@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ImHungryApp",
+    "name": "ImHungri",
     "slug": "ImHungryApp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,13 +11,15 @@
       "backgroundColor": "#FFF5AB"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "Adaluna.imhungry"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFF5AB"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "Adaluna.imhungry"
     },
     "web": {
       "favicon": "./assets/favicon.png"

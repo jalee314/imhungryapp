@@ -71,7 +71,7 @@ To modify the gradient colors, edit the `colors` prop in `App.tsx`:
 
 ```typescript
 <LinearGradient
-  colors={['#FFF5AB', '#FFE100']} // Change these colors
+  colors={['#FFF5AB', '#FFE100']}
   style={styles.container}
   start={{ x: 0, y: 0 }}
   end={{ x: 0, y: 1 }}
