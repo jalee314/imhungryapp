@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   loginText: { fontSize: 16, color: '#000', fontWeight: '500' },
 
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle:   { fontSize: 18, color: '#000', fontFamily: 'Manrope-Bold' },
+  welcomeTitle:   { fontSize: 20, color: '#000', fontFamily: 'Manrope-Bold' },
   welcomeSubtitle:{ fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
 
   formContainer: { width: '100%' },

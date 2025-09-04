@@ -65,13 +65,14 @@ export default function UsernameScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <View style = {{flex:1}}>
       <LinearGradient
         colors={['rgba(255, 245, 171, 0.5)', 'rgba(255, 225, 0, 0.5)']}
         style={styles.gradient}
         start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
       >
+        <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
           <View style={styles.pagePad}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -102,12 +103,12 @@ export default function UsernameScreen() {
                         },
                     }}
 
-  autoCapitalize="none"
-  autoCorrect={false}
-  maxLength={21}
-  onFocus={() => { setIsFocused(true); if (!displayUsername) setDisplayUsername('@'); }}
-  onBlur={() => { setIsFocused(false); if (!username) setDisplayUsername(''); }}
-/>
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    maxLength={21}
+                    onFocus={() => { setIsFocused(true); if (!displayUsername) setDisplayUsername('@'); }}
+                    onBlur={() => { setIsFocused(false); if (!username) setDisplayUsername(''); }}
+                    />
 
                 </View>
               <View style={styles.spacer} />
@@ -119,13 +120,14 @@ export default function UsernameScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
-      </LinearGradient>
     </SafeAreaView>
+</LinearGradient>
+</View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1 ,backgroundColor: 'rgba(255, 245, 171, 0.5)'},
   gradient: { flex: 1 },
   flex1: { flex: 1 },
   pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
