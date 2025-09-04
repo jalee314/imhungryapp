@@ -22,12 +22,11 @@ export default function App() {
 
 
 
-  // Add timeout fallback
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setTimeoutReached(true);
       console.log('Loading timeout');
-    }, 3000); // 3 second timeout
+    }, 3000);
 
     if (fontsLoaded) {
       clearTimeout(timer);
@@ -54,6 +53,7 @@ export default function App() {
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="Username" component={UsernameScreen} />
+        {/* <Stack.Screen name= "Profile Photo" component={ProfilePhoto}/> */}
       </Stack.Navigator>
     </NavigationContainer>
   );
