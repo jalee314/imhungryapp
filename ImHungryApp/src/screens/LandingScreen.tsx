@@ -34,7 +34,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // ensures the pressable covers the whole screen but keeps your centering
   fill: {
     flex: 1,
     alignItems: 'center',

@@ -1,66 +1,66 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import {
+  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
+  KeyboardAvoidingView, Platform, Alert, useWindowDimensions
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
-import { supabase } from '../../lib/supabase';
+import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function SignUpScreen() {
   const navigation = useNavigation();
+  const { width, height } = useWindowDimensions();
+
+  const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
+  const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
+  const GAP = Math.max( 8, Math.min(16, Math.round(height * 0.012)));  // between inputs
+  const MAX_W = Math.min(560, Math.round(width * 0.92));
+  const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
+
+  const responsive = {
+    pagePad:        { paddingHorizontal: H, paddingVertical: V },
+    loginLink:      { marginBottom: Math.round(V * 1.5), marginTop: V  },
+    welcomeSection: { marginBottom: Math.round(V * 1.5) },
+    welcomeTitle:   { marginBottom: Math.round(V * 1) },
+    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.35) },
+    formContainer:  { marginBottom: Math.round(V * 0.125) },
+    paperInput:     { marginBottom: Math.round(GAP * 1.5)},
+    continueButton: { marginTop: V, marginBottom: V },
+    legalContainer: { marginTop: V * 2 },
+  };
+  // ----------------------------
+
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    phoneNumber: '',
-    email: '',
-    password: '',
+    firstName: '', lastName: '', phoneNumber: '', email: '', password: '',
   });
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     let formattedValue = value;
-    
     if (field === 'phoneNumber') {
-      const digits = value.replace(/\D/g, '');
-      
-      if (digits.length <= 3) {
-        formattedValue = digits;
-      } else if (digits.length <= 6) {
-        formattedValue = `(${digits.slice(0, 3)})${digits.slice(3)}`;
-      } else {
-        formattedValue = `(${digits.slice(0, 3)})${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-      }
+      const d = value.replace(/\D/g, '');
+      if (d.length <= 3) formattedValue = d;
+      else if (d.length <= 6) formattedValue = `(${d.slice(0,3)})${d.slice(3)}`;
+      else formattedValue = `(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6,10)}`;
     }
-    
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
   };
 
   const handleContinue = () => {
     if (!formData.firstName || !formData.lastName || !formData.phoneNumber || !formData.email || !formData.password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+      Alert.alert('Error', 'Please fill in all fields'); return;
     }
     if (formData.password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
-      return;
+      Alert.alert('Error', 'Password must be at least 8 characters long'); return;
     }
-    
     const phoneDigits = formData.phoneNumber.replace(/\D/g, '');
     if (phoneDigits.length < 10) {
-      Alert.alert('Error', 'Please enter a complete phone number: (xxx)xxx-xxxx');
-      return;
+      Alert.alert('Error', 'Please enter a complete phone number: (xxx)xxx-xxxx'); return;
     }
-
-    // Navigate to username screen with form data
-    // We'll create the account after username selection
     (navigation as any).navigate('Username', {
-      userData: {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phoneNumber: formData.phoneNumber,
-        email: formData.email,
-        password: formData.password
-      }
+      userData: { ...formData },
     });
   };
 
@@ -72,125 +72,123 @@ export default function SignUpScreen() {
     { label: 'Password (8+ characters)', field: 'password' as const, keyboardType: 'default' as const, autoComplete: 'new-password' as const, textContentType: 'newPassword' as const, autoCapitalize: 'none' as const, placeholder: '' },
   ];
 
-
-  
-  const handleLogin = () => {
-    // TODO: Navigate to login screen
-  };
-  
-  const handleTermsPress = () => {
-    // TODO: Navigate to Terms & Conditions
-  };
-  
-  const handlePrivacyPress = () => {
-    // TODO: Navigate to Privacy Policy
-  };
+  const handleLogin = () => {};
+  const handleTermsPress = () => {};
+  const handlePrivacyPress = () => {};
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <LinearGradient
-        colors={['rgba(255, 245, 171, 0.5)', 'rgba(255, 225, 0, 0.5)']}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoidingView}
-        >
-          {/* All padding lives here so the gradient can be full-bleed */}
-          <View style={styles.pagePad}>
-            {/* Login Link */}
-            <TouchableOpacity style={styles.loginLink} onPress={handleLogin}>
+      <View style={{ flex: 1 }}>
+        <LinearGradient
+          colors= {['rgba(255, 245, 171, 0.1)', 'rgba(255, 225, 0, 0.8)']}
+          style={StyleSheet.absoluteFillObject}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          pointerEvents="none"
+        />
+        <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
+          <View style={[styles.pagePad, responsive.pagePad]}>
+            <TouchableOpacity style={[styles.loginLink, responsive.loginLink]} onPress={handleLogin}>
               <Text style={styles.loginText}>Log in</Text>
             </TouchableOpacity>
 
-            {/* Main Content Container */}
             <View style={styles.mainContainer}>
-              {/* Welcome Section */}
-              <View style={styles.welcomeSection}>
-                <Text style={styles.welcomeTitle}>Welcome to Hungri</Text>
-                <Text style={styles.welcomeSubtitle}>
+              <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome to Hungri</Text>
+                <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
                   Create an account to get curated deals from local restaurants, food franchises and more!
                 </Text>
               </View>
 
               {/* Form Fields */}
-              <View style={styles.formContainer}>
-                {fieldConfig.map((config, index) => (
+              <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
+                {fieldConfig.map((cfg, i) => (
                   <TextInput
-                    key={config.field}
-                    label={config.label}
+                    key={cfg.field}
+                    label={cfg.label}
                     mode="outlined"
-                    value={formData[config.field]}
-                    onChangeText={text => handleInputChange(config.field, text)}
-                    placeholder={config.placeholder}
+                    value={(formData as any)[cfg.field]}
+                    onChangeText={t => handleInputChange(cfg.field, t)}
+                    placeholder={cfg.placeholder}
                     outlineColor="#FFA05C"
                     activeOutlineColor="#FFA05C"
                     dense
-                    style={styles.paperInput}
-                    theme={{ roundness: 12, colors: { background: '#FFF5AB' } }}
-                    keyboardType={config.keyboardType}
-                    autoCapitalize={config.autoCapitalize}
-                    autoComplete={config.autoComplete}
-                    textContentType={config.textContentType}
-                    secureTextEntry={config.field === 'password'}
-                    returnKeyType={index === fieldConfig.length - 1 ? 'done' : 'next'}
+                    style={[styles.paperInput, responsive.paperInput, { backgroundColor: '#FFF5AB' }]}
+                    theme={{
+                      roundness: 12,
+                      colors: {
+                        background: '#FFF5AB',   // Paper uses this to paint the notch
+
+                      },
+                    }}
+                    keyboardType={cfg.keyboardType}
+                    autoCapitalize={cfg.autoCapitalize}
+                    autoComplete={cfg.autoComplete}
+                    textContentType={cfg.textContentType}
+                    secureTextEntry={cfg.field === 'password'}
+                    returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
                   />
                 ))}
               </View>
 
-              {/* Continue Button */}
-              <TouchableOpacity 
-                style={[styles.continueButton, loading && { opacity: 0.7 }]} 
+              {/* Continue */}
+              <TouchableOpacity
+                style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
                 onPress={handleContinue}
                 disabled={loading}
               >
-                <Text style={styles.continueButtonText}>
-                  Continue
-                </Text>
+                <Text style={styles.continueButtonText}>Continue</Text>
               </TouchableOpacity>
-
-
             </View>
 
-            {/* Legal Text */}
-            <View style={styles.legalContainer}>
+            {/* Legal */}
+            <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
               <Text style={styles.legalText}>
                 By continuing, you agree to Hungri's{' '}
-                <Text style={styles.legalLink} onPress={handleTermsPress}>
-                  Terms & Conditions
-                </Text>{' '}
+                <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
                 and{' '}
-                <Text style={styles.legalLink} onPress={handlePrivacyPress}>
-                  Privacy Policy
-                </Text>
+                <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
               </Text>
             </View>
           </View>
         </KeyboardAvoidingView>
-      </LinearGradient>
-    </SafeAreaView>
+     </SafeAreaView>
+      </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
-  gradient: { flex: 1 },
+  // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
+  container: { flex: 1, backgroundColor: 'rgba(255, 245, 171, 0.5)' },
+
   keyboardAvoidingView: { flex: 1 },
-  pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
+  pagePad: { flex: 1 }, // responsive padding applied at runtime
+
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
-  loginLink: { alignSelf: 'flex-end', marginBottom: 20 },
+
+  loginLink: { alignSelf: 'flex-end' },
   loginText: { fontSize: 16, color: '#000', fontWeight: '500' },
-  welcomeSection: { marginBottom: 32, alignSelf: 'stretch' },
-  welcomeTitle: { fontSize: 18, color: '#000', marginBottom: 12, fontFamily: 'Manrope-Bold' },
-  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular', marginBottom: -7 },
-  formContainer: { width: '100%', marginBottom: 4 },
-  paperInput: { marginBottom: 10, backgroundColor: '#FFF5AB' },
-  continueButton: { width: '100%', height: 44, backgroundColor: '#FFA05C', borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 12, marginTop: 12 },
+
+  welcomeSection: { alignSelf: 'stretch' },
+  welcomeTitle:   { fontSize: 18, color: '#000', fontFamily: 'Manrope-Bold' },
+  welcomeSubtitle:{ fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
+
+  formContainer: { width: '100%' },
+  paperInput:    { backgroundColor: 'rgba(255, 245, 171, 0.5)' }, // field bg; spacing added responsively
+
+  continueButton: {
+    width: '100%',
+    height: 44,
+    backgroundColor: '#FFA05C',
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   continueButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  legalContainer: { marginTop: 20, alignItems: 'center' },
+
+  legalContainer: { alignItems: 'center' },
   legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
   legalLink: { color: '#FF9800', fontWeight: '500' },
 });
