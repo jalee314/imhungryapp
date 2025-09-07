@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
   KeyboardAvoidingView, Platform, Alert
 } from 'react-native';
+
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -36,6 +37,32 @@ export default function CuisinePreferencesScreen() {
         return [prev[1], prev[2], cuisine];
       }
     });
+  };
+
+  const insertUserCuisinePreferences = async (userId: string, cuisines: string[]) => {
+    if (cuisines.length === 0) return;
+
+    try {
+      const { data: cuisineData, error: cuisineError } = await supabase
+        .from('cuisine')
+        .select('cuisine_id, cuisine_name')
+        .in('cuisine_name', cuisines);
+
+      if (cuisineError) throw cuisineError;
+
+      const preferences = cuisineData.map(cuisine => ({
+        user_id: userId,
+        cuisine_id: cuisine.cuisine_id
+      }));
+
+      const { error: preferencesError } = await supabase
+        .from('user_cuisine_preferences')
+        .insert(preferences);
+
+      if (preferencesError) throw preferencesError;
+    } catch (error) {
+      console.error('Error inserting cuisine preferences:', error);
+    }
   };
 
   const handleFinish = async () => {
@@ -132,62 +159,10 @@ export default function CuisinePreferencesScreen() {
         throw error;
       }
       
-      // Create profile with all data including cuisine preferences
+      // The database trigger will automatically create the user record
+      // Just insert cuisine preferences
       if (signUpResult.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: signUpResult.user.id,
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            phone: e164Phone,
-            username: userData.username,
-            email: userData.email,
-            cuisine_preferences: selectedCuisines
-          });
-          
-        if (profileError) {
-          // Handle specific profile conflicts
-          const profileErrorMessage = profileError.message?.toLowerCase() || '';
-          
-          // Check for username conflicts - more comprehensive patterns
-          if (profileErrorMessage.includes('username') || 
-              profileErrorMessage.includes('unique constraint') && profileErrorMessage.includes('username') ||
-              profileErrorMessage.includes('duplicate key') && profileErrorMessage.includes('username') ||
-              profileErrorMessage.includes('already exists') && profileErrorMessage.includes('username')) {
-            Alert.alert(
-              'Username Taken',
-              'This username is already taken. Please choose a different username.',
-              [
-                {
-                  text: 'Go Back',
-                  onPress: () => (navigation as any).navigate('Username', { userData })
-                }
-              ]
-            );
-            return;
-          }
-          
-          // Check for phone conflicts - more comprehensive patterns
-          if (profileErrorMessage.includes('phone') || 
-              (profileErrorMessage.includes('unique constraint') && profileErrorMessage.includes('phone')) ||
-              (profileErrorMessage.includes('duplicate key') && profileErrorMessage.includes('phone')) ||
-              (profileErrorMessage.includes('already exists') && profileErrorMessage.includes('phone'))) {
-            Alert.alert(
-              'Phone Number Taken',
-              'This phone number is already registered. Please use a different phone number.',
-              [
-                {
-                  text: 'Go Back',
-                  onPress: () => (navigation as any).navigate('SignUp', { userData })
-                }
-              ]
-            );
-            return;
-          }
-          
-          throw profileError;
-        }
+        await insertUserCuisinePreferences(signUpResult.user.id, selectedCuisines);
       }
 
       (navigation as any).navigate('Landing');
@@ -216,10 +191,10 @@ export default function CuisinePreferencesScreen() {
       }
       
       // Check for username conflicts in the catch block
-      if (errorMessage.includes('username') || 
-          errorMessage.includes('duplicate key') && errorMessage.includes('username') ||
-          errorMessage.includes('already exists') && errorMessage.includes('username') ||
-          errorMessage.includes('unique constraint') && errorMessage.includes('username')) {
+      if (errorMessage.includes('display_name') || 
+          errorMessage.includes('duplicate key') && errorMessage.includes('display_name') ||
+          errorMessage.includes('already exists') && errorMessage.includes('display_name') ||
+          errorMessage.includes('unique constraint') && errorMessage.includes('display_name')) {
         Alert.alert(
           'Username Taken',
           'This username is already taken. Please choose a different username.',
@@ -363,60 +338,8 @@ export default function CuisinePreferencesScreen() {
         throw error;
       }
       
-      // Create profile with all data (no cuisine preferences)
-      if (signUpResult.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: signUpResult.user.id,
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            phone: e164Phone,
-            username: userData.username,
-            email: userData.email,
-            cuisine_preferences: []
-          });
-          
-        if (profileError) {
-          const profileErrorMessage = profileError.message?.toLowerCase() || '';
-          
-          if (profileErrorMessage.includes('username') || 
-              profileErrorMessage.includes('unique constraint') && profileErrorMessage.includes('username') ||
-              profileErrorMessage.includes('duplicate key') && profileErrorMessage.includes('username') ||
-              profileErrorMessage.includes('already exists') && profileErrorMessage.includes('username')) {
-            Alert.alert(
-              'Username Taken',
-              'This username is already taken. Please choose a different username.',
-              [
-                {
-                  text: 'Go Back',
-                  onPress: () => (navigation as any).navigate('Username', { userData })
-                }
-              ]
-            );
-            return;
-          }
-          
-          if (profileErrorMessage.includes('phone') || 
-              (profileErrorMessage.includes('unique constraint') && profileErrorMessage.includes('phone')) ||
-              (profileErrorMessage.includes('duplicate key') && profileErrorMessage.includes('phone')) ||
-              (profileErrorMessage.includes('already exists') && profileErrorMessage.includes('phone'))) {
-            Alert.alert(
-              'Phone Number Taken',
-              'This phone number is already registered. Please use a different phone number.',
-              [
-                {
-                  text: 'Go Back',
-                  onPress: () => (navigation as any).navigate('SignUp', { userData })
-                }
-              ]
-            );
-            return;
-          }
-          
-          throw profileError;
-        }
-      }
+      // The database trigger will automatically create the user record
+      // No need to manually insert
 
       (navigation as any).navigate('Landing');
     } catch (error) {
@@ -436,10 +359,10 @@ export default function CuisinePreferencesScreen() {
         return;
       }
       
-      if (errorMessage.includes('username') || 
-          errorMessage.includes('duplicate key') && errorMessage.includes('username') ||
-          errorMessage.includes('already exists') && errorMessage.includes('username') ||
-          errorMessage.includes('unique constraint') && errorMessage.includes('username')) {
+      if (errorMessage.includes('display_name') || 
+          errorMessage.includes('duplicate key') && errorMessage.includes('display_name') ||
+          errorMessage.includes('already exists') && errorMessage.includes('display_name') ||
+          errorMessage.includes('unique constraint') && errorMessage.includes('display_name')) {
         Alert.alert(
           'Username Taken',
           'This username is already taken. Please choose a different username.',
