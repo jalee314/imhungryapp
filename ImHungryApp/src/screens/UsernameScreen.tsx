@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { supabase } from '../../lib/supabase';
 
 export default function UsernameScreen() {
   const navigation = useNavigation();
@@ -13,7 +12,6 @@ export default function UsernameScreen() {
 
   const [username, setUsername] = useState(''); 
   const [displayUsername, setDisplayUsername] = useState('');  
-  const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
@@ -37,37 +35,16 @@ export default function UsernameScreen() {
     if (username.length > 20) return Alert.alert('Error', 'Username must be less than 20 characters');
     if (!userData) return;
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            phone_number: userData.phoneNumber,
-            username, 
-            full_name: `${userData.firstName} ${userData.lastName}`,
-          },
-        },
-      });
-      if (error) throw error;
-      if (data.user) {
-        Alert.alert('Success', `Welcome to Hungri, ${username}!`, [
-        ]);
-      }
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to create account');
-    } finally {
-      setLoading(false);
-    }
+    // Navigate to ProfilePhoto screen with user data including username
+    (navigation as any).navigate('Profile Photo', {
+      userData: { ...userData, username },
+    });
   };
 
   return (
     <View style = {{flex:1}}>
       <LinearGradient
-        colors={['rgba(255, 245, 171, 0.5)', 'rgba(255, 225, 0, 0.5)']}
+        colors={['rgba(255, 245, 171, 0.1)', 'rgba(255, 225, 0, 0.8)']}
         style={styles.gradient}
         start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
       >
@@ -113,8 +90,8 @@ export default function UsernameScreen() {
                 </View>
               <View style={styles.spacer} />
               <View style={styles.footer}>
-                <TouchableOpacity style={[styles.continueButton, loading && { opacity: 0.7 }]} onPress={handleContinue} disabled={loading}>
-                  <Text style={styles.continueButtonText}>{loading ? 'Creating Account...' : 'Create Account'}</Text>
+                <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+                  <Text style={styles.continueButtonText}>Continue</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -160,6 +137,6 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   footer: { width: '100%', paddingBottom: 16 },
 
-  continueButton: { width: '100%', height: 44, backgroundColor: '#FFA05C', borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  continueButton: { width: '100%', height: 44, backgroundColor: '#FFA05C', borderRadius: 22, alignItems: 'center', justifyContent: 'center',marginBottom: 50 },
   continueButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

@@ -7,10 +7,12 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 export default function SignUpScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const existingUserData = (route.params as any)?.userData;
   const { width, height } = useWindowDimensions();
 
   const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
@@ -33,7 +35,11 @@ export default function SignUpScreen() {
   // ----------------------------
 
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', phoneNumber: '', email: '', password: '',
+    firstName: existingUserData?.firstName || '', 
+    lastName: existingUserData?.lastName || '', 
+    phoneNumber: existingUserData?.phoneNumber || '', 
+    email: existingUserData?.email || '', 
+    password: existingUserData?.password || '',
   });
   const [loading, setLoading] = useState(false);
 

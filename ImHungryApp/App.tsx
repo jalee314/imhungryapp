@@ -7,6 +7,10 @@ import { useFonts } from 'expo-font';
 import LandingScreen from './src/screens/LandingScreen';
 import SignUp from './src/screens/SignUp';
 import UsernameScreen from './src/screens/UsernameScreen';
+import ProfilePhoto from './src/screens/ProfilePhoto';
+import LocationPermissions from './src/screens/LocationPermissions';
+import InstantNotifications from './src/screens/InstantNotifications';
+import CuisinePreferences from './src/screens/CuisinePreferences';
 
 
 const Stack = createNativeStackNavigator();
@@ -53,7 +57,10 @@ export default function App() {
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="Username" component={UsernameScreen} />
-        {/* <Stack.Screen name= "Profile Photo" component={ProfilePhoto}/> */}
+        <Stack.Screen name="Profile Photo" component={ProfilePhoto} />
+        <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
+        <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
+        <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
       </Stack.Navigator>
     </NavigationContainer>
   );
