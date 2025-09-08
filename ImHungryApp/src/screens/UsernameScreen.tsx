@@ -141,7 +141,7 @@ export default function UsernameScreen() {
                     onFocus={() => { setIsFocused(true); if (!displayUsername) setDisplayUsername('@'); }}
                     onBlur={() => { setIsFocused(false); if (!username) setDisplayUsername(''); }}
                     />
-                    {isChecking && <ActivityIndicator size="small" color="#FFA05C" style={styles.feedbackArea} />}
+                    {isChecking && <ActivityIndicator size="small" color="#FFA05C" />}
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 </View>
@@ -201,7 +201,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
-  feedbackArea: {
-    marginTop: 12,
-  }
 });
