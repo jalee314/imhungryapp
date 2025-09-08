@@ -62,13 +62,20 @@ export default function SignUpScreen() {
 
     const dbField = field === 'phoneNumber' ? 'phone_number' : field;
 
+    
     // format value for DB query
     let queryValue = value;
     if (field === 'phoneNumber') {
-        const digits = value.replace(/\D/g, '');
-        // format to +1xxxxxxxxxx for DB query
-        if (digits.length >= 10) {
-            queryValue = `+1${digits.slice(0, 10)}`;
+        let phoneDigits = value;
+
+        // if the number starts with '1' and is 11 digits, it's a US number with country code.
+        // otherwise, if it's 10 digits, assume it's a US number without the country code.
+        if (phoneDigits.startsWith('1') && phoneDigits.length === 11) {
+            // It's already in a good state to be prefixed with '+'
+            queryValue = `+${phoneDigits}`;
+        } else if (phoneDigits.length === 10) {
+            // it's a 10-digit number, so prepend '+1'
+            queryValue = `+1${phoneDigits}`;
         } else {
             // don't run a query for an incomplete number
             setIsChecking(prev => ({ ...prev, [field]: false }));
@@ -76,6 +83,12 @@ export default function SignUpScreen() {
         }
     }
     
+    if (field === 'email' && !value.includes('@')) {
+        // don't run a query for an incomplete email
+        setIsChecking(prev => ({ ...prev, [field]: false }));
+        return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('user') 
@@ -101,16 +114,34 @@ export default function SignUpScreen() {
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     let formattedValue = value;
+    let digits = value.replace(/\D/g, '');
+
     if (field === 'phoneNumber') {
-      const d = value.replace(/\D/g, '');
-      if (d.length <= 3) formattedValue = d;
-      else if (d.length <= 6) formattedValue = `(${d.slice(0,3)})${d.slice(3)}`;
-      else formattedValue = `(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6,10)}`;
+      // Allow up to 11 digits (1 for country code + 10 for number)
+      if (digits.length > 11) {
+        digits = digits.substring(0, 11);
+      }
+
+      const hasCountryCode = digits.length === 11 && digits.startsWith('1');
+      const numberPart = hasCountryCode ? digits.substring(1) : digits;
+
+      if (numberPart.length <= 3) {
+        formattedValue = `(${numberPart}`;
+      } else if (numberPart.length <= 6) {
+        formattedValue = `(${numberPart.slice(0, 3)}) ${numberPart.slice(3)}`;
+      } else {
+        formattedValue = `(${numberPart.slice(0, 3)}) ${numberPart.slice(3, 6)}-${numberPart.slice(6, 10)}`;
+      }
+      if (hasCountryCode) {
+        formattedValue = `+1 ${formattedValue}`;
+      }
     }
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
 
-    if (field === 'email' || field === 'phoneNumber') {
-      debouncedCheck(field, formattedValue);
+    if (field === 'email') {
+      debouncedCheck(field, value);
+    } else if (field === 'phoneNumber') {
+      debouncedCheck(field, digits);
     }
   };
 
