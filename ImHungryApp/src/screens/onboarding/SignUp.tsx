@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -141,7 +141,10 @@ export default function SignUpScreen() {
     { label: 'Password (8+ characters)', field: 'password' as const, keyboardType: 'default' as const, autoComplete: 'new-password' as const, textContentType: 'newPassword' as const, autoCapitalize: 'none' as const, placeholder: '' },
   ];
 
-  const handleLogin = () => {};
+  const handleLogin = () => {
+    (navigation as any).navigate('LogIn');
+  };
+  
   const handleTermsPress = () => {};
   const handlePrivacyPress = () => {};
 

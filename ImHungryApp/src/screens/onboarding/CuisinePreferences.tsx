@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
 const cuisines = [
   'Italian', 'French', 'Spanish', 'Greek',

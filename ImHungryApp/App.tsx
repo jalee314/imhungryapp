@@ -4,14 +4,15 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 
-import LandingScreen from './src/screens/LandingScreen';
-import SignUp from './src/screens/SignUp';
-import UsernameScreen from './src/screens/UsernameScreen';
-import ProfilePhoto from './src/screens/ProfilePhoto';
-import LocationPermissions from './src/screens/LocationPermissions';
-import InstantNotifications from './src/screens/InstantNotifications';
-import CuisinePreferences from './src/screens/CuisinePreferences';
-
+import LandingScreen from './src/screens/onboarding/LandingScreen';
+import SignUp from './src/screens/onboarding/SignUp';
+import LogIn from './src/screens/onboarding/LogIn';
+import UsernameScreen from './src/screens/onboarding/UsernameScreen';
+import ProfilePhoto from './src/screens/onboarding/ProfilePhoto';
+import LocationPermissions from './src/screens/onboarding/LocationPermissions';
+import InstantNotifications from './src/screens/onboarding/InstantNotifications';
+import CuisinePreferences from './src/screens/onboarding/CuisinePreferences';
+import ProfilePage from './src/screens/profile/ProfilePage';
 
 const Stack = createNativeStackNavigator();
 
@@ -56,11 +57,13 @@ export default function App() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="SignUp" component={SignUp} />
+        <Stack.Screen name="LogIn" component={LogIn} />
         <Stack.Screen name="Username" component={UsernameScreen} />
         <Stack.Screen name="Profile Photo" component={ProfilePhoto} />
         <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
         <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
         <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
+        <Stack.Screen name="ProfilePage" component={ProfilePage} />
       </Stack.Navigator>
     </NavigationContainer>
   );

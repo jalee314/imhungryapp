@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
 export default function ProfilePhotoScreen() {
   const navigation = useNavigation();
@@ -166,7 +166,7 @@ export default function ProfilePhotoScreen() {
                     <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
                   ) : (
                     <View style={styles.cameraIconContainer}>
-                      <Image source={require('../../img/gallery.jpg')} style={styles.cameraIcon} />
+                      <Image source={require('../../../img/gallery.jpg')} style={styles.cameraIcon} />
                     </View>
                   )}
                 </TouchableOpacity>

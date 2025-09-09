@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import OutlinedText from '../components/OutlinedText';
+import OutlinedText from '../../components/OutlinedText';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 export default function LandingScreen() {

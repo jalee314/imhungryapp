@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
