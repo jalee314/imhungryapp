@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  KeyboardAvoidingView, Platform, Alert
-} from 'react-native';
-
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';

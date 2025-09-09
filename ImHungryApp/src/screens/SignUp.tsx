@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  KeyboardAvoidingView, Platform, Alert, useWindowDimensions
-} from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { supabase } from '../../lib/supabase';
+
+const debounce = (func: (...args: any[]) => void, delay: number) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
+
 
 export default function SignUpScreen() {
   const navigation = useNavigation();
@@ -42,6 +51,53 @@ export default function SignUpScreen() {
     password: existingUserData?.password || '',
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: '', phoneNumber: '' });
+  const [isChecking, setIsChecking] = useState({ email: false, phoneNumber: false });
+
+  const checkUniqueness = async (field: 'email' | 'phoneNumber', value: string) => {
+    if (!value) return;
+
+    setIsChecking(prev => ({ ...prev, [field]: true }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
+
+    const dbField = field === 'phoneNumber' ? 'phone_number' : field;
+
+    // format value for DB query
+    let queryValue = value;
+    if (field === 'phoneNumber') {
+        const digits = value.replace(/\D/g, '');
+        // format to +1xxxxxxxxxx for DB query
+        if (digits.length >= 10) {
+            queryValue = `+1${digits.slice(0, 10)}`;
+        } else {
+            // don't run a query for an incomplete number
+            setIsChecking(prev => ({ ...prev, [field]: false }));
+            return;
+        }
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('user') 
+        .select(dbField)
+        .eq(dbField, queryValue)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        setErrors(prev => ({ ...prev, [field]: `${field === 'email' ? 'Email' : 'Phone number'} is already taken.` }));
+      }
+    } catch (err) {
+      console.error(`Error checking ${field}:`, err);
+    } finally {
+      setIsChecking(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
+  const debouncedCheck = useCallback(debounce(checkUniqueness, 500), []);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     let formattedValue = value;
@@ -52,11 +108,18 @@ export default function SignUpScreen() {
       else formattedValue = `(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6,10)}`;
     }
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
+
+    if (field === 'email' || field === 'phoneNumber') {
+      debouncedCheck(field, formattedValue);
+    }
   };
 
   const handleContinue = () => {
     if (!formData.firstName || !formData.lastName || !formData.phoneNumber || !formData.email || !formData.password) {
       Alert.alert('Error', 'Please fill in all fields'); return;
+    }
+    if (errors.email || errors.phoneNumber) {
+      Alert.alert('Error', 'Please fix the errors before continuing.'); return;
     }
     if (formData.password.length < 8) {
       Alert.alert('Error', 'Password must be at least 8 characters long'); return;
@@ -67,7 +130,7 @@ export default function SignUpScreen() {
     }
     (navigation as any).navigate('Username', {
       userData: { ...formData },
-    });
+});
   };
 
   const fieldConfig = [
@@ -111,31 +174,33 @@ export default function SignUpScreen() {
               {/* Form Fields */}
               <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
                 {fieldConfig.map((cfg, i) => (
-                  <TextInput
-                    key={cfg.field}
-                    label={cfg.label}
-                    mode="outlined"
-                    value={(formData as any)[cfg.field]}
-                    onChangeText={t => handleInputChange(cfg.field, t)}
-                    placeholder={cfg.placeholder}
-                    outlineColor="#FFA05C"
-                    activeOutlineColor="#FFA05C"
-                    dense
-                    style={[styles.paperInput, responsive.paperInput, { backgroundColor: '#FFF5AB' }]}
-                    theme={{
-                      roundness: 12,
-                      colors: {
-                        background: '#FFF5AB',   // Paper uses this to paint the notch
-
-                      },
-                    }}
-                    keyboardType={cfg.keyboardType}
-                    autoCapitalize={cfg.autoCapitalize}
-                    autoComplete={cfg.autoComplete}
-                    textContentType={cfg.textContentType}
-                    secureTextEntry={cfg.field === 'password'}
-                    returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
-                  />
+                  <View key={cfg.field} style={responsive.paperInput}>
+                    <TextInput
+                      label={cfg.label}
+                      mode="outlined"
+                      value={(formData as any)[cfg.field]}
+                      onChangeText={t => handleInputChange(cfg.field, t)}
+                      placeholder={cfg.placeholder}
+                      outlineColor="#FFA05C"
+                      activeOutlineColor="#FFA05C"
+                      dense
+                      style={[styles.paperInput, { backgroundColor: '#FFF5AB' }]}
+                      theme={{
+                        roundness: 12,
+                        colors: {
+                          background: '#FFF5AB',   // Paper uses this to paint the notch
+                        },
+                      }}
+                      keyboardType={cfg.keyboardType}
+                      autoCapitalize={cfg.autoCapitalize}
+                      autoComplete={cfg.autoComplete}
+                      textContentType={cfg.textContentType}
+                      secureTextEntry={cfg.field === 'password'}
+                      returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
+                    />
+                    {isChecking[cfg.field as keyof typeof isChecking] && <ActivityIndicator size="small" color="#FFA05C" style={styles.errorText} />}
+                    {errors[cfg.field as keyof typeof errors] ? <Text style={styles.errorText}>{errors[cfg.field as keyof typeof errors]}</Text> : null}
+                  </View>
                 ))}
               </View>
 
@@ -197,4 +262,11 @@ const styles = StyleSheet.create({
   legalContainer: { alignItems: 'center' },
   legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
   legalLink: { color: '#FF9800', fontWeight: '500' },
+  errorText: {
+    color: 'red',
+    alignSelf: 'flex-start',
+    marginLeft: 12,
+    marginTop: 4,    
+    marginBottom: -12,
+  }
 });
