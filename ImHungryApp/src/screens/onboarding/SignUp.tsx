@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
@@ -161,7 +161,12 @@ export default function SignUpScreen() {
         <StatusBar style="dark" />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-          <View style={[styles.pagePad, responsive.pagePad]}>
+          <ScrollView 
+            style={[styles.pagePad, responsive.pagePad]}
+            contentContainerStyle={styles.scrollContentContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <TouchableOpacity style={[styles.loginLink, responsive.loginLink]} onPress={handleLogin}>
               <Text style={styles.loginText}>Log in</Text>
             </TouchableOpacity>
@@ -225,7 +230,7 @@ export default function SignUpScreen() {
                 <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
               </Text>
             </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
      </SafeAreaView>
       </View>
@@ -238,6 +243,10 @@ const styles = StyleSheet.create({
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 }, // responsive padding applied at runtime
+  scrollContentContainer: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+  },
 
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
 
