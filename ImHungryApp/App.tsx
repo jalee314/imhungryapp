@@ -32,6 +32,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
     <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
+    <Stack.Screen name="ProfilePage" component={ProfilePage} />
   </Stack.Navigator>
 );
 
