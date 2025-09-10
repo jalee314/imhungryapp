@@ -20,6 +20,19 @@ import ProfilePage from './src/screens/profile/ProfilePage';
 
 const Stack = createNativeStackNavigator();
 
+const prefix = Linking.createURL('/');
+
+const linking = {
+  prefixes: [prefix, 'com.imhungri://', 'imhungri://'],
+  config: {
+    screens: {
+      ResetPassword: 'reset-password'
+      // Add other screens you want to deep link to here
+      // 'ScreenName': 'path-in-url'
+    },
+  },
+};
+
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
@@ -55,7 +68,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="SignUp" component={SignUp} />
@@ -63,7 +76,7 @@ export default function App() {
         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         <Stack.Screen name="ResetPassword" component={ResetPassword} />
         <Stack.Screen name="Username" component={UsernameScreen} />
-        <Stack.Screen name="Profile Photo" component={ProfilePhoto} />
+        <Stack.Screen name="ProfilePhoto" component={ProfilePhoto} />
         <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
         <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
         <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />

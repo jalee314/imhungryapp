@@ -25,9 +25,11 @@
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
+        <key>CFBundleURLName</key>
+        <string>imhungri</string>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>Adaluna.imhungry</string>
+          <string>imhungri</string>
         </array>
       </dict>
     </array>
@@ -44,6 +46,8 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

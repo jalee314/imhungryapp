@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 
 export default function ForgotPasswordScreen() {
+  
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
 
@@ -42,7 +43,7 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'imhungryapp://reset-password', // For Expo development
+        redirectTo: 'https://imhungri.netlify.app/', // Updated to use your Netlify URL
       });
 
       if (error) {
@@ -95,7 +96,7 @@ export default function ForgotPasswordScreen() {
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
                 <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to Hungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                  Create a New Password
+                  Reset Your Password
                 </Text>
               </View>
 

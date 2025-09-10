@@ -91,7 +91,7 @@ export default function UsernameScreen() {
     if (!userData) return;
 
     // Navigate to ProfilePhoto screen with user data including username
-    (navigation as any).navigate('Profile Photo', {
+    (navigation as any).navigate('ProfilePhoto', {
       userData: { ...userData, username },
     });
   };

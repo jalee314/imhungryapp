@@ -6,13 +6,22 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "imhungri",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#FFF5AB"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "Adaluna.imhungry"
+      "bundleIdentifier": "com.imhungri",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "imhungri",
+            "CFBundleURLSchemes": ["imhungri"]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +34,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ]
   }
 }
