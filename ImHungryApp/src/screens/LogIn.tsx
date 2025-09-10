@@ -5,8 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 export default function LogInScreen() {
   const navigation = useNavigation();
@@ -20,7 +19,7 @@ export default function LogInScreen() {
 
   const responsive = {
     pagePad:        { paddingHorizontal: H, paddingVertical: V },
-    backButton:     { marginBottom: Math.round(V * 1.5), marginTop: V  },
+    signupLink:     { marginBottom: Math.round(V * 1.5), marginTop: V  },
     welcomeSection: { marginBottom: Math.round(V * 1.5) },
     welcomeTitle:   { marginBottom: Math.round(V * 1) },
     welcomeSubtitle:{ marginBottom: -Math.round(V * 0.35) },
@@ -57,7 +56,7 @@ export default function LogInScreen() {
         Alert.alert('Error', error.message);
       } else {
         // Navigate to main app or home screen
-        (navigation as any).navigate('ProfilePage', { email: formData.email });
+        (navigation as any).navigate('Home');
       }
     } catch (err) {
       Alert.alert('Error', 'An unexpected error occurred');
@@ -66,12 +65,13 @@ export default function LogInScreen() {
     }
   };
 
-  const handleBack = () => {
+  const handleSignUp = () => {
     (navigation as any).navigate('SignUp');
   };
 
   const handleForgotPassword = () => {
-    (navigation as any).navigate('ForgotPassword');
+    // Navigate to forgot password screen or show forgot password modal
+    Alert.alert('Forgot Password', 'Password reset functionality will be implemented');
   };
 
   const handleTermsPress = () => {};
@@ -91,15 +91,15 @@ export default function LogInScreen() {
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
           <View style={[styles.pagePad, responsive.pagePad]}>
-            <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
+            <TouchableOpacity style={[styles.signupLink, responsive.signupLink]} onPress={handleSignUp}>
+              <Text style={styles.signupText}>Sign up</Text>
             </TouchableOpacity>
 
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
                 <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome back to Hungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                  Sign in with your email address
+                  Log in to continue getting curated deals from local restaurants, food franchises and more!
                 </Text>
               </View>
 
@@ -157,6 +157,11 @@ export default function LogInScreen() {
                 </View>
               </View>
 
+              {/* Forgot Password */}
+              <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+              </TouchableOpacity>
+
               {/* Login Button */}
               <TouchableOpacity
                 style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
@@ -164,11 +169,6 @@ export default function LogInScreen() {
                 disabled={loading}
               >
                 <Text style={styles.continueButtonText}>Log in</Text>
-              </TouchableOpacity>
-
-              {/* Forgot Password */}
-              <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
               </TouchableOpacity>
             </View>
 
@@ -197,7 +197,8 @@ const styles = StyleSheet.create({
 
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
 
-  backButton: { alignSelf: 'flex-start' },
+  signupLink: { alignSelf: 'flex-end' },
+  signupText: { fontSize: 16, color: '#000', fontWeight: '500' },
 
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle:   { fontSize: 20, color: '#000', fontFamily: 'Manrope-Bold' },
@@ -206,13 +207,8 @@ const styles = StyleSheet.create({
   formContainer: { width: '100%' },
   paperInput:    { backgroundColor: 'rgba(255, 245, 171, 0.5)' }, // field bg; spacing added responsively
 
-  forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
-  forgotPasswordText: { 
-    fontSize: 14, 
-    color: '#000', 
-    fontWeight: '500',
-    textDecorationLine: 'underline'
-  },
+  forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 16 },
+  forgotPasswordText: { fontSize: 14, color: '#000', fontWeight: '500' },
 
   continueButton: {
     width: '100%',

@@ -1,63 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 
-export default function LogInScreen() {
+export default function ResetPasswordScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { width, height } = useWindowDimensions();
 
-  const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
-  const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
-  const GAP = Math.max( 8, Math.min(16, Math.round(height * 0.012)));  // between inputs
+  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
+  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
+  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
 
   const responsive = {
-    pagePad:        { paddingHorizontal: H, paddingVertical: V },
-    backButton:     { marginBottom: Math.round(V * 1.5), marginTop: V  },
+    pagePad: { paddingHorizontal: H, paddingVertical: V },
+    backButton: { marginBottom: Math.round(V * 1.5), marginTop: V },
     welcomeSection: { marginBottom: Math.round(V * 1.5) },
-    welcomeTitle:   { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.35) },
-    formContainer:  { marginBottom: Math.round(V * 0.125) },
-    paperInput:     { marginBottom: Math.round(GAP * 1.5)},
-    continueButton: { marginTop: V, marginBottom: V },
+    welcomeTitle: { marginBottom: Math.round(V * 1) },
+    welcomeSubtitle: { marginBottom: -Math.round(V * 0.35) },
+    formContainer: { marginBottom: Math.round(V * 0.125) },
+    paperInput: { marginBottom: Math.round(GAP * 1.5) },
+    resetButton: { marginTop: V, marginBottom: V },
     legalContainer: { marginTop: V * 2 },
   };
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    newPassword: '',
+    confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if user has a valid session from the email link
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        Alert.alert(
+          'Invalid Link',
+          'This password reset link is invalid or has expired. Please request a new one.',
+          [{ text: 'OK', onPress: () => (navigation as any).navigate('ForgotPassword') }]
+        );
+      }
+    };
+    
+    checkSession();
+  }, [navigation]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleLogin = async () => {
-    if (!formData.email || !formData.password) {
+  const handleUpdatePassword = async () => {
+    if (!formData.newPassword || !formData.confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (formData.newPassword.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      const { error } = await supabase.auth.updateUser({
+        password: formData.newPassword
       });
 
       if (error) {
         Alert.alert('Error', error.message);
       } else {
-        // Navigate to main app or home screen
-        (navigation as any).navigate('ProfilePage', { email: formData.email });
+        Alert.alert(
+          'Success',
+          'Your password has been updated successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => (navigation as any).navigate('LogIn'),
+            },
+          ]
+        );
       }
     } catch (err) {
       Alert.alert('Error', 'An unexpected error occurred');
@@ -67,11 +101,7 @@ export default function LogInScreen() {
   };
 
   const handleBack = () => {
-    (navigation as any).navigate('SignUp');
-  };
-
-  const handleForgotPassword = () => {
-    (navigation as any).navigate('ForgotPassword');
+    navigation.goBack();
   };
 
   const handleTermsPress = () => {};
@@ -97,9 +127,9 @@ export default function LogInScreen() {
 
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome back to Hungri</Text>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to Hungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                  Sign in with your email address
+                  Create a New Password
                 </Text>
               </View>
 
@@ -107,10 +137,10 @@ export default function LogInScreen() {
               <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
                 <View style={responsive.paperInput}>
                   <TextInput
-                    label="Email address"
+                    label="New Password"
                     mode="outlined"
-                    value={formData.email}
-                    onChangeText={t => handleInputChange('email', t)}
+                    value={formData.newPassword}
+                    onChangeText={t => handleInputChange('newPassword', t)}
                     placeholder=""
                     outlineColor="#FFA05C"
                     activeOutlineColor="#FFA05C"
@@ -122,20 +152,17 @@ export default function LogInScreen() {
                         background: '#FFF5AB',
                       },
                     }}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    textContentType="emailAddress"
+                    secureTextEntry
                     returnKeyType="next"
                   />
                 </View>
 
                 <View style={responsive.paperInput}>
                   <TextInput
-                    label="Password"
+                    label="Confirm New Password"
                     mode="outlined"
-                    value={formData.password}
-                    onChangeText={t => handleInputChange('password', t)}
+                    value={formData.confirmPassword}
+                    onChangeText={t => handleInputChange('confirmPassword', t)}
                     placeholder=""
                     outlineColor="#FFA05C"
                     activeOutlineColor="#FFA05C"
@@ -147,28 +174,19 @@ export default function LogInScreen() {
                         background: '#FFF5AB',
                       },
                     }}
-                    keyboardType="default"
-                    autoCapitalize="none"
-                    autoComplete="current-password"
-                    textContentType="password"
                     secureTextEntry
                     returnKeyType="done"
                   />
                 </View>
               </View>
 
-              {/* Login Button */}
+              {/* Update Password Button */}
               <TouchableOpacity
-                style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
-                onPress={handleLogin}
+                style={[styles.resetButton, responsive.resetButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+                onPress={handleUpdatePassword}
                 disabled={loading}
               >
-                <Text style={styles.continueButtonText}>Log in</Text>
-              </TouchableOpacity>
-
-              {/* Forgot Password */}
-              <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                <Text style={styles.resetButtonText}>Log-In</Text>
               </TouchableOpacity>
             </View>
 
@@ -189,32 +207,17 @@ export default function LogInScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
   container: { flex: 1, backgroundColor: 'rgba(255, 245, 171, 0.5)' },
-
   keyboardAvoidingView: { flex: 1 },
-  pagePad: { flex: 1 }, // responsive padding applied at runtime
-
+  pagePad: { flex: 1 },
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
-
   backButton: { alignSelf: 'flex-start' },
-
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle:   { fontSize: 20, color: '#000', fontFamily: 'Manrope-Bold' },
-  welcomeSubtitle:{ fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
-
+  welcomeTitle: { fontSize: 20, color: '#000', fontFamily: 'Manrope-Bold' },
+  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
   formContainer: { width: '100%' },
-  paperInput:    { backgroundColor: 'rgba(255, 245, 171, 0.5)' }, // field bg; spacing added responsively
-
-  forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
-  forgotPasswordText: { 
-    fontSize: 14, 
-    color: '#000', 
-    fontWeight: '500',
-    textDecorationLine: 'underline'
-  },
-
-  continueButton: {
+  paperInput: { backgroundColor: 'rgba(255, 245, 171, 0.5)' },
+  resetButton: {
     width: '100%',
     height: 44,
     backgroundColor: '#FFA05C',
@@ -222,8 +225,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-
+  resetButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
   legalContainer: { alignItems: 'center' },
   legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
   legalLink: { color: '#FF9800', fontWeight: '500' },

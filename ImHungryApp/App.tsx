@@ -3,10 +3,14 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
+import * as Linking from 'expo-linking';
+
 
 import LandingScreen from './src/screens/onboarding/LandingScreen';
 import SignUp from './src/screens/onboarding/SignUp';
 import LogIn from './src/screens/onboarding/LogIn';
+import ForgotPassword from './src/screens/onboarding/ForgotPassword';
+import ResetPassword from './src/screens/onboarding/ResetPassword';
 import UsernameScreen from './src/screens/onboarding/UsernameScreen';
 import ProfilePhoto from './src/screens/onboarding/ProfilePhoto';
 import LocationPermissions from './src/screens/onboarding/LocationPermissions';
@@ -24,8 +28,6 @@ export default function App() {
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);
-
-
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -58,6 +60,8 @@ export default function App() {
         <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="LogIn" component={LogIn} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+        <Stack.Screen name="ResetPassword" component={ResetPassword} />
         <Stack.Screen name="Username" component={UsernameScreen} />
         <Stack.Screen name="Profile Photo" component={ProfilePhoto} />
         <Stack.Screen name="LocationPermissions" component={LocationPermissions} />

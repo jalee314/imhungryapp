@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -141,6 +141,7 @@ export default function UsernameScreen() {
                     onFocus={() => { setIsFocused(true); if (!displayUsername) setDisplayUsername('@'); }}
                     onBlur={() => { setIsFocused(false); if (!username) setDisplayUsername(''); }}
                     />
+                    {isChecking && <ActivityIndicator size="small" color="#FFA05C" />}
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 </View>
@@ -198,6 +199,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: 12,
   },
 });

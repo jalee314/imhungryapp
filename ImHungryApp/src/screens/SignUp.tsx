@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -201,6 +201,7 @@ export default function SignUpScreen() {
                       secureTextEntry={cfg.field === 'password'}
                       returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
                     />
+                    {isChecking[cfg.field as keyof typeof isChecking] && <ActivityIndicator size="small" color="#FFA05C" style={styles.errorText} />}
                     {errors[cfg.field as keyof typeof errors] ? <Text style={styles.errorText}>{errors[cfg.field as keyof typeof errors]}</Text> : null}
                   </View>
                 ))}
