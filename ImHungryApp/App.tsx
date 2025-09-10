@@ -20,6 +20,28 @@ import ProfilePage from './src/screens/profile/ProfilePage';
 
 const Stack = createNativeStackNavigator();
 
+const OnboardingStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Landing" component={LandingScreen} />
+    <Stack.Screen name="SignUp" component={SignUp} />
+    <Stack.Screen name="LogIn" component={LogIn} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+    <Stack.Screen name="ResetPassword" component={ResetPassword} />
+    <Stack.Screen name="Username" component={UsernameScreen} />
+    <Stack.Screen name="ProfilePhoto" component={ProfilePhoto} />
+    <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
+    <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
+    <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
+  </Stack.Navigator>
+);
+
+const AppStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="ProfilePage" component={ProfilePage} />
+    {/* Add other authenticated screens here */}
+  </Stack.Navigator>
+);
+
 const prefix = Linking.createURL('/');
 
 const linking = {
@@ -41,6 +63,9 @@ export default function App() {
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);
+  // This state will determine which stack to show. 
+  // In a real app, you'd check for a token in AsyncStorage or a global state.
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false); 
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -69,19 +94,7 @@ export default function App() {
 
   return (
     <NavigationContainer linking={linking}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Landing" component={LandingScreen} />
-        <Stack.Screen name="SignUp" component={SignUp} />
-        <Stack.Screen name="LogIn" component={LogIn} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-        <Stack.Screen name="ResetPassword" component={ResetPassword} />
-        <Stack.Screen name="Username" component={UsernameScreen} />
-        <Stack.Screen name="ProfilePhoto" component={ProfilePhoto} />
-        <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
-        <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
-        <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
-        <Stack.Screen name="ProfilePage" component={ProfilePage} />
-      </Stack.Navigator>
+      {isLoggedIn ? <AppStack /> : <OnboardingStack />}
     </NavigationContainer>
   );
 }

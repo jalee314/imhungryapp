@@ -35,7 +35,7 @@ export default function ResetPasswordScreen() {
     newPassword: '',
     confirmPassword: '',
   });
-  const [loading, setLoading] = useState(true); // Start in loading state
+  const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
@@ -46,24 +46,20 @@ export default function ResetPasswordScreen() {
     const refreshToken = params?.refresh_token;
 
     if (accessToken && refreshToken) {
-      console.log('Tokens found in route params, setting session.');
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
       }).then(({ error }) => {
         if (error) {
-          Alert.alert('Error setting session', error.message);
-          setLoading(false);
+          Alert.alert('Error', 'This password reset link is invalid or has expired.');
+          setSessionReady(false);
         } else {
-          console.log('Session successfully set.');
           setSessionReady(true);
-          setLoading(false);
         }
       });
     } else {
-      console.log('No tokens found in route params.');
       // If no tokens, the link is invalid.
-      setLoading(false);
+      setSessionReady(false);
     }
   }, [route.params]); // Re-run if the route params change.
 
@@ -138,99 +134,88 @@ export default function ResetPasswordScreen() {
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
-        {/* Only show the form if session is ready */}
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Setting up password reset...</Text>
-          </View>
-        ) : sessionReady ? (
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-            <View style={[styles.pagePad, responsive.pagePad]}>
-              <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-                <Ionicons name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
+          <View style={[styles.pagePad, responsive.pagePad]}>
+            <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
 
-              <View style={styles.mainContainer}>
-                <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                  <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to Hungri</Text>
-                  <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                    Create a New Password
-                  </Text>
-                </View>
-
-                {/* Form Fields */}
-                <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
-                  <View style={responsive.paperInput}>
-                    <TextInput
-                      label="New Password"
-                      mode="outlined"
-                      value={formData.newPassword}
-                      onChangeText={t => handleInputChange('newPassword', t)}
-                      placeholder=""
-                      outlineColor="#FFA05C"
-                      activeOutlineColor="#FFA05C"
-                      dense
-                      style={[styles.paperInput, { backgroundColor: '#FFF5AB' }]}
-                      theme={{
-                        roundness: 12,
-                        colors: {
-                          background: '#FFF5AB',
-                        },
-                      }}
-                      secureTextEntry
-                      returnKeyType="next"
-                    />
-                  </View>
-
-                  <View style={responsive.paperInput}>
-                    <TextInput
-                      label="Confirm New Password"
-                      mode="outlined"
-                      value={formData.confirmPassword}
-                      onChangeText={t => handleInputChange('confirmPassword', t)}
-                      placeholder=""
-                      outlineColor="#FFA05C"
-                      activeOutlineColor="#FFA05C"
-                      dense
-                      style={[styles.paperInput, { backgroundColor: '#FFF5AB' }]}
-                      theme={{
-                        roundness: 12,
-                        colors: {
-                          background: '#FFF5AB',
-                        },
-                      }}
-                      secureTextEntry
-                      returnKeyType="done"
-                    />
-                  </View>
-                </View>
-
-                {/* Update Password Button */}
-                <TouchableOpacity
-                  style={[styles.resetButton, responsive.resetButton, CONSTRAIN, loading && { opacity: 0.7 }]}
-                  onPress={handleUpdatePassword}
-                  disabled={loading}
-                >
-                  <Text style={styles.resetButtonText}>Update Password</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Legal */}
-              <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
-                <Text style={styles.legalText}>
-                  By continuing, you agree to Hungri's{' '}
-                  <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
-                  and{' '}
-                  <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
+            <View style={styles.mainContainer}>
+              <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to Hungri</Text>
+                <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
+                  Create a New Password
                 </Text>
               </View>
+
+              {/* Form Fields */}
+              <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
+                <View style={responsive.paperInput}>
+                  <TextInput
+                    label="New Password"
+                    mode="outlined"
+                    value={formData.newPassword}
+                    onChangeText={t => handleInputChange('newPassword', t)}
+                    placeholder=""
+                    outlineColor="#FFA05C"
+                    activeOutlineColor="#FFA05C"
+                    dense
+                    style={[styles.paperInput, { backgroundColor: '#FFF5AB' }]}
+                    theme={{
+                      roundness: 12,
+                      colors: {
+                        background: '#FFF5AB',
+                      },
+                    }}
+                    secureTextEntry
+                    returnKeyType="next"
+                  />
+                </View>
+
+                <View style={responsive.paperInput}>
+                  <TextInput
+                    label="Confirm New Password"
+                    mode="outlined"
+                    value={formData.confirmPassword}
+                    onChangeText={t => handleInputChange('confirmPassword', t)}
+                    placeholder=""
+                    outlineColor="#FFA05C"
+                    activeOutlineColor="#FFA05C"
+                    dense
+                    style={[styles.paperInput, { backgroundColor: '#FFF5AB' }]}
+                    theme={{
+                      roundness: 12,
+                      colors: {
+                        background: '#FFF5AB',
+                      },
+                    }}
+                    secureTextEntry
+                    returnKeyType="done"
+                  />
+                </View>
+              </View>
+
+              {/* Update Password Button */}
+              <TouchableOpacity
+                style={[styles.resetButton, responsive.resetButton, CONSTRAIN, (!sessionReady || loading) && { opacity: 0.7 }]}
+                onPress={handleUpdatePassword}
+                disabled={!sessionReady || loading}
+              >
+                <Text style={styles.resetButtonText}>Update Password</Text>
+              </TouchableOpacity>
             </View>
-          </KeyboardAvoidingView>
-        ) : (
-           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Invalid or expired link.</Text>
+
+            {/* Legal */}
+            <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
+              <Text style={styles.legalText}>
+                By continuing, you agree to Hungri's{' '}
+                <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
+                and{' '}
+                <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
+              </Text>
+            </View>
           </View>
-        )}
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );
@@ -259,14 +244,4 @@ const styles = StyleSheet.create({
   legalContainer: { alignItems: 'center' },
   legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
   legalLink: { color: '#FF9800', fontWeight: '500' },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    fontFamily: 'Manrope-Regular',
-  },
 });

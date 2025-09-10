@@ -33,13 +33,14 @@ export default function ForgotPasswordScreen() {
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleResetPassword = async () => {
     if (!email) {
       Alert.alert('Error', 'Please enter your email address');
       return;
     }
-
+    setSuccessMessage('');
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -49,15 +50,8 @@ export default function ForgotPasswordScreen() {
       if (error) {
         Alert.alert('Error', error.message);
       } else {
-        Alert.alert(
-          'Check Your Email',
-          'We\'ve sent you a password reset link. Please check your email and follow the instructions.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack(),
-            },
-          ]
+        setSuccessMessage(
+          'We\'ve sent you a password reset link. Please check your email and follow the instructions.'
         );
       }
     } catch (err) {
@@ -107,7 +101,10 @@ export default function ForgotPasswordScreen() {
                     label="Email address"
                     mode="outlined"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      if (successMessage) setSuccessMessage('');
+                    }}
                     placeholder=""
                     outlineColor="#FFA05C"
                     activeOutlineColor="#FFA05C"
@@ -126,6 +123,9 @@ export default function ForgotPasswordScreen() {
                     returnKeyType="done"
                   />
                 </View>
+                {successMessage ? (
+                  <Text style={styles.successText}>{successMessage}</Text>
+                ) : null}
               </View>
 
               {/* Reset Password Button */}
@@ -177,4 +177,10 @@ const styles = StyleSheet.create({
   legalContainer: { alignItems: 'center' },
   legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
   legalLink: { color: '#FF9800', fontWeight: '500' },
+  successText: {
+    marginTop: 10,
+    color: '#2E7D32', // A shade of green
+    fontFamily: 'Manrope-Regular',
+    textAlign: 'center',
+  },
 });

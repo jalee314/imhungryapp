@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import { supabase } from '../../../lib/supabase';
+import { toByteArray } from 'base64-js';
 
 const cuisines = [
   'Italian', 'French', 'Spanish', 'Greek',
@@ -87,19 +88,21 @@ export default function CuisinePreferencesScreen() {
         const base64 = await FileSystem.readAsStringAsync(userData.profile_photo_url, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        
-        const dataUrl = `data:image/${fileExt};base64,${base64}`;
-        const response = await fetch(dataUrl);
-        const file = await response.blob();
+
+        const byteArray = toByteArray(base64);
         
         const { data, error } = await supabase.storage
           .from('avatars')
-          .upload(`public/${fileName}`, file, {
+          .upload(`public/${fileName}`, byteArray.buffer, {
+            contentType: `image/${fileExt}`,
             cacheControl: '3600',
             upsert: false
           });
 
-        if (!error) {
+        if (error) {
+          // It's good practice to log the specific storage error
+          console.error('Supabase storage error:', error.message);
+        } else if (data) {
           profilePhotoUrl = data.path;
         }
       }
@@ -122,37 +125,13 @@ export default function CuisinePreferencesScreen() {
       });
       
       if (error) {
-        const errorMessage = error.message?.toLowerCase() || '';
-        
-        if (errorMessage.includes('already registered') || errorMessage.includes('duplicate')) {
-          Alert.alert(
-            'Account Already Exists',
-            'An account with this email already exists. Please use a different email address.',
-            [
-              {
-                text: 'Go Back',
-                onPress: () => (navigation as any).navigate('SignUp', { userData })
-              }
-            ]
-          );
-          return;
-        }
-        
-        if (errorMessage.includes('phone') || errorMessage.includes('phone_number')) {
-          Alert.alert(
-            'Phone Number Taken',
-            'This phone number is already registered. Please use a different phone number.',
-            [
-              {
-                text: 'Go Back',
-                onPress: () => (navigation as any).navigate('SignUp', { userData })
-              }
-            ]
-          );
-          return;
-        }
-        
-        throw error;
+        // A generic error for any conflicts (email, phone, username) that might occur.
+        Alert.alert(
+          'Account Creation Failed',
+          'An account with this email, phone number, or username may already exist. Please go back and check your information.',
+          [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
+        );
+        return;
       }
       
       // The database trigger will automatically create the user record
@@ -161,84 +140,9 @@ export default function CuisinePreferencesScreen() {
         await insertUserCuisinePreferences(signUpResult.user.id, selectedCuisines);
       }
 
-      (navigation as any).navigate('Landing');
+      (navigation as any).navigate('LogIn');
     } catch (error) {
-      
-      // Handle specific error cases in the catch block
-      const errorMessage = (error as any)?.message?.toLowerCase() || '';
-      const errorString = String(error).toLowerCase();
-      
-      // Check for generic database error - this usually means a constraint violation
-      if (errorMessage.includes('database error saving new user')) {
-        // Since this is a generic error, we need to make an educated guess
-        // Based on the user flow, if we get here, it's likely a username conflict
-        // since email conflicts are caught earlier in the auth.signUp call
-        Alert.alert(
-          'Username Taken',
-          'This username is already taken. Please choose a different username.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('Username', { userData })
-            }
-          ]
-        );
-        return;
-      }
-      
-      // Check for username conflicts in the catch block
-      if (errorMessage.includes('display_name') || 
-          errorMessage.includes('duplicate key') && errorMessage.includes('display_name') ||
-          errorMessage.includes('already exists') && errorMessage.includes('display_name') ||
-          errorMessage.includes('unique constraint') && errorMessage.includes('display_name')) {
-        Alert.alert(
-          'Username Taken',
-          'This username is already taken. Please choose a different username.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('Username', { userData })
-            }
-          ]
-        );
-        return;
-      }
-      
-      // Check for phone conflicts in the catch block
-      if (errorMessage.includes('phone') || 
-          errorMessage.includes('duplicate key') && errorMessage.includes('phone') ||
-          errorMessage.includes('already exists') && errorMessage.includes('phone') ||
-          errorMessage.includes('unique constraint') && errorMessage.includes('phone')) {
-        Alert.alert(
-          'Phone Number Taken',
-          'This phone number is already registered. Please use a different phone number.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('SignUp')
-            }
-          ]
-        );
-        return;
-      }
-      
-      // Check for email conflicts in the catch block
-      if (errorMessage.includes('already registered') || 
-          errorMessage.includes('duplicate') && errorMessage.includes('email') ||
-          errorMessage.includes('user already registered')) {
-        Alert.alert(
-          'Account Already Exists',
-          'An account with this email already exists. Please use a different email address.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('SignUp')
-            }
-          ]
-        );
-        return;
-      }
-      
+      console.error('Setup failed:', error); // Log the full error
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
     } finally {
       setLoading(false);
@@ -267,18 +171,19 @@ export default function CuisinePreferencesScreen() {
           encoding: FileSystem.EncodingType.Base64,
         });
         
-        const dataUrl = `data:image/${fileExt};base64,${base64}`;
-        const response = await fetch(dataUrl);
-        const file = await response.blob();
+        const byteArray = toByteArray(base64);
         
         const { data, error } = await supabase.storage
           .from('avatars')
-          .upload(`public/${fileName}`, file, {
+          .upload(`public/${fileName}`, byteArray.buffer, {
+            contentType: `image/${fileExt}`,
             cacheControl: '3600',
             upsert: false
           });
 
-        if (!error) {
+        if (error) {
+          console.error('Supabase storage error:', error.message);
+        } else if (data) {
           profilePhotoUrl = data.path;
         }
       }
@@ -301,110 +206,21 @@ export default function CuisinePreferencesScreen() {
       });
       
       if (error) {
-        const errorMessage = error.message?.toLowerCase() || '';
-        
-        if (errorMessage.includes('already registered') || errorMessage.includes('duplicate')) {
-          Alert.alert(
-            'Account Already Exists',
-            'An account with this email already exists. Please use a different email address.',
-            [
-              {
-                text: 'Go Back',
-                onPress: () => (navigation as any).navigate('SignUp', { userData })
-              }
-            ]
-          );
-          return;
-        }
-        
-        if (errorMessage.includes('phone') || errorMessage.includes('phone_number')) {
-          Alert.alert(
-            'Phone Number Taken',
-            'This phone number is already registered. Please use a different phone number.',
-            [
-              {
-                text: 'Go Back',
-                onPress: () => (navigation as any).navigate('SignUp', { userData })
-              }
-            ]
-          );
-          return;
-        }
-        
-        throw error;
+        // A generic error for any conflicts (email, phone, username) that might occur.
+        Alert.alert(
+          'Account Creation Failed',
+          'An account with this email, phone number, or username may already exist. Please go back and check your information.',
+          [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
+        );
+        return;
       }
       
       // The database trigger will automatically create the user record
       // No need to manually insert
 
-      (navigation as any).navigate('Landing');
+      (navigation as any).navigate('LogIn');
     } catch (error) {
-      const errorMessage = (error as any)?.message?.toLowerCase() || '';
-      
-      if (errorMessage.includes('database error saving new user')) {
-        Alert.alert(
-          'Username Taken',
-          'This username is already taken. Please choose a different username.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('Username', { userData })
-            }
-          ]
-        );
-        return;
-      }
-      
-      if (errorMessage.includes('display_name') || 
-          errorMessage.includes('duplicate key') && errorMessage.includes('display_name') ||
-          errorMessage.includes('already exists') && errorMessage.includes('display_name') ||
-          errorMessage.includes('unique constraint') && errorMessage.includes('display_name')) {
-        Alert.alert(
-          'Username Taken',
-          'This username is already taken. Please choose a different username.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('Username', { userData })
-            }
-          ]
-        );
-        return;
-      }
-      
-      if (errorMessage.includes('phone') || 
-          errorMessage.includes('duplicate key') && errorMessage.includes('phone') ||
-          errorMessage.includes('already exists') && errorMessage.includes('phone') ||
-          errorMessage.includes('unique constraint') && errorMessage.includes('phone')) {
-        Alert.alert(
-          'Phone Number Taken',
-          'This phone number is already registered. Please use a different phone number.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('SignUp', { userData })
-            }
-          ]
-        );
-        return;
-      }
-      
-      if (errorMessage.includes('already registered') || 
-          errorMessage.includes('duplicate') && errorMessage.includes('email') ||
-          errorMessage.includes('user already registered')) {
-        Alert.alert(
-          'Account Already Exists',
-          'An account with this email already exists. Please use a different email address.',
-          [
-            {
-              text: 'Go Back',
-              onPress: () => (navigation as any).navigate('SignUp', { userData })
-            }
-          ]
-        );
-        return;
-      }
-      
+      console.error('Setup failed (skip):', error); // Log the full error
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
     } finally {
       setLoading(false);
