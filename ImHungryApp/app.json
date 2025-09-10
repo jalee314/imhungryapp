@@ -6,13 +6,26 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "imhungri",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#FFF5AB"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "Adaluna.imhungry"
+      "bundleIdentifier": "com.imhungri",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "We need access to your photos so you can select a profile picture.",
+        "NSCameraUsageDescription": "We need access to your camera so you can select a profile picture.",
+        "NSLocationWhenInUseUsageDescription": "We use your location to find restaurants and food spots near you.",
+        "NSUserNotificationsUsageDescription": "We send notifications to let you know when your friends are hungry or when there's a new match.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "imhungri",
+            "CFBundleURLSchemes": ["imhungri"]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +38,9 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-image-picker",
+      "expo-font",
+      "expo-secure-store"
     ]
   }
 }
