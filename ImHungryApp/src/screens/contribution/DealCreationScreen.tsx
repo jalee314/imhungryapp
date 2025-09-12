@@ -438,7 +438,6 @@ const styles = StyleSheet.create({
   separator: {
     height: 0.5,
     backgroundColor: '#C1C1C1',
-    marginHorizontal: 16,
   },
 
   // Extra Details Text Area

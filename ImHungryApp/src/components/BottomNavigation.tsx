@@ -29,7 +29,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       navigation.navigate('DealCreationScreen' as never);
       return;
     }
-     if (tabId === 'contribute') {
+     if (tabId === 'profile') {
       navigation.navigate('ProfilePage' as never);
       return;
     }
