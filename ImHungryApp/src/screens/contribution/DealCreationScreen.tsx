@@ -14,12 +14,19 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import BottomNavigation from '../../components/BottomNavigation';
+import CalendarModal from '../../components/CalendarModal';
+import CategoriesModal from '../../components/CategoriesModal';
 
 export default function DealCreationScreen() {
   const [dealTitle, setDealTitle] = useState('Deal Title - "$10 Sushi before 5pm on M-W"');
   const [dealDetails, setDealDetails] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
+  const [isCategoriesModalVisible, setIsCategoriesModalVisible] = useState(false);
+  const [expirationDate, setExpirationDate] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
 
   const handleAddPhoto = () => {
     setIsModalVisible(true);
@@ -27,6 +34,29 @@ export default function DealCreationScreen() {
 
   const handleCloseModal = () => {
     setIsModalVisible(false);
+  };
+
+  const handleConfirmDate = (date: string | null) => {
+    setExpirationDate(date);
+    setIsCalendarModalVisible(false);
+  };
+
+  const handleDoneCategories = (categories: string[]) => {
+    setSelectedCategories(categories);
+    setIsCategoriesModalVisible(false);
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return null;
+    if (dateString === 'Unknown') return 'Not Known';
+    const date = new Date(dateString);
+    // Adjust for timezone offset to prevent date from being off by one
+    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   return (
@@ -54,7 +84,7 @@ export default function DealCreationScreen() {
           {/* Review Button Row */}
           <View style={styles.reviewButtonRow}>
             <TouchableOpacity style={styles.reviewButton}>
-              <Text style={styles.reviewButtonText}>REVIEW</Text>
+              <Text style={styles.reviewButtonText}>PREVIEW</Text>
             </TouchableOpacity>
           </View>
 
@@ -84,25 +114,30 @@ export default function DealCreationScreen() {
               {/* Add Photo */}
               <TouchableOpacity style={styles.addPhotoFrame} onPress={handleAddPhoto}>
                 <Ionicons name="camera-outline" size={24} color="#404040" style={styles.iconStyle} />
-                <Text style={styles.optionText}>Add Photo</Text>
+                <Text style={[styles.optionText, {flex: 1}]}>Add Photo</Text>
                 <Ionicons name="chevron-forward" size={20} color="black" />
               </TouchableOpacity>
               
               <View style={styles.separator} />
               
               {/* Expiration Date */}
-              <TouchableOpacity style={styles.expirationFrame}>
+              <TouchableOpacity style={styles.expirationFrame} onPress={() => setIsCalendarModalVisible(true)}>
                 <Ionicons name="time-outline" size={24} color="#4E4E4E" style={styles.iconStyle} />
-                <Text style={styles.optionText}>Expiration Date</Text>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Expiration Date</Text>
+                  {expirationDate && (
+                    <Text style={styles.expirationDateValue}>{formatDate(expirationDate)}</Text>
+                  )}
+                </View>
                 <Ionicons name="chevron-forward" size={20} color="black" />
               </TouchableOpacity>
               
               <View style={styles.separator} />
               
               {/* Deal Categories */}
-              <TouchableOpacity style={styles.categoriesFrame}>
+              <TouchableOpacity style={styles.categoriesFrame} onPress={() => setIsCategoriesModalVisible(true)}>
                 <Ionicons name="grid-outline" size={24} color="#606060" style={styles.iconStyle} />
-                <Text style={styles.optionText}>Deal Categories</Text>
+                <Text style={[styles.optionText, {flex: 1}]}>Deal Categories</Text>
                 <Ionicons name="chevron-forward" size={20} color="black" />
               </TouchableOpacity>
               
@@ -176,6 +211,22 @@ export default function DealCreationScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Calendar Modal */}
+      <CalendarModal
+        visible={isCalendarModalVisible}
+        onClose={() => setIsCalendarModalVisible(false)}
+        onConfirm={handleConfirmDate}
+        initialDate={expirationDate}
+      />
+
+      {/* Categories Modal */}
+      <CategoriesModal
+        visible={isCategoriesModalVisible}
+        onClose={() => setIsCategoriesModalVisible(false)}
+        onDone={handleDoneCategories}
+        initialSelected={selectedCategories}
+      />
 
       {/* Bottom Navigation */}
       <BottomNavigation 
@@ -355,8 +406,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 30,
+    minHeight: 30,
     gap: 16,
+    paddingVertical: 5,
   },
   categoriesFrame: {
     flexDirection: 'row',
@@ -393,11 +445,20 @@ const styles = StyleSheet.create({
   },
 
   // Option Text
-  optionText: {
+  optionTextContainer: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  optionText: {
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
+  },
+  expirationDateValue: {
+    fontFamily: 'Inter',
+    fontSize: 11,
+    color: '#888889',
+    marginTop: 2,
   },
   foodTagsText: {
     flex: 1,
@@ -486,4 +547,5 @@ const styles = StyleSheet.create({
   cancelButton: {
     marginTop: 8,
   },
+  // Calendar Modal Styles are now in CalendarModal.tsx
 });
