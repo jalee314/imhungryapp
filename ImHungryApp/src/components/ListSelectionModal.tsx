@@ -7,56 +7,55 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  ScrollView,
   FlatList,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-const MOCK_CATEGORIES = [
-  { id: '1', name: 'Happy Hour 🍹' },
-  { id: '2', name: 'BOGO / 2-for-1' },
-  { id: '3', name: 'Discount % / Dollar Off' },
-  { id: '4', name: 'Meal Specials (e.g., "$10 lunch combo")' },
-  { id: '5', name: 'Student Discount 🎓' },
-  { id: '6', name: 'Daily Specials (e.g., "Taco Tuesday", "Wing Wednesday")' },
-  { id: '7', name: 'Buffet / All-You-Can-Eat' },
-  { id: '8', name: 'Drinks & Bar Deals 🍺' },
-  { id: '9', name: 'Family / Group Deals 👨‍👩‍👧‍👦' },
-  { id: '10', name: 'Seasonal / Limited-Time Offers ⏳' },
-  { id: '11', name: 'Loyalty / Rewards Program' },
-];
+interface ListItem {
+  id: string;
+  name: string;
+}
 
-interface CategoriesModalProps {
+interface ListSelectionModalProps {
   visible: boolean;
   onClose: () => void;
   onDone: (selected: string[]) => void;
   initialSelected: string[];
+  data: ListItem[];
+  title: string;
 }
 
-const CategoriesModal: React.FC<CategoriesModalProps> = ({ visible, onClose, onDone, initialSelected }) => {
+const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
+  visible,
+  onClose,
+  onDone,
+  initialSelected,
+  data,
+  title,
+}) => {
   const [searchText, setSearchText] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialSelected);
+  const [selectedItems, setSelectedItems] = useState<string[]>(initialSelected);
 
   useEffect(() => {
-    setSelectedCategories(initialSelected);
+    setSelectedItems(initialSelected);
   }, [initialSelected]);
 
-  const handleSelectCategory = (categoryId: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(categoryId)
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
+  const handleSelectItem = (itemId: string) => {
+    setSelectedItems(prev =>
+      prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
     );
   };
 
-  const filteredCategories = MOCK_CATEGORIES.filter(category =>
-    category.name.toLowerCase().includes(searchText.toLowerCase())
+  const filteredData = data.filter(item =>
+    item.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const renderItem = ({ item }: { item: { id: string; name: string } }) => (
-    <TouchableOpacity style={styles.itemContainer} onPress={() => handleSelectCategory(item.id)}>
+  const renderItem = ({ item }: { item: ListItem }) => (
+    <TouchableOpacity style={styles.itemContainer} onPress={() => handleSelectItem(item.id)}>
       <Text style={styles.itemText}>{item.name}</Text>
-      {selectedCategories.includes(item.id) ? (
+      {selectedItems.includes(item.id) ? (
         <View style={styles.checkmark}>
           <Ionicons name="checkmark" size={16} color="#FFFFFF" />
         </View>
@@ -73,8 +72,8 @@ const CategoriesModal: React.FC<CategoriesModalProps> = ({ visible, onClose, onD
           <TouchableOpacity onPress={onClose}>
             <Text style={styles.headerButtonText}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add Deal Category</Text>
-          <TouchableOpacity onPress={() => onDone(selectedCategories)}>
+          <Text style={styles.headerTitle}>{title}</Text>
+          <TouchableOpacity onPress={() => onDone(selectedItems)}>
             <Text style={[styles.headerButtonText, styles.doneButton]}>Done</Text>
           </TouchableOpacity>
         </View>
@@ -90,7 +89,7 @@ const CategoriesModal: React.FC<CategoriesModalProps> = ({ visible, onClose, onD
         </View>
 
         <FlatList
-          data={filteredCategories}
+          data={filteredData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -149,18 +148,20 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center', // Reverted to 'center'
     paddingVertical: 14,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
   },
   itemText: {
     fontFamily: 'Inter',
-    fontSize: 12,
+    fontSize: 12, // Corrected font size
     color: '#000000',
+    flex: 1, // Allow text to wrap
+    marginRight: 8, // Add space between text and checkmark
   },
   separator: {
-    height: 0.5,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: '#C1C1C1',
     marginHorizontal: 16,
   },
@@ -178,4 +179,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CategoriesModal;
+export default ListSelectionModal;

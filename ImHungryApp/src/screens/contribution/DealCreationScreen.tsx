@@ -15,7 +15,35 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import BottomNavigation from '../../components/BottomNavigation';
 import CalendarModal from '../../components/CalendarModal';
-import CategoriesModal from '../../components/CategoriesModal';
+import ListSelectionModal from '../../components/ListSelectionModal';
+
+const DEAL_CATEGORIES = [
+  { id: '1', name: 'Happy Hour 🍹' },
+  { id: '2', name: 'BOGO / 2-for-1' },
+  { id: '3', name: 'Discount % / Dollar Off' },
+  { id: '4', name: 'Meal Specials (e.g., "$10 lunch combo")' },
+  { id: '5', name: 'Student Discount 🎓' },
+  { id: '6', name: 'Daily Specials (e.g., "Taco Tuesday", "Wing Wednesday")' },
+  { id: '7', name: 'Buffet / All-You-Can-Eat' },
+  { id: '8', name: 'Drinks & Bar Deals 🍺' },
+  { id: '9', name: 'Family / Group Deals 👨‍👩‍👧‍👦' },
+  { id: '10', name: 'Seasonal / Limited-Time Offers ⏳' },
+  { id: '11', name: 'Loyalty / Rewards Program' },
+];
+
+const FOOD_TAGS = [
+  { id: '1', name: 'Pizza 🍕' },
+  { id: '2', name: 'Burgers 🍔' },
+  { id: '3', name: 'Tacos / Mexican 🌮' },
+  { id: '4', name: 'Sushi / Japanese 🍣' },
+  { id: '5', name: 'Chinese / Asian 🥡' },
+  { id: '6', name: 'Italian / Pasta 🍝' },
+  { id: '7', name: 'BBQ 🍖' },
+  { id: '8', name: 'Seafood 🦞' },
+  { id: '9', name: 'Vegan / Vegetarian 🌱' },
+  { id: '10', name: 'Desserts / Sweets 🍩' },
+  { id: '11', name: 'Beverages ☕️' },
+];
 
 export default function DealCreationScreen() {
   const [dealTitle, setDealTitle] = useState('Deal Title - "$10 Sushi before 5pm on M-W"');
@@ -24,8 +52,10 @@ export default function DealCreationScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
   const [isCategoriesModalVisible, setIsCategoriesModalVisible] = useState(false);
+  const [isFoodTagsModalVisible, setIsFoodTagsModalVisible] = useState(false);
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedFoodTags, setSelectedFoodTags] = useState<string[]>([]);
 
 
   const handleAddPhoto = () => {
@@ -44,6 +74,11 @@ export default function DealCreationScreen() {
   const handleDoneCategories = (categories: string[]) => {
     setSelectedCategories(categories);
     setIsCategoriesModalVisible(false);
+  };
+
+  const handleDoneFoodTags = (tags: string[]) => {
+    setSelectedFoodTags(tags);
+    setIsFoodTagsModalVisible(false);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -137,16 +172,36 @@ export default function DealCreationScreen() {
               {/* Deal Categories */}
               <TouchableOpacity style={styles.categoriesFrame} onPress={() => setIsCategoriesModalVisible(true)}>
                 <Ionicons name="grid-outline" size={24} color="#606060" style={styles.iconStyle} />
-                <Text style={[styles.optionText, {flex: 1}]}>Deal Categories</Text>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Deal Categories</Text>
+                  {selectedCategories.length > 0 && (
+                    <Text style={styles.selectedValueText} numberOfLines={1}>
+                      {selectedCategories
+                        .map(id => DEAL_CATEGORIES.find(cat => cat.id === id)?.name)
+                        .filter(Boolean)
+                        .join(', ')}
+                    </Text>
+                  )}
+                </View>
                 <Ionicons name="chevron-forward" size={20} color="black" />
               </TouchableOpacity>
               
               <View style={styles.separator} />
               
               {/* Food Tags */}
-              <TouchableOpacity style={styles.tagBox}>
+              <TouchableOpacity style={styles.tagBox} onPress={() => setIsFoodTagsModalVisible(true)}>
                 <Ionicons name="pricetag-outline" size={24} color="#606060" style={styles.iconStyle} />
-                <Text style={styles.foodTagsText}>Food Tags</Text>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Food Tags</Text>
+                  {selectedFoodTags.length > 0 && (
+                    <Text style={styles.selectedValueText} numberOfLines={1}>
+                      {selectedFoodTags
+                        .map(id => FOOD_TAGS.find(tag => tag.id === id)?.name)
+                        .filter(Boolean)
+                        .join(', ')}
+                    </Text>
+                  )}
+                </View>
                 <Ionicons name="chevron-forward" size={20} color="black" />
               </TouchableOpacity>
               
@@ -221,11 +276,23 @@ export default function DealCreationScreen() {
       />
 
       {/* Categories Modal */}
-      <CategoriesModal
+      <ListSelectionModal
         visible={isCategoriesModalVisible}
         onClose={() => setIsCategoriesModalVisible(false)}
         onDone={handleDoneCategories}
         initialSelected={selectedCategories}
+        data={DEAL_CATEGORIES}
+        title="Add Deal Category"
+      />
+
+      {/* Food Tags Modal */}
+      <ListSelectionModal
+        visible={isFoodTagsModalVisible}
+        onClose={() => setIsFoodTagsModalVisible(false)}
+        onDone={handleDoneFoodTags}
+        initialSelected={selectedFoodTags}
+        data={FOOD_TAGS}
+        title="Food Tags"
       />
 
       {/* Bottom Navigation */}
@@ -406,7 +473,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    minHeight: 30,
+    height: 30, // Adjusted for two lines
     gap: 16,
     paddingVertical: 5,
   },
@@ -414,29 +481,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 30,
+    height: 30, // Adjusted for two lines
     gap: 16,
   },
   tagBox: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 30,
-    gap: 17,
+    height: 30, // Adjusted for two lines
+    gap: 16,
   },
   anonymousRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     height: 30,
-    gap: 17,
+    gap: 16,
   },
   extraDetailsTitle: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     height: 30,
-    gap: 17,
+    gap: 16,
   },
 
   // Icons
@@ -455,6 +522,12 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   expirationDateValue: {
+    fontFamily: 'Inter',
+    fontSize: 11,
+    color: '#888889',
+    marginTop: 2,
+  },
+  selectedValueText: {
     fontFamily: 'Inter',
     fontSize: 11,
     color: '#888889',
@@ -497,8 +570,9 @@ const styles = StyleSheet.create({
 
   // Separator
   separator: {
-    height: 0.5,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: '#C1C1C1',
+    marginHorizontal: 16,
   },
 
   // Extra Details Text Area
