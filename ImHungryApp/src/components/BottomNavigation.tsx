@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface BottomNavigationProps {
-  photoUrl?: string | null;
+  photoUrl?: any; // Changed to any to support require()
   activeTab?: string;
   onTabPress?: (tab: string) => void;
 }
@@ -17,29 +17,27 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const navigation = useNavigation();
 
   const navItems = [
-    { id: 'home', icon: 'home-outline', label: 'Home' },
-    { id: 'search', icon: 'magnify', label: 'Search' },
-    { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute' },
-    { id: 'favorites', icon: 'heart-outline', label: 'Favorites' },
-    { id: 'profile', icon: 'profile', label: 'Profile' },
+    { id: 'home', icon: 'home-outline', label: 'Home', screen: 'HomeScreen' },
+    { id: 'search', icon: 'magnify', label: 'Search', screen: 'SearchScreen' },
+    { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
+    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesScreen' },
+    { id: 'profile', icon: 'account-circle-outline', label: 'Profile', screen: 'ProfilePage' },
   ];
 
-  const handleTabPress = (tabId: string) => {
-    if (tabId === 'contribute') {
-      navigation.navigate('DealCreationScreen' as never);
-      return;
-    }
-     if (tabId === 'profile') {
-      navigation.navigate('ProfilePage' as never);
-      return;
-    }
+  const handleTabPress = (screenName: string) => {
+    // Navigate to the screen associated with the tab
+    navigation.navigate(screenName as never);
 
+    // Also call the onTabPress prop if it exists
     if (onTabPress) {
-      onTabPress(tabId);
+      const tab = navItems.find(item => item.screen === screenName);
+      if (tab) {
+        onTabPress(tab.id);
+      }
     }
   };
 
-  const renderNavItem = (item: { id: string; icon: any; label: string }) => {
+  const renderNavItem = (item: { id: string; icon: any; label: string, screen: string }) => {
     const isActive = activeTab === item.id;
     
     if (item.id === 'profile') {
@@ -47,10 +45,12 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         <TouchableOpacity
           key={item.id}
           style={[styles.navItem, isActive && styles.activeNavItem]}
-          onPress={() => handleTabPress(item.id)}
+          onPress={() => handleTabPress(item.screen)}
         >
-          {photoUrl ? (
+          {photoUrl && typeof photoUrl === 'string' ? (
             <Image source={{ uri: photoUrl }} style={styles.navProfilePhoto} />
+          ) : photoUrl ? (
+            <Image source={photoUrl} style={styles.navProfilePhoto} />
           ) : (
             <View style={styles.navProfilePlaceholder}>
               <Text style={styles.navPlaceholderText}>👤</Text>
@@ -64,7 +64,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       <TouchableOpacity
         key={item.id}
         style={[styles.navItem, isActive && styles.activeNavItem]}
-        onPress={() => handleTabPress(item.id)}
+        onPress={() => handleTabPress(item.screen)}
       >
         <MaterialCommunityIcons 
           name={item.icon} 
@@ -114,14 +114,14 @@ const styles = StyleSheet.create({
     color: '#FFA05C',
   },
   navProfilePhoto: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
   navProfilePlaceholder: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
