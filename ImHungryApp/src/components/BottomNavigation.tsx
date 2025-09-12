@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface BottomNavigationProps {
   photoUrl?: string | null;
@@ -12,21 +14,32 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   activeTab = 'profile',
   onTabPress 
 }) => {
+  const navigation = useNavigation();
+
   const navItems = [
-    { id: 'home', icon: '⊞', label: 'Home' },
-    { id: 'search', icon: '🔍', label: 'Search' },
-    { id: 'create', icon: '+', label: 'Create' },
-    { id: 'favorites', icon: '♡', label: 'Favorites' },
+    { id: 'home', icon: 'home-outline', label: 'Home' },
+    { id: 'search', icon: 'magnify', label: 'Search' },
+    { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute' },
+    { id: 'favorites', icon: 'heart-outline', label: 'Favorites' },
     { id: 'profile', icon: 'profile', label: 'Profile' },
   ];
 
   const handleTabPress = (tabId: string) => {
+    if (tabId === 'contribute') {
+      navigation.navigate('DealCreationScreen' as never);
+      return;
+    }
+     if (tabId === 'contribute') {
+      navigation.navigate('ProfilePage' as never);
+      return;
+    }
+
     if (onTabPress) {
       onTabPress(tabId);
     }
   };
 
-  const renderNavItem = (item: { id: string; icon: string; label: string }) => {
+  const renderNavItem = (item: { id: string; icon: any; label: string }) => {
     const isActive = activeTab === item.id;
     
     if (item.id === 'profile') {
@@ -53,9 +66,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         style={[styles.navItem, isActive && styles.activeNavItem]}
         onPress={() => handleTabPress(item.id)}
       >
-        <Text style={[styles.navIcon, isActive && styles.activeNavIcon]}>
-          {item.icon}
-        </Text>
+        <MaterialCommunityIcons 
+          name={item.icon} 
+          size={28} 
+          color={isActive ? '#FFA05C' : '#666'} 
+        />
       </TouchableOpacity>
     );
   };

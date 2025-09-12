@@ -18,6 +18,8 @@ import InstantNotifications from './src/screens/onboarding/InstantNotifications'
 import CuisinePreferences from './src/screens/onboarding/CuisinePreferences';
 import ProfilePage from './src/screens/profile/ProfilePage';
 import profileEdit from './src/screens/profile/profileEdit';
+import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +37,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
     <Stack.Screen name="profileEdit" component={profileEdit} />
+    <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
   </Stack.Navigator>
 );
 
