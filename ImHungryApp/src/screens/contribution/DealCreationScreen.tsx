@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
   Switch,
   ScrollView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import * as ImagePicker from 'expo-image-picker';
 import BottomNavigation from '../../components/BottomNavigation';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
@@ -47,6 +49,12 @@ const FOOD_TAGS = [
   { id: '11', name: 'Beverages ☕️' },
 ];
 
+const SEARCH_RESULTS = [
+  { id: '1', name: 'Taco Bell - Los Angeles', subtext: '123 Taco St, Los Angeles, CA 90001' },
+  { id: '2', name: 'Sushi One - Los Angeles', subtext: '456 Sushi Ave, Los Angeles, CA 90002' },
+  { id: '3', name: 'Burger Palace - Los Angeles', subtext: '789 Burger Blvd, Los Angeles, CA 90003' },
+];
+
 export default function DealCreationScreen() {
   const [dealTitle, setDealTitle] = useState('');
   const [dealDetails, setDealDetails] = useState('');
@@ -55,12 +63,14 @@ export default function DealCreationScreen() {
   const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
   const [isCategoriesModalVisible, setIsCategoriesModalVisible] = useState(false);
   const [isFoodTagsModalVisible, setIsFoodTagsModalVisible] = useState(false);
+  const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFoodTags, setSelectedFoodTags] = useState<string[]>([]);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const scrollViewRef = useRef(null);
   const detailsInputRef = useRef(null);
-  const titleInputRef = useRef(null); // New ref for title input
+  const titleInputRef = useRef(null);
 
   const handleAddPhoto = () => {
     setIsCameraModalVisible(true);
@@ -70,13 +80,33 @@ export default function DealCreationScreen() {
     setIsCameraModalVisible(false);
   };
 
-  const handleTakePhoto = () => {
-    console.log("Take Photo pressed");
+  const handleTakePhoto = async () => {
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+      console.log("Photo URI:", result.assets[0].uri);
+    }
     handleCloseCameraModal();
   };
 
-  const handleChooseFromAlbum = () => {
-    console.log("Choose from Photo Album pressed");
+  const handleChooseFromAlbum = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+      console.log("Image URI:", result.assets[0].uri);
+    }
     handleCloseCameraModal();
   };
 
@@ -95,11 +125,18 @@ export default function DealCreationScreen() {
     setIsFoodTagsModalVisible(false);
   };
 
+  const handleDoneSearch = () => {
+    setIsSearchModalVisible(false);
+  };
+
+  const handleSearchPress = () => {
+    setIsSearchModalVisible(true);
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return null;
     if (dateString === 'Unknown') return 'Not Known';
     const date = new Date(dateString);
-    // Adjust for timezone offset to prevent date from being off by one
     const userTimezoneOffset = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -108,9 +145,7 @@ export default function DealCreationScreen() {
     });
   };
 
-  // Add this function to handle focusing on the details input
   const handleDetailsFocus = () => {
-    // Wait a moment for keyboard to appear, then scroll
     setTimeout(() => {
       if (scrollViewRef.current && detailsInputRef.current) {
         scrollViewRef.current.scrollToPosition(0, 300, true);
@@ -118,11 +153,10 @@ export default function DealCreationScreen() {
     }, 100);
   };
 
-  // Add new function to handle focusing on the title input
   const handleTitleFocus = () => {
     setTimeout(() => {
       if (scrollViewRef.current && titleInputRef.current) {
-        scrollViewRef.current.scrollToPosition(0, 100, true); // Less scrolling for title
+        scrollViewRef.current.scrollToPosition(0, 100, true);
       }
     }, 100);
   };
@@ -166,12 +200,12 @@ export default function DealCreationScreen() {
           </View>
 
           {/* Search Bar */}
-          <View style={styles.searchContainer}>
+          <TouchableOpacity style={styles.searchContainer} onPress={handleSearchPress}>
             <View style={styles.magnifyingGlass}>
               <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
             </View>
             <Text style={styles.searchPlaceholder}>Search</Text>
-          </View>
+          </TouchableOpacity>
 
           {/* Deal Title Box */}
           <View style={styles.dealTitleBox}>
@@ -183,7 +217,7 @@ export default function DealCreationScreen() {
               placeholder='Deal Title - "$10 Sushi before 5pm on M-W"'
               placeholderTextColor="#888889"
               multiline
-              maxLength={100} // Add 100 character limit
+              maxLength={100}
               onFocus={handleTitleFocus}
             />
             <Text style={styles.characterCount}>
@@ -197,7 +231,12 @@ export default function DealCreationScreen() {
               {/* Add Photo */}
               <TouchableOpacity style={styles.addPhotoFrame} onPress={handleAddPhoto}>
                 <Ionicons name="camera-outline" size={24} color="#404040" style={styles.iconStyle} />
-                <Text style={[styles.optionText, {flex: 1}]}>Add Photo</Text>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Add Photo</Text>
+                  {imageUri && (
+                    <Text style={styles.expirationDateValue}>Photo Added</Text>
+                  )}
+                </View>
                 <Ionicons name="chevron-forward" size={20} color="black" />
               </TouchableOpacity>
               
@@ -328,6 +367,15 @@ export default function DealCreationScreen() {
         title="Food Tags"
       />
 
+      {/* Search Modal */}
+      <ListSelectionModal
+        visible={isSearchModalVisible}
+        onClose={() => setIsSearchModalVisible(false)}
+        onDone={handleDoneSearch}
+        data={SEARCH_RESULTS.map(item => ({ id: item.id, name: `${item.name}\n${item.subtext}` }))}
+        title="Search Restaurant"
+      />
+
       {/* Bottom Navigation */}
       <BottomNavigation 
         photoUrl={require('../../../img/Default_pfp.svg.png')}
@@ -355,12 +403,12 @@ const styles = StyleSheet.create({
   // Header Styles 
   header: {
     width: '100%',
-    height: 110, // Increased height
+    height: 110,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 0.5,
     borderBottomColor: '#DEDEDE',
-    justifyContent: 'flex-end', // Align content to the bottom
-    paddingBottom: 8, // Padding at the bottom of the header
+    justifyContent: 'flex-end',
+    paddingBottom: 8,
   },
   headerBottomFrame: {
     flexDirection: 'row',
@@ -503,7 +551,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 30, // Increased from 30 to 40
+    height: 30,
     gap: 16,
     paddingVertical: 5,
   },
@@ -511,14 +559,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 30, // Adjusted for two lines
+    height: 30,
     gap: 16,
   },
   tagBox: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 30, // Adjusted for two lines
+    height: 30,
     gap: 16,
   },
   anonymousRow: {
@@ -539,15 +587,15 @@ const styles = StyleSheet.create({
   // Icons
   iconStyle: {
     width: 24,
-    height: 24, // Added explicit height
+    height: 24,
   },
 
   // Option Text
   optionTextContainer: {
     flex: 1,
     justifyContent: 'center',
-    height: '100%', 
-    paddingVertical: 1, 
+    height: '100%',
+    paddingVertical: 1,
   },
   optionText: {
     fontFamily: 'Inter',
@@ -605,5 +653,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
   },
-  // Modal Styles are now in their respective component files
 });

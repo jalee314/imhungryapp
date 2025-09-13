@@ -14,13 +14,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 interface ListItem {
   id: string;
   name: string;
+  subtext?: string;
 }
 
 interface ListSelectionModalProps {
   visible: boolean;
   onClose: () => void;
   onDone: (selected: string[]) => void;
-  initialSelected: string[];
+  initialSelected?: string[];
   data: ListItem[];
   title: string;
 }
@@ -29,32 +30,42 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   visible,
   onClose,
   onDone,
-  initialSelected,
+  initialSelected = [],
   data,
   title,
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>(initialSelected);
 
-  useEffect(() => {
-    setSelectedItems(initialSelected);
-  }, [initialSelected]);
-
   const handleSelectItem = (itemId: string) => {
-    setSelectedItems(prev =>
-      prev.includes(itemId)
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    );
+    setSelectedItems(prev => {
+      const isSelected = prev.includes(itemId);
+      if (isSelected) {
+        return prev.filter(id => id !== itemId);
+      } else {
+        return [...prev, itemId];
+      }
+    });
   };
 
   const filteredData = data.filter(item =>
-    item.name.toLowerCase().includes(searchText.toLowerCase())
+    item.name.toLowerCase().includes(searchText.toLowerCase()) || (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
   );
+
+  const isSearchModal = title === "Search Restaurant";
 
   const renderItem = ({ item }: { item: ListItem }) => (
     <TouchableOpacity style={styles.itemContainer} onPress={() => handleSelectItem(item.id)}>
-      <Text style={styles.itemText}>{item.name}</Text>
+      <View style={styles.textContainer}>
+        {isSearchModal ? (
+          <>
+            <Text style={styles.itemTextBold}>{item.name}</Text>
+            {item.subtext && <Text style={styles.itemSubtext}>{item.subtext}</Text>}
+          </>
+        ) : (
+          <Text style={styles.itemText}>{item.name}</Text>
+        )}
+      </View>
       {selectedItems.includes(item.id) ? (
         <View style={styles.checkmark}>
           <Ionicons name="checkmark" size={16} color="#FFFFFF" />
@@ -109,20 +120,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    marginTop: 10,
   },
   headerButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     color: '#000000',
   },
   doneButton: {
     fontWeight: '700',
-    color: '#FFA05C',
+    color: '#FF8C4C',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000000',
   },
@@ -131,10 +142,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(250, 250, 250, 0.93)',
     borderRadius: 10,
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginBottom: 8,
     paddingHorizontal: 10,
     height: 36,
+    marginTop: 24,
   },
   searchInput: {
     flex: 1,
@@ -148,17 +160,29 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center', // Reverted to 'center'
+    alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
   },
+  textContainer: {
+    flex: 1,
+  },
   itemText: {
     fontFamily: 'Inter',
-    fontSize: 12, // Corrected font size
+    fontSize: 16,
     color: '#000000',
-    flex: 1, // Allow text to wrap
-    marginRight: 8, // Add space between text and checkmark
+  },
+  itemTextBold: {
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '700',
+  },
+  itemSubtext: {
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: '#000000',
   },
   separator: {
     height: StyleSheet.hairlineWidth,

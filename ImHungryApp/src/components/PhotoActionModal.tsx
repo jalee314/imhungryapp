@@ -23,14 +23,14 @@ const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
 }) => {
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       visible={visible}
       onRequestClose={onClose}
     >
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={styles.modalOptionsContainer}>
             <TouchableOpacity style={styles.modalButton} onPress={onTakePhoto}>
               <Text style={styles.modalButtonText}>Take Photo</Text>
             </TouchableOpacity>
@@ -39,7 +39,7 @@ const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
               <Text style={styles.modalButtonText}>Choose from Photo Album</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={[styles.modalContent, styles.cancelButton]} onPress={onClose}>
+          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
             <Text style={[styles.modalButtonText, { fontWeight: 'bold' }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -51,17 +51,18 @@ const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
 const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
+    backgroundColor: '#F4F4F4', // Changed background color
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
-    marginHorizontal: 8,
-    marginBottom: 30,
+    width: '90%',
+    gap: 8,
   },
-  modalContent: {
-    backgroundColor: 'rgba(249, 249, 249, 0.94)',
-    borderRadius: 14,
-    alignItems: 'center',
+  modalOptionsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   modalButton: {
     width: '100%',
@@ -69,16 +70,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonText: {
-    fontSize: 20,
-    color: '#007AFF',
+    fontSize: 16,
+    color: '#000000',
+    textAlign: 'center',
   },
   modalSeparator: {
     height: 0.5,
-    backgroundColor: '#C1C1C1',
+    backgroundColor: '#9E9E9E',
     width: '100%',
   },
   cancelButton: {
     marginTop: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    width: '100%',
+    paddingVertical: 18,
+    alignItems: 'center',
   },
 });
 
