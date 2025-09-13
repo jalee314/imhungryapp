@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -37,22 +37,33 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   const [searchText, setSearchText] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>(initialSelected);
 
+  const isSearchModal = title === "Search Restaurant";
+
   const handleSelectItem = (itemId: string) => {
-    setSelectedItems(prev => {
-      const isSelected = prev.includes(itemId);
-      if (isSelected) {
-        return prev.filter(id => id !== itemId);
-      } else {
-        return [...prev, itemId];
-      }
-    });
+    // --- MODIFIED LOGIC ---
+    if (isSearchModal) {
+      // Logic for single selection
+      setSelectedItems(prev => {
+        const isSelected = prev.includes(itemId);
+        // If the clicked item is already selected, deselect it. Otherwise, select it.
+        return isSelected ? [] : [itemId];
+      });
+    } else {
+      // Original logic for multiple selections
+      setSelectedItems(prev => {
+        const isSelected = prev.includes(itemId);
+        if (isSelected) {
+          return prev.filter(id => id !== itemId);
+        } else {
+          return [...prev, itemId];
+        }
+      });
+    }
   };
 
   const filteredData = data.filter(item =>
     item.name.toLowerCase().includes(searchText.toLowerCase()) || (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
   );
-
-  const isSearchModal = title === "Search Restaurant";
 
   const renderItem = ({ item }: { item: ListItem }) => (
     <TouchableOpacity style={styles.itemContainer} onPress={() => handleSelectItem(item.id)}>
@@ -170,18 +181,18 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontFamily: 'Inter',
-    fontSize: 16,
+    fontSize: 12,
     color: '#000000',
   },
   itemTextBold: {
     fontFamily: 'Inter',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
     fontWeight: '700',
   },
   itemSubtext: {
     fontFamily: 'Inter',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
   },
   separator: {

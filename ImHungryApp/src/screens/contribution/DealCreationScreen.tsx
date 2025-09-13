@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -20,6 +16,13 @@ import BottomNavigation from '../../components/BottomNavigation';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
+
+// Define an interface for the Restaurant object for better type safety
+interface Restaurant {
+  id: string;
+  name: string;
+  subtext: string;
+}
 
 const DEAL_CATEGORIES = [
   { id: '1', name: 'Happy Hour 🍹' },
@@ -36,23 +39,26 @@ const DEAL_CATEGORIES = [
 ];
 
 const FOOD_TAGS = [
-  { id: '1', name: 'Pizza 🍕' },
-  { id: '2', name: 'Burgers 🍔' },
-  { id: '3', name: 'Tacos / Mexican 🌮' },
-  { id: '4', name: 'Sushi / Japanese 🍣' },
-  { id: '5', name: 'Chinese / Asian 🥡' },
-  { id: '6', name: 'Italian / Pasta 🍝' },
-  { id: '7', name: 'BBQ 🍖' },
-  { id: '8', name: 'Seafood 🦞' },
-  { id: '9', name: 'Vegan / Vegetarian 🌱' },
-  { id: '10', name: 'Desserts / Sweets 🍩' },
-  { id: '11', name: 'Beverages ☕️' },
+    { id: '1', name: 'Pizza 🍕' },
+    { id: '2', name: 'Burgers 🍔' },
+    { id: '3', name: 'Tacos / Mexican 🌮' },
+    { id: '4', name: 'Sushi / Japanese 🍣' },
+    { id: '5', name: 'Chinese / Asian 🥡' },
+    { id: '6', name: 'Italian / Pasta 🍝' },
+    { id: '7', name: 'BBQ 🍖' },
+    { id: '8', name: 'Seafood 🦞' },
+    { id: '9', name: 'Vegan / Vegetarian 🌱' },
+    { id: '10', name: 'Desserts / Sweets 🍩' },
+    { id: '11', name: 'Beverages ☕️' },
+    { id: '12', name: 'Bread & Pastries' },
 ];
 
-const SEARCH_RESULTS = [
+// Apply the Restaurant interface and add the example from the screenshot
+const SEARCH_RESULTS: Restaurant[] = [
   { id: '1', name: 'Taco Bell - Los Angeles', subtext: '123 Taco St, Los Angeles, CA 90001' },
   { id: '2', name: 'Sushi One - Los Angeles', subtext: '456 Sushi Ave, Los Angeles, CA 90002' },
   { id: '3', name: 'Burger Palace - Los Angeles', subtext: '789 Burger Blvd, Los Angeles, CA 90003' },
+  { id: '4', name: 'Tous les Jours - La Habra', subtext: '1130 S Beach Blvd, La Habra, CA 90631' },
 ];
 
 export default function DealCreationScreen() {
@@ -68,6 +74,7 @@ export default function DealCreationScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFoodTags, setSelectedFoodTags] = useState<string[]>([]);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const scrollViewRef = useRef(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -90,7 +97,6 @@ export default function DealCreationScreen() {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
-      console.log("Photo URI:", result.assets[0].uri);
     }
     handleCloseCameraModal();
   };
@@ -105,7 +111,6 @@ export default function DealCreationScreen() {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
-      console.log("Image URI:", result.assets[0].uri);
     }
     handleCloseCameraModal();
   };
@@ -125,8 +130,18 @@ export default function DealCreationScreen() {
     setIsFoodTagsModalVisible(false);
   };
 
-  const handleDoneSearch = () => {
+  const handleDoneSearch = (selectedIds: string[]) => {
+    if (selectedIds.length > 0) {
+      const restaurant = SEARCH_RESULTS.find(r => r.id === selectedIds[0]);
+      if (restaurant) {
+        setSelectedRestaurant(restaurant);
+      }
+    }
     setIsSearchModalVisible(false);
+  };
+
+  const handleClearRestaurant = () => {
+    setSelectedRestaurant(null);
   };
 
   const handleSearchPress = () => {
@@ -165,9 +180,7 @@ export default function DealCreationScreen() {
     <View style={styles.container}>
       <StatusBar style="dark" />
       
-      {/* Header */}
       <View style={styles.header}>
-        {/* Main Header Content */}
         <View style={styles.headerBottomFrame}>
           <Text style={styles.appName}>ImHungri</Text>
           <View style={styles.locationFrame}>
@@ -192,22 +205,31 @@ export default function DealCreationScreen() {
           keyboardOpeningTime={0}
           scrollToOverflowEnabled={true}
         >
-          {/* Review Button Row */}
           <View style={styles.reviewButtonRow}>
             <TouchableOpacity style={styles.reviewButton}>
               <Text style={styles.reviewButtonText}>PREVIEW</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Search Bar */}
-          <TouchableOpacity style={styles.searchContainer} onPress={handleSearchPress}>
-            <View style={styles.magnifyingGlass}>
-              <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
+          {selectedRestaurant ? (
+            <View style={styles.selectedRestaurantContainer}>
+              <View style={styles.restaurantTextContainer}>
+                <Text style={styles.selectedRestaurantName}>{selectedRestaurant.name}</Text>
+                <Text style={styles.selectedRestaurantAddress}>{selectedRestaurant.subtext}</Text>
+              </View>
+              <TouchableOpacity onPress={handleClearRestaurant}>
+                <Ionicons name="close-circle" size={24} color="#C1C1C1" />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.searchPlaceholder}>Search</Text>
-          </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.searchContainer} onPress={handleSearchPress}>
+              <View style={styles.magnifyingGlass}>
+                <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
+              </View>
+              <Text style={styles.searchPlaceholder}>Search</Text>
+            </TouchableOpacity>
+          )}
 
-          {/* Deal Title Box */}
           <View style={styles.dealTitleBox}>
             <TextInput
               ref={titleInputRef}
@@ -225,10 +247,8 @@ export default function DealCreationScreen() {
             </Text>
           </View>
 
-          {/* Extra Details Container */}
           <View style={styles.extraDetailsContainer}>
             <View style={styles.optionsFrame}>
-              {/* Add Photo */}
               <TouchableOpacity style={styles.addPhotoFrame} onPress={handleAddPhoto}>
                 <Ionicons name="camera-outline" size={24} color="#404040" style={styles.iconStyle} />
                 <View style={styles.optionTextContainer}>
@@ -242,7 +262,6 @@ export default function DealCreationScreen() {
               
               <View style={styles.separator} />
               
-              {/* Expiration Date */}
               <TouchableOpacity style={styles.expirationFrame} onPress={() => setIsCalendarModalVisible(true)}>
                 <Ionicons name="time-outline" size={24} color="#4E4E4E" style={styles.iconStyle} />
                 <View style={styles.optionTextContainer}>
@@ -256,7 +275,6 @@ export default function DealCreationScreen() {
               
               <View style={styles.separator} />
               
-              {/* Deal Categories */}
               <TouchableOpacity style={styles.categoriesFrame} onPress={() => setIsCategoriesModalVisible(true)}>
                 <Ionicons name="grid-outline" size={24} color="#606060" style={styles.iconStyle} />
                 <View style={styles.optionTextContainer}>
@@ -275,7 +293,6 @@ export default function DealCreationScreen() {
               
               <View style={styles.separator} />
               
-              {/* Food Tags */}
               <TouchableOpacity style={styles.tagBox} onPress={() => setIsFoodTagsModalVisible(true)}>
                 <Ionicons name="pricetag-outline" size={24} color="#606060" style={styles.iconStyle} />
                 <View style={styles.optionTextContainer}>
@@ -294,7 +311,6 @@ export default function DealCreationScreen() {
               
               <View style={styles.separator} />
               
-              {/* Anonymous */}
               <View style={styles.anonymousRow}>
                 <MaterialCommunityIcons name="incognito" size={24} color="#606060" style={styles.iconStyle} />
                 <Text style={styles.anonymousText}>Anonymous</Text>
@@ -308,13 +324,11 @@ export default function DealCreationScreen() {
               
               <View style={styles.separator} />
               
-              {/* Extra Details */}
               <View style={styles.extraDetailsTitle}>
                 <Ionicons name="menu-outline" size={24} color="#606060" style={styles.iconStyle} />
                 <Text style={styles.extraDetailsTextLabel}>Extra Details</Text>
               </View>
 
-              {/* Extra Details Text Area */}
               <View style={styles.extraDetailsTextArea}>
                 <TextInput
                   ref={detailsInputRef}
@@ -339,7 +353,6 @@ export default function DealCreationScreen() {
         onChooseFromAlbum={handleChooseFromAlbum}
       />
 
-      {/* Calendar Modal */}
       <CalendarModal
         visible={isCalendarModalVisible}
         onClose={() => setIsCalendarModalVisible(false)}
@@ -347,7 +360,6 @@ export default function DealCreationScreen() {
         initialDate={expirationDate}
       />
 
-      {/* Categories Modal */}
       <ListSelectionModal
         visible={isCategoriesModalVisible}
         onClose={() => setIsCategoriesModalVisible(false)}
@@ -357,7 +369,6 @@ export default function DealCreationScreen() {
         title="Add Deal Category"
       />
 
-      {/* Food Tags Modal */}
       <ListSelectionModal
         visible={isFoodTagsModalVisible}
         onClose={() => setIsFoodTagsModalVisible(false)}
@@ -367,16 +378,14 @@ export default function DealCreationScreen() {
         title="Food Tags"
       />
 
-      {/* Search Modal */}
       <ListSelectionModal
         visible={isSearchModalVisible}
         onClose={() => setIsSearchModalVisible(false)}
         onDone={handleDoneSearch}
-        data={SEARCH_RESULTS.map(item => ({ id: item.id, name: `${item.name}\n${item.subtext}` }))}
+        data={SEARCH_RESULTS}
         title="Search Restaurant"
       />
 
-      {/* Bottom Navigation */}
       <BottomNavigation 
         photoUrl={require('../../../img/Default_pfp.svg.png')}
         activeTab="contribute"
@@ -393,14 +402,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  flexOne: {
-    flex: 1,
-  },
   safeArea: {
     flex: 1,
   },
-
-  // Header Styles 
   header: {
     width: '100%',
     height: 110,
@@ -443,8 +447,6 @@ const styles = StyleSheet.create({
     color: '#000000',
     letterSpacing: 0.5,
   },
-
-  // Main Content
   mainFrame: {
     flex: 1,
     width: '100%',
@@ -477,11 +479,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000000',
   },
-  contentFrame: {
-    gap: 14,
-  },
-
-  // Search Container
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -504,8 +501,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: 'rgba(60, 60, 67, 0.6)',
   },
-
-  // Deal Title Box
   dealTitleBox: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -527,8 +522,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginTop: 4,
   },
-
-  // Extra Details Container
   extraDetailsContainer: {
     width: 369,
     backgroundColor: '#FFFFFF',
@@ -538,8 +531,6 @@ const styles = StyleSheet.create({
   optionsFrame: {
     gap: 8,
   },
-
-  // Option Items
   addPhotoFrame: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -583,14 +574,10 @@ const styles = StyleSheet.create({
     height: 30,
     gap: 16,
   },
-
-  // Icons
   iconStyle: {
     width: 24,
     height: 24,
   },
-
-  // Option Text
   optionTextContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -614,12 +601,6 @@ const styles = StyleSheet.create({
     color: '#888889',
     marginTop: 2,
   },
-  foodTagsText: {
-    flex: 1,
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-  },
   anonymousText: {
     flex: 1,
     fontFamily: 'Inter',
@@ -632,14 +613,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000000',
   },
-  // Separator
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#C1C1C1',
     marginHorizontal: 16,
   },
-
-  // Extra Details Text Area
   extraDetailsTextArea: {
     paddingHorizontal: 15,
     paddingBottom: 8,
@@ -651,6 +629,34 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontFamily: 'Inter',
     fontSize: 14,
+    color: '#000000',
+  },
+  selectedRestaurantContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    width: 369,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+  },
+  restaurantTextContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  selectedRestaurantName: {
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    fontSize: 14,
+    lineHeight: 17,
+    color: '#000000',
+    marginBottom: 2,
+  },
+  selectedRestaurantAddress: {
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 17,
     color: '#000000',
   },
 });
