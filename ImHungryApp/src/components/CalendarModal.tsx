@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Button } from 'react-native';
+import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -23,17 +23,26 @@ const formatDate = (dateString: string | null) => {
 
 export default function CalendarModal({ visible, onClose, onConfirm, initialDate }: CalendarModalProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(initialDate);
+  const [noExpirationKnown, setNoExpirationKnown] = useState(false);
 
   useEffect(() => {
-    setSelectedDate(initialDate);
+    setSelectedDate(initialDate === 'Unknown' ? null : initialDate);
+    setNoExpirationKnown(initialDate === 'Unknown');
   }, [initialDate, visible]);
 
   const handleConfirm = () => {
-    onConfirm(selectedDate);
+    if (noExpirationKnown) {
+      onConfirm('Unknown');
+    } else {
+      onConfirm(selectedDate);
+    }
   };
 
-  const handleSetUnknown = () => {
-    onConfirm('Unknown');
+  const handleToggleNoExpiration = () => {
+    setNoExpirationKnown(!noExpirationKnown);
+    if (!noExpirationKnown) {
+      setSelectedDate(null);
+    }
   };
 
   return (
@@ -53,18 +62,23 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
             <Text style={[styles.calendarHeaderText, { color: '#FFA05C', fontWeight: 'bold' }]}>Done</Text>
           </TouchableOpacity>
         </View>
-        {selectedDate && (
+        {selectedDate && !noExpirationKnown && (
           <View style={styles.selectedDateContainer}>
             <View style={styles.selectedDatePill}>
               <Text style={styles.selectedDateText}>{formatDate(selectedDate)}</Text>
               <TouchableOpacity onPress={() => setSelectedDate(null)}>
-                 <Ionicons name="close-circle" size={16} color="#333" />
+                <Ionicons name="close-circle" size={16} color="#333" />
               </TouchableOpacity>
             </View>
           </View>
         )}
         <Calendar
-          onDayPress={(day) => setSelectedDate(day.dateString)}
+          onDayPress={(day) => {
+            setSelectedDate(day.dateString);
+            if (noExpirationKnown) {
+              setNoExpirationKnown(false);
+            }
+          }}
           markedDates={{
             [selectedDate || '']: { selected: true, selectedColor: '#FFA05C' },
           }}
@@ -73,11 +87,25 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
             arrowColor: '#000',
           }}
         />
-        <View style={styles.unknownButtonContainer}>
-            <TouchableOpacity style={styles.unknownButton} onPress={handleSetUnknown}>
-                <Text style={styles.unknownButtonText}>Unknown Expiration Date</Text>
-            </TouchableOpacity>
-        </View>
+
+        {/* Separator line */}
+        <View style={styles.separator} />
+        
+        {/* No expiration known toggle */}
+        <TouchableOpacity 
+          style={styles.noExpirationContainer}
+          onPress={handleToggleNoExpiration}
+        >
+          <Text style={styles.noExpirationText}>Mark if no expiration is known</Text>
+          <View style={[
+            styles.checkbox,
+            noExpirationKnown ? styles.checkboxActive : {}
+          ]}>
+            {noExpirationKnown && (
+              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+            )}
+          </View>
+        </TouchableOpacity>
       </SafeAreaView>
     </Modal>
   );
@@ -117,18 +145,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
   },
-  unknownButtonContainer: {
-    padding: 16,
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#C1C1C1',
+    marginVertical: 16,
+    marginHorizontal: 16,
   },
-  unknownButton: {
-    backgroundColor: '#EFEFEF',
-    borderRadius: 8,
-    paddingVertical: 12,
+  noExpirationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  noExpirationText: {
+    fontSize: 12,
+    color: '#000000',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#C1C1C1',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  unknownButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  checkboxActive: {
+    backgroundColor: '#FF8C4C',
+    borderColor: '#FF8C4C',
+  }
 });

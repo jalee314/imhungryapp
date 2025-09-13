@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,16 @@ import {
   TextInput,
   Switch,
   ScrollView,
-  Modal,
-  Pressable
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import BottomNavigation from '../../components/BottomNavigation';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
+import PhotoActionModal from '../../components/PhotoActionModal';
 
 const DEAL_CATEGORIES = [
   { id: '1', name: 'Happy Hour 🍹' },
@@ -46,24 +48,36 @@ const FOOD_TAGS = [
 ];
 
 export default function DealCreationScreen() {
-  const [dealTitle, setDealTitle] = useState('Deal Title - "$10 Sushi before 5pm on M-W"');
+  const [dealTitle, setDealTitle] = useState('');
   const [dealDetails, setDealDetails] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCameraModalVisible, setIsCameraModalVisible] = useState(false);
   const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
   const [isCategoriesModalVisible, setIsCategoriesModalVisible] = useState(false);
   const [isFoodTagsModalVisible, setIsFoodTagsModalVisible] = useState(false);
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFoodTags, setSelectedFoodTags] = useState<string[]>([]);
-
+  const scrollViewRef = useRef(null);
+  const detailsInputRef = useRef(null);
+  const titleInputRef = useRef(null); // New ref for title input
 
   const handleAddPhoto = () => {
-    setIsModalVisible(true);
+    setIsCameraModalVisible(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalVisible(false);
+  const handleCloseCameraModal = () => {
+    setIsCameraModalVisible(false);
+  };
+
+  const handleTakePhoto = () => {
+    console.log("Take Photo pressed");
+    handleCloseCameraModal();
+  };
+
+  const handleChooseFromAlbum = () => {
+    console.log("Choose from Photo Album pressed");
+    handleCloseCameraModal();
   };
 
   const handleConfirmDate = (date: string | null) => {
@@ -94,6 +108,25 @@ export default function DealCreationScreen() {
     });
   };
 
+  // Add this function to handle focusing on the details input
+  const handleDetailsFocus = () => {
+    // Wait a moment for keyboard to appear, then scroll
+    setTimeout(() => {
+      if (scrollViewRef.current && detailsInputRef.current) {
+        scrollViewRef.current.scrollToPosition(0, 300, true);
+      }
+    }, 100);
+  };
+
+  // Add new function to handle focusing on the title input
+  const handleTitleFocus = () => {
+    setTimeout(() => {
+      if (scrollViewRef.current && titleInputRef.current) {
+        scrollViewRef.current.scrollToPosition(0, 100, true); // Less scrolling for title
+      }
+    }, 100);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -114,8 +147,17 @@ export default function DealCreationScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Main Content Frame */}
-        <ScrollView style={styles.mainFrame} contentContainerStyle={styles.mainFrameContentContainer}>
+        <KeyboardAwareScrollView
+          ref={scrollViewRef}
+          style={styles.mainFrame}
+          contentContainerStyle={styles.mainFrameContentContainer}
+          keyboardShouldPersistTaps="handled"
+          extraScrollHeight={120}
+          enableOnAndroid={true}
+          enableAutomaticScroll={true}
+          keyboardOpeningTime={0}
+          scrollToOverflowEnabled={true}
+        >
           {/* Review Button Row */}
           <View style={styles.reviewButtonRow}>
             <TouchableOpacity style={styles.reviewButton}>
@@ -134,13 +176,19 @@ export default function DealCreationScreen() {
           {/* Deal Title Box */}
           <View style={styles.dealTitleBox}>
             <TextInput
+              ref={titleInputRef}
               style={styles.dealTitleText}
               value={dealTitle}
               onChangeText={setDealTitle}
-              placeholder="Deal Title"
+              placeholder='Deal Title - "$10 Sushi before 5pm on M-W"'
               placeholderTextColor="#888889"
               multiline
+              maxLength={100} // Add 100 character limit
+              onFocus={handleTitleFocus}
             />
+            <Text style={styles.characterCount}>
+              {dealTitle.length}/100
+            </Text>
           </View>
 
           {/* Extra Details Container */}
@@ -230,42 +278,27 @@ export default function DealCreationScreen() {
               {/* Extra Details Text Area */}
               <View style={styles.extraDetailsTextArea}>
                 <TextInput
+                  ref={detailsInputRef}
                   style={styles.extraDetailsInput}
                   value={dealDetails}
                   onChangeText={setDealDetails}
-                  placeholder="Add any extra details here..."
+                  placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Does it apply to a specific menu section?&#10;• Are there any limitations or exclusions?&#10;• Are there any codes or special instructions needed to redeem it?"
                   placeholderTextColor="#888889"
                   multiline
+                  onFocus={handleDetailsFocus}
                 />
               </View>
             </View>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={handleCloseModal}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={handleCloseModal}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <TouchableOpacity style={styles.modalButton} onPress={() => { console.log("Take Photo pressed"); handleCloseModal(); }}>
-                <Text style={styles.modalButtonText}>Take Photo</Text>
-              </TouchableOpacity>
-              <View style={styles.modalSeparator} />
-              <TouchableOpacity style={styles.modalButton} onPress={() => { console.log("Choose from Photo Album pressed"); handleCloseModal(); }}>
-                <Text style={styles.modalButtonText}>Choose from Photo Album</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={[styles.modalContent, styles.cancelButton]} onPress={handleCloseModal}>
-              <Text style={[styles.modalButtonText, { fontWeight: 'bold' }]}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
+      <PhotoActionModal
+        visible={isCameraModalVisible}
+        onClose={handleCloseCameraModal}
+        onTakePhoto={handleTakePhoto}
+        onChooseFromAlbum={handleChooseFromAlbum}
+      />
 
       {/* Calendar Modal */}
       <CalendarModal
@@ -312,11 +345,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
+  flexOne: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },
 
-  // Header Styles
+  // Header Styles 
   header: {
     width: '100%',
     height: 110, // Increased height
@@ -325,19 +361,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#DEDEDE',
     justifyContent: 'flex-end', // Align content to the bottom
     paddingBottom: 8, // Padding at the bottom of the header
-  },
-  headerBackground: {
-    // This is now redundant as styles are on the header itself
-  },
-  headerFrame: {
-    // This container is no longer needed
-  },
-  statusBarFrame: {
-    // This is for spacing and can be removed or simplified
-    // as SafeAreaView handles status bar space.
-  },
-  statusBarSpacer: {
-    // Redundant
   },
   headerBottomFrame: {
     flexDirection: 'row',
@@ -449,6 +472,13 @@ const styles = StyleSheet.create({
     color: '#888889',
     flex: 1,
   },
+  characterCount: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    color: '#888889',
+    alignSelf: 'flex-end',
+    marginTop: 4,
+  },
 
   // Extra Details Container
   extraDetailsContainer: {
@@ -473,7 +503,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 30, // Adjusted for two lines
+    height: 30, // Increased from 30 to 40
     gap: 16,
     paddingVertical: 5,
   },
@@ -509,12 +539,15 @@ const styles = StyleSheet.create({
   // Icons
   iconStyle: {
     width: 24,
+    height: 24, // Added explicit height
   },
 
   // Option Text
   optionTextContainer: {
     flex: 1,
     justifyContent: 'center',
+    height: '100%', 
+    paddingVertical: 1, 
   },
   optionText: {
     fontFamily: 'Inter',
@@ -551,23 +584,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000000',
   },
-
-  // Redundant Icon Styles (can be removed)
-  addPhotoIcon: {},
-  expirationIcon: {},
-  categoriesIcon: {},
-  tagIcon: {},
-  anonymousIcon: {},
-  detailsIcon: {},
-  arrowIcon: {},
-
-  // Redundant Toggle Switch Styles (can be removed)
-  toggleSwitchContainer: {},
-  toggleSwitch: {},
-  toggleSwitchActive: {},
-  switchThumb: {},
-  switchThumbActive: {},
-
   // Separator
   separator: {
     height: StyleSheet.hairlineWidth,
@@ -589,37 +605,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
   },
-  // Modal Styles
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    marginHorizontal: 8,
-    marginBottom: 30, // Adjust to position above bottom navigation if needed
-  },
-  modalContent: {
-    backgroundColor: 'rgba(249, 249, 249, 0.94)',
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  modalButton: {
-    width: '100%',
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    fontSize: 20,
-    color: '#007AFF',
-  },
-  modalSeparator: {
-    height: 0.5,
-    backgroundColor: '#C1C1C1',
-    width: '100%',
-  },
-  cancelButton: {
-    marginTop: 8,
-  },
-  // Calendar Modal Styles are now in CalendarModal.tsx
+  // Modal Styles are now in their respective component files
 });
