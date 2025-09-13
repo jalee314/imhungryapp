@@ -1,25 +1,25 @@
 import React from 'react';
 import {
-  Modal,
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Pressable,
+  Modal,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
 } from 'react-native';
 
 interface PhotoActionModalProps {
   visible: boolean;
   onClose: () => void;
   onTakePhoto: () => void;
-  onChooseFromAlbum: () => void;
+  onChooseFromLibrary: () => void;
 }
 
 const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
   visible,
   onClose,
   onTakePhoto,
-  onChooseFromAlbum,
+  onChooseFromLibrary,
 }) => {
   return (
     <Modal
@@ -28,64 +28,73 @@ const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
       visible={visible}
       onRequestClose={onClose}
     >
-      <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalOptionsContainer}>
-            <TouchableOpacity style={styles.modalButton} onPress={onTakePhoto}>
-              <Text style={styles.modalButtonText}>Take Photo</Text>
-            </TouchableOpacity>
-            <View style={styles.modalSeparator} />
-            <TouchableOpacity style={styles.modalButton} onPress={onChooseFromAlbum}>
-              <Text style={styles.modalButtonText}>Choose from Photo Album</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={[styles.modalButtonText, { fontWeight: 'bold' }]}>Cancel</Text>
-          </TouchableOpacity>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <TouchableOpacity style={styles.option} onPress={onTakePhoto}>
+                  <Text style={styles.optionText}>Take Photo</Text>
+                </TouchableOpacity>
+
+                <View style={styles.divider} />
+
+                <TouchableOpacity style={styles.option} onPress={onChooseFromLibrary}>
+                  <Text style={styles.optionText}>Choose from Library</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </Pressable>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalBackdrop: {
+  overlay: {
     flex: 1,
-    backgroundColor: '#F4F4F4', // Changed background color
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)', // 80% opacity black background
+    justifyContent: 'flex-end',
   },
   modalContainer: {
-    width: '90%',
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 90, // Position above bottom navigation
   },
-  modalOptionsContainer: {
+  modalContent: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    overflow: 'hidden',
+    marginBottom: 8,
   },
-  modalButton: {
-    width: '100%',
-    paddingVertical: 18,
+  option: {
+    paddingVertical: 16,
     alignItems: 'center',
   },
-  modalButtonText: {
+  optionText: {
+    fontFamily: 'Inter',
     fontSize: 16,
+    fontWeight: '500',
     color: '#000000',
-    textAlign: 'center',
   },
-  modalSeparator: {
-    height: 0.5,
-    backgroundColor: '#9E9E9E',
-    width: '100%',
+  divider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
   },
   cancelButton: {
-    marginTop: 8,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    width: '100%',
-    paddingVertical: 18,
+    paddingVertical: 16,
     alignItems: 'center',
+  },
+  cancelText: {
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
   },
 });
 
