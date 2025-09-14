@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   appName: {
-    fontFamily: 'Mitr',
+    fontFamily: 'MuseoModerno-Bold',
     fontWeight: '700',
     fontSize: 24,
     color: '#FF8C4C',

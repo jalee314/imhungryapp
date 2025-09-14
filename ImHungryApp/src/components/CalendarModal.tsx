@@ -74,6 +74,16 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
         )}
         <Calendar
           onDayPress={(day) => {
+            // Get today's date as a 'YYYY-MM-DD' string.
+            // .toISOString() returns UTC, but splitting at 'T' gives us the correct date part regardless of timezone.
+            const todayString = new Date().toISOString().split('T')[0];
+
+            // Compare the strings directly. This is reliable and avoids all timezone issues.
+            if (day.dateString < todayString) {
+              // Ignore selection if the selected date string is lexicographically smaller than today's.
+              return;
+            }
+            
             setSelectedDate(day.dateString);
             if (noExpirationKnown) {
               setNoExpirationKnown(false);

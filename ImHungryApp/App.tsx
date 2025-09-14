@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
+import * as Font from 'expo-font';
 import * as Linking from 'expo-linking';
 
 
@@ -61,11 +62,13 @@ const linking = {
   },
 };
 
+
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
     'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
     'Manrope-Bold': require('./assets/fonts/Manrope-Bold.ttf'),
+    'MuseoModerno-Bold': require('./assets/fonts/MuseoModerno-Bold.ttf'),
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);

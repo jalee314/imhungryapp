@@ -12,14 +12,14 @@ interface PhotoActionModalProps {
   visible: boolean;
   onClose: () => void;
   onTakePhoto: () => void;
-  onChooseFromLibrary: () => void;
+  onChooseFromAlbum: () => void;
 }
 
 const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
   visible,
   onClose,
   onTakePhoto,
-  onChooseFromLibrary,
+  onChooseFromAlbum,
 }) => {
   return (
     <Modal
@@ -39,7 +39,7 @@ const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
 
                 <View style={styles.divider} />
 
-                <TouchableOpacity style={styles.option} onPress={onChooseFromLibrary}>
+                <TouchableOpacity style={styles.option} onPress={onChooseFromAlbum}>
                   <Text style={styles.optionText}>Choose from Library</Text>
                 </TouchableOpacity>
               </View>

@@ -40,25 +40,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   const isSearchModal = title === "Search Restaurant";
 
   const handleSelectItem = (itemId: string) => {
-    // --- MODIFIED LOGIC ---
-    if (isSearchModal) {
-      // Logic for single selection
-      setSelectedItems(prev => {
-        const isSelected = prev.includes(itemId);
-        // If the clicked item is already selected, deselect it. Otherwise, select it.
-        return isSelected ? [] : [itemId];
-      });
-    } else {
-      // Original logic for multiple selections
-      setSelectedItems(prev => {
-        const isSelected = prev.includes(itemId);
-        if (isSelected) {
-          return prev.filter(id => id !== itemId);
-        } else {
-          return [...prev, itemId];
-        }
-      });
-    }
+    setSelectedItems(prev => (prev.includes(itemId) ? [] : [itemId]));
   };
 
   const filteredData = data.filter(item =>
