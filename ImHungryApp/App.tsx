@@ -20,6 +20,7 @@ import CuisinePreferences from './src/screens/onboarding/CuisinePreferences';
 import ProfilePage from './src/screens/profile/ProfilePage';
 import profileEdit from './src/screens/profile/profileEdit';
 import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
+import { DataCacheProvider } from './src/context/DataCacheContext';
 
 
 const Stack = createNativeStackNavigator();
@@ -102,8 +103,10 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer linking={linking}>
-      {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-    </NavigationContainer>
+    <DataCacheProvider>
+      <NavigationContainer linking={linking}>
+        {isLoggedIn ? <AppStack /> : <OnboardingStack />}
+      </NavigationContainer>
+    </DataCacheProvider>
   );
 }

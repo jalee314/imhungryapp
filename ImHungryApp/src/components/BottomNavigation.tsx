@@ -1,20 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { fetchUserData } from '../services/userService';
 
 interface BottomNavigationProps {
-  photoUrl?: any; // Changed to any to support require()
+  photoUrl?: any; // Optional override for profile photo
   activeTab?: string;
   onTabPress?: (tab: string) => void;
 }
 
 const BottomNavigation: React.FC<BottomNavigationProps> = ({ 
-  photoUrl, 
+  photoUrl: propPhotoUrl, 
   activeTab = 'profile',
   onTabPress 
 }) => {
   const navigation = useNavigation();
+  const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = await fetchUserData();
+        setUserPhotoUrl(userData.profilePicture);
+      } catch (error) {
+        console.error('Error fetching user data for navbar:', error);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   const navItems = [
     { id: 'home', icon: 'home-outline', label: 'Home', screen: 'HomeScreen' },
@@ -25,10 +41,8 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   ];
 
   const handleTabPress = (screenName: string) => {
-    // Navigate to the screen associated with the tab
     navigation.navigate(screenName as never);
 
-    // Also call the onTabPress prop if it exists
     if (onTabPress) {
       const tab = navItems.find(item => item.screen === screenName);
       if (tab) {
@@ -41,16 +55,19 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     const isActive = activeTab === item.id;
     
     if (item.id === 'profile') {
+      // Use prop photoUrl if provided, otherwise use fetched user photo
+      const displayPhotoUrl = propPhotoUrl || userPhotoUrl;
+      
       return (
         <TouchableOpacity
           key={item.id}
           style={[styles.navItem, isActive && styles.activeNavItem]}
           onPress={() => handleTabPress(item.screen)}
         >
-          {photoUrl && typeof photoUrl === 'string' ? (
-            <Image source={{ uri: photoUrl }} style={styles.navProfilePhoto} />
-          ) : photoUrl ? (
-            <Image source={photoUrl} style={styles.navProfilePhoto} />
+          {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
+            <Image source={{ uri: displayPhotoUrl }} style={styles.navProfilePhoto} />
+          ) : displayPhotoUrl ? (
+            <Image source={displayPhotoUrl} style={styles.navProfilePhoto} />
           ) : (
             <View style={styles.navProfilePlaceholder}>
               <Text style={styles.navPlaceholderText}>👤</Text>
@@ -96,8 +113,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     justifyContent: 'space-around',
     alignItems: 'center',
-    // Add safe area padding for devices with home indicators
-    paddingBottom: 34, // Adjust this value based on your device's safe area
+    paddingBottom: 34,
   },
   navItem: {
     alignItems: 'center',

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TextInput,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,6 +20,8 @@ import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
+import { useDataCache } from '../../context/DataCacheContext'; // Import the context hook
+import { fetchUserData } from '../../services/userService'; // Import your data fetching function
 
 // --- Interfaces and Data ---
 interface Restaurant {
@@ -26,35 +29,6 @@ interface Restaurant {
   name: string;
   subtext: string;
 }
-
-const DEAL_CATEGORIES = [
-  { id: '1', name: 'Happy Hour 🍹' },
-  { id: '2', name: 'BOGO / 2-for-1' },
-  { id: '3', name: 'Discount % / Dollar Off' },
-  { id: '4', name: 'Meal Specials (e.g., "$10 lunch combo")' },
-  { id: '5', name: 'Student Discount 🎓' },
-  { id: '6', name: 'Daily Specials (e.g., "Taco Tuesday", "Wing Wednesday")' },
-  { id: '7', name: 'Buffet / All-You-Can-Eat' },
-  { id: '8', name: 'Drinks & Bar Deals 🍺' },
-  { id: '9', name: 'Family / Group Deals 👨‍👩‍👧‍👦' },
-  { id: '10', name: 'Seasonal / Limited-Time Offers ⏳' },
-  { id: '11', name: 'Loyalty / Rewards Program' },
-];
-
-const FOOD_TAGS = [
-    { id: '1', name: 'Pizza 🍕' },
-    { id: '2', name: 'Burgers 🍔' },
-    { id: '3', name: 'Tacos / Mexican 🌮' },
-    { id: '4', name: 'Sushi / Japanese 🍣' },
-    { id: '5', name: 'Chinese / Asian 🥡' },
-    { id: '6', name: 'Italian / Pasta 🍝' },
-    { id: '7', name: 'BBQ 🍖' },
-    { id: '8', name: 'Seafood 🦞' },
-    { id: '9', name: 'Vegan / Vegetarian 🌱' },
-    { id: '10', name: 'Desserts / Sweets 🍩' },
-    { id: '11', name: 'Beverages ☕️' },
-    { id: '12', name: 'Bread & Pastries' },
-];
 
 const SEARCH_RESULTS: Restaurant[] = [
   { id: '1', name: 'Taco Bell - Los Angeles', subtext: '123 Taco St, Los Angeles, CA 90001' },
@@ -64,6 +38,15 @@ const SEARCH_RESULTS: Restaurant[] = [
 ];
 
 export default function DealCreationScreen() {
+  // Get data from the context
+  const { categories, cuisines, restaurants, loading: dataLoading, error } = useDataCache();
+  
+  const [userData, setUserData] = useState({
+    username: '',
+    profilePicture: null,
+    city: '',
+    state: ''
+  });
   const [dealTitle, setDealTitle] = useState('');
   const [dealDetails, setDealDetails] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -78,10 +61,42 @@ export default function DealCreationScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
 
+  useEffect(() => {
+    // Fetch user data when component mounts
+    const loadUserData = async () => {
+      try {
+        const data = await fetchUserData(); // Your function to get user data from database
+        setUserData(data);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    
+    loadUserData();
+  }, []);
+
+  // Filter restaurants based on search query
+  const filteredRestaurants = restaurants
+    .filter(r => r && r.name && r.address) // Ensure we have valid data
+    .map(r => ({
+      id: r.id,
+      name: r.name,
+      subtext: r.address
+    }))
+    .filter(r => 
+      searchQuery.trim() === '' || 
+      r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.subtext.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  
+  // Debug logging
+  
+  // All existing handler functions remain the same
   const handleAddPhoto = () => setIsCameraModalVisible(true);
   const handleCloseCameraModal = () => setIsCameraModalVisible(false);
 
@@ -114,14 +129,17 @@ export default function DealCreationScreen() {
 
   const handleDoneSearch = (selectedIds: string[]) => {
     if (selectedIds.length > 0) {
-      const restaurant = SEARCH_RESULTS.find(r => r.id === selectedIds[0]);
+      const restaurant = filteredRestaurants.find(r => r.id === selectedIds[0]);
       if (restaurant) setSelectedRestaurant(restaurant);
     }
     setIsSearchModalVisible(false);
   };
 
   const handleClearRestaurant = () => setSelectedRestaurant(null);
-  const handleSearchPress = () => setIsSearchModalVisible(true);
+  const handleSearchPress = () => {
+    setSearchQuery(''); // Reset search query when opening modal
+    setIsSearchModalVisible(true);
+  };
 
   const handlePreview = () => {
     if (!selectedRestaurant || !dealTitle) {
@@ -151,7 +169,7 @@ export default function DealCreationScreen() {
   const handleDetailsFocus = () => {
     setTimeout(() => {
       if (scrollViewRef.current && detailsInputRef.current) {
-        scrollViewRef.current.scrollToPosition(0, 150, true);
+        scrollViewRef.current.scrollToPosition(0, 300, true);
       }
     }, 100);
   };
@@ -164,153 +182,209 @@ export default function DealCreationScreen() {
     }, 100);
   };
 
+  // Helper functions to display selected items
+  const getSelectedCategoryNames = () => {
+    return selectedCategories
+      .map(id => categories.find(c => c.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  const getSelectedCuisineNames = () => {
+    return selectedFoodTags
+      .map(id => cuisines.find(c => c.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
+  };
+
   return (
-  <View style={styles.container}>
-    <StatusBar style="dark" />
-    
-    <Header onLocationPress={() => console.log('Location pressed')} />
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      
+      <Header onLocationPress={() => console.log('Location pressed')} />
 
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAwareScrollView
-        ref={scrollViewRef}
-        style={styles.mainFrame}
-        contentContainerStyle={styles.mainFrameContentContainer}
-        keyboardShouldPersistTaps="handled"
-        extraScrollHeight={120}
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
-        keyboardOpeningTime={0}
-        scrollToOverflowEnabled={true}
-      >
-        <View style={styles.reviewButtonRow}>
-          <TouchableOpacity style={styles.reviewButton} onPress={handlePreview}>
-            <Text style={styles.reviewButtonText}>PREVIEW</Text>
-          </TouchableOpacity>
+      {/* Show a loading indicator when data is being loaded */}
+      {dataLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#FFA05C" />
         </View>
+      )}
 
-        {selectedRestaurant ? (
-          <View style={styles.selectedRestaurantContainer}>
-            <View style={styles.restaurantTextContainer}>
-              <Text style={styles.selectedRestaurantName}>{selectedRestaurant.name}</Text>
-              <Text style={styles.selectedRestaurantAddress}>{selectedRestaurant.subtext}</Text>
-            </View>
-            <TouchableOpacity onPress={handleClearRestaurant}>
-              <Ionicons name="close-circle" size={24} color="#C1C1C1" />
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAwareScrollView
+          ref={scrollViewRef}
+          style={styles.mainFrame}
+          contentContainerStyle={styles.mainFrameContentContainer}
+          keyboardShouldPersistTaps="handled"
+          extraScrollHeight={120}
+          enableOnAndroid={true}
+          enableAutomaticScroll={true}
+          keyboardOpeningTime={0}
+          scrollToOverflowEnabled={true}
+        >
+          <View style={styles.reviewButtonRow}>
+            <TouchableOpacity 
+              style={[styles.reviewButton, dataLoading ? styles.disabledButton : null]} 
+              onPress={handlePreview}
+              disabled={dataLoading}
+            >
+              <Text style={styles.reviewButtonText}>PREVIEW</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <TouchableOpacity style={styles.searchContainer} onPress={handleSearchPress}>
-            <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
-            <Text style={styles.searchPlaceholder}>Search Restaurant</Text>
-          </TouchableOpacity>
-        )}
 
-        <View style={styles.dealTitleBox}>
-          <TextInput
-            ref={titleInputRef}
-            style={styles.dealTitleText}
-            value={dealTitle}
-            onChangeText={setDealTitle}
-            placeholder='Deal Title - "$10 Sushi before 5pm on M-W"'
-            placeholderTextColor="#888889"
-            multiline
-            maxLength={100}
-            onFocus={handleTitleFocus}
-          />
-          <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
-        </View>
+          {selectedRestaurant ? (
+            <View style={styles.selectedRestaurantContainer}>
+              <View style={styles.restaurantTextContainer}>
+                <Text style={styles.selectedRestaurantName}>{selectedRestaurant.name}</Text>
+                <Text style={styles.selectedRestaurantAddress}>{selectedRestaurant.subtext}</Text>
+              </View>
+              <TouchableOpacity onPress={handleClearRestaurant}>
+                <Ionicons name="close-circle" size={24} color="#C1C1C1" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.searchContainer} onPress={handleSearchPress}>
+              <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
+              <Text style={styles.searchPlaceholder}>Search Restaurant</Text>
+            </TouchableOpacity>
+          )}
 
-        <View style={styles.extraDetailsContainer}>
-          <TouchableOpacity style={styles.optionRow} onPress={handleAddPhoto}>
-            <Ionicons name="camera-outline" size={24} color="#404040" />
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Add Photo</Text>
-              {imageUri && <Text style={styles.optionSubText}>Photo Added</Text>}
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="black" />
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
-            <Ionicons name="time-outline" size={24} color="#4E4E4E" />
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Expiration Date</Text>
-              {expirationDate && <Text style={styles.optionSubText}>{formatDate(expirationDate)}</Text>}
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="black" />
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
-            <Ionicons name="grid-outline" size={24} color="#606060" />
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Deal Categories</Text>
-              {selectedCategories.length > 0 && <Text style={styles.optionSubText} numberOfLines={1}>{selectedCategories.map(id => DEAL_CATEGORIES.find(c => c.id === id)?.name).join(', ')}</Text>}
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="black" />
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
-            <Ionicons name="pricetag-outline" size={24} color="#606060" />
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Cuisine Tag</Text>
-              {selectedFoodTags.length > 0 && <Text style={styles.optionSubText} numberOfLines={1}>{selectedFoodTags.map(id => FOOD_TAGS.find(t => t.id === id)?.name).join(', ')}</Text>}
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="black" />
-          </TouchableOpacity>
-          <View style={styles.separator} />
-          <View style={styles.optionRow}>
-            <MaterialCommunityIcons name="incognito" size={24} color="#606060" />
-            <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
-            <Switch trackColor={{ false: "#D2D5DA", true: "#FFA05C" }} thumbColor={"#FFFFFF"} onValueChange={setIsAnonymous} value={isAnonymous} />
+          <View style={styles.dealTitleBox}>
+            <TextInput
+              ref={titleInputRef}
+              style={styles.dealTitleText}
+              value={dealTitle}
+              onChangeText={setDealTitle}
+              placeholder='Deal Title - "$10 Sushi before 5pm on M-W"'
+              placeholderTextColor="#888889"
+              multiline
+              maxLength={100}
+              onFocus={handleTitleFocus}
+            />
+            <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
           </View>
-          <View style={styles.separator} />
-          <View style={styles.optionRow}>
-            <Ionicons name="menu-outline" size={24} color="#606060" />
-            <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
+
+          <View style={styles.extraDetailsContainer}>
+            <TouchableOpacity style={styles.optionRow} onPress={handleAddPhoto}>
+              <Ionicons name="camera-outline" size={24} color="#404040" />
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionText}>Add Photo</Text>
+                {imageUri && <Text style={styles.optionSubText}>Photo Added</Text>}
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="black" />
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
+              <Ionicons name="time-outline" size={24} color="#4E4E4E" />
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionText}>Expiration Date</Text>
+                {expirationDate && (
+                  <Text style={styles.optionSubText}>
+                    {expirationDate === 'Unknown' ? 'Not Known' : formatDate(expirationDate)}
+                  </Text>
+                )}
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="black" />
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
+              <Ionicons name="grid-outline" size={24} color="#606060" />
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionText}>Deal Categories</Text>
+                {selectedCategories.length > 0 && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryNames()}</Text>}
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="black" />
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
+              <Ionicons name="pricetag-outline" size={24} color="#606060" />
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionText}>Cuisine Tag</Text>
+                {selectedFoodTags.length > 0 && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineNames()}</Text>}
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="black" />
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <View style={styles.optionRow}>
+              <MaterialCommunityIcons name="incognito" size={24} color="#606060" />
+              <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
+              <Switch trackColor={{ false: "#D2D5DA", true: "#FFA05C" }} thumbColor={"#FFFFFF"} onValueChange={setIsAnonymous} value={isAnonymous} />
+            </View>
+            <View style={styles.separator} />
+            <View style={styles.optionRow}>
+              <Ionicons name="menu-outline" size={24} color="#606060" />
+              <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
+            </View>
+            <TextInput
+              ref={detailsInputRef}
+              style={styles.extraDetailsInput}
+              value={dealDetails}
+              onChangeText={setDealDetails}
+              placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Does it apply to a specific menu section?&#10;• Are there any limitations or exclusions?"
+              placeholderTextColor="#888889"
+              multiline
+              onFocus={handleDetailsFocus}
+            />
           </View>
-          <TextInput
-            ref={detailsInputRef}
-            style={styles.extraDetailsInput}
-            value={dealDetails}
-            onChangeText={setDealDetails}
-            placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Does it apply to a specific menu section?&#10;• Are there any limitations or exclusions?"
-            placeholderTextColor="#888889"
-            multiline
-            onFocus={handleDetailsFocus}
-          />
-        </View>
-      </KeyboardAwareScrollView>
-    </SafeAreaView>
+        </KeyboardAwareScrollView>
+      </SafeAreaView>
 
-    {/* Modals and BottomNavigation outside the SafeAreaView */}
-    <PhotoActionModal
-      visible={isCameraModalVisible}
-      onClose={handleCloseCameraModal}
-      onTakePhoto={handleTakePhoto}
-      onChooseFromAlbum={handleChooseFromAlbum}
-    />
-    <CalendarModal visible={isCalendarModalVisible} onClose={() => setIsCalendarModalVisible(false)} onConfirm={handleConfirmDate} initialDate={expirationDate} />
-    <ListSelectionModal visible={isCategoriesModalVisible} onClose={() => setIsCategoriesModalVisible(false)} onDone={handleDoneCategories} initialSelected={selectedCategories} data={DEAL_CATEGORIES} title="Add Deal Category" />
-    <ListSelectionModal visible={isFoodTagsModalVisible} onClose={() => setIsFoodTagsModalVisible(false)} onDone={handleDoneFoodTags} initialSelected={selectedFoodTags} data={FOOD_TAGS} title="Food Tags" />
-    <ListSelectionModal visible={isSearchModalVisible} onClose={() => setIsSearchModalVisible(false)} onDone={handleDoneSearch} data={SEARCH_RESULTS} title="Search Restaurant" />
+      {/* Modals and BottomNavigation outside the SafeAreaView */}
+      <PhotoActionModal
+        visible={isCameraModalVisible}
+        onClose={handleCloseCameraModal}
+        onTakePhoto={handleTakePhoto}
+        onChooseFromAlbum={handleChooseFromAlbum}
+      />
+      <CalendarModal visible={isCalendarModalVisible} onClose={() => setIsCalendarModalVisible(false)} onConfirm={handleConfirmDate} initialDate={expirationDate} />
+      <ListSelectionModal 
+        visible={isCategoriesModalVisible} 
+        onClose={() => setIsCategoriesModalVisible(false)} 
+        onDone={handleDoneCategories} 
+        initialSelected={selectedCategories} 
+        data={categories} // Using data from context
+        title="Add Deal Category" 
+      />
+      <ListSelectionModal 
+        visible={isFoodTagsModalVisible} 
+        onClose={() => setIsFoodTagsModalVisible(false)} 
+        onDone={handleDoneFoodTags} 
+        initialSelected={selectedFoodTags} 
+        data={cuisines} // Using data from context
+        title="Food Tags" 
+      />
+      <ListSelectionModal 
+        visible={isSearchModalVisible} 
+        onClose={() => setIsSearchModalVisible(false)} 
+        onDone={handleDoneSearch} 
+        data={filteredRestaurants.length > 0 ? filteredRestaurants : [
+          // Fallback data in case filteredRestaurants is empty
+          { id: 'placeholder', name: 'No restaurants found', subtext: 'Try a different search' }
+        ]} 
+        title="Search Restaurant"
+        onSearchChange={setSearchQuery}
+        searchQuery={searchQuery}
+      />
 
-    <DealPreviewScreen
-      visible={isPreviewVisible}
-      onClose={() => setIsPreviewVisible(false)}
-      onPost={handlePost}
-      dealTitle={dealTitle}
-      dealDetails={dealDetails}
-      imageUri={imageUri}
-      expirationDate={expirationDate}
-      selectedRestaurant={selectedRestaurant}
-      selectedCategories={selectedCategories.map(id => DEAL_CATEGORIES.find(cat => cat.id === id)?.name).filter((name): name is string => !!name)}
-    />
+      <DealPreviewScreen
+        visible={isPreviewVisible}
+        onClose={() => setIsPreviewVisible(false)}
+        onPost={handlePost}
+        dealTitle={dealTitle}
+        dealDetails={dealDetails}
+        imageUri={imageUri}
+        expirationDate={expirationDate}
+        selectedRestaurant={selectedRestaurant}
+        selectedCategories={selectedCategories.map(id => categories.find(cat => cat.id === id)?.name).filter((name): name is string => !!name)}
+        userData={userData} // Pass the user data here
+      />
 
-    <BottomNavigation
-      photoUrl={require('../../../img/Default_pfp.svg.png')}
-      activeTab="contribute"
-      onTabPress={(tab) => console.log('Tab pressed:', tab)}
-    />
-  </View>
+      <BottomNavigation
+        photoUrl={require('../../../img/Default_pfp.svg.png')}
+        activeTab="contribute"
+        onTabPress={(tab) => console.log('Tab pressed:', tab)}
+      />
+    </View>
   );
 }
 
@@ -485,5 +559,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
     flex: 1,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    zIndex: 1000,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });

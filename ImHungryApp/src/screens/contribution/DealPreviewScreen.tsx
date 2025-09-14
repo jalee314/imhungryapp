@@ -15,7 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 interface Restaurant {
   id: string;
   name: string;
-  subtext: string;
+  subtext: string; // This will be used for the address
+}
+
+interface User {
+  username: string;
+  profilePicture: string | null;
+  city: string;
+  state: string;
 }
 
 interface DealPreviewScreenProps {
@@ -28,6 +35,7 @@ interface DealPreviewScreenProps {
     expirationDate: string | null;
     selectedRestaurant: Restaurant | null;
     selectedCategories: string[];
+    userData: User;
 }
 
 const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
@@ -40,6 +48,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     expirationDate,
     selectedRestaurant,
     selectedCategories,
+    userData,
 }) => {
     const formatDate = (dateString: string | null) => {
         if (!dateString || dateString === 'Unknown') return 'Not Known';
@@ -71,22 +80,27 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         <View style={styles.restaurantHeader}>
                             <View style={styles.restaurantInfo}>
                                 <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
-                                <Text style={styles.restaurantSubtext}>{categoryText}</Text>
+                                <Text style={styles.restaurantSubtext}>3mi away • {categoryText}</Text>
                                 <Text style={styles.restaurantSubtext}>{selectedRestaurant?.subtext}</Text>
                                 <Text style={styles.restaurantSubtext}>Expires - {formatDate(expirationDate)}</Text>
                             </View>
                             <Ionicons name="navigate-circle-outline" size={24} color="black" />
                         </View>
 
-                        {imageUri && <Image source={{ uri: imageUri }} style={styles.dealImage} />}
                         <Text style={styles.dealTitle}>{dealTitle}</Text>
+                        {imageUri && <Image source={{ uri: imageUri }} style={styles.dealImage} />}
                         {dealDetails ? <Text style={styles.dealDetails}>{dealDetails}</Text> : null}
 
                         <View style={styles.sharedByContainer}>
-                            <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.pfp} />
+                            {userData.profilePicture ? (
+                                <Image source={{ uri: userData.profilePicture }} style={styles.pfp} />
+                            ) : (
+                                <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.pfp} />
+                            )}
                             <View>
-                                <Text style={styles.sharedByText}><Text style={{ fontWeight: 'bold' }}>Shared By:</Text> The Hungry Monster</Text>
-                                <Text style={styles.sharedByText}>Fullerton, California</Text>
+                                <Text style={styles.sharedByLabel}>Shared By</Text>
+                                <Text style={styles.userName}>{userData.username}</Text>
+                                <Text style={styles.userLocation}>{`${userData.city}, ${userData.state}`}</Text>
                             </View>
                         </View>
                     </View>
@@ -155,6 +169,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000000',
     marginBottom: 4,
+    lineHeight: 19,
   },
   restaurantSubtext: {
     fontFamily: 'Inter',
@@ -162,18 +177,20 @@ const styles = StyleSheet.create({
     color: '#555555',
     lineHeight: 18,
   },
+  dealTitle: {
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    fontSize: 16,
+    lineHeight: 19,
+    color: '#000000',
+    marginBottom: 8,
+  },
   dealImage: {
     width: '100%',
     aspectRatio: 4 / 3,
     borderRadius: 10,
     backgroundColor: '#EFEFEF',
-  },
-  dealTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 14,
-    lineHeight: 17,
-    color: '#000000',
+    marginBottom: 8,
   },
   dealDetails: {
     fontFamily: 'Inter',
@@ -184,7 +201,7 @@ const styles = StyleSheet.create({
   },
   sharedByContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
     paddingTop: 16,
     borderTopWidth: 0.5,
@@ -196,7 +213,22 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
   },
-  sharedByText: {
+  sharedByLabel: {
+    fontFamily: 'Inter',
+    fontSize: 10,
+    lineHeight: 15,
+    letterSpacing: 0.02,
+    color: '#000000',
+  },
+  userName: {
+    fontFamily: 'Inter',
+    fontSize: 10,
+    lineHeight: 15,
+    letterSpacing: 0.02,
+    color: '#000000',
+    fontWeight: 'bold',
+  },
+  userLocation: {
     fontFamily: 'Inter',
     fontSize: 10,
     lineHeight: 15,
