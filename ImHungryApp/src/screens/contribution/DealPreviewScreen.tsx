@@ -84,7 +84,6 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                                 <Text style={styles.restaurantSubtext}>{selectedRestaurant?.subtext}</Text>
                                 <Text style={styles.restaurantSubtext}>Expires - {formatDate(expirationDate)}</Text>
                             </View>
-                            <Ionicons name="navigate-circle-outline" size={24} color="black" />
                         </View>
 
                         <Text style={styles.dealTitle}>{dealTitle}</Text>
@@ -140,8 +139,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   scrollContainer: {
-    alignItems: 'center',
-    padding: 12,
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 12,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -153,11 +153,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
-    gap: 16,
+    gap: 8,
   },
   restaurantHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   restaurantInfo: {
     flex: 1,
@@ -168,14 +169,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     color: '#000000',
-    marginBottom: 4,
-    lineHeight: 19,
+    lineHeight: 15,
   },
   restaurantSubtext: {
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#555555',
-    lineHeight: 18,
+    lineHeight: 15,
   },
   dealTitle: {
     fontFamily: 'Inter',
@@ -183,14 +183,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 19,
     color: '#000000',
-    marginBottom: 8,
   },
   dealImage: {
     width: '100%',
-    aspectRatio: 4 / 3,
+    aspectRatio: 4 / 5,
     borderRadius: 10,
     backgroundColor: '#EFEFEF',
-    marginBottom: 8,
   },
   dealDetails: {
     fontFamily: 'Inter',
@@ -204,13 +202,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 8,
     paddingTop: 16,
-    borderTopWidth: 0.5,
-    borderTopColor: '#EAEAEA',
-    marginTop: 8,
+    width: 244.25,
   },
   pfp: {
-    width: 50,
-    height: 50,
+    width: 50.25,
+    height: 50.25,
     borderRadius: 25,
   },
   sharedByLabel: {

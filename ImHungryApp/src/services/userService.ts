@@ -3,24 +3,16 @@ import { supabase } from '../../lib/supabase';
 
 // Get public URL for a file in Supabase Storage
 const getPublicUrl = (path: string) => {
-  // First determine the bucket name from the path
-  // Example: "public/user_jasonklee1003_jasklee_1757535543645.jpg"
-  // Bucket name would be "public"
-  const parts = path.split('/');
-  const bucketName = parts[0]; // 'public'
-  
-  // The file path is everything after the bucket name
-  const filePath = parts.slice(1).join('/'); // 'user_jasonklee1003_jasklee_1757535543645.jpg'
-  
-  // Get the public URL
+  // Profile photos are stored in the 'avatars' bucket
+  // The path in the database is just the filename (e.g., "public/user_jasonklee1003_jasklee_1757535543645.jpg")
   const { data } = supabase
     .storage
-    .from(bucketName)
-    .getPublicUrl(filePath);
+    .from('avatars')
+    .getPublicUrl(path);
   
-  console.log('Generated public URL:', data.publicUrl);
   return data.publicUrl;
 };
+
 
 // Define the User interface to match your database schema
 export interface User {
@@ -93,24 +85,20 @@ export const fetchUserData = async (): Promise<UserDisplayData> => {
 
     // Important: Process the profile photo URL
     let profilePicture = null;
-    if (userData.profile_photo) {
-      // If it's already a complete URL
-      if (userData.profile_photo.startsWith('http')) {
-        profilePicture = userData.profile_photo;
-      } 
-      // If it's a Supabase storage path
-      else {
-        profilePicture = getPublicUrl(userData.profile_photo);
+      if (userData.profile_photo) {
+        if (userData.profile_photo.startsWith('http')) {
+          profilePicture = userData.profile_photo;
+        } else {
+          profilePicture = getPublicUrl(userData.profile_photo);
+        }
       }
-      console.log('Profile picture URL:', profilePicture);
-    }
 
-    const displayData = {
-      username: userData.display_name,
-      profilePicture: profilePicture,
-      city: userData.location_city || 'Unknown',
-      state: 'CA', // Adjust based on your schema
-    };
+      const displayData: UserDisplayData = {
+        username: userData.display_name,
+        profilePicture: profilePicture,
+        city: userData.location_city || 'Unknown',
+        state: 'CA',
+      };
 
     // Cache the data
     await AsyncStorage.setItem('userData', JSON.stringify(displayData));
@@ -151,10 +139,20 @@ export const updateUserData = async (updates: Partial<User>): Promise<UserDispla
       throw error;
     }
 
+    // Process the profile photo URL
+    let profilePicture = null;
+    if (data.profile_photo) {
+      if (data.profile_photo.startsWith('http')) {
+        profilePicture = data.profile_photo;
+      } else {
+        profilePicture = getPublicUrl(data.profile_photo);
+      }
+    }
+
     // Transform and cache the updated data
     const displayData: UserDisplayData = {
       username: data.display_name,
-      profilePicture: data.profile_photo,
+      profilePicture: profilePicture,
       city: data.location_city || 'Unknown',
       state: 'CA',
     };

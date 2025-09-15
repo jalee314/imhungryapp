@@ -21,7 +21,8 @@ import PhotoActionModal from '../../components/PhotoActionModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../context/DataCacheContext'; // Import the context hook
-import { fetchUserData } from '../../services/userService'; // Import your data fetching function
+import { fetchUserData, clearUserCache } from '../../services/userService'; // Import your data fetching function
+
 
 // --- Interfaces and Data ---
 interface Restaurant {
@@ -29,13 +30,6 @@ interface Restaurant {
   name: string;
   subtext: string;
 }
-
-const SEARCH_RESULTS: Restaurant[] = [
-  { id: '1', name: 'Taco Bell - Los Angeles', subtext: '123 Taco St, Los Angeles, CA 90001' },
-  { id: '2', name: 'Sushi One - Los Angeles', subtext: '456 Sushi Ave, Los Angeles, CA 90002' },
-  { id: '3', name: 'Burger Palace - Los Angeles', subtext: '789 Burger Blvd, Los Angeles, CA 90003' },
-  { id: '4', name: 'Tous les Jours - La Habra', subtext: '1130 S Beach Blvd, La Habra, CA 90631' },
-];
 
 export default function DealCreationScreen() {
   // Get data from the context
@@ -67,10 +61,9 @@ export default function DealCreationScreen() {
   const titleInputRef = useRef(null);
 
   useEffect(() => {
-    // Fetch user data when component mounts
     const loadUserData = async () => {
       try {
-        const data = await fetchUserData(); // Your function to get user data from database
+        const data = await fetchUserData();
         setUserData(data);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -78,7 +71,8 @@ export default function DealCreationScreen() {
     };
     
     loadUserData();
-  }, []);
+}, []);
+
 
   // Filter restaurants based on search query
   const filteredRestaurants = restaurants
@@ -102,14 +96,18 @@ export default function DealCreationScreen() {
 
   const handleTakePhoto = async () => {
     let result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality: 1 });
-    if (!result.canceled) setImageUri(result.assets[0].uri);
-    handleCloseCameraModal();
+    handleCloseCameraModal(); // Close the modal after image picker completes
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
   };
 
   const handleChooseFromAlbum = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [4, 3], quality: 1 });
-    if (!result.canceled) setImageUri(result.assets[0].uri);
-    handleCloseCameraModal();
+    handleCloseCameraModal(); // Close the modal after image picker completes
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
   };
 
   const handleConfirmDate = (date: string | null) => {
@@ -380,9 +378,9 @@ export default function DealCreationScreen() {
       />
 
       <BottomNavigation
-        photoUrl={require('../../../img/Default_pfp.svg.png')}
-        activeTab="contribute"
-        onTabPress={(tab) => console.log('Tab pressed:', tab)}
+          photoUrl={userData.profilePicture ? { uri: userData.profilePicture } : require('../../../img/Default_pfp.svg.png')}
+          activeTab="contribute"
+          onTabPress={(tab) => console.log('Tab pressed:', tab)}
       />
     </View>
   );
