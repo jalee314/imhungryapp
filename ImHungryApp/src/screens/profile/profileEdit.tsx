@@ -36,7 +36,6 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   // Dynamic spacing calculations
   const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));  // between inputs
 
-  // Orange County cities for autocomplete
   const commonCities = [
     'Anaheim, CA', 'Santa Ana, CA', 'Irvine, CA', 'Huntington Beach, CA',
     'Garden Grove, CA', 'Orange, CA', 'Fullerton, CA', 'Costa Mesa, CA',
@@ -45,33 +44,15 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
     'Stanton, CA', 'La Habra, CA', 'Placentia, CA', 'Brea, CA',
     'Laguna Niguel, CA', 'Fountain Valley, CA', 'Aliso Viejo, CA', 'La Palma, CA',
     'Seal Beach, CA', 'Laguna Hills, CA', 'Dana Point, CA', 'San Clemente, CA',
-    'Laguna Beach, CA', 'Villa Park, CA', 'Los Alamitos, CA', 'Rancho Santa Margarita, CA',
-    'Ladera Ranch, CA', 'Coto de Caza, CA', 'Trabuco Canyon, CA', 'Silverado, CA',
-    'Modjeska Canyon, CA', 'El Toro, CA', 'Lemon Heights, CA', 'North Tustin, CA',
-    'Orange Park Acres, CA', 'Anaheim Hills, CA', 'Yorba Linda, CA', 'East Anaheim, CA',
-    'West Anaheim, CA', 'Central Anaheim, CA', 'Canyon, CA', 'Santiago Hills, CA',
-    'Portola Hills, CA', 'Foothill Ranch, CA', 'Woodbridge, CA', 'University Park, CA',
-    'Turtle Rock, CA', 'Shady Canyon, CA', 'Quail Hill, CA', 'Oak Creek, CA',
-    'Northwood, CA', 'Meadowood, CA', 'Laguna Altura, CA', 'Hidden Hills, CA',
-    'El Camino Real, CA', 'Deerfield, CA', 'Cypress Village, CA', 'Colony Park, CA',
-    'Canyon View, CA', 'Canyon Creek, CA', 'Canyon Crest, CA', 'Canyon Gate, CA',
-    'Canyon Hills, CA', 'Canyon Park, CA', 'Canyon Ridge, CA', 'Canyon View Estates, CA',
-    'Canyon Woods, CA', 'Canyon Acres, CA', 'Canyon Heights, CA', 'Canyon Lake, CA',
-    'Canyon Meadows, CA', 'Canyon Oaks, CA', 'Canyon Pines, CA', 'Canyon Pointe, CA',
-    'Canyon Springs, CA', 'Canyon Terrace, CA', 'Canyon Valley, CA', 'Canyon Vista, CA',
-    'Canyon West, CA', 'Canyon Woods Estates, CA', 'Canyon Crest Estates, CA',
-    'Canyon Gate Estates, CA', 'Canyon Hills Estates, CA', 'Canyon Park Estates, CA',
-    'Canyon Ridge Estates, CA', 'Canyon View Estates, CA', 'Canyon Woods Estates, CA'
+    'Laguna Beach, CA', 'Villa Park, CA', 'Los Alamitos, CA', 'Rancho Santa Margarita, CA'
   ];
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field as keyof typeof errors]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
 
-    // Handle username validation
     if (field === 'username') {
       if (value.length > 15) {
         setErrors(prev => ({ ...prev, username: 'Username must be less than 15 characters.' }));
@@ -83,7 +64,6 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
       }
     }
 
-    // Handle email validation
     if (field === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (value.length > 0 && !emailRegex.test(value)) {
@@ -92,12 +72,11 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
       }
     }
 
-    // Handle city autocomplete
     if (field === 'city') {
       if (value.length > 0) {
         const filtered = commonCities.filter(city => 
           city.toLowerCase().includes(value.toLowerCase())
-        ).slice(0, 5); // Show max 5 suggestions
+        ).slice(0, 5);
         setCitySuggestions(filtered);
         setShowCitySuggestions(true);
       } else {
@@ -118,39 +97,29 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
-    if (formData.username.length < 3) {
-      Alert.alert('Error', 'Username must be at least 3 characters long');
-      return;
-    }
-    if (formData.username.length > 15) {
-      Alert.alert('Error', 'Username must be less than 15 characters');
+    if (formData.username.length < 3 || formData.username.length > 15) {
+      Alert.alert('Error', 'Username must be 3-15 characters long');
       return;
     }
     
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
-
+    
     setLoading(true);
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         Alert.alert('Error', 'User not found');
         return;
       }
 
-      // Split full name into first and last name
       const nameParts = formData.fullName.trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      // Update both auth.users and public.user tables
-      
-      // First, update auth.users metadata
       const { error: authError } = await supabase.auth.updateUser({
         email: formData.email,
         data: {
@@ -170,7 +139,6 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
         throw authError;
       }
 
-      // Then, update public.user table
       const { error: userError } = await supabase
         .from('user')
         .update({
@@ -193,6 +161,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
         }
         throw userError;
       }
+      
       Alert.alert('Success', 'Profile updated successfully!', [
         { text: 'OK', onPress: () => (navigation as any).goBack() }
       ]);
@@ -213,16 +182,16 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      
+        
       {/* Header */}
-      <View style={styles.header}>
+        <View style={styles.header}>
         <TouchableOpacity onPress={() => (navigation as any).goBack()}>
           <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+              </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <View style={styles.headerSpacer} />
-      </View>
-
+          </View>
+          
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={styles.keyboardView}
@@ -266,16 +235,16 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                         <Text style={styles.suggestionText}>{city}</Text>
                       </TouchableOpacity>
                     ))}
-                  </View>
-                )}
               </View>
+            )}
+          </View>
             ))}
           </View>
         </ScrollView>
 
         {/* Save Button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={[styles.saveButton, loading && styles.disabledButton]}
             onPress={handleSave}
             disabled={loading}
@@ -331,7 +300,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   textInput: {
-    backgroundColor: 'rgba(255, 245, 171, 0.1)',
+    backgroundColor: '#FFFFFF',
     height: 45,
   },
   errorText: {

@@ -18,6 +18,11 @@ import InstantNotifications from './src/screens/onboarding/InstantNotifications'
 import CuisinePreferences from './src/screens/onboarding/CuisinePreferences';
 import ProfilePage from './src/screens/profile/ProfilePage';
 import profileEdit from './src/screens/profile/profileEdit';
+import BlockedUsersPage from './src/screens/profile/BlockedUsersPage';
+import ContactUsPage from './src/screens/profile/ContactUsPage';
+import FAQPage from './src/screens/profile/FAQPage';
+import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
+import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +40,11 @@ const OnboardingStack = () => (
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
     <Stack.Screen name="profileEdit" component={profileEdit} />
+    <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
+    <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
+    <Stack.Screen name="FAQPage" component={FAQPage} />
+    <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
+    <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
   </Stack.Navigator>
 );
 
