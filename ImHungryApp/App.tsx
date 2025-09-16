@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
+import * as Font from 'expo-font';
 import * as Linking from 'expo-linking';
 
 
@@ -17,6 +18,15 @@ import LocationPermissions from './src/screens/onboarding/LocationPermissions';
 import InstantNotifications from './src/screens/onboarding/InstantNotifications';
 import CuisinePreferences from './src/screens/onboarding/CuisinePreferences';
 import ProfilePage from './src/screens/profile/ProfilePage';
+import profileEdit from './src/screens/profile/profileEdit';
+import BlockedUsersPage from './src/screens/profile/BlockedUsersPage';
+import ContactUsPage from './src/screens/profile/ContactUsPage';
+import FAQPage from './src/screens/profile/FAQPage';
+import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
+import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
+import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
+import { DataCacheProvider } from './src/context/DataCacheContext';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +43,13 @@ const OnboardingStack = () => (
     <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
+    <Stack.Screen name="profileEdit" component={profileEdit} />
+    <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
+    <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
+    <Stack.Screen name="FAQPage" component={FAQPage} />
+    <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
+    <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
+    <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
   </Stack.Navigator>
 );
 
@@ -56,11 +73,13 @@ const linking = {
   },
 };
 
+
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
     'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
     'Manrope-Bold': require('./assets/fonts/Manrope-Bold.ttf'),
+    'MuseoModerno-Bold': require('./assets/fonts/MuseoModerno-Bold.ttf'),
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);
@@ -94,8 +113,10 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer linking={linking}>
-      {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-    </NavigationContainer>
+    <DataCacheProvider>
+      <NavigationContainer linking={linking}>
+        {isLoggedIn ? <AppStack /> : <OnboardingStack />}
+      </NavigationContainer>
+    </DataCacheProvider>
   );
 }
