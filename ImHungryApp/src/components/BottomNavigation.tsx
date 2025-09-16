@@ -1,43 +1,73 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { fetchUserData } from '../services/userService';
 
 interface BottomNavigationProps {
-  photoUrl?: string | null;
+  photoUrl?: any; // Optional override for profile photo
   activeTab?: string;
   onTabPress?: (tab: string) => void;
 }
 
 const BottomNavigation: React.FC<BottomNavigationProps> = ({ 
-  photoUrl, 
+  photoUrl: propPhotoUrl, 
   activeTab = 'profile',
   onTabPress 
 }) => {
+  const navigation = useNavigation();
+  const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = await fetchUserData();
+        setUserPhotoUrl(userData.profilePicture);
+      } catch (error) {
+        console.error('Error fetching user data for navbar:', error);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
   const navItems = [
-    { id: 'home', icon: '⊞', label: 'Home' },
-    { id: 'search', icon: '🔍', label: 'Search' },
-    { id: 'create', icon: '+', label: 'Create' },
-    { id: 'favorites', icon: '♡', label: 'Favorites' },
-    { id: 'profile', icon: 'profile', label: 'Profile' },
+    { id: 'home', icon: 'home-outline', label: 'Home', screen: 'HomeScreen' },
+    { id: 'search', icon: 'magnify', label: 'Search', screen: 'SearchScreen' },
+    { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
+    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesScreen' },
+    { id: 'profile', icon: 'account-circle-outline', label: 'Profile', screen: 'ProfilePage' },
   ];
 
-  const handleTabPress = (tabId: string) => {
+  const handleTabPress = (screenName: string) => {
+    navigation.navigate(screenName as never);
+
     if (onTabPress) {
-      onTabPress(tabId);
+      const tab = navItems.find(item => item.screen === screenName);
+      if (tab) {
+        onTabPress(tab.id);
+      }
     }
   };
 
-  const renderNavItem = (item: { id: string; icon: string; label: string }) => {
+  const renderNavItem = (item: { id: string; icon: any; label: string, screen: string }) => {
     const isActive = activeTab === item.id;
     
     if (item.id === 'profile') {
+      // Use prop photoUrl if provided, otherwise use fetched user photo
+      const displayPhotoUrl = propPhotoUrl || userPhotoUrl;
+      
       return (
         <TouchableOpacity
           key={item.id}
           style={[styles.navItem, isActive && styles.activeNavItem]}
-          onPress={() => handleTabPress(item.id)}
+          onPress={() => handleTabPress(item.screen)}
         >
-          {photoUrl ? (
-            <Image source={{ uri: photoUrl }} style={styles.navProfilePhoto} />
+          {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
+            <Image source={{ uri: displayPhotoUrl }} style={styles.navProfilePhoto} />
+          ) : displayPhotoUrl ? (
+            <Image source={displayPhotoUrl} style={styles.navProfilePhoto} />
           ) : (
             <View style={styles.navProfilePlaceholder}>
               <Text style={styles.navPlaceholderText}>👤</Text>
@@ -51,11 +81,13 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       <TouchableOpacity
         key={item.id}
         style={[styles.navItem, isActive && styles.activeNavItem]}
-        onPress={() => handleTabPress(item.id)}
+        onPress={() => handleTabPress(item.screen)}
       >
-        <Text style={[styles.navIcon, isActive && styles.activeNavIcon]}>
-          {item.icon}
-        </Text>
+        <MaterialCommunityIcons 
+          name={item.icon} 
+          size={28} 
+          color={isActive ? '#FFA05C' : '#666'} 
+        />
       </TouchableOpacity>
     );
   };
@@ -81,8 +113,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     justifyContent: 'space-around',
     alignItems: 'center',
-    // Add safe area padding for devices with home indicators
-    paddingBottom: 34, // Adjust this value based on your device's safe area
+    paddingBottom: 34,
   },
   navItem: {
     alignItems: 'center',
@@ -99,14 +130,14 @@ const styles = StyleSheet.create({
     color: '#FFA05C',
   },
   navProfilePhoto: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
   navProfilePlaceholder: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
