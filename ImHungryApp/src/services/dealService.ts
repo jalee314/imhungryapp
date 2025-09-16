@@ -112,12 +112,6 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       imageUri: dealData.imageUri ? 'Present' : 'None'
     });
 
-    // Check for profanity before proceeding
-    const profanityCheck = await checkDealContentForProfanity(dealData.title, dealData.description);
-    if (!profanityCheck.success) {
-      return { success: false, error: profanityCheck.error };
-    }
-
     // Get current user ID
     const userId = await getCurrentUserId();
     if (!userId) {

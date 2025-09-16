@@ -22,7 +22,7 @@ import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../context/DataCacheContext';
 import { fetchUserData, clearUserCache } from '../../services/userService';
-import { createDeal } from '../../services/dealService'; // Import the deal service
+import { createDeal, checkDealContentForProfanity } from '../../services/dealService'; // Import the deal service
 
 // --- Interfaces and Data ---
 interface Restaurant {
@@ -140,11 +140,24 @@ export default function DealCreationScreen() {
     setIsSearchModalVisible(true);
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
     if (!selectedRestaurant || !dealTitle) {
       Alert.alert("Missing Information", "Please select a restaurant and add a deal title to continue.");
       return;
     }
+
+    // Check for profanity before showing preview
+    try {
+      const profanityCheck = await checkDealContentForProfanity(dealTitle, dealDetails);
+      if (!profanityCheck.success) {
+        Alert.alert("Content Review", profanityCheck.error);
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking profanity:', error);
+      // If profanity check fails, show preview anyway
+    }
+
     setIsPreviewVisible(true);
   };
 
@@ -167,6 +180,12 @@ export default function DealCreationScreen() {
         cuisineId: selectedCuisine,
         isAnonymous: isAnonymous,
       };
+
+      // Check for profanity before proceeding
+      const profanityCheck = await checkDealContentForProfanity(dealData.title, dealData.description);
+      if (!profanityCheck.success) {
+        return { success: false, error: profanityCheck.error };
+      }
 
       const result = await createDeal(dealData);
       
