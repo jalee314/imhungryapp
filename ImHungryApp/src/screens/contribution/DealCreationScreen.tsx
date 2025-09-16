@@ -20,9 +20,9 @@ import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
-import { useDataCache } from '../../context/DataCacheContext'; // Import the context hook
-import { fetchUserData, clearUserCache } from '../../services/userService'; // Import your data fetching function
-
+import { useDataCache } from '../../context/DataCacheContext';
+import { fetchUserData, clearUserCache } from '../../services/userService';
+import { createDeal } from '../../services/dealService'; // Import the deal service
 
 // --- Interfaces and Data ---
 interface Restaurant {
@@ -50,12 +50,14 @@ export default function DealCreationScreen() {
   const [isFoodTagsModalVisible, setIsFoodTagsModalVisible] = useState(false);
   const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedFoodTags, setSelectedFoodTags] = useState<string[]>([]);
+  // Changed from arrays to single values
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -71,12 +73,11 @@ export default function DealCreationScreen() {
     };
     
     loadUserData();
-}, []);
-
+  }, []);
 
   // Filter restaurants based on search query
   const filteredRestaurants = restaurants
-    .filter(r => r && r.name && r.address) // Ensure we have valid data
+    .filter(r => r && r.name && r.address)
     .map(r => ({
       id: r.id,
       name: r.name,
@@ -88,15 +89,13 @@ export default function DealCreationScreen() {
       r.subtext.toLowerCase().includes(searchQuery.toLowerCase())
     );
   
-  // Debug logging
-  
   // All existing handler functions remain the same
   const handleAddPhoto = () => setIsCameraModalVisible(true);
   const handleCloseCameraModal = () => setIsCameraModalVisible(false);
 
   const handleTakePhoto = async () => {
     let result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality: 1 });
-    handleCloseCameraModal(); // Close the modal after image picker completes
+    handleCloseCameraModal();
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
     }
@@ -104,7 +103,7 @@ export default function DealCreationScreen() {
 
   const handleChooseFromAlbum = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [4, 3], quality: 1 });
-    handleCloseCameraModal(); // Close the modal after image picker completes
+    handleCloseCameraModal();
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
     }
@@ -115,13 +114,15 @@ export default function DealCreationScreen() {
     setIsCalendarModalVisible(false);
   };
 
-  const handleDoneCategories = (categories: string[]) => {
-    setSelectedCategories(categories);
+  // Updated to handle single selection
+  const handleDoneCategories = (categoryIds: string[]) => {
+    setSelectedCategory(categoryIds.length > 0 ? categoryIds[0] : null);
     setIsCategoriesModalVisible(false);
   };
 
-  const handleDoneFoodTags = (tags: string[]) => {
-    setSelectedFoodTags(tags);
+  // Updated to handle single selection
+  const handleDoneCuisines = (cuisineIds: string[]) => {
+    setSelectedCuisine(cuisineIds.length > 0 ? cuisineIds[0] : null);
     setIsFoodTagsModalVisible(false);
   };
 
@@ -135,7 +136,7 @@ export default function DealCreationScreen() {
 
   const handleClearRestaurant = () => setSelectedRestaurant(null);
   const handleSearchPress = () => {
-    setSearchQuery(''); // Reset search query when opening modal
+    setSearchQuery('');
     setIsSearchModalVisible(true);
   };
 
@@ -147,11 +148,59 @@ export default function DealCreationScreen() {
     setIsPreviewVisible(true);
   };
 
-  const handlePost = () => {
-    console.log("Posting Deal...");
-    // Future: Add logic to submit data to your backend
-    setIsPreviewVisible(false);
-    // Optional: Navigate away or clear the form upon successful post
+  const handlePost = async () => {
+    if (!selectedRestaurant || !dealTitle) {
+      Alert.alert("Missing Information", "Please select a restaurant and add a deal title to continue.");
+      return;
+    }
+
+    setIsPosting(true);
+    
+    try {
+      const dealData = {
+        title: dealTitle,
+        description: dealDetails,
+        imageUri: imageUri,
+        expirationDate: expirationDate,
+        restaurantId: selectedRestaurant.id,
+        categoryId: selectedCategory,
+        cuisineId: selectedCuisine,
+        isAnonymous: isAnonymous,
+      };
+
+      const result = await createDeal(dealData);
+      
+      if (result.success) {
+        Alert.alert(
+          "Success!", 
+          "Your deal has been posted successfully!", 
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Clear the form
+                setDealTitle('');
+                setDealDetails('');
+                setImageUri(null);
+                setExpirationDate(null);
+                setSelectedCategory(null);
+                setSelectedCuisine(null);
+                setSelectedRestaurant(null);
+                setIsAnonymous(false);
+                setIsPreviewVisible(false);
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Error", result.error || "Failed to post deal. Please try again.");
+      }
+    } catch (error) {
+      console.error('Error posting deal:', error);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const formatDate = (dateString: string | null) => {
@@ -180,19 +229,15 @@ export default function DealCreationScreen() {
     }, 100);
   };
 
-  // Helper functions to display selected items
-  const getSelectedCategoryNames = () => {
-    return selectedCategories
-      .map(id => categories.find(c => c.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
+  // Helper functions to display selected items (updated for single selection)
+  const getSelectedCategoryName = () => {
+    if (!selectedCategory) return '';
+    return categories.find(c => c.id === selectedCategory)?.name || '';
   };
 
-  const getSelectedCuisineNames = () => {
-    return selectedFoodTags
-      .map(id => cuisines.find(c => c.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
+  const getSelectedCuisineName = () => {
+    if (!selectedCuisine) return '';
+    return cuisines.find(c => c.id === selectedCuisine)?.name || '';
   };
 
   return (
@@ -288,8 +333,8 @@ export default function DealCreationScreen() {
             <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
               <Ionicons name="grid-outline" size={24} color="#606060" />
               <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Deal Categories</Text>
-                {selectedCategories.length > 0 && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryNames()}</Text>}
+                <Text style={styles.optionText}>Deal Category</Text>
+                {selectedCategory && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryName()}</Text>}
               </View>
               <Ionicons name="chevron-forward" size={20} color="black" />
             </TouchableOpacity>
@@ -298,7 +343,7 @@ export default function DealCreationScreen() {
               <Ionicons name="pricetag-outline" size={24} color="#606060" />
               <View style={styles.optionTextContainer}>
                 <Text style={styles.optionText}>Cuisine Tag</Text>
-                {selectedFoodTags.length > 0 && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineNames()}</Text>}
+                {selectedCuisine && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineName()}</Text>}
               </View>
               <Ionicons name="chevron-forward" size={20} color="black" />
             </TouchableOpacity>
@@ -339,24 +384,25 @@ export default function DealCreationScreen() {
         visible={isCategoriesModalVisible} 
         onClose={() => setIsCategoriesModalVisible(false)} 
         onDone={handleDoneCategories} 
-        initialSelected={selectedCategories} 
-        data={categories} // Using data from context
-        title="Add Deal Category" 
+        initialSelected={selectedCategory ? [selectedCategory] : []} 
+        data={categories}
+        title="Select Deal Category" 
+        singleSelect={true}
       />
       <ListSelectionModal 
         visible={isFoodTagsModalVisible} 
         onClose={() => setIsFoodTagsModalVisible(false)} 
-        onDone={handleDoneFoodTags} 
-        initialSelected={selectedFoodTags} 
-        data={cuisines} // Using data from context
-        title="Food Tags" 
+        onDone={handleDoneCuisines} 
+        initialSelected={selectedCuisine ? [selectedCuisine] : []} 
+        data={cuisines}
+        title="Select Cuisine Tag" 
+        singleSelect={true}
       />
       <ListSelectionModal 
         visible={isSearchModalVisible} 
         onClose={() => setIsSearchModalVisible(false)} 
         onDone={handleDoneSearch} 
         data={filteredRestaurants.length > 0 ? filteredRestaurants : [
-          // Fallback data in case filteredRestaurants is empty
           { id: 'placeholder', name: 'No restaurants found', subtext: 'Try a different search' }
         ]} 
         title="Search Restaurant"
@@ -373,8 +419,9 @@ export default function DealCreationScreen() {
         imageUri={imageUri}
         expirationDate={expirationDate}
         selectedRestaurant={selectedRestaurant}
-        selectedCategories={selectedCategories.map(id => categories.find(cat => cat.id === id)?.name).filter((name): name is string => !!name)}
-        userData={userData} // Pass the user data here
+        selectedCategory={getSelectedCategoryName()}
+        userData={userData}
+        isPosting={isPosting}
       />
 
       <BottomNavigation

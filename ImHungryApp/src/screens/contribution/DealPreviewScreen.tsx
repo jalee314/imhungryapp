@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,8 +35,9 @@ interface DealPreviewScreenProps {
     imageUri: string | null;
     expirationDate: string | null;
     selectedRestaurant: Restaurant | null;
-    selectedCategories: string[];
+    selectedCategory: string; // Changed from array to single string
     userData: User;
+    isPosting?: boolean; // Added loading state prop
 }
 
 const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
@@ -47,8 +49,9 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     imageUri,
     expirationDate,
     selectedRestaurant,
-    selectedCategories,
+    selectedCategory,
     userData,
+    isPosting = false,
 }) => {
     const formatDate = (dateString: string | null) => {
         if (!dateString || dateString === 'Unknown') return 'Not Known';
@@ -60,18 +63,24 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
         });
     };
 
-    const categoryText = selectedCategories.join(' & ');
-
     return (
         <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
             <SafeAreaView style={styles.container}>
                 <StatusBar style="dark" />
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={onClose}>
-                        <Ionicons name="arrow-back" size={24} color="#404040" />
+                    <TouchableOpacity onPress={onClose} disabled={isPosting}>
+                        <Ionicons name="arrow-back" size={24} color={isPosting ? "#ccc" : "#404040"} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.postButton} onPress={onPost}>
-                        <Text style={styles.postButtonText}>POST</Text>
+                    <TouchableOpacity 
+                        style={[styles.postButton, isPosting && styles.disabledButton]} 
+                        onPress={onPost}
+                        disabled={isPosting}
+                    >
+                        {isPosting ? (
+                            <ActivityIndicator size="small" color="#000000" />
+                        ) : (
+                            <Text style={styles.postButtonText}>POST</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
 
@@ -80,7 +89,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         <View style={styles.restaurantHeader}>
                             <View style={styles.restaurantInfo}>
                                 <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
-                                <Text style={styles.restaurantSubtext}>3mi away • {categoryText}</Text>
+                                <Text style={styles.restaurantSubtext}>3mi away • {selectedCategory}</Text>
                                 <Text style={styles.restaurantSubtext}>{selectedRestaurant?.subtext}</Text>
                                 <Text style={styles.restaurantSubtext}>Expires - {formatDate(expirationDate)}</Text>
                             </View>
@@ -132,6 +141,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    minWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   postButtonText: {
     color: '#000000',

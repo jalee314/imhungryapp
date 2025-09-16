@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -24,6 +24,9 @@ interface ListSelectionModalProps {
   initialSelected?: string[];
   data: ListItem[];
   title: string;
+  singleSelect?: boolean;
+  onSearchChange?: (query: string) => void;
+  searchQuery?: string;
 }
 
 const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
@@ -33,18 +36,53 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   initialSelected = [],
   data,
   title,
+  singleSelect = false,
+  onSearchChange,
+  searchQuery,
 }) => {
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState(searchQuery || '');
   const [selectedItems, setSelectedItems] = useState<string[]>(initialSelected);
 
   const isSearchModal = title === "Search Restaurant";
 
+  // Update selectedItems when modal becomes visible and initialSelected changes
+  useEffect(() => {
+    if (visible) {
+      setSelectedItems(initialSelected);
+    }
+  }, [visible, initialSelected.join(',')]); // Use join to avoid array reference issues
+
+  // Update searchText when modal becomes visible and searchQuery changes
+  useEffect(() => {
+    if (visible) {
+      setSearchText(searchQuery || '');
+    }
+  }, [visible, searchQuery]);
+
   const handleSelectItem = (itemId: string) => {
-    setSelectedItems(prev => (prev.includes(itemId) ? [] : [itemId]));
+    if (singleSelect || isSearchModal) {
+      // Single selection mode
+      setSelectedItems(prev => (prev.includes(itemId) ? [] : [itemId]));
+    } else {
+      // Multiple selection mode
+      setSelectedItems(prev => 
+        prev.includes(itemId) 
+          ? prev.filter(id => id !== itemId)
+          : [...prev, itemId]
+      );
+    }
   };
 
-  const filteredData = data.filter(item =>
-    item.name.toLowerCase().includes(searchText.toLowerCase()) || (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
+  const handleSearchChange = (text: string) => {
+    setSearchText(text);
+    if (onSearchChange) {
+      onSearchChange(text);
+    }
+  };
+
+  const filteredData = onSearchChange ? data : data.filter(item =>
+    item.name.toLowerCase().includes(searchText.toLowerCase()) || 
+    (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
   );
 
   const renderItem = ({ item }: { item: ListItem }) => (
@@ -88,7 +126,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
             style={styles.searchInput}
             placeholder="Search"
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={handleSearchChange}
           />
         </View>
 
