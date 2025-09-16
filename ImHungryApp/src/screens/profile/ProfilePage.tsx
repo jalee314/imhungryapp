@@ -1,24 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  View, Text, StyleSheet, ActivityIndicator, Image, 
-  TouchableOpacity, SafeAreaView, ScrollView 
+  View, Text, StyleSheet, Image, 
+  TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal 
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
 import BottomNavigation from '../../components/BottomNavigation';
+import * as ImagePicker from 'expo-image-picker';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-interface ProfilePageProps {
-  route?: {
-    params?: {
-      user_id?: string;
-      email?: string;
-    };
-  };
-}
+interface ProfilePageProps {}
 
 interface UserProfile {
-  [key: string]: any; // Flexible interface to handle any column names
+  [key: string]: any;
   display_name?: string | null;
   profile_photo?: string | null;
   created_at?: string | null;
@@ -30,56 +25,18 @@ interface UserProfile {
   signup_date?: string | null;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
+const ProfilePage: React.FC<ProfilePageProps> = () => {
   const navigation = useNavigation();
-  const user_id = route?.params?.user_id;
-  const email = route?.params?.email;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share'>('posts');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchProfile = async () => {
-    // Get current user from Supabase Auth if no user_id provided
-    let currentUserId = user_id;
-    if (!currentUserId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      currentUserId = user?.id;
-    }
-    
-    // If we have an email but no user_id, try to find user by email
-    if (!currentUserId && email) {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('user')
-          .select('*')
-          .eq('email', email)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile by email:', error);
-          setProfile(null);
-        } else if (data) {
-          setProfile(data);
-          // If a profile photo path exists, get its public URL
-          if (data.profile_photo && data.profile_photo !== 'default_avatar.png') {
-            const { data: urlData } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(data.profile_photo);
-            
-            setPhotoUrl(urlData.publicUrl);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile by email:', error);
-        setProfile(null);
-      }
-      setLoading(false);
-      return;
-    }
-    
-    if (!currentUserId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -89,7 +46,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
       const { data, error } = await supabase
         .from('user')
         .select('*')
-        .eq('user_id', currentUserId)
+        .eq('user_id', user.id)
         .single();
 
       if (error) {
@@ -97,11 +54,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
         setProfile(null);
       } else if (data) {
         setProfile(data);
-        // If a profile photo path exists, get its public URL
         if (data.profile_photo && data.profile_photo !== 'default_avatar.png') {
+          const photoPath = data.profile_photo.startsWith('public/') 
+            ? data.profile_photo 
+            : `public/${data.profile_photo}`;
+            
           const { data: urlData } = supabase.storage
             .from('avatars')
-            .getPublicUrl(data.profile_photo);
+            .getPublicUrl(photoPath);
           
           setPhotoUrl(urlData.publicUrl);
         }
@@ -115,40 +75,32 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
 
   useEffect(() => {
     fetchProfile();
-  }, [user_id, email]);
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
       fetchProfile();
-    }, [user_id, email])
+    }, [])
   );
 
   const formatJoinDate = (profile: UserProfile | null) => {
     if (!profile) return 'Joined recently';
     
-    // Try different possible date field names
-    const dateString = profile.created_at || profile.createdAt || profile.date_created || profile.inserted_at || profile.created || profile.registered_at || profile.signup_date;
+    const dateString = profile.created_at || profile.createdAt || profile.date_created || 
+                      profile.inserted_at || profile.created || profile.registered_at || profile.signup_date;
     
-    if (!dateString) {
-      console.log('Available profile fields:', Object.keys(profile));
-      return 'Joined recently';
-    }
+    if (!dateString) return 'Joined recently';
     
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        console.log('Invalid date string:', dateString);
-        return 'Joined recently';
-      }
-      return `Joined ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+    const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Joined recently';
+    return `Joined ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
     } catch (error) {
-      console.log('Error parsing date:', error, 'Date string:', dateString);
       return 'Joined recently';
     }
   };
 
   const getDisplayName = () => {
-    // Try different possible column names for username
     return profile?.username || profile?.user_name || profile?.display_name || profile?.name || '';
   };
 
@@ -156,10 +108,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
     const username = getDisplayName();
     const length = username.length;
     
-    // Adjust font size based on username length
-    if (length <= 8) return 24;      // Normal size for short usernames
-    if (length <= 12) return 22;     // Medium size for medium usernames
-    if (length <= 15) return 20;     
+    if (length <= 8) return 26;
+    if (length <= 12) return 24;
+    return 22;
   };
 
   
@@ -167,12 +118,237 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
     (navigation as any).navigate('profileEdit', { profile });
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FFA05C" />
-      </View>
+  const handleProfilePhotoPress = () => {
+    Alert.alert(
+      'Update Profile Photo',
+      'Choose how you want to update your profile photo',
+      [
+        {
+          text: 'Take Photo',
+          onPress: handleTakePhoto,
+        },
+        {
+          text: 'Choose from Library',
+          onPress: handleChooseFromLibrary,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
     );
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Sorry, we need camera permissions to take a photo!');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const handleChooseFromLibrary = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to select a photo!');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        Alert.alert('Error', 'Failed to log out. Please try again.');
+        return;
+      }
+      
+      setShowLogoutModal(false);
+      // Navigate to login page
+      (navigation as any).navigate('LogIn');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    }
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  const handleDeleteAccount = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure? All your information is going to be deleted.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) {
+                Alert.alert('Error', 'User not found');
+                return;
+              }
+
+      // Delete profile photo from storage if it exists
+      if (profile?.profile_photo && profile.profile_photo !== 'default_avatar.png') {
+        const photoPath = profile.profile_photo.startsWith('public/') 
+          ? profile.profile_photo 
+          : `public/${profile.profile_photo}`;
+          
+        const { error: deletePhotoError } = await supabase.storage
+          .from('avatars')
+          .remove([photoPath]);
+        
+        if (deletePhotoError) {
+          console.error('Error deleting profile photo:', deletePhotoError);
+        }
+      }
+
+      // Delete user from public.user table (if record exists)
+      const { error: deleteUserError } = await supabase
+        .from('user')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteUserError) {
+        console.error('Error deleting user from public.user:', deleteUserError);
+        // Don't fail if user record doesn't exist in public.user table
+      }
+
+      // Note: User will remain in auth.users table - delete manually from Supabase dashboard
+      console.log('User deleted from app. Manual deletion from auth.users required.');
+
+
+
+      // Sign out the user (this will end their session)
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) {
+        console.error('Error signing out user:', signOutError);
+        // Continue with deletion even if sign out fails
+      }
+
+              setShowDeleteModal(false);
+              Alert.alert('Success', 'Account deleted successfully');
+              
+              // Navigate to login page
+              (navigation as any).navigate('LogIn');
+            } catch (error) {
+              console.error('Error during account deletion:', error);
+              Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const cancelDeleteAccount = () => {
+    setShowDeleteModal(false);
+  };
+
+  const uploadPhoto = async (photoUri: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const fileExt = photoUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const userEmail = user.email || 'unknown';
+      const emailPrefix = userEmail.split('@')[0];
+      const fullName = profile?.display_name || profile?.username || 'user';
+      const cleanFullName = fullName.replace(/[^a-zA-Z0-9]/g, '');
+      const fileName = `public/${emailPrefix}_${cleanFullName}_${user.id}.${fileExt}`;
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: photoUri,
+        type: `image/${fileExt}`,
+        name: fileName,
+      } as any);
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, formData, {
+          contentType: `image/${fileExt}`,
+          upsert: false,
+          cacheControl: '3600'
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Delete old photo
+      if (profile?.profile_photo && profile.profile_photo !== 'default_avatar.png') {
+        const oldPhotoPath = profile.profile_photo.startsWith('public/') 
+          ? profile.profile_photo 
+          : `public/${profile.profile_photo}`;
+        await supabase.storage.from('avatars').remove([oldPhotoPath]);
+      }
+
+      // Update profile
+      await supabase.from('user').update({ profile_photo: fileName }).eq('user_id', user.id);
+      await supabase.auth.updateUser({ data: { profile_photo_url: fileName } });
+
+      // Update UI
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      setPhotoUrl(urlData.publicUrl);
+      await fetchProfile();
+      
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      Alert.alert('Error', 'Failed to update profile photo. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return null;
   }
 
   return (
@@ -180,44 +356,47 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
       <StatusBar style="dark" />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         
+        {/* User Profile Container */}
+        <View style={styles.userProfileContainer}>
         {/* Header Section with Profile Photo */}
         <View style={styles.header}>
           <View style={styles.leftSection}>
             <View style={styles.userInfo}>
               <Text style={[styles.userName, { fontSize: getUsernameFontSize() }]}>{getDisplayName()}</Text>
               <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-                <Text style={styles.editIcon}>✏️</Text>
+                <MaterialCommunityIcons name="pencil" size={16} color="#000" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.joinDate}>{formatJoinDate(profile)}</Text>
-            <Text style={styles.location}>Fullerton, CA</Text>
+              <Text style={styles.joinDate}>{formatJoinDate(profile)}</Text>
+              <Text style={styles.location}>{profile?.location_city || 'Location not set'}</Text>
+              
+              {/* Statistics - positioned in the same container */}
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>1</Text>
+                  <Text style={styles.statLabel}>Deals Posted</Text>
+                </View>
+              </View>
           </View>
           
           <View style={styles.rightSection}>
+              <TouchableOpacity 
+                style={styles.profilePhotoContainer}
+                onPress={handleProfilePhotoPress}
+              >
             {photoUrl ? (
               <Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
             ) : (
-              <View style={styles.profilePhotoPlaceholder}>
-                <Text style={styles.placeholderText}>👤</Text>
-              </View>
-            )}
+                  <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.profilePhoto} />
+                )}
+              </TouchableOpacity>
+          </View>
           </View>
         </View>
 
-        {/* Statistics */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Deals Posted</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Deals Redeemed</Text>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
+        {/* Gray Scrollable Content Container */}
+        <View style={styles.contentArea}>
+        <View style={styles.actionButtonsContainer}>
           <TouchableOpacity 
             style={[styles.actionButton, activeTab === 'posts' && styles.activeButton]}
             onPress={() => setActiveTab('posts')}
@@ -236,20 +415,90 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
             </Text>
           </TouchableOpacity>
           
+          <View style={styles.extraSpacing} />
+          
           <TouchableOpacity 
-            style={[styles.actionButton, styles.shareButton]}
+            style={[styles.shareActionButton, styles.shareActionButton]}
             onPress={() => setActiveTab('share')}
           >
             <Text style={styles.shareButtonText}>Share</Text>
-            <Text style={styles.shareIcon}>↗</Text>
+            <MaterialCommunityIcons name="share-variant" size={16} color="#000" />
           </TouchableOpacity>
         </View>
-
-        {/* Main Content Area */}
-        <View style={styles.contentArea}>
+          {activeTab === 'posts' && (
+            <View style={styles.textContainer}>
           <Text style={styles.contentText}>
             Support the platform by posting food deals you see!
           </Text>
+        </View>
+          )}
+          
+          {activeTab === 'settings' && (
+            <View style={styles.settingsList}>
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => navigation.navigate('FAQPage' as never)}
+              >
+                <MaterialCommunityIcons name="help-circle" size={20} color="#000" />
+                <Text style={styles.settingText}>FAQ</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => navigation.navigate('PrivacyPolicyPage' as never)}
+              >
+                <MaterialCommunityIcons name="file-document" size={20} color="#000" />
+                <Text style={styles.settingText}>Privacy & Policy</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => navigation.navigate('TermsConditionsPage' as never)}
+              >
+                <MaterialCommunityIcons name="file-document" size={20} color="#000" />
+                <Text style={styles.settingText}>Terms & Conditions</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => (navigation as any).navigate('ContactUsPage')}
+              >
+                <MaterialCommunityIcons name="headphones" size={20} color="#000" />
+                <Text style={styles.settingText}>Contact Us</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => (navigation as any).navigate('BlockedUsersPage')}
+              >
+                <MaterialCommunityIcons name="account-cancel" size={20} color="#000" />
+                <Text style={styles.settingText}>Blocked Users</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={handleLogout}
+              >
+                <MaterialCommunityIcons name="logout" size={20} color="#000" />
+                <Text style={styles.settingText}>Log Out</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={handleDeleteAccount}
+              >
+                <MaterialCommunityIcons name="delete" size={20} color="#000" />
+                <Text style={styles.settingText}>Delete Account</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+              </View>
+            )}
         </View>
         
         {/* Bottom spacing to prevent content from being hidden behind navigation */}
@@ -263,9 +512,61 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ route }) => {
         activeTab="profile"
         onTabPress={(tab) => {
           // Handle navigation to different tabs
-          console.log('Navigate to:', tab);
         }}
       />
+
+      {/* Logout Modal */}
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelLogout}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity 
+              style={styles.modalOption}
+              onPress={confirmLogout}
+            >
+              <Text style={styles.modalOptionText}>Log Out</Text>
+            </TouchableOpacity>
+            <View style={styles.modalSeparator} />
+            <TouchableOpacity 
+              style={styles.modalOption}
+              onPress={cancelLogout}
+            >
+              <Text style={styles.modalOptionText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelDeleteAccount}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity 
+              style={styles.modalOption}
+              onPress={confirmDeleteAccount}
+            >
+              <Text style={styles.modalOptionText}>Delete Account</Text>
+            </TouchableOpacity>
+            <View style={styles.modalSeparator} />
+            <TouchableOpacity 
+              style={styles.modalOption}
+              onPress={cancelDeleteAccount}
+            >
+              <Text style={styles.modalOptionText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -275,22 +576,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
   scrollView: {
     flex: 1,
   },
   
-  // Header Section
+  userProfileContainer: {
+    paddingVertical: 20,
+    backgroundColor: '#fff',
+  },
+  
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    paddingLeft: 5,
+    paddingRight: 20,
+    marginBottom: 20,
+    gap: 12,
+    alignItems: 'center'
+  },
+  
+  extraSpacing: {
+    width: 20,
+  },
+  
+  contentArea: {
+    backgroundColor: '#F5F5F5',
+    flex: 1,
+    minHeight: 550,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    position: 'relative',
+  },
+  
   header: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: 15,
     alignItems: 'flex-start',
   },
   leftSection: {
@@ -304,128 +624,109 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
   userName: {
-    fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
   },
   editButton: {
     padding: 4,
   },
-  editIcon: {
-    fontSize: 16,
-  },
   joinDate: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+    fontSize: 12,
+    color: '#000',
+    marginBottom: 2,
   },
   location: {
-    fontSize: 14,
-    color: '#666',
-  },
-
-  // Profile Photo
-  profilePhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: '#FFA05C',
-  },
-  profilePhotoPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFA05C',
-  },
-  placeholderText: {
-    fontSize: 32,
-    color: '#999',
-  },
-
-  // Statistics
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 40,
-    marginBottom: 30,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFA05C',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-
-  // Action Buttons
-  actionButtons: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 30,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
-  },
-  activeButton: {
-    backgroundColor: '#FFA05C',
-    borderColor: '#FFA05C',
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000',
-  },
-  activeButtonText: {
-    color: '#fff',
-  },
-  shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  shareButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000',
-  },
-  shareIcon: {
     fontSize: 12,
     color: '#000',
   },
 
-  // Content Area
-  contentArea: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 40,
+  profilePhotoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 200,
   },
+  profilePhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#FFA05C',
+  },
+
+  statsContainer: {
+    paddingTop: 15,
+    justifyContent: 'center',
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFA05C',
+    marginRight: 10,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#000',
+    textAlign: 'center',
+  },
+
+  actionButton: {
+    flex: 1,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 35,
+    minWidth: 95,
+    borderColor: '#D8D8D8',
+  },
+  shareActionButton: {
+    flex: 1,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 35,
+    minWidth: 95,
+    borderColor: '#000',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  activeButton: {
+    backgroundColor: '#FFA05C',
+    borderColor: '#D8D8D8'
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  activeButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+  },
+  shareButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+
+  textContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: 20,
+    right: 20,
+    transform: [{ translateY: -50 }],
+    padding: 16,
+  },
+  
   contentText: {
     fontSize: 16,
     color: '#333',
@@ -433,7 +734,64 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   bottomSpacing: {
-    height: 100, // Space to prevent content from being hidden behind bottom navigation
+    height: 100,
+  },
+
+  settingsList: {
+    backgroundColor: '#fff',
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#FFA05C',
+    overflow: 'hidden',
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  settingText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '500',
+    marginLeft: 10,
+  },
+  settingArrow: {
+    fontSize: 20,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  modalOption: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  modalOptionText: {
+    fontSize: 18,
+    color: '#000',
+    fontWeight: '400',
+  },
+  modalSeparator: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 0,
   },
 
 });
