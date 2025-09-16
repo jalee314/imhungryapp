@@ -8,7 +8,10 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
 import BottomNavigation from '../../components/BottomNavigation';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { toByteArray } from 'base64-js';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { clearUserCache } from '../../services/userService';
 
 interface ProfilePageProps {}
 
@@ -303,41 +306,58 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       const fileExt = photoUri.split('.').pop()?.toLowerCase() || 'jpg';
       const userEmail = user.email || 'unknown';
       const emailPrefix = userEmail.split('@')[0];
-      const fullName = profile?.display_name || profile?.username || 'user';
-      const cleanFullName = fullName.replace(/[^a-zA-Z0-9]/g, '');
-      const fileName = `public/${emailPrefix}_${cleanFullName}_${user.id}.${fileExt}`;
+      const username = profile?.username || profile?.display_name || 'user';
+      
+      // Use the same filename format as onboarding
+      const fileName = `user_${emailPrefix}_${username}_${Date.now()}.${fileExt}`;
 
-      const formData = new FormData();
-      formData.append('file', {
-        uri: photoUri,
-        type: `image/${fileExt}`,
-        name: fileName,
-      } as any);
+      // Store reference to old photo before upload
+      const oldPhotoPath = profile?.profile_photo && profile.profile_photo !== 'default_avatar.png' 
+        ? (profile.profile_photo.startsWith('public/') ? profile.profile_photo : `public/${profile.profile_photo}`)
+        : null;
 
-      const { error: uploadError } = await supabase.storage
+      // Read the file as base64 and convert using toByteArray (same as onboarding)
+      const base64 = await FileSystem.readAsStringAsync(photoUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      const byteArray = toByteArray(base64);
+
+      // Upload new photo using the same pattern as onboarding
+      const { data, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, formData, {
+        .upload(`public/${fileName}`, byteArray.buffer, {
           contentType: `image/${fileExt}`,
-          upsert: false,
-          cacheControl: '3600'
+          cacheControl: '3600',
+          upsert: false // Same as onboarding - timestamp prevents collisions
         });
 
       if (uploadError) throw uploadError;
 
-      // Delete old photo
-      if (profile?.profile_photo && profile.profile_photo !== 'default_avatar.png') {
-        const oldPhotoPath = profile.profile_photo.startsWith('public/') 
-          ? profile.profile_photo 
-          : `public/${profile.profile_photo}`;
-        await supabase.storage.from('avatars').remove([oldPhotoPath]);
+      // The uploaded path will be `public/${fileName}`, which matches onboarding
+      const uploadedPath = data?.path || `public/${fileName}`;
+
+      // Update profile with new photo path
+      await supabase.from('user').update({ profile_photo: uploadedPath }).eq('user_id', user.id);
+      await supabase.auth.updateUser({ data: { profile_photo_url: uploadedPath } });
+
+      // Clear the user cache so other components fetch fresh data
+      await clearUserCache();
+
+      // Only delete old photo after successful upload and database update
+      if (oldPhotoPath) {
+        const { error: deleteError } = await supabase.storage
+          .from('avatars')
+          .remove([oldPhotoPath]);
+        
+        if (deleteError) {
+          console.warn('Failed to delete old photo:', deleteError);
+          // Don't throw here - the upload was successful, deletion is cleanup
+        }
       }
 
-      // Update profile
-      await supabase.from('user').update({ profile_photo: fileName }).eq('user_id', user.id);
-      await supabase.auth.updateUser({ data: { profile_photo_url: fileName } });
-
       // Update UI
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(uploadedPath);
       setPhotoUrl(urlData.publicUrl);
       await fetchProfile();
       

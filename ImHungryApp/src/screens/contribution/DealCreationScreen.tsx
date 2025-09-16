@@ -23,6 +23,7 @@ import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../context/DataCacheContext';
 import { fetchUserData, clearUserCache } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService'; // Import the deal service
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 // --- Interfaces and Data ---
 interface Restaurant {
@@ -62,18 +63,24 @@ export default function DealCreationScreen() {
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
 
+  const loadUserData = async () => {
+    try {
+      const data = await fetchUserData();
+      setUserData(data);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const data = await fetchUserData();
-        setUserData(data);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-    
     loadUserData();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserData();
+    }, [])
+  );
 
   // Filter restaurants based on search query
   const filteredRestaurants = restaurants

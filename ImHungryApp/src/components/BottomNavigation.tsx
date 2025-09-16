@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchUserData } from '../services/userService';
 
@@ -18,19 +18,26 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const navigation = useNavigation();
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
 
-  // Fetch user data on component mount
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const userData = await fetchUserData();
-        setUserPhotoUrl(userData.profilePicture);
-      } catch (error) {
-        console.error('Error fetching user data for navbar:', error);
-      }
-    };
+  // Fetch user data on component mount and when screen comes into focus
+  const loadUserData = async () => {
+    try {
+      const userData = await fetchUserData();
+      setUserPhotoUrl(userData.profilePicture);
+    } catch (error) {
+      console.error('Error fetching user data for navbar:', error);
+    }
+  };
 
+  useEffect(() => {
     loadUserData();
   }, []);
+
+  // Refresh user data when any screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserData();
+    }, [])
+  );
 
   const navItems = [
     { id: 'home', icon: 'home-outline', label: 'Home', screen: 'HomeScreen' },
