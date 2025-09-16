@@ -112,6 +112,12 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       imageUri: dealData.imageUri ? 'Present' : 'None'
     });
 
+    // Check for profanity before proceeding
+    const profanityCheck = await checkDealContentForProfanity(dealData.title, dealData.description);
+    if (!profanityCheck.success) {
+      return { success: false, error: profanityCheck.error };
+    }
+
     // Get current user ID
     const userId = await getCurrentUserId();
     if (!userId) {
@@ -198,5 +204,54 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
   } catch (error) {
     console.error('Error creating deal:', error);
     return { success: false, error: 'An unexpected error occurred' };
+  }
+};
+
+// Check for profanity using your existing Supabase Edge Function
+export const checkDealContentForProfanity = async (title: string, description?: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Check title for profanity
+    const { data: titleData, error: titleError } = await supabase.functions.invoke('catch-profanity', {
+      body: { text: title }
+    });
+
+    if (titleError) {
+      console.error('Error checking title profanity:', titleError);
+      // If profanity check fails, allow post to proceed (you can change this)
+      return { success: true };
+    }
+
+    if (!titleData?.isClean) {
+      return { 
+        success: false, 
+        error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.' 
+      };
+    }
+
+    // Check description for profanity if it exists
+    if (description && description.trim()) {
+      const { data: descData, error: descError } = await supabase.functions.invoke('catch-profanity', {
+        body: { text: description }
+      });
+
+      if (descError) {
+        console.error('Error checking description profanity:', descError);
+        // If profanity check fails, allow post to proceed (you can change this)
+        return { success: true };
+      }
+
+      if (!descData?.isClean) {
+        return { 
+          success: false, 
+          error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.' 
+        };
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error calling profanity filter:', error);
+    // If profanity check fails, allow post to proceed (you can change this)
+    return { success: true };
   }
 };
