@@ -24,6 +24,7 @@ import { useDataCache } from '../../context/DataCacheContext';
 import { fetchUserData, clearUserCache } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService'; // Import the deal service
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { ProfileCacheService } from '../../services/profileCacheService';
 
 // --- Interfaces and Data ---
 interface Restaurant {
@@ -197,6 +198,9 @@ export default function DealCreationScreen() {
       const result = await createDeal(dealData);
       
       if (result.success) {
+        // ✨ NEW: Force refresh profile cache after successful deal post
+        await ProfileCacheService.forceRefresh();
+        
         Alert.alert(
           "Success!", 
           "Your deal has been posted successfully!", 

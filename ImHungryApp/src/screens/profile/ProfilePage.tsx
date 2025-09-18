@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   View, Text, StyleSheet, Image, 
-  TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal 
+  TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator 
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -11,7 +11,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { clearUserCache } from '../../services/userService';
+import { fetchUserData, getFullUserProfile, clearUserCache } from '../../services/userService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ProfileCacheService } from '../../services/profileCacheService';
 
 interface ProfilePageProps {}
 
@@ -31,60 +33,82 @@ interface UserProfile {
 const ProfilePage: React.FC<ProfilePageProps> = () => {
   const navigation = useNavigation();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [dealCount, setDealCount] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share'>('posts');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
-  const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
+  // Only show loading skeleton if we have NO data at all
+  const [hasData, setHasData] = useState(false);
+
+  // Instagram-style loading: Show cache immediately, update in background
+  const loadProfileData = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // 1. IMMEDIATELY show cached data (if available)
+      const cached = await ProfileCacheService.getCachedProfile();
+      if (cached) {
+        setProfile(cached.profile);
+        setPhotoUrl(cached.photoUrl);
+        setDealCount(cached.dealCount);
+        setHasData(true); // We have data, no need for skeleton
+      }
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        setProfile(null);
-      } else if (data) {
-        setProfile(data);
-        if (data.profile_photo && data.profile_photo !== 'default_avatar.png') {
-          const photoPath = data.profile_photo.startsWith('public/') 
-            ? data.profile_photo 
-            : `public/${data.profile_photo}`;
-            
-          const { data: urlData } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(photoPath);
+      // 2. Fetch fresh data in background (NO visible loading)
+      const freshData = await ProfileCacheService.fetchFreshProfile();
+      
+      if (freshData) {
+        // Only update if data actually changed
+        const dataChanged = JSON.stringify(freshData.profile) !== JSON.stringify(profile) ||
+                            freshData.photoUrl !== photoUrl ||
+                            freshData.dealCount !== dealCount;
+        
+        if (dataChanged) {
+          setProfile(freshData.profile);
+          setPhotoUrl(freshData.photoUrl);
+          setDealCount(freshData.dealCount);
           
-          setPhotoUrl(urlData.publicUrl);
+          // Cache the fresh data for next time
+          await ProfileCacheService.setCachedProfile(freshData.profile, freshData.photoUrl, freshData.dealCount);
         }
       }
+      
+      // If no cached data was available, we're done loading
+      if (!cached) {
+        setHasData(true);
+      }
+      
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      setProfile(null);
+      console.error('Error loading profile:', error);
+      setHasData(true); // Show UI even if there's an error
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchProfile();
+    loadProfileData();
   }, []);
 
+  // Only reload if no data exists
   useFocusEffect(
     React.useCallback(() => {
-      fetchProfile();
-    }, [])
+      if (!hasData) {
+        loadProfileData();
+      }
+    }, [hasData])
   );
+
+  // Force refresh when user updates profile (still no visible loading)
+  const refreshProfile = async () => {
+    const freshData = await ProfileCacheService.forceRefresh();
+    if (freshData) {
+      setProfile(freshData.profile);
+      setPhotoUrl(freshData.photoUrl);
+      setDealCount(freshData.dealCount);
+    }
+  };
 
   const formatJoinDate = (profile: UserProfile | null) => {
     if (!profile) return 'Joined recently';
@@ -103,8 +127,9 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     }
   };
 
+  // Use userData for display instead of profile
   const getDisplayName = () => {
-    return profile?.username || profile?.user_name || profile?.display_name || profile?.name || '';
+    return userData?.username || profile?.display_name || '';
   };
 
   const getUsernameFontSize = () => {
@@ -203,6 +228,9 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         Alert.alert('Error', 'Failed to log out. Please try again.');
         return;
       }
+      
+      // Clear profile cache on logout
+      await ProfileCacheService.clearCache();
       
       setShowLogoutModal(false);
       // Navigate to login page
@@ -359,7 +387,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       // Update UI
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(uploadedPath);
       setPhotoUrl(urlData.publicUrl);
-      await fetchProfile();
+      await refreshProfile();
       
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -367,14 +395,73 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     }
   };
 
-  if (loading) {
-    return null;
+  // Show skeleton only if we have NO data at all
+  if (!hasData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          
+          {/* Loading Skeleton */}
+          <View style={styles.userProfileContainer}>
+            <View style={styles.header}>
+              <View style={styles.leftSection}>
+                <View style={styles.userInfo}>
+                  {/* Username skeleton */}
+                  <View style={[styles.skeleton, styles.skeletonUsername]} />
+                  <View style={[styles.skeleton, styles.skeletonEditButton]} />
+                </View>
+                {/* Join date skeleton */}
+                <View style={[styles.skeleton, styles.skeletonJoinDate]} />
+                {/* Location skeleton */}
+                <View style={[styles.skeleton, styles.skeletonLocation]} />
+                
+                {/* Stats skeleton */}
+                <View style={styles.statsContainer}>
+                  <View style={styles.statItem}>
+                    <View style={[styles.skeleton, styles.skeletonStatNumber]} />
+                    <View style={[styles.skeleton, styles.skeletonStatLabel]} />
+                  </View>
+                </View>
+              </View>
+              
+              <View style={styles.rightSection}>
+                {/* Profile photo skeleton */}
+                <View style={[styles.skeleton, styles.skeletonProfilePhoto]} />
+              </View>
+            </View>
+          </View>
+
+          {/* Content area skeleton */}
+          <View style={styles.contentArea}>
+            <View style={styles.actionButtonsContainer}>
+              <View style={[styles.skeleton, styles.skeletonButton]} />
+              <View style={[styles.skeleton, styles.skeletonButton]} />
+              <View style={styles.extraSpacing} />
+              <View style={[styles.skeleton, styles.skeletonButton]} />
+            </View>
+          </View>
+          
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+        
+        {/* Show skeleton bottom nav */}
+        <View style={styles.skeletonBottomNav}>
+          {[1, 2, 3, 4, 5].map((_, index) => (
+            <View key={index} style={[styles.skeleton, styles.skeletonNavItem]} />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+      >
         
         {/* User Profile Container */}
         <View style={styles.userProfileContainer}>
@@ -390,10 +477,10 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               <Text style={styles.joinDate}>{formatJoinDate(profile)}</Text>
               <Text style={styles.location}>{profile?.location_city || 'Location not set'}</Text>
               
-              {/* Statistics - positioned in the same container */}
+              {/* Statistics with real deal count */}
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>1</Text>
+                  <Text style={styles.statNumber}>{dealCount}</Text>
                   <Text style={styles.statLabel}>Deals Posted</Text>
                 </View>
               </View>
@@ -814,6 +901,85 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
   },
 
+  // Skeleton styles
+  skeleton: {
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+  },
+  skeletonUsername: {
+    width: 120,
+    height: 26,
+    marginBottom: 4,
+  },
+  skeletonEditButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  skeletonJoinDate: {
+    width: 150,
+    height: 12,
+    marginBottom: 2,
+  },
+  skeletonLocation: {
+    width: 100,
+    height: 12,
+    marginBottom: 15,
+  },
+  skeletonStatNumber: {
+    width: 30,
+    height: 24,
+    marginRight: 10,
+  },
+  skeletonStatLabel: {
+    width: 80,
+    height: 12,
+  },
+  skeletonProfilePhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: '#E1E9EE',
+  },
+  skeletonButton: {
+    flex: 1,
+    height: 35,
+    borderRadius: 20,
+    minWidth: 95,
+  },
+  skeletonBottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingVertical: 6,
+    paddingHorizontal: 15,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingBottom: 34,
+  },
+  skeletonNavItem: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+
+  // Skeleton loading styles
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
 });
 
 export default ProfilePage;
