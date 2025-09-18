@@ -62,6 +62,29 @@ export default function CuisinePreferencesScreen() {
     }
   };
 
+  const saveUserLocation = async (userId: string, locationData: any) => {
+    if (!locationData) return;
+    
+    try {
+      // Update the user record with location data using PostGIS POINT
+      const { error } = await supabase
+        .from('user')
+        .update({
+          location_city: locationData.city,
+          location: `POINT(${locationData.longitude} ${locationData.latitude})`
+        })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error saving location:', error);
+      } else {
+        console.log('Location saved successfully');
+      }
+    } catch (error) {
+      console.error('Error saving location:', error);
+    }
+  };
+
   const handleFinish = async () => {
     if (selectedCuisines.length === 0) {
       Alert.alert('Selection Required', 'Please select at least one cuisine preference.');
@@ -119,7 +142,9 @@ export default function CuisinePreferencesScreen() {
             username: userData.username,
             full_name: `${userData.firstName} ${userData.lastName}`,
             profile_photo_url: profilePhotoUrl,
-            cuisine_preferences: selectedCuisines
+            cuisine_preferences: selectedCuisines,
+            // Include location data in auth metadata
+            location_data: userData.locationData
           },
         },
       });
@@ -135,9 +160,14 @@ export default function CuisinePreferencesScreen() {
       }
       
       // The database trigger will automatically create the user record
-      // Just insert cuisine preferences
+      // Insert cuisine preferences and location
       if (signUpResult.user) {
         await insertUserCuisinePreferences(signUpResult.user.id, selectedCuisines);
+        
+        // Save location data if available
+        if (userData.locationData) {
+          await saveUserLocation(signUpResult.user.id, userData.locationData);
+        }
       }
 
       (navigation as any).navigate('LogIn');
@@ -200,7 +230,9 @@ export default function CuisinePreferencesScreen() {
             username: userData.username,
             full_name: `${userData.firstName} ${userData.lastName}`,
             profile_photo_url: profilePhotoUrl,
-            cuisine_preferences: []
+            cuisine_preferences: [],
+            // Include location data in auth metadata
+            location_data: userData.locationData
           },
         },
       });
@@ -216,7 +248,10 @@ export default function CuisinePreferencesScreen() {
       }
       
       // The database trigger will automatically create the user record
-      // No need to manually insert
+      // Save location data if available
+      if (signUpResult.user && userData.locationData) {
+        await saveUserLocation(signUpResult.user.id, userData.locationData);
+      }
 
       (navigation as any).navigate('LogIn');
     } catch (error) {

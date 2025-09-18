@@ -17,8 +17,8 @@ export interface Restaurant {
   id: string; // Corresponds to restaurant_id
   name: string;
   address: string;
-  lat: number;
-  lng: number;
+  lat: number; // Extracted from PostGIS location
+  lng: number; // Extracted from PostGIS location
   logoImage?: string; // Corresponds to logo_image
   brandId?: string; // Corresponds to brand_id
 }
@@ -37,7 +37,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
   const [state, setState] = useState<DataState>({
     categories: [],
     cuisines: [],
-    restaurants: [], // Added restaurants array
+    restaurants: [],
     loading: true,
     error: null,
   });
@@ -50,7 +50,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
         const [categoriesJson, cuisinesJson, restaurantsJson] = await Promise.all([
           AsyncStorage.getItem('cached_categories'),
           AsyncStorage.getItem('cached_cuisines'),
-          AsyncStorage.getItem('cached_restaurants') // Added restaurants cache
+          AsyncStorage.getItem('cached_restaurants')
         ]);
         
         if (categoriesJson && cuisinesJson) {
@@ -62,7 +62,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
             ...prev,
             categories,
             cuisines,
-            restaurants, // Added restaurants
+            restaurants,
             loading: false
           }));
           console.log('Loaded data from cache:', { 
@@ -95,8 +95,11 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
           // Fetch cuisines
           supabase.from('cuisine').select('cuisine_id, cuisine_name'),
           
-          // Fetch restaurants - limiting to 100 for performance reasons
-          supabase.from('restaurant').select('restaurant_id, name, address, lat, lng, logo_image, brand_id').limit(100)
+          // Fetch restaurants using the PostGIS view
+          supabase
+            .from('restaurants_with_coords')
+            .select('restaurant_id, name, address, logo_image, brand_id, lat, lng')
+            .limit(100)
         ]);
           
         if (categoriesError) throw categoriesError;
@@ -114,15 +117,18 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
           name: item.cuisine_name
         }));
         
-        const restaurants = restaurantsData.map(item => ({
-          id: item.restaurant_id,
-          name: item.name,
-          address: item.address,
-          lat: item.lat,
-          lng: item.lng,
-          logoImage: item.logo_image,
-          brandId: item.brand_id
-        }));
+        // Transform restaurants - lat/lng are already extracted by the view
+        const restaurants = restaurantsData
+          .filter(item => item.lat !== null && item.lng !== null && !isNaN(item.lat) && !isNaN(item.lng))
+          .map(item => ({
+            id: item.restaurant_id,
+            name: item.name,
+            address: item.address,
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lng),
+            logoImage: item.logo_image,
+            brandId: item.brand_id
+          }));
         
         // Update state with new data
         setState({
@@ -178,7 +184,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
     const categoriesChannel = supabase.channel('categories-changes')
       .on('postgres_changes', {
         event: '*', // Listen for all events (insert, update, delete)
-        schema: 'public', // Adjust if your schema is different
+        schema: 'public',
         table: 'categories'
       }, () => {
         console.log('Categories table changed, refreshing data...');
@@ -189,7 +195,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
     const cuisinesChannel = supabase.channel('cuisines-changes')
       .on('postgres_changes', {
         event: '*', // Listen for all events (insert, update, delete)
-        schema: 'public', // Adjust if your schema is different
+        schema: 'public',
         table: 'cuisine'
       }, () => {
         console.log('Cuisines table changed, refreshing data...');
@@ -224,7 +230,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
       // Unsubscribe from Supabase channels
       supabase.removeChannel(categoriesChannel);
       supabase.removeChannel(cuisinesChannel);
-      supabase.removeChannel(restaurantsChannel); // Remove restaurant channel
+      supabase.removeChannel(restaurantsChannel);
       
       // Remove AppState listener
       if (appStateSubscription.current) {
