@@ -61,4 +61,31 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+export const clearAuthStorage = async () => {
+  try {
+    // Clear the Supabase session key (this is the default key Supabase uses)
+    const storage = new LargeSecureStore();
+    await storage.removeItem('sb-' + supabaseUrl.replace('https://', '').replace('http://', '') + '-auth-token');
+    
+    // Also clear any cached user data
+    await AsyncStorage.removeItem('userData');
+    await AsyncStorage.removeItem('userDataTimestamp');
+    
+    console.log('Auth storage cleared');
+  } catch (error) {
+    console.error('Error clearing auth storage:', error);
+  }
+};
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+    console.log('Auth event:', event);
+  }
+  
+  if (event === 'SIGNED_OUT') {
+    // Clear any cached data when user signs out
+    AsyncStorage.multiRemove(['userData', 'userDataTimestamp']);
+  }
+});
+
 
