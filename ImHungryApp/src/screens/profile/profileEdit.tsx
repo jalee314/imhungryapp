@@ -7,6 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
+import { ProfileCacheService } from '../../services/profileCacheService';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface ProfileEditProps {
   route?: {
@@ -20,6 +22,9 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   const navigation = useNavigation();
   const profile = route?.params?.profile;
   const { height } = useWindowDimensions();
+  
+  // Add this debugging line
+  console.log('Profile data received:', JSON.stringify(profile, null, 2));
   
   const [formData, setFormData] = useState({
     fullName: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
@@ -161,6 +166,9 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
         }
         throw userError;
       }
+      
+      // Clear the profile cache so ProfilePage will fetch fresh data
+      await ProfileCacheService.clearCache();
       
       Alert.alert('Success', 'Profile updated successfully!', [
         { text: 'OK', onPress: () => (navigation as any).goBack() }

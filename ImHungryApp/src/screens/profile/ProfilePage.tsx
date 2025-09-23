@@ -45,6 +45,8 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   // Only show loading skeleton if we have NO data at all
   const [hasData, setHasData] = useState(false);
 
+  
+
   // Instagram-style loading: Show cache immediately, update in background
   const loadProfileData = async () => {
     try {
@@ -110,6 +112,14 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     }
   };
 
+  // Add the new useFocusEffect here:
+  useFocusEffect(
+    React.useCallback(() => {
+      // Force refresh the profile data when screen comes into focus
+      refreshProfile();
+    }, [])
+  );
+
   const formatJoinDate = (profile: UserProfile | null) => {
     if (!profile) return 'Joined recently';
     
@@ -143,6 +153,14 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
   
   const handleEditProfile = () => {
+    // Add validation before navigation
+    console.log('Profile being passed to edit:', JSON.stringify(profile, null, 2));
+    
+    if (!profile || !profile.user_id) {
+      Alert.alert('Error', 'Profile data not available. Please try again.');
+      return;
+    }
+    
     (navigation as any).navigate('profileEdit', { profile });
   };
 

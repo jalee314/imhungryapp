@@ -90,7 +90,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
           { data: restaurantsData, error: restaurantsError }
         ] = await Promise.all([
           // Fetch categories
-          supabase.from('categories').select('category_id, category_name'),
+          supabase.from('category').select('category_id, category_name'),
           
           // Fetch cuisines
           supabase.from('cuisine').select('cuisine_id, cuisine_name'),

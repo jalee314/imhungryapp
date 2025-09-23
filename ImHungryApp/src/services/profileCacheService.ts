@@ -95,6 +95,12 @@ export class ProfileCacheService {
       if (profileResult.error) throw profileResult.error;
       const profile = profileResult.data;
 
+      // Add validation to ensure we have the right data structure
+      if (!profile.first_name && !profile.last_name && !profile.display_name) {
+        console.error('Invalid profile data structure:', profile);
+        throw new Error('Invalid profile data received from database');
+      }
+
       // Generate photo URL if needed
       let photoUrl = null;
       if (profile.profile_photo && profile.profile_photo !== 'default_avatar.png') {

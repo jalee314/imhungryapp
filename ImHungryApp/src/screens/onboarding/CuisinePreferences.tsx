@@ -53,7 +53,7 @@ export default function CuisinePreferencesScreen() {
       }));
 
       const { error: preferencesError } = await supabase
-        .from('user_cuisine_preferences')
+        .from('user_cuisine_preference')
         .insert(preferences);
 
       if (preferencesError) throw preferencesError;
@@ -144,7 +144,8 @@ export default function CuisinePreferencesScreen() {
             profile_photo_url: profilePhotoUrl,
             cuisine_preferences: selectedCuisines,
             // Include location data in auth metadata
-            location_data: userData.locationData
+            location_data: userData.locationData,
+            display_name: userData.username  // Add this line
           },
         },
       });
