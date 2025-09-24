@@ -63,18 +63,24 @@ export default function CuisinePreferencesScreen() {
   };
 
   const saveUserLocation = async (userId: string, locationData: any) => {
-    if (!locationData) return;
+    if (!locationData || !locationData.latitude || !locationData.longitude) return;
     
     try {
-      // Update the user record with location data using PostGIS POINT
-      const { error } = await supabase
-        .from('user')
-        .update({
-          location_city: locationData.city,
-          location: `POINT(${locationData.longitude} ${locationData.latitude})`
-        })
-        .eq('user_id', userId);
-
+      // Validate coordinates
+      if (locationData.latitude < -90 || locationData.latitude > 90 ||
+          locationData.longitude < -180 || locationData.longitude > 180) {
+        console.error('Invalid coordinates:', locationData);
+        return;
+      }
+  
+      // Call the database function
+      const { data, error } = await supabase.rpc('update_user_location', {
+        user_uuid: userId,
+        lat: locationData.latitude,
+        lng: locationData.longitude,
+        city: locationData.city
+      });
+  
       if (error) {
         console.error('Error saving location:', error);
       } else {
@@ -151,12 +157,39 @@ export default function CuisinePreferencesScreen() {
       });
       
       if (error) {
-        // A generic error for any conflicts (email, phone, username) that might occur.
-        Alert.alert(
-          'Account Creation Failed',
-          'An account with this email, phone number, or username may already exist. Please go back and check your information.',
-          [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
-        );
+        console.error('Detailed signup error:', {
+          message: error.message,
+          status: error.status,
+          statusText: error.statusText,
+          userData: userData,
+        });
+        
+        // Handle specific error types
+        if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+          Alert.alert(
+            'Account Already Exists',
+            'An account with this email, phone number, or username already exists. Please try logging in or use different information.',
+            [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
+          );
+        } else if (error.message.includes('ST_GeogFromText') || error.message.includes('PostGIS')) {
+          Alert.alert(
+            'Location Error',
+            'There was an issue processing your location. Please try again.',
+            [{ text: 'Go Back', onPress: () => navigation.goBack() }]
+          );
+        } else if (error.message.includes('User creation failed')) {
+          Alert.alert(
+            'Database Error',
+            `Account creation failed: ${error.message}. Please contact support if this continues.`,
+            [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
+          );
+        } else {
+          Alert.alert(
+            'Account Creation Failed',
+            'An unexpected error occurred. Please try again or contact support.',
+            [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
+          );
+        }
         return;
       }
       
@@ -233,7 +266,6 @@ export default function CuisinePreferencesScreen() {
             profile_photo_url: profilePhotoUrl,
             cuisine_preferences: [],
             // Include location data in auth metadata
-            location_data: userData.locationData
           },
         },
       });
@@ -253,7 +285,6 @@ export default function CuisinePreferencesScreen() {
       if (signUpResult.user && userData.locationData) {
         await saveUserLocation(signUpResult.user.id, userData.locationData);
       }
-
       (navigation as any).navigate('LogIn');
     } catch (error) {
       console.error('Setup failed (skip):', error); // Log the full error
