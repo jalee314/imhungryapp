@@ -40,7 +40,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   );
 
   const navItems = [
-    { id: 'home', icon: 'home-outline', label: 'Home', screen: 'HomeScreen' },
+    { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' },
     { id: 'search', icon: 'magnify', label: 'Search', screen: 'SearchScreen' },
     { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
     { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesScreen' },
