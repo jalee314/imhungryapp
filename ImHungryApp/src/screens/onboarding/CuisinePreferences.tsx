@@ -150,6 +150,8 @@ export default function CuisinePreferencesScreen() {
             profile_photo_url: profilePhotoUrl,
             cuisine_preferences: selectedCuisines,
             // Include location data in auth metadata
+            location_data: userData.locationData,
+            display_name: userData.username  // Add this line
           },
         },
       });

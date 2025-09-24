@@ -148,6 +148,7 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       image_url: imageUrl,
       category_id: dealData.categoryId,
       cuisine_id: dealData.cuisineId,
+      is_anonymous: dealData.isAnonymous,
     };
 
     console.log('Inserting deal template:', dealTemplateData);
