@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   StatusBar,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -32,96 +33,193 @@ const Feed: React.FC = () => {
     '🥙 Mediterranean'
   ];
 
+  // Updated sample data with local images only
+  // Updated sample data with more deals and variety
   const communityDeals: Deal[] = [
     {
       id: '1',
       title: 'Buy 1 Get 1 FREE Sea Salt Coffee per Member',
       restaurant: '85 Degrees Bakery',
-      details: '3mi away • 3h ago • By Kevin Hu',
-      image: 'https://via.placeholder.com/204x144/f0f0f0/999999?text=Coffee+Deal',
+      details: 'Valid for members only',
+      image: require('../../../img/albert.webp'),
       votes: 67,
       isUpvoted: true,
       isDownvoted: false,
       isFavorited: false,
       timeAgo: '3h ago',
-      author: 'Kevin Hu'
+      author: 'Kevin Hu',
+      milesAway: '3mi'
     },
     {
       id: '2',
       title: '$6 plate when Dodgers win @ home',
       restaurant: 'Panda Express',
-      details: '3mi away • 3h ago • Kevin Hu',
-      image: 'https://via.placeholder.com/204x144/ff0000/ffffff?text=Panda+Deal',
+      details: 'When Dodgers win at home games',
+      image: require('../../../img/monkey.jpg'),
       votes: 67,
       isUpvoted: true,
       isDownvoted: false,
       isFavorited: false,
       timeAgo: '3h ago',
-      author: 'Kevin Hu'
+      author: 'Kevin Hu',
+      milesAway: '3mi'
     },
     {
       id: '3',
       title: 'Free Appetizer with Entree Purchase',
       restaurant: 'Local Bistro',
-      details: '2mi away • 5h ago • By Sarah M',
-      image: 'https://via.placeholder.com/204x144/00ff00/ffffff?text=Free+App',
+      details: 'Must purchase entree',
+      image: require('../../../img/albert.webp'),
       votes: 45,
       isUpvoted: false,
       isDownvoted: false,
       isFavorited: true,
       timeAgo: '5h ago',
-      author: 'Sarah M'
-    }
-  ];
-
-  const dealsForYou: Deal[] = [
+      author: 'Sarah M',
+      milesAway: '2mi'
+    },
     {
       id: '4',
+      title: '50% Off All Boba Drinks Every Tuesday',
+      restaurant: 'Gong Cha',
+      details: 'Tuesday special only',
+      image: require('../../../img/monkey.jpg'),
+      votes: 89,
+      isUpvoted: false,
+      isDownvoted: false,
+      isFavorited: false,
+      timeAgo: '1h ago',
+      author: 'Alex T',
+      milesAway: '1mi'
+    },
+    {
+      id: '5',
+      title: 'Happy Hour: $3 Tacos 4-6pm',
+      restaurant: 'Taco Bell',
+      details: 'Weekdays only',
+      image: require('../../../img/albert.webp'),
+      votes: 112,
+      isUpvoted: true,
+      isDownvoted: false,
+      isFavorited: true,
+      timeAgo: '30min ago',
+      author: 'Maria L',
+      milesAway: '4mi'
+    }
+  ];
+  
+  const dealsForYou: Deal[] = [
+    {
+      id: '6',
       title: '$1 Wings on Wednesdays',
       restaurant: 'CyberWings',
-      details: 'American • 3h ago • 3mi away',
-      image: 'https://via.placeholder.com/169x144/ffa500/ffffff?text=Wings',
+      details: 'Wednesdays only',
+      image: require('../../../img/monkey.jpg'),
       votes: 67,
       isUpvoted: false,
       isDownvoted: false,
       isFavorited: true,
-      timeAgo: '3h ago'
+      timeAgo: '3h ago',
+      author: 'Kevin Hu',
+      milesAway: '3mi'
     },
     {
-      id: '5',
+      id: '7',
       title: 'Buy 1 Get 1 FREE Sea Salt Coffee per Member',
       restaurant: '85 Degrees Bakery',
-      details: 'Korean • 3h ago • 3mi away',
-      image: 'https://via.placeholder.com/169x144/0066ff/ffffff?text=Coffee',
+      details: 'Members only',
+      image: require('../../../img/albert.webp'),
       votes: 67,
       isUpvoted: false,
       isDownvoted: true,
       isFavorited: false,
-      timeAgo: '3h ago'
+      timeAgo: '3h ago',
+      author: 'Sarah M',
+      milesAway: '3mi'
     },
     {
-      id: '6',
+      id: '8',
       title: '$2 Chicken Tenders on Thursdays',
       restaurant: 'Chicken Spot',
-      details: 'American • 2h ago • 2mi away',
-      image: 'https://via.placeholder.com/169x144/ff6600/ffffff?text=Chicken',
+      details: 'Thursday special',
+      image: require('../../../img/monkey.jpg'),
       votes: 89,
       isUpvoted: true,
       isDownvoted: false,
       isFavorited: false,
-      timeAgo: '2h ago'
+      timeAgo: '2h ago',
+      author: 'Kevin Hu',
+      milesAway: '2mi'
     },
     {
-      id: '7',
+      id: '9',
       title: '$6 plate when Dodgers win @ home',
       restaurant: 'Stadium Food',
-      details: 'American • 1h ago • 4mi away',
-      image: 'https://via.placeholder.com/169x144/cc00ff/ffffff?text=Stadium',
+      details: 'Game day special',
+      image: require('../../../img/albert.webp'),
       votes: 123,
       isUpvoted: false,
       isDownvoted: false,
       isFavorited: true,
-      timeAgo: '1h ago'
+      timeAgo: '1h ago',
+      author: 'Sarah M',
+      milesAway: '4mi'
+    },
+    {
+      id: '10',
+      title: 'Free Donut with Any Coffee Purchase',
+      restaurant: 'Dunkin Donuts',
+      details: 'Valid all day',
+      image: require('../../../img/monkey.jpg'),
+      votes: 156,
+      isUpvoted: true,
+      isDownvoted: false,
+      isFavorited: false,
+      timeAgo: '45min ago',
+      author: 'Mike R',
+      milesAway: '1mi'
+    },
+    {
+      id: '11',
+      title: '25% Off Entire Menu After 9pm',
+      restaurant: 'In-N-Out Burger',
+      details: 'Late night special',
+      image: require('../../../img/albert.webp'),
+      votes: 201,
+      isUpvoted: false,
+      isDownvoted: false,
+      isFavorited: true,
+      timeAgo: '2h ago',
+      author: 'Jessica K',
+      milesAway: '5mi'
+    },
+    {
+      id: '12',
+      title: 'Buy 2 Get 1 Free Pizza Slices',
+      restaurant: 'Pizza Hut',
+      details: 'Lunch hours 11am-3pm',
+      image: require('../../../img/monkey.jpg'),
+      votes: 78,
+      isUpvoted: true,
+      isDownvoted: false,
+      isFavorited: false,
+      timeAgo: '4h ago',
+      author: 'Tom B',
+      milesAway: '3mi'
+    },
+    {
+      id: '13',
+      title: 'Student Discount: 15% Off with ID',
+      restaurant: 'Chipotle Mexican Grill',
+      details: 'Valid student ID required',
+      image: require('../../../img/albert.webp'),
+      votes: 93,
+      isUpvoted: false,
+      isDownvoted: false,
+      isFavorited: true,
+      timeAgo: '6h ago',
+      author: 'Amy S',
+      milesAway: '2mi'
     }
   ];
 
@@ -239,12 +337,12 @@ const Feed: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF', // CHANGED: Pure white instead of eggshell
     paddingTop: 0,
   },
   content: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF', // CHANGED: Pure white instead of eggshell
     paddingHorizontal: 10,
     paddingTop: 4,
   },
@@ -280,17 +378,98 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     width: '100%',
   },
-  dealsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 4,
+dealsGrid: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  paddingHorizontal: 4,
+},
+leftCard: {
+  width: '48%', // Takes up 48% of width, leaving space for gap
+  marginBottom: 8,
+},
+rightCard: {
+  width: '48%', // Takes up 48% of width, leaving space for gap  
+  marginBottom: 8,
+},
+  // Community variant styles
+  communityImage: {
+    width: 204,
+    height: 144,
+    borderRadius: 5,
+    borderWidth: 0.5,
+    borderColor: '#757575',
+    marginBottom: 8,
   },
-  leftCard: {
-    marginRight: 2,
+  communityTitle: {
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    fontSize: 12,
+    lineHeight: 15,
+    color: '#000000',
+    textAlign: 'left',
+    width: 204,
+    marginBottom: 4, // Reduced margin
   },
-  rightCard: {
-    marginLeft: 2,
+  communityRestaurant: {
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 12,
+    color: '#000000',
+    width: 204,
+    marginBottom: 2,
+    textAlign: 'left',
+  },
+  communityLocationAuthor: {
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    fontSize: 10,
+    lineHeight: 12,
+    color: '#666666',
+    width: 204,
+    marginBottom: 8,
+    textAlign: 'left',
+  },
+  
+  // Standard variant styles
+  standardTitle: {
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    fontSize: 12,
+    lineHeight: 15,
+    color: '#000000',
+    textAlign: 'left',
+    width: 169,
+    marginBottom: 8,
+  },
+  standardImage: {
+    width: 169,
+    height: 144,
+    borderRadius: 5,
+    borderWidth: 0.5,
+    borderColor: '#757575',
+    marginBottom: 8,
+  },
+  standardRestaurant: {
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 12,
+    color: '#000000',
+    width: 169,
+    marginBottom: 2,
+    textAlign: 'left',
+  },
+  standardLocationAuthor: {
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    fontSize: 10,
+    lineHeight: 12,
+    color: '#666666',
+    width: 169,
+    marginBottom: 8,
+    textAlign: 'left',
   },
 });
 

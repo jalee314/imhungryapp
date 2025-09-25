@@ -9,7 +9,7 @@ import {
   TextInput,
   FlatList,
 } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons'; // CHANGED: Back to original
 
 interface ListItem {
   id: string;
@@ -45,14 +45,12 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
 
   const isSearchModal = title === "Search Restaurant";
 
-  // Update selectedItems when modal becomes visible and initialSelected changes
   useEffect(() => {
     if (visible) {
       setSelectedItems(initialSelected);
     }
-  }, [visible, initialSelected.join(',')]); // Use join to avoid array reference issues
+  }, [visible, initialSelected.join(',')]);
 
-  // Update searchText when modal becomes visible and searchQuery changes
   useEffect(() => {
     if (visible) {
       setSearchText(searchQuery || '');
@@ -61,10 +59,8 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
 
   const handleSelectItem = (itemId: string) => {
     if (singleSelect || isSearchModal) {
-      // Single selection mode
       setSelectedItems(prev => (prev.includes(itemId) ? [] : [itemId]));
     } else {
-      // Multiple selection mode
       setSelectedItems(prev => 
         prev.includes(itemId) 
           ? prev.filter(id => id !== itemId)
@@ -99,7 +95,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
       </View>
       {selectedItems.includes(item.id) ? (
         <View style={styles.checkmark}>
-          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+          <Ionicons name="checkmark" size={16} color="#FFFFFF" /> {/* CHANGED: Back to original */}
         </View>
       ) : (
         <View style={styles.checkmarkPlaceholder} />
@@ -121,7 +117,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
         </View>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#8E8E93" />
+          <Ionicons name="search" size={20} color="#8E8E93" /> {/* CHANGED: Back to original */}
           <TextInput
             style={styles.searchInput}
             placeholder="Search"
@@ -142,6 +138,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   );
 };
 
+// ... styles remain the same
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

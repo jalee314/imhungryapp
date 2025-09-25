@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 
 export interface Deal {
   id: string;
   title: string;
   restaurant: string;
   details: string;
-  image: string;
+  image: string | any;
   votes: number;
   isUpvoted: boolean;
   isDownvoted: boolean;
@@ -15,6 +15,7 @@ export interface Deal {
   cuisine?: string;
   timeAgo: string;
   author?: string;
+  milesAway?: string;
 }
 
 interface DealCardProps {
@@ -53,25 +54,22 @@ const DealCard: React.FC<DealCardProps> = ({
   };
 
   const renderContent = () => {
-    if (isCommunity) {
-      // Community variant: Image first, then title
-      return (
-        <>
-          <Image source={{ uri: deal.image }} style={styles.communityImage} />
-          <Text style={styles.communityTitle}>{deal.title}</Text>
-          <Text style={styles.communityDetails}>{deal.details}</Text>
-        </>
-      );
-    } else {
-      // Standard variant: Title first, then image
-      return (
-        <>
-          <Text style={styles.standardTitle}>{deal.title}</Text>
-          <Image source={{ uri: deal.image }} style={styles.standardImage} />
-          <Text style={styles.standardDetails}>{deal.details}</Text>
-        </>
-      );
-    }
+    const locationAuthorText = `${deal.milesAway || '?mi'} away • ${deal.timeAgo} • ${deal.author || 'Unknown'}`;
+    
+    const imageSource = typeof deal.image === 'string' 
+      ? { uri: deal.image } 
+      : deal.image;
+    
+    return (
+      <>
+        <Image source={imageSource} style={styles.dealImage} />
+        <View style={styles.textContainer}>
+          <Text style={styles.dealTitle} numberOfLines={2}>{deal.title}</Text>
+          <Text style={styles.restaurantName} numberOfLines={1}>{deal.restaurant}</Text>
+          <Text style={styles.locationAuthor} numberOfLines={1}>{locationAuthorText}</Text>
+        </View>
+      </>
+    );
   };
 
   return (
@@ -85,15 +83,14 @@ const DealCard: React.FC<DealCardProps> = ({
     >
       {renderContent()}
       
-      {/* Interactions */}
       <View style={styles.cardInteractions}>
         <View style={styles.voteContainer}>
           <TouchableOpacity 
             style={[styles.voteButton, deal.isUpvoted && styles.upvoted]}
             onPress={handleUpvote}
           >
-            <MaterialCommunityIcons 
-              name="arrow-up" 
+            <MaterialCommunityIcons  // CHANGED: Back to original
+              name="arrow-up"  // CHANGED: Back to original
               size={12} 
               color={deal.isUpvoted ? "#FFF" : "#000"} 
             />
@@ -104,8 +101,8 @@ const DealCard: React.FC<DealCardProps> = ({
             style={[styles.voteButton, deal.isDownvoted && styles.downvoted]}
             onPress={handleDownvote}
           >
-            <MaterialCommunityIcons 
-              name="arrow-down" 
+            <MaterialCommunityIcons  // CHANGED: Back to original
+              name="arrow-down"  // CHANGED: Back to original
               size={12} 
               color={deal.isDownvoted ? "#FFF" : "#000"} 
             />
@@ -115,8 +112,8 @@ const DealCard: React.FC<DealCardProps> = ({
           style={[styles.favoriteButton, deal.isFavorited && styles.favorited]}
           onPress={handleFavorite}
         >
-          <MaterialCommunityIcons 
-            name={deal.isFavorited ? "heart" : "heart-outline"} 
+          <MaterialCommunityIcons  // CHANGED: Back to original
+            name={deal.isFavorited ? "heart" : "heart-outline"}  // CHANGED: Back to original
             size={16} 
             color={deal.isFavorited ? "#FF8C4C" : "#000"} 
           />
@@ -132,88 +129,71 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
+    width: 185,
+    minHeight: 280,
   },
   communityCard: {
-    width: 220,
     marginRight: 8,
   },
-  standardCard: {
-    width: 185,
-    borderWidth: 0.5,
-    borderColor: '#AAAAAA',
+  standardCard: { 
     marginBottom: 8,
   },
-  // Community variant styles
-  communityImage: {
-    width: 204,
+  dealImage: {
+    width: 161,
     height: 144,
     borderRadius: 5,
     borderWidth: 0.5,
     borderColor: '#757575',
     marginBottom: 8,
   },
-  communityTitle: {
+  textContainer: {
+    width: 161,
+    minHeight: 54,
+    marginBottom: 8,
+  },
+  dealTitle: {
     fontFamily: 'Inter',
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 15,
     color: '#000000',
-    textAlign: 'center',
-    width: 204,
+    textAlign: 'left',
+    width: '100%',
     height: 30,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  communityDetails: {
+  restaurantName: {
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 12,
+    color: '#000000',
+    width: '100%',
+    height: 12,
+    marginBottom: 2,
+    textAlign: 'left',
+  },
+  locationAuthor: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 10,
     lineHeight: 12,
-    color: '#000000',
-    width: 204,
-    height: 24,
-    marginBottom: 8,
+    color: '#666666',
+    width: '100%',
+    height: 12,
+    textAlign: 'left',
   },
-  // Standard variant styles
-  standardTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 15,
-    color: '#000000',
-    textAlign: 'center',
-    width: 169,
-    height: 30,
-    marginBottom: 8,
-  },
-  standardImage: {
-    width: 169,
-    height: 144,
-    borderRadius: 5,
-    borderWidth: 0.5,
-    borderColor: '#757575',
-    marginBottom: 8,
-  },
-  standardDetails: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 10,
-    lineHeight: 12,
-    color: '#000000',
-    width: 169,
-    height: 24,
-    marginBottom: 8,
-  },
-  // Interaction styles
   cardInteractions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+    marginTop: 'auto',
   },
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D8D8D8',
     borderRadius: 30,
@@ -221,7 +201,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   voteButton: {
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 2,
@@ -249,7 +229,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   favoriteButton: {
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D8D8D8',
     borderRadius: 30,

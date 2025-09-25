@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
 
 interface BottomNavigationProps {
-  photoUrl?: any; // Optional override for profile photo
+  photoUrl?: any;
   activeTab?: string;
   onTabPress?: (tab: string) => void;
 }
@@ -18,7 +18,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const navigation = useNavigation();
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
 
-  // Fetch user data on component mount and when screen comes into focus
   const loadUserData = async () => {
     try {
       const userData = await fetchUserData();
@@ -32,7 +31,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     loadUserData();
   }, []);
 
-  // Refresh user data when any screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadUserData();
@@ -40,7 +38,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   );
 
   const navItems = [
-    { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' },
+    { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' }, // CHANGED: Back to original
     { id: 'search', icon: 'magnify', label: 'Search', screen: 'SearchScreen' },
     { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
     { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesScreen' },
@@ -62,7 +60,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     const isActive = activeTab === item.id;
     
     if (item.id === 'profile') {
-      // Use prop photoUrl if provided, otherwise use fetched user photo
       const displayPhotoUrl = propPhotoUrl || userPhotoUrl;
       
       return (
@@ -90,7 +87,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         style={[styles.navItem, isActive && styles.activeNavItem]}
         onPress={() => handleTabPress(item.screen)}
       >
-        <MaterialCommunityIcons 
+        <MaterialCommunityIcons  // CHANGED: Back to original
           name={item.icon} 
           size={28} 
           color={isActive ? '#FFA05C' : '#666'} 
