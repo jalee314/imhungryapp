@@ -16,7 +16,6 @@ const getCurrentUserId = async (): Promise<string | null> => {
 // Upload image to Supabase storage
 const uploadDealImage = async (imageUri: string): Promise<string | null> => {
   try {
-    // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       console.error('User not authenticated:', authError);
@@ -37,7 +36,7 @@ const uploadDealImage = async (imageUri: string): Promise<string | null> => {
     const byteArray = toByteArray(base64);
     
     const { data, error } = await supabase.storage
-      .from('deal-images') // Changed from 'deals' to 'deal-images'
+      .from('deal-images')
       .upload(`public/${fileName}`, byteArray.buffer, {
         contentType: `image/${fileExt}`,
         cacheControl: '3600',
@@ -65,26 +64,17 @@ const parseDate = (dateString: string | null): string | null => {
   if (!dateString || dateString === 'Unknown') {
     return null;
   }
-
   try {
-    // Handle different date formats
     let date: Date;
-    
-    // If it's already an ISO string
     if (dateString.includes('T') || dateString.includes('Z')) {
       date = new Date(dateString);
-    }
-    // If it's a date string like "2024-12-25" or "12/25/2024"
-    else {
+    } else {
       date = new Date(dateString);
     }
-
-    // Check if the date is valid
     if (isNaN(date.getTime())) {
       console.error('Invalid date format:', dateString);
       return null;
     }
-
     return date.toISOString();
   } catch (error) {
     console.error('Error parsing date:', dateString, error);
@@ -112,13 +102,11 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       imageUri: dealData.imageUri ? 'Present' : 'None'
     });
 
-    // Get current user ID
     const userId = await getCurrentUserId();
     if (!userId) {
       return { success: false, error: 'No authenticated user found' };
     }
 
-    // Upload image if provided
     let imageUrl: string | null = null;
     if (dealData.imageUri) {
       imageUrl = await uploadDealImage(dealData.imageUri);
@@ -127,7 +115,6 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       }
     }
 
-    // Get restaurant's brand_id
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurant')
       .select('brand_id')
@@ -139,9 +126,8 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       return { success: false, error: 'Failed to fetch restaurant information' };
     }
 
-    // Prepare deal template data
     const dealTemplateData = {
-      brand_id: restaurant.brand_id,
+      restaurant_id: dealData.restaurantId,
       user_id: dealData.isAnonymous ? null : userId,
       title: dealData.title,
       description: dealData.description || null,
@@ -153,28 +139,23 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
 
     console.log('Inserting deal template:', dealTemplateData);
 
-    // Insert deal template
-    const { data: templateData, error: templateError } = await supabase
+    // Insert the deal template. The database trigger will handle creating the instances.
+    const { error: templateError } = await supabase
       .from('deal_template')
-      .insert(dealTemplateData)
-      .select('template_id')
-      .single();
+      .insert(dealTemplateData);
 
     if (templateError) {
       console.error('Error creating deal template:', templateError);
       return { success: false, error: 'Failed to create deal template' };
     }
 
-    // Parse and validate the expiration date
+    // --- REMOVED CODE BLOCK ---
+    // The following block was manually creating a deal_instance, which is now
+    // handled automatically by the database trigger. Removing it solves the
+    // duplication issue.
+    /*
     const parsedEndDate = parseDate(dealData.expirationDate);
     
-    console.log('Parsed dates:', {
-      original: dealData.expirationDate,
-      parsed: parsedEndDate
-    });
-
-    // The database trigger will automatically create the deal_instance
-    // But we can also create it manually to ensure it exists
     const dealInstanceData = {
       restaurant_id: dealData.restaurantId,
       template_id: templateData.template_id,
@@ -190,11 +171,12 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
 
     if (instanceError) {
       console.error('Error creating deal instance:', instanceError);
-      // Don't return error here as the trigger might have already created it
       console.log('Deal instance might have been created by trigger');
     }
+    */
+    // --- END OF REMOVED CODE BLOCK ---
 
-    console.log('Deal created successfully!');
+    console.log('Deal template created successfully! Instance(s) will be created by the trigger.');
     return { success: true };
   } catch (error) {
     console.error('Error creating deal:', error);
@@ -202,17 +184,16 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
   }
 };
 
+
 // Check for profanity using your existing Supabase Edge Function
 export const checkDealContentForProfanity = async (title: string, description?: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Check title for profanity
     const { data: titleData, error: titleError } = await supabase.functions.invoke('catch-profanity', {
       body: { text: title }
     });
 
     if (titleError) {
       console.error('Error checking title profanity:', titleError);
-      // If profanity check fails, allow post to proceed (you can change this)
       return { success: true };
     }
 
@@ -223,7 +204,6 @@ export const checkDealContentForProfanity = async (title: string, description?: 
       };
     }
 
-    // Check description for profanity if it exists
     if (description && description.trim()) {
       const { data: descData, error: descError } = await supabase.functions.invoke('catch-profanity', {
         body: { text: description }
@@ -231,7 +211,6 @@ export const checkDealContentForProfanity = async (title: string, description?: 
 
       if (descError) {
         console.error('Error checking description profanity:', descError);
-        // If profanity check fails, allow post to proceed (you can change this)
         return { success: true };
       }
 
@@ -246,7 +225,6 @@ export const checkDealContentForProfanity = async (title: string, description?: 
     return { success: true };
   } catch (error) {
     console.error('Error calling profanity filter:', error);
-    // If profanity check fails, allow post to proceed (you can change this)
     return { success: true };
   }
 };
