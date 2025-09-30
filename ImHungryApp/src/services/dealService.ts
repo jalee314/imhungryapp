@@ -490,7 +490,7 @@ export const getDealUploaderId = async (dealId: string): Promise<string | null> 
       return null;
     }
 
-    const userId = data.deal_template[0]?.user_id;
+    const userId = data.deal_template?.user_id;
     return userId;
   } catch (error) {
     return null;
