@@ -104,3 +104,59 @@ export const removeFavoriteInteractions = async (dealId: string): Promise<boolea
     return false;
   }
 };
+
+/**
+ * Get the view count for a deal (count of click interactions)
+ */
+export const getDealViewCount = async (dealId: string): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('interaction')
+      .select('*', { count: 'exact', head: true })
+      .eq('deal_id', dealId)
+      .eq('interaction_type', 'click');
+
+    if (error) {
+      console.error('Error fetching view count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getDealViewCount:', error);
+    return 0;
+  }
+};
+
+/**
+ * Get view counts for multiple deals at once (more efficient)
+ */
+export const getDealViewCounts = async (dealIds: string[]): Promise<Record<string, number>> => {
+  try {
+    if (dealIds.length === 0) return {};
+
+    const { data, error } = await supabase
+      .from('interaction')
+      .select('deal_id')
+      .in('deal_id', dealIds)
+      .eq('interaction_type', 'click');
+
+    if (error) {
+      console.error('Error fetching view counts:', error);
+      return {};
+    }
+
+    // Count clicks per deal
+    const viewCounts: Record<string, number> = {};
+    dealIds.forEach(id => viewCounts[id] = 0);
+    
+    data?.forEach(interaction => {
+      viewCounts[interaction.deal_id] = (viewCounts[interaction.deal_id] || 0) + 1;
+    });
+
+    return viewCounts;
+  } catch (error) {
+    console.error('Error in getDealViewCounts:', error);
+    return {};
+  }
+};

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { Deal } from '../components/DealCard';
 
 interface DealUpdateContextType {
@@ -12,6 +12,12 @@ const DealUpdateContext = createContext<DealUpdateContextType | undefined>(undef
 export const DealUpdateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Store updated deals by ID
   const [updatedDeals, setUpdatedDeals] = useState<Map<string, Deal>>(new Map());
+  
+  // Use ref to access latest state without triggering re-renders
+  const updatedDealsRef = useRef<Map<string, Deal>>(new Map());
+  
+  // Keep ref in sync with state
+  updatedDealsRef.current = updatedDeals;
 
   const updateDeal = useCallback((deal: Deal) => {
     setUpdatedDeals(prev => {
@@ -21,9 +27,10 @@ export const DealUpdateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
   }, []);
 
+  // Access ref instead of state - stable reference
   const getUpdatedDeal = useCallback((dealId: string) => {
-    return updatedDeals.get(dealId);
-  }, [updatedDeals]);
+    return updatedDealsRef.current.get(dealId);
+  }, []); // No dependencies - stable reference
 
   const clearUpdatedDeal = useCallback((dealId: string) => {
     setUpdatedDeals(prev => {
