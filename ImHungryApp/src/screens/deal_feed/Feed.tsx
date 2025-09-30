@@ -10,6 +10,7 @@ import {
   Image,
   SafeAreaView,
   ActivityIndicator,
+  RefreshControl, // Add this import
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,7 @@ const Feed: React.FC = () => {
   const [selectedCuisine, setSelectedCuisine] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // Add refreshing state
   const [error, setError] = useState<string | null>(null);
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
@@ -59,22 +61,37 @@ const Feed: React.FC = () => {
   ];
 
   // Fetch deals from database
-  const loadDeals = async () => {
+  const loadDeals = async (isRefreshing = false) => {
     try {
-      setLoading(true);
+      if (!isRefreshing) {
+        setLoading(true);
+      }
       setError(null);
+      
+      console.log(`📥 ${isRefreshing ? 'Refreshing' : 'Loading'} deals...`);
       
       const dbDeals = await fetchRankedDeals();
       const transformedDeals = dbDeals.map(transformDealForUI);
       
+      console.log(`✅ Loaded ${transformedDeals.length} deals`);
       setDeals(transformedDeals);
     } catch (err) {
       console.error('Error loading deals:', err);
       setError('Failed to load deals. Please try again.');
     } finally {
-      setLoading(false);
+      if (isRefreshing) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadDeals(true);
+  }, []);
 
   useEffect(() => {
     loadDeals();
@@ -366,7 +383,20 @@ const Feed: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#FF8C4C']} // Android spinner color
+            tintColor="#FF8C4C" // iOS spinner color
+            title="Pull to refresh" // iOS text
+            titleColor="#666" // iOS text color
+          />
+        }
+      >
         {/* Cuisine Filters */}
         <CuisineFilter
           filters={cuisineFilters}
