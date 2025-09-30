@@ -37,6 +37,20 @@ class ReportService {
   async submitReport(report: ReportSubmission): Promise<{ success: boolean; reportId?: string; error?: string }> {
     try {
 
+      // Validate required fields
+      if (!report.dealId) {
+        return { success: false, error: 'Deal ID is required' };
+      }
+      if (!report.reporterUserId) {
+        return { success: false, error: 'Reporter user ID is required' };
+      }
+      if (!report.uploaderUserId) {
+        return { success: false, error: 'Uploader user ID is required' };
+      }
+      if (!report.reasonCodeId) {
+        return { success: false, error: 'Reason code ID is required' };
+      }
+
       const { data, error } = await supabase
         .from('user_report')
         .insert([
@@ -56,8 +70,6 @@ class ReportService {
       if (error) {
         return { success: false, error: error.message };
       }
-
-
       return { success: true, reportId: data.report_id };
     } catch (error) {
       return { success: false, error: 'Failed to submit report' };

@@ -22,6 +22,7 @@ const DealDetailScreen: React.FC = () => {
   const route = useRoute<DealDetailRouteProp>();
   const { deal } = route.params;
 
+
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
@@ -102,7 +103,6 @@ const DealDetailScreen: React.FC = () => {
   };
 
   const handleDirections = () => {
-    console.log('Get directions to:', dealData.restaurant);
     // Implement directions functionality
   };
 
@@ -121,13 +121,9 @@ const DealDetailScreen: React.FC = () => {
 
   const handleBlockUser = () => {
     setIsPopupVisible(false);
-    // Implement block user functionality
+    (navigation as any).navigate('BlockUser', { dealId: dealData.id, uploaderUserId: dealData.userId || "00000000-0000-0000-0000-000000000000" });
   };
 
-  const handleContentFeedback = () => {
-    setIsPopupVisible(false);
-    // Implement content feedback functionality
-  };
 
   // Get profile picture - use actual data or fallback to default
   const profilePicture = dealData.userProfilePhoto 
@@ -306,7 +302,6 @@ const DealDetailScreen: React.FC = () => {
         onClose={handleClosePopup}
         onReportContent={handleReportContent}
         onBlockUser={handleBlockUser}
-        onContentFeedback={handleContentFeedback}
         dealId={dealData.id}
         uploaderUserId={dealData.userId || "00000000-0000-0000-0000-000000000000"}
       />

@@ -181,6 +181,7 @@ const Feed: React.FC = () => {
   };
 
   const handleUpvote = (dealId: string) => {
+
     const deal = deals.find(d => d.id === dealId);
     if (!deal) return;
 

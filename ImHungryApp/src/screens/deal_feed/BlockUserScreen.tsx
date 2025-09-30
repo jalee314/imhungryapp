@@ -12,27 +12,22 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { reportService } from '../../services/reportService';
-import { getFullUserProfile } from '../../services/userService';
-import { getDealUploaderId } from '../../services/dealService';
+import { submitBlock } from '../../services/blockService';
 
-type ReportContentRouteProp = RouteProp<{ ReportContent: { dealId: string; uploaderUserId: string } }, 'ReportContent'>;
+type BlockUserRouteProp = RouteProp<{ BlockUser: { dealId: string; uploaderUserId: string } }, 'BlockUser'>;
 
-const ReportContentScreen: React.FC = () => {
+const BlockUserScreen: React.FC = () => {
   const navigation = useNavigation();
-  const route = useRoute<ReportContentRouteProp>();
+  const route = useRoute<BlockUserRouteProp>();
   const { dealId, uploaderUserId } = route.params;
   
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
 
-
-  const reportOptions = [
-    'I\'ve seen this deal already / it\'s a repeat',
-    'Inappropriate / offensive content',
-    'This deal is no longer valid / has expired',
-    'Wrong Price',
-    'Wrong Deal',
+  const blockOptions = [
+    'Inappropriate behavior',
+    'Spam or harassment',
+    'Offensive content',
     'Other'
   ];
 
@@ -46,69 +41,42 @@ const ReportContentScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (selectedOptions.length === 0) {
-      Alert.alert('Please select a reason', 'You must select at least one reason for reporting this content.');
+      Alert.alert('Please select a reason', 'You must select at least one reason for blocking this user.');
       return;
     }
 
     try {
-      // Get current user profile
-      const currentUser = await getFullUserProfile();
-      
-      if (!currentUser) {
-        Alert.alert('Error', 'You must be logged in to submit a report.');
+      // Check if uploaderUserId is valid (not the fallback UUID)
+      if (!uploaderUserId || uploaderUserId === "00000000-0000-0000-0000-000000000000") {
+        Alert.alert('Error', 'Unable to identify the user. Please try again later.');
         return;
       }
 
-      // Check if uploaderUserId is valid (not the fallback UUID)
-      let finalUploaderUserId = uploaderUserId;
-      
-      if (!uploaderUserId || uploaderUserId === "00000000-0000-0000-0000-000000000000") {
-        const fetchedUserId = await getDealUploaderId(dealId);
-        
-        if (!fetchedUserId) {
-          Alert.alert('Error', 'Unable to identify the content uploader. Please try again later.');
-          return;
-        }
-        
-        finalUploaderUserId = fetchedUserId;
-      }
-
-      // Map selected options to reason code UUIDs from your Supabase database
+      // Map selected reason to reason code ID (using actual UUIDs from database)
       const reasonCodeMap: { [key: string]: string } = {
-        'I\'ve seen this deal already / it\'s a repeat': '80c755ea-1e1b-4f11-8ed5-1ca3b6779b5b', 
-        'Inappropriate / offensive behavior': 'f4ad8941-54e7-4b86-8750-313360cefbda', 
-        'This deal is no longer valid / has expired': 'b6fc9047-30f2-44f9-8787-69e415041581',
-        'Wrong Price': 'bee4479d-4368-4fe8-9e31-7e7e4af8698e',
-        'Wrong Deal': 'b8654ee1-9a0e-471f-b205-b05b0c5cc113',
-        'Other': '2deae166-7539-46d7-a279-ae235b419791' 
+        'Inappropriate / offensive behavior': 'f7095d6b-3efd-462f-be0f-239bfd636886', // Code 6
+        'Spam or harassment': 'e6e34593-de9a-4464-8bc0-f32d127ca5dc', // Code 7
+        'Offensive content': 'd0d49ef3-14ec-4c7f-bada-39bd63499756', // Code 8
+        'Other': '2deae166-7539-46d7-a279-ae235b419791' // Code 5
       };
 
-      // Get the first selected reason (you might want to handle multiple selections differently)
-      const selectedReason = selectedOptions[0];
-      const reasonCodeId = reasonCodeMap[selectedReason] || '2deae166-7539-46d7-a279-ae235b419791'; // Default to "Other"
+      const reasonCodeId = reasonCodeMap[selectedOptions[0]] || '2deae166-7539-46d7-a279-ae235b419791'; // Default to "Other" UUID
+      const reasonText = selectedOptions.includes('Other') ? additionalDetails : undefined;
 
-      // Submit the report to Supabase
-      const reportData = {
-        dealId,
-        reporterUserId: currentUser.user_id,
-        uploaderUserId: finalUploaderUserId,
-        reasonCodeId: reasonCodeId,
-        reasonText: selectedOptions.includes('Other') ? additionalDetails : undefined,
-      };
 
-      const result = await reportService.submitReport(reportData);
+      const result = await submitBlock(uploaderUserId, reasonCodeId, reasonText);
 
       if (result.success) {
         Alert.alert(
-          'Report Submitted',
-          'Thank you for your report. We will review it and take appropriate action.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+          'User Blocked',
+          'This user has been blocked. You will no longer see their content.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Feed' as never) }]
         );
       } else {
-        Alert.alert('Error', result.error || 'Failed to submit report. Please try again.');
+        Alert.alert('Error', result.error || 'Failed to block user. Please try again.');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit report. Please try again.');
+      Alert.alert('Error', 'Failed to block user. Please try again.');
     }
   };
 
@@ -126,7 +94,7 @@ const ReportContentScreen: React.FC = () => {
           <Text style={styles.headerButtonText}>Cancel</Text>
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Report Content</Text>
+        <Text style={styles.headerTitle}>Block User</Text>
         
         <TouchableOpacity onPress={handleSubmit} style={styles.headerButton}>
           <Text style={styles.submitButtonText}>Submit</Text>
@@ -134,9 +102,9 @@ const ReportContentScreen: React.FC = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Report Options */}
+        {/* Block Options */}
         <View style={styles.optionsContainer}>
-          {reportOptions.map((option, index) => (
+          {blockOptions.map((option, index) => (
             <View key={option}>
               <TouchableOpacity 
                 style={styles.optionRow}
@@ -149,7 +117,7 @@ const ReportContentScreen: React.FC = () => {
                   )}
                 </View>
               </TouchableOpacity>
-              {index < reportOptions.length - 1 && <View style={styles.divider} />}
+              {index < blockOptions.length - 1 && <View style={styles.divider} />}
             </View>
           ))}
         </View>
@@ -159,7 +127,7 @@ const ReportContentScreen: React.FC = () => {
           <View style={styles.detailsContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder="Please provide details about why you're reporting this deal."
+              placeholder="Please provide details about why you're blocking this user."
               value={additionalDetails}
               onChangeText={setAdditionalDetails}
               multiline
@@ -273,4 +241,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReportContentScreen;
+export default BlockUserScreen;
