@@ -30,6 +30,7 @@ const CommunityUploadedScreen: React.FC = () => {
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
+  const currentUserId = useRef<string | null>(null);
 
   useEffect(() => {
     const loadDeals = async () => {
@@ -58,6 +59,35 @@ const CommunityUploadedScreen: React.FC = () => {
     };
   }, []);
 
+  // ✨ NEW: Sync updated deals from context when screen comes into focus (same as Feed)
+  useFocusEffect(
+    React.useCallback(() => {
+      const dealsToClean: string[] = [];
+      
+      setDeals(prevDeals => {
+        let hasChanges = false;
+        const updatedDeals = prevDeals.map(deal => {
+          const updatedDeal = getUpdatedDeal(deal.id);
+          if (updatedDeal) {
+            hasChanges = true;
+            dealsToClean.push(deal.id); // Mark for cleanup, don't clear yet
+            return updatedDeal;
+          }
+          return deal;
+        });
+        
+        return hasChanges ? updatedDeals : prevDeals;
+      });
+      
+      // Clear after render completes
+      if (dealsToClean.length > 0) {
+        setTimeout(() => {
+          dealsToClean.forEach(id => clearUpdatedDeal(id));
+        }, 0);
+      }
+    }, [getUpdatedDeal, clearUpdatedDeal])
+  );
+
   // Setup Realtime subscriptions for interactions and favorites
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
@@ -65,53 +95,62 @@ const CommunityUploadedScreen: React.FC = () => {
       if (!user || deals.length === 0) return;
 
       const userId = user.id;
+      currentUserId.current = userId;
       const dealIds = deals.map(d => d.id);
 
-      // Subscribe to ALL interaction changes
+      // Subscribe to interaction changes (for OTHER users' votes)
       interactionChannel.current = supabase
         .channel('community-interactions')
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
             table: 'interaction',
           },
           async (payload) => {
-            const interaction = payload.new || payload.old;
+            const interaction = payload.new;
             
             // Only update if it affects our visible deals
             if (!dealIds.includes(interaction.deal_id)) return;
             
-            // Skip click events (too noisy, not needed for UI updates)
+            // Skip click events (too noisy)
             if (interaction.interaction_type === 'click') return;
             
-            // Debounce: Skip if we just processed this exact action
-            const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
-            if (recentActions.current.has(actionKey)) {
-              console.log('⏭️ Skipping duplicate realtime event');
+            // IMPORTANT: Skip if this is OUR OWN action (optimistic updates handle this)
+            if (interaction.user_id === userId) {
+              console.log('⏭️ Skipping own action - optimistic update already handled it');
               return;
             }
             
-            // Mark this action as processed
+            // Debounce
+            const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
+            if (recentActions.current.has(actionKey)) return;
+            
             recentActions.current.add(actionKey);
             setTimeout(() => recentActions.current.delete(actionKey), 1000);
             
-            console.log('⚡ Realtime interaction:', payload.eventType, interaction.interaction_type);
+            console.log('⚡ Realtime interaction from another user:', interaction.interaction_type);
             
-            // Recalculate vote counts and states
+            // Only recalculate for THIS SPECIFIC deal, not all deals
             const [voteStates, voteCounts] = await Promise.all([
-              getUserVoteStates(dealIds),
-              calculateVoteCounts(dealIds)
+              getUserVoteStates([interaction.deal_id]),
+              calculateVoteCounts([interaction.deal_id])
             ]);
             
-            // Update deals with new data
-            setDeals(prevDeals => prevDeals.map(deal => ({
-              ...deal,
-              isUpvoted: voteStates[deal.id]?.isUpvoted || false,
-              isDownvoted: voteStates[deal.id]?.isDownvoted || false,
-              votes: voteCounts[deal.id] || 0,
-            })));
+            // Update only the affected deal
+            setDeals(prevDeals => prevDeals.map(deal => {
+              if (deal.id === interaction.deal_id) {
+                return {
+                  ...deal,
+                  votes: voteCounts[deal.id] || deal.votes,
+                  // Keep current user's vote state (don't override optimistic updates)
+                  isUpvoted: deal.isUpvoted,
+                  isDownvoted: deal.isDownvoted,
+                };
+              }
+              return deal;
+            }));
           }
         )
         .subscribe((status) => {
@@ -120,7 +159,7 @@ const CommunityUploadedScreen: React.FC = () => {
           }
         });
 
-      // Subscribe to favorite changes
+      // Subscribe to favorite changes (only for current user)
       favoriteChannel.current = supabase
         .channel('community-favorites')
         .on(
@@ -133,8 +172,15 @@ const CommunityUploadedScreen: React.FC = () => {
           },
           (payload) => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
-            const isFavorited = payload.eventType === 'INSERT';
             
+            // Skip if we're already processing this action
+            const actionKey = `favorite-${dealId}`;
+            if (recentActions.current.has(actionKey)) {
+              console.log('⏭️ Skipping duplicate favorite event');
+              return;
+            }
+            
+            const isFavorited = payload.eventType === 'INSERT';
             console.log('⚡ Realtime favorite:', payload.eventType, dealId);
             
             setDeals(prevDeals => prevDeals.map(deal => 

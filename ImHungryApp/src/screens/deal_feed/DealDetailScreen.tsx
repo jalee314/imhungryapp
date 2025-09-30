@@ -15,6 +15,8 @@ import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
+import { getDealViewCount } from '../../services/interactionService';
+import { supabase } from '../../../lib/supabase';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
 
@@ -27,11 +29,49 @@ const DealDetailScreen: React.FC = () => {
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [viewCount, setViewCount] = useState<number>(0);
 
   // ✨ NEW: Update context whenever deal data changes
   useEffect(() => {
     updateDeal(dealData);
   }, [dealData, updateDeal]);
+
+  // Fetch initial view count and subscribe to realtime updates
+  useEffect(() => {
+    const fetchViewCount = async () => {
+      const count = await getDealViewCount(dealData.id);
+      setViewCount(count);
+    };
+
+    fetchViewCount();
+
+    // Subscribe to realtime click interactions for this deal
+    const subscription = supabase
+      .channel(`deal-clicks-${dealData.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'interaction',
+          filter: `deal_id=eq.${dealData.id}`,
+        },
+        (payload) => {
+          const interaction = payload.new as any;
+          // Only increment for click interactions
+          if (interaction.interaction_type === 'click') {
+            console.log('⚡ New view detected via Realtime');
+            setViewCount(prev => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [dealData.id]);
 
   // ❌ REMOVE ENTIRE useEffect for click logging (lines 38-45):
   // The click is already logged in Feed.tsx/CommunityUploadedScreen.tsx
@@ -171,7 +211,7 @@ const DealDetailScreen: React.FC = () => {
           <View style={styles.restaurantTopRow}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
             <View style={styles.viewCountContainer}>
-              <Text style={styles.viewCount}>{dealData.votes} viewed</Text>
+              <Text style={styles.viewCount}>{viewCount} viewed</Text>
               <View style={styles.avatarGroup}>
                 {/* Mock viewer avatars */}
                 <Image 

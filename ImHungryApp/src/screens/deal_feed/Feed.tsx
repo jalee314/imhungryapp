@@ -26,6 +26,7 @@ import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
+import { useDataCache } from '../../context/DataCacheContext';
 
 /**
  * Get the current authenticated user's ID
@@ -43,7 +44,8 @@ const getCurrentUserId = async (): Promise<string | null> => {
 const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
-  const [selectedCuisine, setSelectedCuisine] = useState<string>('All');
+  const { cuisines, loading: cuisinesLoading } = useDataCache(); // Get cuisines and loading state
+  const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,19 +54,6 @@ const Feed: React.FC = () => {
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
   
-  const cuisineFilters = [
-    '🍕 Pizza',
-    '🍔 Burgers', 
-    '🌮 Mexican',
-    '🍣 Japanese',
-    '🍝 Italian',
-    '🥗 Asian',
-    '🍖 BBQ',
-    '🥪 Sandwiches',
-    '🍜 Vietnamese',
-    '🥙 Mediterranean'
-  ];
-
   // Load deals on mount
   useEffect(() => {
     const loadDeals = async () => {
@@ -243,17 +232,26 @@ const Feed: React.FC = () => {
     }
   }, []);
 
-  // Filter deals based on selected cuisine
+  // Filter deals based on selected cuisine ID
   const filteredDeals = deals.filter(deal => {
-    if (selectedCuisine === 'All') return true;
-    return deal.cuisine?.toLowerCase().includes(selectedCuisine.toLowerCase()) || false;
+    if (selectedCuisineId === 'All') return true;
+    return deal.cuisineId === selectedCuisineId;
+  });
+
+  // Debug logging
+  console.log('Feed Debug:', {
+    totalDeals: deals.length,
+    filteredDeals: filteredDeals.length,
+    selectedCuisineId,
+    cuisinesLoaded: cuisines.length,
+    sampleDealCuisineId: deals[0]?.cuisineId
   });
 
   const communityDeals = filteredDeals.slice(0, 10);
   const dealsForYou = filteredDeals;
 
   const handleCuisineFilterSelect = (filter: string) => {
-    setSelectedCuisine(filter);
+    setSelectedCuisineId(filter);
   };
 
   // ✅ FIX: Access deal state INSIDE setter to avoid stale closure
@@ -492,17 +490,32 @@ const Feed: React.FC = () => {
           />
         }
       >
-        {/* Cuisine Filters */}
-        <CuisineFilter
-          filters={cuisineFilters}
-          selectedFilter={selectedCuisine}
-          onFilterSelect={handleCuisineFilterSelect}
-        />
+        {/* Cuisine Filters - Only show when cuisines are loaded */}
+        {!cuisinesLoading && cuisines.length > 0 && (
+          <CuisineFilter
+            filters={cuisines.map(c => c.name)}
+            selectedFilter={
+              selectedCuisineId === 'All' 
+                ? 'All' 
+                : cuisines.find(c => c.id === selectedCuisineId)?.name || 'All'
+            }
+            onFilterSelect={(filterName) => {
+              if (filterName === 'All') {
+                setSelectedCuisineId('All');
+              } else {
+                const cuisine = cuisines.find(c => c.name === filterName);
+                if (cuisine) {
+                  setSelectedCuisineId(cuisine.id);
+                }
+              }
+            }}
+          />
+        )}
         {loading ? (
           renderLoadingState()
         ) : error ? (
           renderErrorState()
-        ) : deals.length === 0 ? (
+        ) : filteredDeals.length === 0 ? (
           renderEmptyState()
         ) : (
           <>
