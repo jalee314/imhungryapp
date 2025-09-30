@@ -397,8 +397,9 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       await supabase.from('user').update({ profile_photo: uploadedPath }).eq('user_id', user.id);
       await supabase.auth.updateUser({ data: { profile_photo_url: uploadedPath } });
 
-      // Clear the user cache so other components fetch fresh data
+      // Clear ALL caches so everything updates
       await clearUserCache();
+      await ProfileCacheService.clearCache();
 
       // Only delete old photo after successful upload and database update
       if (oldPhotoPath) {
@@ -412,10 +413,17 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         }
       }
 
-      // Update UI
+      // Update UI with new URL
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(uploadedPath);
       setPhotoUrl(urlData.publicUrl);
+      
+      // Force refresh to update everything including BottomNavigation
       await refreshProfile();
+      
+      // Add a small delay and trigger a re-render
+      setTimeout(() => {
+        setPhotoUrl(urlData.publicUrl + `?t=${Date.now()}`);
+      }, 100);
       
     } catch (error) {
       console.error('Error uploading photo:', error);

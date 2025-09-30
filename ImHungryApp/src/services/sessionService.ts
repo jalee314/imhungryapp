@@ -210,17 +210,23 @@ export const isAuthenticated = async (): Promise<boolean> => {
  * Setup app state listener to manage sessions
  */
 export const setupAppStateListener = (): (() => void) => {
+  let lastState: AppStateStatus = AppState.currentState;
+  
   const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-    if (nextAppState === 'background' || nextAppState === 'inactive') {
+    // Only log when transitioning to background (not inactive)
+    // This prevents duplicate logs since iOS fires both 'inactive' and 'background'
+    if (nextAppState === 'background' && lastState !== 'background') {
       console.log('📱 App going to background - ending session');
       await endDatabaseSession();
-    } else if (nextAppState === 'active') {
+    } else if (nextAppState === 'active' && lastState !== 'active') {
       console.log('📱 App coming to foreground - creating session');
       const isAuth = await isAuthenticated();
       if (isAuth) {
         await createDatabaseSession();
       }
     }
+    
+    lastState = nextAppState;
   };
 
   const subscription = AppState.addEventListener('change', handleAppStateChange);

@@ -104,21 +104,16 @@ export class ProfileCacheService {
       // Generate photo URL if needed
       let photoUrl = null;
       if (profile.profile_photo && profile.profile_photo !== 'default_avatar.png') {
-        // Check cache first
-        photoUrl = await this.getCachedPhotoUrl(user.id);
+        // Always generate fresh URL from the database value (don't use stale cache)
+        const photoPath = profile.profile_photo.startsWith('public/') 
+          ? profile.profile_photo 
+          : `public/${profile.profile_photo}`;
         
-        if (!photoUrl) {
-          // Generate new URL
-          const photoPath = profile.profile_photo.startsWith('public/') 
-            ? profile.profile_photo 
-            : `public/${profile.profile_photo}`;
-          
-          const { data: urlData } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(photoPath);
-          
-          photoUrl = urlData.publicUrl;
-        }
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(photoPath);
+        
+        photoUrl = urlData.publicUrl;
       }
 
       return { profile, photoUrl, dealCount };

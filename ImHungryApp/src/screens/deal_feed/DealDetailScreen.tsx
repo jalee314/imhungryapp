@@ -260,7 +260,7 @@ const DealDetailScreen: React.FC = () => {
 
           <View style={styles.rightActions}>
             <TouchableOpacity 
-              style={[styles.actionButton, dealData.isFavorited && styles.favorited]}
+              style={styles.actionButton}
               onPress={handleFavorite}
             >
               <MaterialCommunityIcons 
@@ -534,9 +534,6 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  favorited: {
-    backgroundColor: '#FF8C4C',
   },
   detailsSection: {
     paddingHorizontal: 24,
