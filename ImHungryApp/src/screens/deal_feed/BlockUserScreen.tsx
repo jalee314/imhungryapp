@@ -25,7 +25,7 @@ const BlockUserScreen: React.FC = () => {
   const [additionalDetails, setAdditionalDetails] = useState('');
 
   const blockOptions = [
-    'Inappropriate behavior',
+    'Inappropriate / offensive behavior',
     'Spam or harassment',
     'Offensive content',
     'Other'
@@ -60,9 +60,9 @@ const BlockUserScreen: React.FC = () => {
         'Other': '2deae166-7539-46d7-a279-ae235b419791' // Code 5
       };
 
-      const reasonCodeId = reasonCodeMap[selectedOptions[0]] || '2deae166-7539-46d7-a279-ae235b419791'; // Default to "Other" UUID
+      const selectedReason = selectedOptions[0];
+      const reasonCodeId = reasonCodeMap[selectedReason] || '2deae166-7539-46d7-a279-ae235b419791'; // Default to "Other" UUID
       const reasonText = selectedOptions.includes('Other') ? additionalDetails : undefined;
-
 
       const result = await submitBlock(uploaderUserId, reasonCodeId, reasonText);
 

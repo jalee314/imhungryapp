@@ -62,7 +62,7 @@ const BlockedUsersPage = () => {
     }
 
     try {
-      // Unblock all selected users
+      // Unblock all users who are NOT selected (unchecked)
       const unblockPromises = usersToUnblock.map(user => unblockUser(user.blocked_user_id));
       const results = await Promise.all(unblockPromises);
       
@@ -73,7 +73,10 @@ const BlockedUsersPage = () => {
         setBlockedUsers(prevUsers => 
           prevUsers.filter(user => selectedUsers.has(user.blocked_user_id))
         );
+        
+        // Update selected users to only include remaining blocked users
         setSelectedUsers(new Set(blockedUsers.filter(user => selectedUsers.has(user.blocked_user_id)).map(user => user.blocked_user_id)));
+        
         Alert.alert('Success', `${successCount} user(s) have been unblocked`, [
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);

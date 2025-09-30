@@ -40,7 +40,6 @@ export const submitBlock = async (
   reasonText?: string
 ): Promise<BlockSubmissionResult> => {
   try {
-
     // Get current user
     const currentUser = await getCurrentUserId();
     if (!currentUser) {
@@ -76,7 +75,6 @@ export const submitBlock = async (
       reason_text: reasonText || null,
     };
 
-
     const { data, error } = await supabase
       .from('user_block')
       .insert(blockData)
@@ -86,6 +84,7 @@ export const submitBlock = async (
     if (error) {
       return { success: false, error: 'Failed to block user' };
     }
+    
     return { success: true, blockId: data.block_id };
 
   } catch (error) {
@@ -151,7 +150,7 @@ export const unblockUser = async (blockedUserId: string): Promise<BlockSubmissio
       .eq('blocked_user_id', blockedUserId);
 
     if (error) {
-      return { success: false, error: 'Failed to unblock user' };
+      return { success: false, error: `Failed to unblock user: ${error.message}` };
     }
 
     return { success: true };
