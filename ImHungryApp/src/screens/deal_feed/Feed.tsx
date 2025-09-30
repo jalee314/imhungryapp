@@ -16,6 +16,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
+import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
 import { feedService } from '../../services/feedService';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
@@ -124,8 +125,40 @@ const Feed: React.FC = () => {
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#FFA05C" />
-      <Text style={styles.loadingText}>Loading deals...</Text>
+      {/* Community Uploaded Skeleton Section */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
+        <TouchableOpacity style={styles.seeAllButton}>
+          <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
+        </TouchableOpacity>
+      </View>
+      
+      <FlatList
+        data={[1, 2, 3]} // Show 3 skeleton cards
+        renderItem={() => <DealCardSkeleton variant="horizontal" />}
+        keyExtractor={(item) => item.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.communityList}
+      />
+
+      {/* Section Separator */}
+      <View style={styles.sectionSeparator} />
+
+      {/* Deals For You Skeleton Section */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
+      </View>
+
+      <View style={styles.dealsGrid}>
+        {[1, 2, 3, 4, 5, 6].map((item, index) => (
+          <View key={item} style={[
+            index % 2 === 0 ? styles.leftCard : styles.rightCard
+          ]}>
+            <DealCardSkeleton variant="vertical" />
+          </View>
+        ))}
+      </View>
     </View>
   );
 
@@ -334,9 +367,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
+    paddingBottom: 100, // Space for bottom navigation
   },
   loadingText: {
     marginTop: 16,
