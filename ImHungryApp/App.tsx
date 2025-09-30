@@ -36,7 +36,10 @@ import { DataCacheProvider } from './src/context/DataCacheContext';
 const Stack = createNativeStackNavigator();
 
 const OnboardingStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
+  <Stack.Navigator 
+    screenOptions={{ headerShown: false }}
+    initialRouteName="LogIn"
+  >
     <Stack.Screen name="Landing" component={LandingScreen} />
     <Stack.Screen name="SignUp" component={SignUp} />
     <Stack.Screen name="LogIn" component={LogIn} />
@@ -134,8 +137,12 @@ export default function App() {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event);
-      setIsLoggedIn(!!session);
+      const newLoginState = !!session;
+      
+      // Force state update with a small delay to ensure it takes effect
+      setTimeout(() => {
+        setIsLoggedIn(newLoginState);
+      }, 100);
       
       if (session && event === 'SIGNED_IN') {
         await initializeAuthSession();
@@ -169,9 +176,13 @@ export default function App() {
     );
   }
 
+
   return (
     <DataCacheProvider>
-      <NavigationContainer linking={linking}>
+      <NavigationContainer 
+        linking={linking}
+        key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
+      >
         {isLoggedIn ? <AppStack /> : <OnboardingStack />}
       </NavigationContainer>
     </DataCacheProvider>
