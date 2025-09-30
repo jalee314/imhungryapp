@@ -5,62 +5,30 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  FlatList,
   StatusBar,
-  Image,
-  SafeAreaView,
   ActivityIndicator,
-  RefreshControl, // Add this import
+  RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import Header from '../../components/Header';
 import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
-import CuisineFilter from '../../components/CuisineFilter';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 
-/**
- * Get the current authenticated user's ID
- */
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
-};
-
-const Feed: React.FC = () => {
+const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
-  const [selectedCuisine, setSelectedCuisine] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // Add refreshing state
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
-  const recentActions = useRef<Set<string>>(new Set()); // Track recent actions to avoid double-updates
-  
-  const cuisineFilters = [
-    '🍕 Pizza',
-    '🍔 Burgers', 
-    '🌮 Mexican',
-    '🍣 Japanese',
-    '🍝 Italian',
-    '🥗 Asian',
-    '🍖 BBQ',
-    '🥪 Sandwiches',
-    '🍜 Vietnamese',
-    '🥙 Mediterranean'
-  ];
+  const recentActions = useRef<Set<string>>(new Set());
 
   // Fetch deals from database
   const loadDeals = async (isRefreshing = false) => {
@@ -70,7 +38,7 @@ const Feed: React.FC = () => {
       }
       setError(null);
       
-      console.log(`📥 ${isRefreshing ? 'Refreshing' : 'Loading'} deals...`);
+      console.log(`📥 ${isRefreshing ? 'Refreshing' : 'Loading'} community deals...`);
       
       const dbDeals = await fetchRankedDeals();
       const transformedDeals = dbDeals.map(transformDealForUI);
@@ -110,7 +78,7 @@ const Feed: React.FC = () => {
 
       // Subscribe to ALL interaction changes
       interactionChannel.current = supabase
-        .channel('all-interactions')
+        .channel('all-interactions-community')
         .on(
           'postgres_changes',
           {
@@ -121,32 +89,24 @@ const Feed: React.FC = () => {
           async (payload) => {
             const interaction = payload.new || payload.old;
             
-            // Only update if it affects our visible deals
             if (!dealIds.includes(interaction.deal_id)) return;
-            
-            // Skip click events (too noisy, not needed for UI updates)
             if (interaction.interaction_type === 'click') return;
             
-            // Debounce: Skip if we just processed this exact action
             const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
             if (recentActions.current.has(actionKey)) {
-              console.log('⏭️ Skipping duplicate realtime event');
               return;
             }
             
-            // Mark this action as processed
             recentActions.current.add(actionKey);
             setTimeout(() => recentActions.current.delete(actionKey), 1000);
             
             console.log('⚡ Realtime interaction:', payload.eventType, interaction.interaction_type);
             
-            // Recalculate vote counts and states
             const [voteStates, voteCounts] = await Promise.all([
               getUserVoteStates(dealIds),
               calculateVoteCounts(dealIds)
             ]);
             
-            // Update deals with new data
             setDeals(prevDeals => prevDeals.map(deal => ({
               ...deal,
               isUpvoted: voteStates[deal.id]?.isUpvoted || false,
@@ -155,15 +115,11 @@ const Feed: React.FC = () => {
             })));
           }
         )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('📡 Interaction channel: SUBSCRIBED');
-          }
-        });
+        .subscribe();
 
       // Subscribe to favorite changes
       favoriteChannel.current = supabase
-        .channel('user-favorites')
+        .channel('user-favorites-community')
         .on(
           'postgres_changes',
           {
@@ -176,18 +132,12 @@ const Feed: React.FC = () => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
             const isFavorited = payload.eventType === 'INSERT';
             
-            console.log('⚡ Realtime favorite:', payload.eventType, dealId);
-            
             setDeals(prevDeals => prevDeals.map(deal => 
               deal.id === dealId ? { ...deal, isFavorited } : deal
             ));
           }
         )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('📡 Favorite channel: SUBSCRIBED');
-          }
-        });
+        .subscribe();
     };
 
     if (deals.length > 0) {
@@ -205,28 +155,13 @@ const Feed: React.FC = () => {
     };
   }, [deals.length]);
 
-  // Filter deals based on selected cuisine
-  const filteredDeals = deals.filter(deal => {
-    if (selectedCuisine === 'All') return true;
-    return deal.cuisine?.toLowerCase().includes(selectedCuisine.toLowerCase()) || false;
-  });
-
-  const communityDeals = filteredDeals.slice(0, 10);
-  const dealsForYou = filteredDeals;
-
-  const handleCuisineFilterSelect = (filter: string) => {
-    setSelectedCuisine(filter);
-  };
-
   const handleUpvote = (dealId: string) => {
-
     const deal = deals.find(d => d.id === dealId);
     if (!deal) return;
 
     const wasUpvoted = deal.isUpvoted;
     const wasDownvoted = deal.isDownvoted;
 
-    // 1. INSTANT UI update (synchronous, no await)
     setDeals(prevDeals => prevDeals.map(d => {
       if (d.id === dealId) {
         return {
@@ -241,33 +176,14 @@ const Feed: React.FC = () => {
       return d;
     }));
 
-    // 2. Background database save (async, happens later)
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
-      // Revert UI on failure
       setDeals(prevDeals => prevDeals.map(d => 
         d.id === dealId ? deal : d
       ));
     });
   };
 
-  const handleDealPress = (dealId: string) => {
-    const selectedDeal = deals.find(deal => deal.id === dealId);
-    if (selectedDeal) {
-      // Find the position of this deal in the filtered feed
-      const positionInFeed = filteredDeals.findIndex(d => d.id === dealId);
-      
-      // Log the click interaction
-      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
-        console.error('Failed to log click:', err);
-      });
-      
-      // Navigate to detail screen
-      navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
-    }
-  };
-  
-  // Handle downvote
   const handleDownvote = (dealId: string) => {
     const deal = deals.find(d => d.id === dealId);
     if (!deal) return;
@@ -275,7 +191,6 @@ const Feed: React.FC = () => {
     const wasDownvoted = deal.isDownvoted;
     const wasUpvoted = deal.isUpvoted;
 
-    // 1. INSTANT UI update
     setDeals(prevDeals => prevDeals.map(d => {
       if (d.id === dealId) {
         return {
@@ -290,7 +205,6 @@ const Feed: React.FC = () => {
       return d;
     }));
 
-    // 2. Background database save
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
       setDeals(prevDeals => prevDeals.map(d => 
@@ -305,12 +219,10 @@ const Feed: React.FC = () => {
 
     const wasFavorited = deal.isFavorited;
 
-    // 1. INSTANT UI update
     setDeals(prevDeals => prevDeals.map(d => 
       d.id === dealId ? { ...d, isFavorited: !wasFavorited } : d
     ));
 
-    // 2. Background database save
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
       setDeals(prevDeals => prevDeals.map(d => 
@@ -319,57 +231,23 @@ const Feed: React.FC = () => {
     });
   };
 
-  const renderCommunityDeal = ({ item }: { item: Deal }) => (
-    <DealCard
-      deal={item}
-      variant="horizontal"
-      onUpvote={handleUpvote}
-      onDownvote={handleDownvote}
-      onFavorite={handleFavorite}
-      onPress={handleDealPress}
-    />
-  );
-
-  const renderDealForYou = ({ item }: { item: Deal }) => (
-    <DealCard
-      deal={item}
-      variant="vertical"
-      onUpvote={handleUpvote}
-      onDownvote={handleDownvote}
-      onFavorite={handleFavorite}
-      onPress={handleDealPress}
-    />
-  );
+  const handleDealPress = (dealId: string) => {
+    const selectedDeal = deals.find(deal => deal.id === dealId);
+    if (selectedDeal) {
+      const positionInFeed = deals.findIndex(d => d.id === dealId);
+      
+      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+        console.error('Failed to log click:', err);
+      });
+      
+      navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
+    }
+  };
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      {/* Community Uploaded Skeleton Section */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
-        <TouchableOpacity style={styles.seeAllButton}>
-          <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
-        </TouchableOpacity>
-      </View>
-      
-      <FlatList
-        data={[1, 2, 3]} // Show 3 skeleton cards
-        renderItem={() => <DealCardSkeleton variant="horizontal" />}
-        keyExtractor={(item) => item.toString()}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.communityList}
-      />
-
-      {/* Section Separator */}
-      <View style={styles.sectionSeparator} />
-
-      {/* Deals For You Skeleton Section */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
-      </View>
-
       <View style={styles.dealsGrid}>
-        {[1, 2, 3, 4, 5, 6].map((item, index) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((item, index) => (
           <View key={item} style={[
             index % 2 === 0 ? styles.leftCard : styles.rightCard
           ]}>
@@ -383,7 +261,7 @@ const Feed: React.FC = () => {
   const renderErrorState = () => (
     <View style={styles.errorContainer}>
       <Text style={styles.errorText}>{error}</Text>
-      <TouchableOpacity style={styles.retryButton} onPress={loadDeals}>
+      <TouchableOpacity style={styles.retryButton} onPress={() => loadDeals()}>
         <Text style={styles.retryButtonText}>Retry</Text>
       </TouchableOpacity>
     </View>
@@ -391,7 +269,7 @@ const Feed: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No deals available</Text>
+      <Text style={styles.emptyText}>No community deals available</Text>
       <Text style={styles.emptySubtext}>Check back later for new deals!</Text>
     </View>
   );
@@ -400,40 +278,44 @@ const Feed: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Custom Header matching Figma design */}
-      <View style={styles.header}>
-        <View style={styles.logoLocation}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>ImHungri</Text>
+      {/* Header with back button and title */}
+      <View style={styles.headerBackground}>
+        <View style={styles.header}>
+          <View style={styles.timeBattery}>
+            <Text style={styles.time}>9:41</Text>
           </View>
-          <View style={styles.locationContainer}>
-            <Ionicons name="location" size={16} color="#000000" />
-            <Text style={styles.locationText}>Fullerton, CA</Text>
-            <Ionicons name="chevron-down" size={12} color="#000000" />
+          
+          <View style={styles.trackTitle}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialCommunityIcons name="arrow-left" size={20} color="#000000" />
+            </TouchableOpacity>
+            
+            <View style={styles.bestValueDeals}>
+              <Text style={styles.titleText}>
+                <Text style={styles.titleEmoji}>👥 </Text>
+                <Text style={styles.titleBold}>Community Uploaded</Text>
+              </Text>
+            </View>
           </View>
         </View>
       </View>
 
       <ScrollView 
-        style={styles.content} 
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#FF8C4C']} // Android spinner color
-            tintColor="#FF8C4C" // iOS spinner color
-            title="Pull to refresh" // iOS text
-            titleColor="#666" // iOS text color
+            colors={['#FF8C4C']}
+            tintColor="#FF8C4C"
           />
         }
       >
-        {/* Cuisine Filters */}
-        <CuisineFilter
-          filters={cuisineFilters}
-          selectedFilter={selectedCuisine}
-          onFilterSelect={handleCuisineFilterSelect}
-        />
         {loading ? (
           renderLoadingState()
         ) : error ? (
@@ -441,62 +323,22 @@ const Feed: React.FC = () => {
         ) : deals.length === 0 ? (
           renderEmptyState()
         ) : (
-          <>
-            {/* Community Uploaded Section - Show first 5 deals horizontally */}
-            {communityDeals.length > 0 && (
-              <>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
-                  <TouchableOpacity 
-                    style={styles.seeAllButton}
-                    onPress={() => navigation.navigate('CommunityUploaded' as never)}
-                  >
-                    <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
-                  </TouchableOpacity>
-                </View>
-
-                <FlatList
-                  data={communityDeals}
-                  renderItem={renderCommunityDeal}
-                  keyExtractor={(item) => item.id}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.communityList}
+          <View style={styles.dealsGrid}>
+            {deals.map((deal, index) => (
+              <View key={deal.id} style={[
+                index % 2 === 0 ? styles.leftCard : styles.rightCard
+              ]}>
+                <DealCard
+                  deal={deal}
+                  variant="vertical"
+                  onUpvote={handleUpvote}
+                  onDownvote={handleDownvote}
+                  onFavorite={handleFavorite}
+                  onPress={handleDealPress}
                 />
-              </>
-            )}
-
-            {/* Section Separator */}
-            {communityDeals.length > 0 && dealsForYou.length > 0 && (
-              <View style={styles.sectionSeparator} />
-            )}
-
-            {/* Deals For You Section - Show ALL deals in grid */}
-            {dealsForYou.length > 0 && (
-              <>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
-                </View>
-
-                <View style={styles.dealsGrid}>
-                  {dealsForYou.map((deal, index) => (
-                    <View key={deal.id} style={[
-                      index % 2 === 0 ? styles.leftCard : styles.rightCard
-                    ]}>
-                      <DealCard
-                        deal={deal}
-                        variant="vertical"
-                        onUpvote={handleUpvote}
-                        onDownvote={handleDownvote}
-                        onFavorite={handleFavorite}
-                        onPress={handleDealPress}
-                      />
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-          </>
+              </View>
+            ))}
+          </View>
         )}
       </ScrollView>
 
@@ -510,104 +352,89 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
+  headerBackground: {
     backgroundColor: '#FFFFFF',
-    paddingTop: 44, // Status bar height
-    paddingBottom: 8,
-    paddingHorizontal: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#BCBCBC',
+    borderBottomColor: '#DEDEDE',
+    paddingTop: 15,
+    position: 'relative',
+    zIndex: 2,
   },
-  logoLocation: {
+  header: {
+    alignItems: 'flex-start',
+    gap: 16,
+    paddingBottom: 4,
+  },
+  timeBattery: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  logoContainer: {
-    height: 31,
     justifyContent: 'center',
+    paddingHorizontal: 20,
+    height: 21,
+    width: '100%',
   },
-  logoText: {
-    fontFamily: 'MuseoModerno-Bold',
+  time: {
+    fontFamily: 'SF Pro',
     fontWeight: '700',
-    fontSize: 24,
-    color: '#FF8C4C',
+    fontSize: 16,
+    color: '#000000',
   },
-  locationContainer: {
+  trackTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 60,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    width: '100%',
   },
-  locationText: {
+  backButton: {
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bestValueDeals: {
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 4,
+  },
+  titleText: {
     fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '400',
+    fontSize: 16,
     color: '#000000',
+  },
+  titleEmoji: {
+    fontWeight: '700',
+  },
+  titleBold: {
+    fontFamily: 'Inter',
+    fontWeight: '900',
   },
   content: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  contentContainer: {
     paddingHorizontal: 10,
-    paddingTop: 4,
+    paddingTop: 8,
+    paddingBottom: 100,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    color: '#000000',
-  },
-  seeAllButton: {
-    backgroundColor: '#F1F1F1',
-    borderWidth: 0.5,
-    borderColor: '#AAAAAA',
-    borderRadius: 50,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  communityList: {
-    paddingBottom: 4,
-  },
-  sectionSeparator: {
-    height: 0.5,
-    backgroundColor: '#AAAAAA',
-    marginVertical: 8,
-    width: '100%',
-  },
-
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    paddingBottom: 100, // Space for bottom navigation
+    gap: 4,
   },
   leftCard: {
     width: '48%',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   rightCard: {
     width: '48%',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   loadingContainer: {
     flex: 1,
-    paddingBottom: 100, // Space for bottom navigation
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-    fontFamily: 'Inter',
   },
   errorContainer: {
     flex: 1,
@@ -656,4 +483,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Feed;
+export default CommunityUploadedScreen;

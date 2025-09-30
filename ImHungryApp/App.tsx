@@ -27,6 +27,7 @@ import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
 import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
 import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
 import Feed from './src/screens/deal_feed/Feed';
+import CommunityUploadedScreen from './src/screens/deal_feed/CommunityUploadedScreen';
 import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
@@ -56,6 +57,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="Feed" component={Feed} />
+    <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
@@ -73,6 +75,7 @@ const AppStack = () => (
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
+    <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
