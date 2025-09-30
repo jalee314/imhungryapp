@@ -241,16 +241,28 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
   const confirmLogout = async () => {
     try {
-      // Use the new session service sign out
+      setShowLogoutModal(false);
+      
+      // Use the session service sign out
       await signOut();
       
       // Clear profile cache
       await ProfileCacheService.clearCache();
       
-      setShowLogoutModal(false);
+      // Clear any remaining auth data
+      await AsyncStorage.multiRemove(['userData', 'userDataTimestamp', 'supabase_auth_session']);
       
-      // Navigate to login
-      (navigation as any).navigate('LogIn');
+      // Force a second signOut to ensure auth state is cleared
+      await supabase.auth.signOut();
+      
+      // Clear additional cache
+      await AsyncStorage.multiRemove([
+        'userData', 
+        'userDataTimestamp', 
+        'supabase_auth_session',
+        'current_db_session_id',
+        'db_session_start_time'
+      ]);
     } catch (error) {
       console.error('Error during logout:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
@@ -370,7 +382,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       // Upload new photo using the same pattern as onboarding
       const { data, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(`public/${fileName}`, byteArray.buffer, {
+        .upload(`public/${fileName}`, byteArray, {
           contentType: `image/${fileExt}`,
           cacheControl: '3600',
           upsert: false // Same as onboarding - timestamp prevents collisions

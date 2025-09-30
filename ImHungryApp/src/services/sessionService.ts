@@ -181,6 +181,7 @@ export const signOut = async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Error signing out:', error);
+      throw error;
     }
     
     // Clear auth cache
@@ -189,6 +190,7 @@ export const signOut = async (): Promise<void> => {
     console.log('✅ Signed out successfully');
   } catch (error) {
     console.error('Error in signOut:', error);
+    throw error;
   }
 };
 

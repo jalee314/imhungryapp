@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
+import { isAuthenticated } from '../services/sessionService';
 
 interface BottomNavigationProps {
   photoUrl?: any;
@@ -20,10 +21,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   const loadUserData = async () => {
     try {
+      // Check if user is authenticated before fetching data
+      const isAuth = await isAuthenticated();
+      if (!isAuth) {
+        setUserPhotoUrl(null);
+        return;
+      }
+      
       const userData = await fetchUserData();
       setUserPhotoUrl(userData.profilePicture);
     } catch (error) {
       // Handle error silently
+      setUserPhotoUrl(null);
     }
   };
 

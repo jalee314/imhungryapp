@@ -204,7 +204,8 @@ export default function CuisinePreferencesScreen() {
         }
       }
 
-      (navigation as any).navigate('LogIn');
+      // Let the authentication state change handle navigation
+      // The app will automatically switch to OnboardingStack after signup
     } catch (error) {
       console.error('Setup failed:', error); // Log the full error
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
@@ -285,7 +286,8 @@ export default function CuisinePreferencesScreen() {
       if (signUpResult.user && userData.locationData) {
         await saveUserLocation(signUpResult.user.id, userData.locationData);
       }
-      (navigation as any).navigate('LogIn');
+      // Let the authentication state change handle navigation
+      // The app will automatically switch to OnboardingStack after signup
     } catch (error) {
       console.error('Setup failed (skip):', error); // Log the full error
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
