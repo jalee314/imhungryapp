@@ -14,7 +14,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
-import { logClick } from '../../services/interactionService';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
 
@@ -22,23 +22,20 @@ const DealDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<DealDetailRouteProp>();
   const { deal } = route.params;
-
+  const { updateDeal } = useDealUpdate();
 
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const hasLoggedClick = useRef(false); // Prevent duplicate click logs
 
-  // Log click when detail screen is viewed (only once)
+  // ✨ NEW: Update context whenever deal data changes
   useEffect(() => {
-    if (!hasLoggedClick.current) {
-      hasLoggedClick.current = true;
-      logClick(dealData.id).catch(err => {
-        console.error('Failed to log click:', err);
-      });
-    }
-  }, []); // Empty deps - only run once
+    updateDeal(dealData);
+  }, [dealData, updateDeal]);
 
+  // ❌ REMOVE ENTIRE useEffect for click logging (lines 38-45):
+  // The click is already logged in Feed.tsx/CommunityUploadedScreen.tsx
+  // when the user clicks the card, so we don't need to log it here again
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

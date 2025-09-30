@@ -18,9 +18,11 @@ import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calcul
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { supabase } from '../../../lib/supabase';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 
 const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -178,78 +180,96 @@ const CommunityUploadedScreen: React.FC = () => {
   }, []);
 
   const handleUpvote = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
-
-    const wasUpvoted = deal.isUpvoted;
-    const wasDownvoted = deal.isDownvoted;
-
-    setDeals(prevDeals => prevDeals.map(d => {
-      if (d.id === dealId) {
-        return {
-          ...d,
-          isUpvoted: !wasUpvoted,
-          isDownvoted: false,
-          votes: wasUpvoted 
-            ? d.votes - 1
-            : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-        };
-      }
-      return d;
-    }));
+    let originalDeal: Deal | undefined;
+    
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasUpvoted = d.isUpvoted;
+          const wasDownvoted = d.isDownvoted;
+          
+          return {
+            ...d,
+            isUpvoted: !wasUpvoted,
+            isDownvoted: false,
+            votes: wasUpvoted 
+              ? d.votes - 1
+              : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+          };
+        }
+        return d;
+      });
+    });
 
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 
   const handleDownvote = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
-
-    const wasDownvoted = deal.isDownvoted;
-    const wasUpvoted = deal.isUpvoted;
-
-    setDeals(prevDeals => prevDeals.map(d => {
-      if (d.id === dealId) {
-        return {
-          ...d,
-          isDownvoted: !wasDownvoted,
-          isUpvoted: false,
-          votes: wasDownvoted 
-            ? d.votes + 1
-            : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-        };
-      }
-      return d;
-    }));
+    let originalDeal: Deal | undefined;
+    
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasDownvoted = d.isDownvoted;
+          const wasUpvoted = d.isUpvoted;
+          
+          return {
+            ...d,
+            isDownvoted: !wasDownvoted,
+            isUpvoted: false,
+            votes: wasDownvoted 
+              ? d.votes + 1
+              : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+          };
+        }
+        return d;
+      });
+    });
 
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 
   const handleFavorite = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
+    let originalDeal: Deal | undefined;
+    
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          return {
+            ...d,
+            isFavorited: !d.isFavorited
+          };
+        }
+        return d;
+      });
+    });
 
-    const wasFavorited = deal.isFavorited;
-
-    setDeals(prevDeals => prevDeals.map(d => 
-      d.id === dealId ? { ...d, isFavorited: !wasFavorited } : d
-    ));
-
+    const wasFavorited = originalDeal?.isFavorited || false;
+    
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 

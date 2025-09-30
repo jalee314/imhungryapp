@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import Header from '../../components/Header';
@@ -25,6 +25,7 @@ import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calcul
 import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 
 /**
  * Get the current authenticated user's ID
@@ -41,6 +42,7 @@ const getCurrentUserId = async (): Promise<string | null> => {
 
 const Feed: React.FC = () => {
   const navigation = useNavigation();
+  const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const [selectedCuisine, setSelectedCuisine] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,19 +139,25 @@ const Feed: React.FC = () => {
             
             console.log('⚡ Realtime interaction:', payload.eventType, interaction.interaction_type);
             
-            // Recalculate vote counts and states
+            // ✅ FIX: Only fetch vote state for THE SPECIFIC deal that changed
+            const changedDealId = interaction.deal_id;
             const [voteStates, voteCounts] = await Promise.all([
-              getUserVoteStates(dealIds),
-              calculateVoteCounts(dealIds)
+              getUserVoteStates([changedDealId]),  // Only this deal
+              calculateVoteCounts([changedDealId])  // Only this deal
             ]);
             
-            // Update deals with new data
-            setDeals(prevDeals => prevDeals.map(deal => ({
-              ...deal,
-              isUpvoted: voteStates[deal.id]?.isUpvoted || false,
-              isDownvoted: voteStates[deal.id]?.isDownvoted || false,
-              votes: voteCounts[deal.id] || 0,
-            })));
+            // ✅ FIX: Only update the specific deal that changed
+            setDeals(prevDeals => prevDeals.map(deal => {
+              if (deal.id === changedDealId) {
+                return {
+                  ...deal,
+                  isUpvoted: voteStates[changedDealId]?.isUpvoted || false,
+                  isDownvoted: voteStates[changedDealId]?.isDownvoted || false,
+                  votes: voteCounts[changedDealId] || 0,
+                };
+              }
+              return deal; // ✅ Return unchanged deal object (no re-render)
+            }));
           }
         )
         .subscribe((status) => {
@@ -202,7 +210,25 @@ const Feed: React.FC = () => {
     };
   }, [deals.length]);
 
-  // REMOVED useFocusEffect - React Navigation preserves state, and optimistic updates work!
+  // ✨ NEW: Sync updated deals from context when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      setDeals(prevDeals => {
+        let hasChanges = false;
+        const updatedDeals = prevDeals.map(deal => {
+          const updatedDeal = getUpdatedDeal(deal.id);
+          if (updatedDeal) {
+            hasChanges = true;
+            clearUpdatedDeal(deal.id); // Clear after applying
+            return updatedDeal;
+          }
+          return deal;
+        });
+        
+        return hasChanges ? updatedDeals : prevDeals;
+      });
+    }, [getUpdatedDeal, clearUpdatedDeal])
+  );
 
   // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
@@ -230,51 +256,45 @@ const Feed: React.FC = () => {
     setSelectedCuisine(filter);
   };
 
+  // ✅ FIX: Access deal state INSIDE setter to avoid stale closure
   const handleUpvote = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
-
-    const wasUpvoted = deal.isUpvoted;
-    const wasDownvoted = deal.isDownvoted;
-
-    // 1. INSTANT UI update (synchronous, no await)
-    setDeals(prevDeals => prevDeals.map(d => {
-      if (d.id === dealId) {
-        return {
-          ...d,
-          isUpvoted: !wasUpvoted,
-          isDownvoted: false,
-          votes: wasUpvoted 
-            ? d.votes - 1
-            : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-        };
-      }
-      return d;
-    }));
-
-    // Also update the cache for consistency
-    const newVotes = wasUpvoted 
-      ? deal.votes - 1 
-      : (wasDownvoted ? deal.votes + 2 : deal.votes + 1);
+    // Store original state for revert
+    let originalDeal: Deal | undefined;
     
-    dealCacheService.updateDealInCache(dealId, {
-      isUpvoted: !wasUpvoted,
-      isDownvoted: false,
-      votes: newVotes
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          // Capture original for revert
+          originalDeal = d;
+          
+          // Use values from CURRENT state (d) not old state
+          const wasUpvoted = d.isUpvoted;
+          const wasDownvoted = d.isDownvoted;
+          
+          return {
+            ...d,
+            isUpvoted: !wasUpvoted,
+            isDownvoted: false,
+            votes: wasUpvoted 
+              ? d.votes - 1
+              : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+          };
+        }
+        return d;
+      });
     });
 
-    // 2. Background database save (async, happens later)
+    // ❌ REMOVED: Cache service update (causing circular updates)
+    // dealCacheService.updateDealInCache(...)
+
+    // Background database save with revert on error
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
-      // Revert UI on failure
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
-      dealCacheService.updateDealInCache(dealId, {
-        isUpvoted: deal.isUpvoted,
-        isDownvoted: deal.isDownvoted,
-        votes: deal.votes
-      });
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 
@@ -296,77 +316,70 @@ const Feed: React.FC = () => {
   
   // Handle downvote
   const handleDownvote = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
-
-    const wasDownvoted = deal.isDownvoted;
-    const wasUpvoted = deal.isUpvoted;
-
-    // 1. INSTANT UI update
-    setDeals(prevDeals => prevDeals.map(d => {
-      if (d.id === dealId) {
-        return {
-          ...d,
-          isDownvoted: !wasDownvoted,
-          isUpvoted: false,
-          votes: wasDownvoted 
-            ? d.votes + 1
-            : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-        };
-      }
-      return d;
-    }));
-
-    // Also update the cache
-    const newVotes = wasDownvoted 
-      ? deal.votes + 1 
-      : (wasUpvoted ? deal.votes - 2 : deal.votes - 1);
+    let originalDeal: Deal | undefined;
     
-    dealCacheService.updateDealInCache(dealId, {
-      isDownvoted: !wasDownvoted,
-      isUpvoted: false,
-      votes: newVotes
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          
+          const wasDownvoted = d.isDownvoted;
+          const wasUpvoted = d.isUpvoted;
+          
+          return {
+            ...d,
+            isDownvoted: !wasDownvoted,
+            isUpvoted: false,
+            votes: wasDownvoted 
+              ? d.votes + 1
+              : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+          };
+        }
+        return d;
+      });
     });
 
-    // 2. Background database save
+    // ❌ REMOVED: Cache service update
+    
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
-      dealCacheService.updateDealInCache(dealId, {
-        isUpvoted: deal.isUpvoted,
-        isDownvoted: deal.isDownvoted,
-        votes: deal.votes
-      });
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 
   const handleFavorite = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
-
-    const wasFavorited = deal.isFavorited;
-
-    // 1. INSTANT UI update
-    setDeals(prevDeals => prevDeals.map(d => 
-      d.id === dealId ? { ...d, isFavorited: !wasFavorited } : d
-    ));
-
-    // Also update the cache
-    dealCacheService.updateDealInCache(dealId, {
-      isFavorited: !wasFavorited
+    let originalDeal: Deal | undefined;
+    
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          
+          return {
+            ...d,
+            isFavorited: !d.isFavorited
+          };
+        }
+        return d;
+      });
     });
 
-    // 2. Background database save
+    // ❌ REMOVED: Cache service update
+
+    // Use the wasFavorited from original deal
+    const wasFavorited = originalDeal?.isFavorited || false;
+    
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
-      dealCacheService.updateDealInCache(dealId, {
-        isFavorited: deal.isFavorited
-      });
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 

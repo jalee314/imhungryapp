@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -368,4 +368,17 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DealCard;
+// ✨ NEW: Memoize component with custom comparison
+const arePropsEqual = (prevProps: DealCardProps, nextProps: DealCardProps) => {
+  // Only re-render if the specific deal data that affects rendering changed
+  return (
+    prevProps.deal.id === nextProps.deal.id &&
+    prevProps.deal.votes === nextProps.deal.votes &&
+    prevProps.deal.isUpvoted === nextProps.deal.isUpvoted &&
+    prevProps.deal.isDownvoted === nextProps.deal.isDownvoted &&
+    prevProps.deal.isFavorited === nextProps.deal.isFavorited &&
+    prevProps.variant === nextProps.variant
+  );
+};
+
+export default memo(DealCard, arePropsEqual);

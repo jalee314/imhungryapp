@@ -32,6 +32,7 @@ import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
+import { DealUpdateProvider } from './src/context/DealUpdateContext';
 
 
 const Stack = createNativeStackNavigator();
@@ -182,12 +183,14 @@ export default function App() {
 
   return (
     <DataCacheProvider>
-      <NavigationContainer 
-        linking={linking}
-        key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
-      >
-        {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-      </NavigationContainer>
+      <DealUpdateProvider>
+        <NavigationContainer 
+          linking={linking}
+          key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
+        >
+          {isLoggedIn ? <AppStack /> : <OnboardingStack />}
+        </NavigationContainer>
+      </DealUpdateProvider>
     </DataCacheProvider>
   );
 }
