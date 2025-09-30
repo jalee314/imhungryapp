@@ -27,6 +27,7 @@ import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
 import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
 import Feed from './src/screens/deal_feed/Feed';
 import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
+import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 
 
@@ -54,6 +55,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="Feed" component={Feed} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
+    <Stack.Screen name="ReportContent" component={ReportContentScreen} />
   </Stack.Navigator>
 );
 
@@ -69,6 +71,7 @@ const AppStack = () => (
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
+    <Stack.Screen name="ReportContent" component={ReportContentScreen} />
   </Stack.Navigator>
 );
 
@@ -102,7 +105,6 @@ export default function App() {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setTimeoutReached(true);
-      console.log('Loading timeout');
     }, 3000);
 
     if (fontsLoaded) {
@@ -111,10 +113,6 @@ export default function App() {
 
     return () => clearTimeout(timer);
   }, [fontsLoaded]);
-
-  if (fontError) {
-    console.log('Font loading error:', fontError);
-  }
 
   if (!fontsLoaded && !fontError && !timeoutReached) {
     return (

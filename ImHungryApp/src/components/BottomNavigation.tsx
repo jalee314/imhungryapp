@@ -23,7 +23,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       const userData = await fetchUserData();
       setUserPhotoUrl(userData.profilePicture);
     } catch (error) {
-      console.error('Error fetching user data for navbar:', error);
+      // Handle error silently
     }
   };
 
@@ -41,7 +41,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' }, // CHANGED: Back to original
     { id: 'search', icon: 'magnify', label: 'Search', screen: 'SearchScreen' },
     { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
-    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesScreen' },
+    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'Feed' }, // Temporarily use Feed until FavoritesScreen is created
     { id: 'profile', icon: 'account-circle-outline', label: 'Profile', screen: 'ProfilePage' },
   ];
 

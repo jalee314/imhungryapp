@@ -17,6 +17,7 @@ import Header from '../../components/Header';
 import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import CuisineFilter from '../../components/CuisineFilter';
+import { feedService } from '../../services/feedService';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 
 const Feed: React.FC = () => {
@@ -38,6 +39,7 @@ const Feed: React.FC = () => {
     '🍜 Vietnamese',
     '🥙 Mediterranean'
   ];
+
 
   // Fetch deals from database
   const loadDeals = async () => {
@@ -168,7 +170,6 @@ const Feed: React.FC = () => {
           selectedFilter={selectedCuisine}
           onFilterSelect={handleCuisineFilterSelect}
         />
-
         {loading ? (
           renderLoadingState()
         ) : error ? (
@@ -315,6 +316,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     width: '100%',
   },
+
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

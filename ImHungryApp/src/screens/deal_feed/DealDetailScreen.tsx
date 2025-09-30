@@ -12,6 +12,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Deal } from '../../components/DealCard';
+import ThreeDotPopup from '../../components/ThreeDotPopup';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
 
@@ -22,6 +23,8 @@ const DealDetailScreen: React.FC = () => {
 
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -58,11 +61,35 @@ const DealDetailScreen: React.FC = () => {
   };
 
   const handleShare = () => {
-    console.log('Share deal:', dealData.id);
     // Implement share functionality
   };
 
   const handleDirections = () => {
+    // Implement directions functionality
+  };
+
+  const handleMoreButtonPress = () => {
+    setIsPopupVisible(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupVisible(false);
+  };
+
+  const handleReportContent = () => {
+    setIsPopupVisible(false);
+    // Implement report functionality
+  };
+
+  const handleBlockUser = () => {
+    setIsPopupVisible(false);
+    // Implement block user functionality
+  };
+
+  const handleContentFeedback = () => {
+    setIsPopupVisible(false);
+    // Implement content feedback functionality
+  };
     console.log('Get directions to:', dealData.restaurant);
     // Implement directions functionality
   };
@@ -91,7 +118,7 @@ const DealDetailScreen: React.FC = () => {
           <TouchableOpacity style={styles.directionsButton} onPress={handleDirections}>
             <Text style={styles.directionsText}>Directions</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.moreButton}>
+          <TouchableOpacity style={styles.moreButton} onPress={handleMoreButtonPress}>
             <MaterialCommunityIcons name="dots-vertical" size={24} color="#404040" />
           </TouchableOpacity>
         </View>
@@ -238,6 +265,16 @@ const DealDetailScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+      {/* 3-Dot Popup Modal */}
+      <ThreeDotPopup
+        visible={isPopupVisible}
+        onClose={handleClosePopup}
+        onReportContent={handleReportContent}
+        onBlockUser={handleBlockUser}
+        onContentFeedback={handleContentFeedback}
+        dealId={dealData.id}
+        uploaderUserId={dealData.uploaderUserId || "00000000-0000-0000-0000-000000000000"}
+      />
     </SafeAreaView>
   );
 };
@@ -255,7 +292,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
+    borderBottomColor: '#E0E0E0',
   },
   backButton: {
     padding: 4,

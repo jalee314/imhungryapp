@@ -16,7 +16,7 @@ export interface Deal {
   timeAgo: string;
   author?: string;
   milesAway?: string;
-  // Add new fields for detail screen
+
   userId?: string;
   userDisplayName?: string;
   userProfilePhoto?: string;
@@ -174,7 +174,7 @@ const DealCard: React.FC<DealCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create({=
   // Horizontal Card Styles (for community track - actually vertical cards in horizontal scroll)
   horizontalCard: {
     backgroundColor: '#FFFFFF',
