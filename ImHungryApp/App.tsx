@@ -28,6 +28,7 @@ import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
 import Feed from './src/screens/deal_feed/Feed';
 import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
+import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 
 
@@ -56,6 +57,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="Feed" component={Feed} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
+    <Stack.Screen name="BlockUser" component={BlockUserScreen} />
   </Stack.Navigator>
 );
 
@@ -72,6 +74,7 @@ const AppStack = () => (
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
+    <Stack.Screen name="BlockUser" component={BlockUserScreen} />
   </Stack.Navigator>
 );
 

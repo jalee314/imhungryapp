@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';
+import { Deal } from '../components/DealCard';
 
 // Get current user ID from Supabase auth
 const getCurrentUserId = async (): Promise<string | null> => {
@@ -22,12 +23,10 @@ const uploadDealImage = async (imageUri: string): Promise<string | null> => {
       return null;
     }
     
-    console.log('Authenticated user:', user.id);
 
     const fileExt = imageUri.split('.').pop() || 'jpg';
     const fileName = `deal_${Date.now()}.${fileExt}`;
     
-    console.log('Uploading file:', fileName);
 
     const base64 = await FileSystem.readAsStringAsync(imageUri, {
       encoding: FileSystem.EncodingType.Base64,
@@ -37,24 +36,20 @@ const uploadDealImage = async (imageUri: string): Promise<string | null> => {
     
     const { data, error } = await supabase.storage
       .from('deal-images')
-      .upload(`public/${fileName}`, byteArray.buffer, {
+      .upload(`public/${fileName}`, byteArray, {
         contentType: `image/${fileExt}`,
         cacheControl: '3600',
         upsert: false
       });
 
     if (error) {
-      console.error('Supabase storage error:', error.message);
-      console.error('Error details:', error);
       return null;
     } else if (data) {
-      console.log('Upload successful:', data.path);
       return data.path;
     }
     
     return null;
   } catch (error) {
-    console.error('Error uploading deal image:', error);
     return null;
   }
 };
@@ -97,10 +92,6 @@ export interface CreateDealData {
 // Create deal template and instance
 export const createDeal = async (dealData: CreateDealData): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('Creating deal with data:', {
-      ...dealData,
-      imageUri: dealData.imageUri ? 'Present' : 'None'
-    });
 
     const userId = await getCurrentUserId();
     if (!userId) {
@@ -137,7 +128,6 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       is_anonymous: dealData.isAnonymous, // This flag controls client-side display
     };
 
-    console.log('Inserting deal template:', dealTemplateData);
 
     // Insert the deal template. The database trigger will handle creating the instances.
     const { error: templateError } = await supabase
@@ -145,14 +135,10 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       .insert(dealTemplateData);
 
     if (templateError) {
-      console.error('Error creating deal template:', templateError);
       return { success: false, error: 'Failed to create deal template' };
     }
-
-    console.log('Deal template created successfully! Instance(s) will be created by the trigger.');
     return { success: true };
   } catch (error) {
-    console.error('Error creating deal:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
 };
@@ -166,7 +152,6 @@ export const checkDealContentForProfanity = async (title: string, description?: 
     });
 
     if (titleError) {
-      console.error('Error checking title profanity:', titleError);
       return { success: true };
     }
 
@@ -183,7 +168,6 @@ export const checkDealContentForProfanity = async (title: string, description?: 
       });
 
       if (descError) {
-        console.error('Error checking description profanity:', descError);
         return { success: true };
       }
 
@@ -197,7 +181,6 @@ export const checkDealContentForProfanity = async (title: string, description?: 
 
     return { success: true };
   } catch (error) {
-    console.error('Error calling profanity filter:', error);
     return { success: true };
   }
 };
@@ -223,6 +206,7 @@ export interface DatabaseDeal {
   start_date: string;
   end_date: string | null;
   is_anonymous: boolean;
+  user_id: string;
   user_display_name: string | null;
   user_profile_photo: string | null;
   votes: number;
@@ -241,21 +225,17 @@ const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> =
       return null;
     }
 
-    console.log('Fetching location for user:', user.id);
 
     // Query to extract lat/lng from PostGIS geography column
     const { data: userData, error } = await supabase
       .rpc('get_user_location_coords', { user_uuid: user.id });
 
-    console.log('RPC response:', { userData, error });
 
     if (error) {
-      console.error('Error fetching user location:', error);
       return null;
     }
 
     if (!userData || userData.length === 0) {
-      console.log('No userData returned from RPC function');
       return null;
     }
 
@@ -264,17 +244,14 @@ const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> =
 
     // The RPC function should return { lat: number, lng: number }
     if (!locationData.lat || !locationData.lng) {
-      console.error('No location coordinates found for user', { locationData });
       return null;
     }
 
-    console.log('Location found:', { lat: locationData.lat, lng: locationData.lng });
     return {
       lat: locationData.lat,
       lng: locationData.lng
     };
   } catch (error) {
-    console.error('Error getting user location:', error);
     return null;
   }
 };
@@ -284,7 +261,6 @@ const getRankedDealIds = async (): Promise<string[]> => {
   try {
     const location = await getUserLocation();
     if (!location) {
-      console.warn('No user location found, using default ranking');
       return [];
     }
 
@@ -299,19 +275,16 @@ const getRankedDealIds = async (): Promise<string[]> => {
     });
 
     if (error) {
-      console.error('Error calling ranking function:', error);
       return [];
     }
 
     if (!data || !Array.isArray(data)) {
-      console.warn('No ranked deals found');
       return [];
     }
 
     // Extract deal IDs from the response
     return data.map((item: any) => item.deal_id).filter(Boolean);
   } catch (error) {
-    console.error('Error getting ranked deal IDs:', error);
     return [];
   }
 };
@@ -323,7 +296,6 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
     const rankedIds = await getRankedDealIds();
     
     if (rankedIds.length === 0) {
-      console.warn('No ranked deals found');
       return [];
     }
 
@@ -341,6 +313,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
           title,
           description,
           image_url,
+          user_id,
           restaurant!inner(
             name,
             address
@@ -361,12 +334,11 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching deals:', error);
       return [];
     }
 
     // Transform the data to match our interface
-    const transformedDeals: DatabaseDeal[] = deals.map(deal => ({
+    const transformedDeals: DatabaseDeal[] = deals.map((deal: any) => ({
       deal_id: deal.deal_id,
       template_id: deal.template_id,
       title: deal.deal_template.title,
@@ -380,6 +352,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       start_date: deal.start_date,
       end_date: deal.end_date,
       is_anonymous: deal.is_anonymous,
+      user_id: deal.deal_template.user_id,
       user_display_name: deal.deal_template.user?.display_name || null,
       user_profile_photo: deal.deal_template.user?.profile_photo || null,
       votes: 0, // You'll need to implement vote counting
@@ -396,13 +369,13 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
 
     return rankedDeals;
   } catch (error) {
-    console.error('Error fetching ranked deals:', error);
     return [];
   }
 };
 
 // Transform database deal to Deal interface for components
 export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
+  
   // Calculate time ago
   const timeAgo = getTimeAgo(new Date(dbDeal.created_at));
   
@@ -434,7 +407,7 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     }
   }
 
-  return {
+  const transformedDeal = {
     id: dbDeal.deal_id,
     title: dbDeal.title,
     restaurant: dbDeal.restaurant_name,
@@ -449,11 +422,40 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     author: dbDeal.is_anonymous ? 'Anonymous' : (dbDeal.user_display_name || 'Unknown'),
     milesAway: dbDeal.distance_miles ? `${Math.round(dbDeal.distance_miles)}mi` : '?mi',
     // Add new fields
-    userDisplayName: dbDeal.user_display_name,
-    userProfilePhoto: userProfilePhotoUrl,
+    userId: dbDeal.user_id,
+    userDisplayName: dbDeal.user_display_name || undefined,
+    userProfilePhoto: userProfilePhotoUrl || undefined,
     restaurantAddress: dbDeal.restaurant_address,
     isAnonymous: dbDeal.is_anonymous,
   };
+
+
+  return transformedDeal;
+};
+
+// Helper function to get user ID for a specific deal
+export const getDealUploaderId = async (dealId: string): Promise<string | null> => {
+  try {
+    
+    const { data, error } = await supabase
+      .from('deal_instance')
+      .select(`
+        deal_template!inner(
+          user_id
+        )
+      `)
+      .eq('deal_id', dealId)
+      .single();
+
+    if (error) {
+      return null;
+    }
+
+    const userId = data.deal_template[0]?.user_id;
+    return userId;
+  } catch (error) {
+    return null;
+  }
 };
 
 // Helper function to calculate time ago

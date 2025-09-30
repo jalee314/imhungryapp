@@ -75,21 +75,17 @@ const Feed: React.FC = () => {
 
   const handleCuisineFilterSelect = (filter: string) => {
     setSelectedCuisine(filter);
-    console.log('Selected cuisine:', filter);
   };
 
   const handleUpvote = (dealId: string) => {
-    console.log('Upvote deal:', dealId);
     // TODO: Implement upvote functionality
   };
 
   const handleDownvote = (dealId: string) => {
-    console.log('Downvote deal:', dealId);
     // TODO: Implement downvote functionality
   };
 
   const handleFavorite = (dealId: string) => {
-    console.log('Favorite deal:', dealId);
     // TODO: Implement favorite functionality
   };
 
