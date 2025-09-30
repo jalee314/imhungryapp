@@ -65,6 +65,7 @@ const DealDetailScreen: React.FC = () => {
   };
 
   const handleDirections = () => {
+    console.log('Get directions to:', dealData.restaurant);
     // Implement directions functionality
   };
 
@@ -89,9 +90,6 @@ const DealDetailScreen: React.FC = () => {
   const handleContentFeedback = () => {
     setIsPopupVisible(false);
     // Implement content feedback functionality
-  };
-    console.log('Get directions to:', dealData.restaurant);
-    // Implement directions functionality
   };
 
   // Get profile picture - use actual data or fallback to default
@@ -273,7 +271,7 @@ const DealDetailScreen: React.FC = () => {
         onBlockUser={handleBlockUser}
         onContentFeedback={handleContentFeedback}
         dealId={dealData.id}
-        uploaderUserId={dealData.uploaderUserId || "00000000-0000-0000-0000-000000000000"}
+        uploaderUserId={dealData.userId || "00000000-0000-0000-0000-000000000000"}
       />
     </SafeAreaView>
   );

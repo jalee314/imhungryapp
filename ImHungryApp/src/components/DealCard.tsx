@@ -174,7 +174,7 @@ const DealCard: React.FC<DealCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({=
+const styles = StyleSheet.create({
   // Horizontal Card Styles (for community track - actually vertical cards in horizontal scroll)
   horizontalCard: {
     backgroundColor: '#FFFFFF',
@@ -205,8 +205,6 @@ const styles = StyleSheet.create({=
     color: '#000000',
     textAlign: 'left',
     height: 30, // Fixed height
-    numberOfLines: 2,
-    ellipsizeMode: 'tail',
   },
   horizontalDetails: {
     fontFamily: 'Inter',
