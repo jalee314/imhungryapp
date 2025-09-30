@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
+import { logClick } from '../../services/interactionService';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
 
@@ -26,6 +27,17 @@ const DealDetailScreen: React.FC = () => {
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const hasLoggedClick = useRef(false); // Prevent duplicate click logs
+
+  // Log click when detail screen is viewed (only once)
+  useEffect(() => {
+    if (!hasLoggedClick.current) {
+      hasLoggedClick.current = true;
+      logClick(dealData.id).catch(err => {
+        console.error('Failed to log click:', err);
+      });
+    }
+  }, []); // Empty deps - only run once
 
 
   const formatDate = (dateString: string) => {

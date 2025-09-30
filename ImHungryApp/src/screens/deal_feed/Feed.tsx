@@ -23,6 +23,7 @@ import CuisineFilter from '../../components/CuisineFilter';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
+import { logClick } from '../../services/interactionService';
 
 /**
  * Get the current authenticated user's ID
@@ -46,6 +47,7 @@ const Feed: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
+  const recentActions = useRef<Set<string>>(new Set()); // Track recent actions to avoid double-updates
   
   const cuisineFilters = [
     '🍕 Pizza',
@@ -106,13 +108,13 @@ const Feed: React.FC = () => {
       const userId = user.id;
       const dealIds = deals.map(d => d.id);
 
-      // Subscribe to ALL interaction changes (not just current user)
+      // Subscribe to ALL interaction changes
       interactionChannel.current = supabase
         .channel('all-interactions')
         .on(
           'postgres_changes',
           {
-            event: '*', // INSERT, UPDATE, DELETE
+            event: '*',
             schema: 'public',
             table: 'interaction',
           },
@@ -121,6 +123,20 @@ const Feed: React.FC = () => {
             
             // Only update if it affects our visible deals
             if (!dealIds.includes(interaction.deal_id)) return;
+            
+            // Skip click events (too noisy, not needed for UI updates)
+            if (interaction.interaction_type === 'click') return;
+            
+            // Debounce: Skip if we just processed this exact action
+            const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
+            if (recentActions.current.has(actionKey)) {
+              console.log('⏭️ Skipping duplicate realtime event');
+              return;
+            }
+            
+            // Mark this action as processed
+            recentActions.current.add(actionKey);
+            setTimeout(() => recentActions.current.delete(actionKey), 1000);
             
             console.log('⚡ Realtime interaction:', payload.eventType, interaction.interaction_type);
             
@@ -140,10 +156,12 @@ const Feed: React.FC = () => {
           }
         )
         .subscribe((status) => {
-          console.log('📡 Interaction channel:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Interaction channel: SUBSCRIBED');
+          }
         });
 
-      // Subscribe to favorite changes (only current user)
+      // Subscribe to favorite changes
       favoriteChannel.current = supabase
         .channel('user-favorites')
         .on(
@@ -166,7 +184,9 @@ const Feed: React.FC = () => {
           }
         )
         .subscribe((status) => {
-          console.log('📡 Favorite channel:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Favorite channel: SUBSCRIBED');
+          }
         });
     };
 
@@ -181,6 +201,7 @@ const Feed: React.FC = () => {
       if (favoriteChannel.current) {
         supabase.removeChannel(favoriteChannel.current);
       }
+      recentActions.current.clear();
     };
   }, [deals.length]);
 
@@ -230,6 +251,23 @@ const Feed: React.FC = () => {
     });
   };
 
+  const handleDealPress = (dealId: string) => {
+    const selectedDeal = deals.find(deal => deal.id === dealId);
+    if (selectedDeal) {
+      // Find the position of this deal in the filtered feed
+      const positionInFeed = filteredDeals.findIndex(d => d.id === dealId);
+      
+      // Log the click interaction
+      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+        console.error('Failed to log click:', err);
+      });
+      
+      // Navigate to detail screen
+      navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
+    }
+  };
+  
+  // Handle downvote
   const handleDownvote = (dealId: string) => {
     const deal = deals.find(d => d.id === dealId);
     if (!deal) return;
@@ -279,13 +317,6 @@ const Feed: React.FC = () => {
         d.id === dealId ? deal : d
       ));
     });
-  };
-
-  const handleDealPress = (dealId: string) => {
-    const selectedDeal = deals.find(deal => deal.id === dealId);
-    if (selectedDeal) {
-      navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
-    }
   };
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (

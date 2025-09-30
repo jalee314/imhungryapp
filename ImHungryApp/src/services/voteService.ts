@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import { logInteraction } from './interactionService';
+import { logInteraction, removeFavoriteInteractions } from './interactionService';
 
 /**
  * Get the current authenticated user's ID
@@ -250,6 +250,9 @@ export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean
         return false;
       }
       
+      // Also remove favorite interactions from interaction table
+      await removeFavoriteInteractions(dealId);
+      
       console.log('🗑️ Favorite removed');
     } else {
       // ADD to favorites table
@@ -265,7 +268,7 @@ export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean
         return false;
       }
 
-      // Also log the interaction
+      // Log the favorite interaction
       await logInteraction(dealId, 'favorite');
       console.log('✅ Favorite added');
     }

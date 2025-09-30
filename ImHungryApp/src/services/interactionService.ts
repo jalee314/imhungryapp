@@ -62,9 +62,45 @@ export const logInteraction = async (
       return false;
     }
 
+    console.log(`✅ ${interactionType} logged for deal ${dealId}`);
     return true;
   } catch (error) {
     console.error('Error in logInteraction:', error);
+    return false;
+  }
+};
+
+/**
+ * Log a click interaction when user opens a deal
+ */
+export const logClick = async (dealId: string, positionInFeed?: number): Promise<boolean> => {
+  return await logInteraction(dealId, 'click', positionInFeed);
+};
+
+/**
+ * Remove favorite interactions for a deal when unfavoriting
+ */
+export const removeFavoriteInteractions = async (dealId: string): Promise<boolean> => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('interaction')
+      .delete()
+      .eq('user_id', userId)
+      .eq('deal_id', dealId)
+      .eq('interaction_type', 'favorite');
+
+    if (error) {
+      console.error('Error removing favorite interactions:', error);
+      return false;
+    }
+
+    console.log(`🗑️ Favorite interactions removed for deal ${dealId}`);
+    return true;
+  } catch (error) {
+    console.error('Error in removeFavoriteInteractions:', error);
     return false;
   }
 };
