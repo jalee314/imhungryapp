@@ -10,7 +10,7 @@ import {
   Image,
   SafeAreaView,
   ActivityIndicator,
-  RefreshControl, // Add this import
+  RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -24,6 +24,8 @@ import { fetchRankedDeals, transformDealForUI } from '../../services/dealService
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
+import { dealCacheService } from '../../services/dealCacheService';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 
 /**
  * Get the current authenticated user's ID
@@ -40,14 +42,15 @@ const getCurrentUserId = async (): Promise<string | null> => {
 
 const Feed: React.FC = () => {
   const navigation = useNavigation();
+  const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const [selectedCuisine, setSelectedCuisine] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // Add refreshing state
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
-  const recentActions = useRef<Set<string>>(new Set()); // Track recent actions to avoid double-updates
+  const recentActions = useRef<Set<string>>(new Set());
   
   const cuisineFilters = [
     '🍕 Pizza',
@@ -62,44 +65,40 @@ const Feed: React.FC = () => {
     '🥙 Mediterranean'
   ];
 
-  // Fetch deals from database
-  const loadDeals = async (isRefreshing = false) => {
-    try {
-      if (!isRefreshing) {
+  // Load deals on mount
+  useEffect(() => {
+    const loadDeals = async () => {
+      try {
         setLoading(true);
-      }
-      setError(null);
-      
-      console.log(`📥 ${isRefreshing ? 'Refreshing' : 'Loading'} deals...`);
-      
-      const dbDeals = await fetchRankedDeals();
-      const transformedDeals = dbDeals.map(transformDealForUI);
-      
-      console.log(`✅ Loaded ${transformedDeals.length} deals`);
-      setDeals(transformedDeals);
-    } catch (err) {
-      console.error('Error loading deals:', err);
-      setError('Failed to load deals. Please try again.');
-    } finally {
-      if (isRefreshing) {
-        setRefreshing(false);
-      } else {
+        const cachedDeals = await dealCacheService.getDeals();
+        setDeals(cachedDeals);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading deals:', err);
+        setError('Failed to load deals. Please try again.');
+      } finally {
         setLoading(false);
       }
-    }
-  };
+    };
 
-  // Pull-to-refresh handler
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadDeals(true);
-  }, []);
-
-  useEffect(() => {
     loadDeals();
+
+    // Initialize deal_instance realtime
+    dealCacheService.initializeRealtime();
+
+    // Subscribe to cache updates for deal_instance changes
+    const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
+      console.log('📬 Received deal_instance cache update');
+      setDeals(updatedDeals);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  // Setup Realtime subscriptions
+  // Setup Realtime subscriptions for interactions and favorites
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -140,19 +139,25 @@ const Feed: React.FC = () => {
             
             console.log('⚡ Realtime interaction:', payload.eventType, interaction.interaction_type);
             
-            // Recalculate vote counts and states
+            // ✅ FIX: Only fetch vote state for THE SPECIFIC deal that changed
+            const changedDealId = interaction.deal_id;
             const [voteStates, voteCounts] = await Promise.all([
-              getUserVoteStates(dealIds),
-              calculateVoteCounts(dealIds)
+              getUserVoteStates([changedDealId]),  // Only this deal
+              calculateVoteCounts([changedDealId])  // Only this deal
             ]);
             
-            // Update deals with new data
-            setDeals(prevDeals => prevDeals.map(deal => ({
-              ...deal,
-              isUpvoted: voteStates[deal.id]?.isUpvoted || false,
-              isDownvoted: voteStates[deal.id]?.isDownvoted || false,
-              votes: voteCounts[deal.id] || 0,
-            })));
+            // ✅ FIX: Only update the specific deal that changed
+            setDeals(prevDeals => prevDeals.map(deal => {
+              if (deal.id === changedDealId) {
+                return {
+                  ...deal,
+                  isUpvoted: voteStates[changedDealId]?.isUpvoted || false,
+                  isDownvoted: voteStates[changedDealId]?.isDownvoted || false,
+                  votes: voteCounts[changedDealId] || 0,
+                };
+              }
+              return deal; // ✅ Return unchanged deal object (no re-render)
+            }));
           }
         )
         .subscribe((status) => {
@@ -205,6 +210,39 @@ const Feed: React.FC = () => {
     };
   }, [deals.length]);
 
+  // ✨ NEW: Sync updated deals from context when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      setDeals(prevDeals => {
+        let hasChanges = false;
+        const updatedDeals = prevDeals.map(deal => {
+          const updatedDeal = getUpdatedDeal(deal.id);
+          if (updatedDeal) {
+            hasChanges = true;
+            clearUpdatedDeal(deal.id); // Clear after applying
+            return updatedDeal;
+          }
+          return deal;
+        });
+        
+        return hasChanges ? updatedDeals : prevDeals;
+      });
+    }, [getUpdatedDeal, clearUpdatedDeal])
+  );
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const freshDeals = await dealCacheService.getDeals(true);
+      setDeals(freshDeals);
+    } catch (err) {
+      console.error('Error refreshing deals:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   // Filter deals based on selected cuisine
   const filteredDeals = deals.filter(deal => {
     if (selectedCuisine === 'All') return true;
@@ -218,36 +256,45 @@ const Feed: React.FC = () => {
     setSelectedCuisine(filter);
   };
 
+  // ✅ FIX: Access deal state INSIDE setter to avoid stale closure
   const handleUpvote = (dealId: string) => {
+    // Store original state for revert
+    let originalDeal: Deal | undefined;
+    
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          // Capture original for revert
+          originalDeal = d;
+          
+          // Use values from CURRENT state (d) not old state
+          const wasUpvoted = d.isUpvoted;
+          const wasDownvoted = d.isDownvoted;
+          
+          return {
+            ...d,
+            isUpvoted: !wasUpvoted,
+            isDownvoted: false,
+            votes: wasUpvoted 
+              ? d.votes - 1
+              : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+          };
+        }
+        return d;
+      });
+    });
 
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
+    // ❌ REMOVED: Cache service update (causing circular updates)
+    // dealCacheService.updateDealInCache(...)
 
-    const wasUpvoted = deal.isUpvoted;
-    const wasDownvoted = deal.isDownvoted;
-
-    // 1. INSTANT UI update (synchronous, no await)
-    setDeals(prevDeals => prevDeals.map(d => {
-      if (d.id === dealId) {
-        return {
-          ...d,
-          isUpvoted: !wasUpvoted,
-          isDownvoted: false,
-          votes: wasUpvoted 
-            ? d.votes - 1
-            : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-        };
-      }
-      return d;
-    }));
-
-    // 2. Background database save (async, happens later)
+    // Background database save with revert on error
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
-      // Revert UI on failure
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 
@@ -269,53 +316,70 @@ const Feed: React.FC = () => {
   
   // Handle downvote
   const handleDownvote = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
+    let originalDeal: Deal | undefined;
+    
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          
+          const wasDownvoted = d.isDownvoted;
+          const wasUpvoted = d.isUpvoted;
+          
+          return {
+            ...d,
+            isDownvoted: !wasDownvoted,
+            isUpvoted: false,
+            votes: wasDownvoted 
+              ? d.votes + 1
+              : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+          };
+        }
+        return d;
+      });
+    });
 
-    const wasDownvoted = deal.isDownvoted;
-    const wasUpvoted = deal.isUpvoted;
-
-    // 1. INSTANT UI update
-    setDeals(prevDeals => prevDeals.map(d => {
-      if (d.id === dealId) {
-        return {
-          ...d,
-          isDownvoted: !wasDownvoted,
-          isUpvoted: false,
-          votes: wasDownvoted 
-            ? d.votes + 1
-            : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-        };
-      }
-      return d;
-    }));
-
-    // 2. Background database save
+    // ❌ REMOVED: Cache service update
+    
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 
   const handleFavorite = (dealId: string) => {
-    const deal = deals.find(d => d.id === dealId);
-    if (!deal) return;
+    let originalDeal: Deal | undefined;
+    
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          
+          return {
+            ...d,
+            isFavorited: !d.isFavorited
+          };
+        }
+        return d;
+      });
+    });
 
-    const wasFavorited = deal.isFavorited;
+    // ❌ REMOVED: Cache service update
 
-    // 1. INSTANT UI update
-    setDeals(prevDeals => prevDeals.map(d => 
-      d.id === dealId ? { ...d, isFavorited: !wasFavorited } : d
-    ));
-
-    // 2. Background database save
+    // Use the wasFavorited from original deal
+    const wasFavorited = originalDeal?.isFavorited || false;
+    
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? deal : d
-      ));
+      if (originalDeal) {
+        setDeals(prevDeals => prevDeals.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
     });
   };
 
