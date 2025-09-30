@@ -420,6 +420,20 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     }
   }
 
+  // Handle user profile photo
+  let userProfilePhotoUrl = null;
+  if (dbDeal.user_profile_photo) {
+    if (dbDeal.user_profile_photo.startsWith('http')) {
+      userProfilePhotoUrl = dbDeal.user_profile_photo;
+    } else {
+      // Get public URL from Supabase storage
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(dbDeal.user_profile_photo);
+      userProfilePhotoUrl = data.publicUrl;
+    }
+  }
+
   return {
     id: dbDeal.deal_id,
     title: dbDeal.title,
@@ -433,7 +447,12 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     cuisine: dbDeal.cuisine_name || undefined,
     timeAgo: timeAgo,
     author: dbDeal.is_anonymous ? 'Anonymous' : (dbDeal.user_display_name || 'Unknown'),
-    milesAway: dbDeal.distance_miles ? `${Math.round(dbDeal.distance_miles)}mi` : '?mi'
+    milesAway: dbDeal.distance_miles ? `${Math.round(dbDeal.distance_miles)}mi` : '?mi',
+    // Add new fields
+    userDisplayName: dbDeal.user_display_name,
+    userProfilePhoto: userProfilePhotoUrl,
+    restaurantAddress: dbDeal.restaurant_address,
+    isAnonymous: dbDeal.is_anonymous,
   };
 };
 

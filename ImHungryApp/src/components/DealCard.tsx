@@ -16,6 +16,12 @@ export interface Deal {
   timeAgo: string;
   author?: string;
   milesAway?: string;
+  // Add new fields for detail screen
+  userId?: string;
+  userDisplayName?: string;
+  userProfilePhoto?: string;
+  restaurantAddress?: string;
+  isAnonymous?: boolean;
 }
 
 interface DealCardProps {
