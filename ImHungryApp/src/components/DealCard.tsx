@@ -13,6 +13,7 @@ export interface Deal {
   isDownvoted: boolean;
   isFavorited: boolean;
   cuisine?: string;
+  cuisineId?: string; // ADD THIS
   timeAgo: string;
   author?: string;
   milesAway?: string;

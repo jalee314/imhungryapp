@@ -203,6 +203,7 @@ export interface DatabaseDeal {
   restaurant_name: string;
   restaurant_address: string;
   cuisine_name: string | null;
+  cuisine_id: string | null;
   category_name: string | null;
   created_at: string;
   start_date: string;
@@ -299,13 +300,16 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
     const rankedIds = await getRankedDealIds();
     
     if (rankedIds.length === 0) {
+      console.log('⚠️ No ranked IDs returned from ranking function');
       return [];
     }
+
+    console.log(`📋 Got ${rankedIds.length} ranked IDs`);
 
     // Get user location
     const userLocation = await getCurrentUserLocation();
 
-    // Fetch deal data
+    // Fetch deal data - FIXED: Remove cuisine_id from join, we already have it in deal_template
     const { data: deals, error } = await supabase
       .from('deal_instance')
       .select(`
@@ -320,6 +324,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
           description,
           image_url,
           user_id,
+          cuisine_id,
           restaurant!inner(
             restaurant_id,
             name,
@@ -341,8 +346,11 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('❌ Error fetching deals:', error);
       return [];
     }
+
+    console.log(`✅ Fetched ${deals?.length || 0} deals from database`);
     
     // Batch fetch vote states and vote counts
     const dealIds = deals.map(deal => deal.deal_id);
@@ -388,6 +396,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
         restaurant_address: deal.deal_template.restaurant.address,
         restaurant_id: deal.deal_template.restaurant.restaurant_id,
         cuisine_name: deal.deal_template.cuisine?.cuisine_name || null,
+        cuisine_id: deal.deal_template.cuisine_id, // Direct from template, not from join
         category_name: deal.deal_template.category?.category_name || null,
         created_at: deal.created_at,
         start_date: deal.start_date,
@@ -395,7 +404,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
         is_anonymous: deal.is_anonymous,
         user_display_name: deal.deal_template.user?.display_name || null,
         user_profile_photo: deal.deal_template.user?.profile_photo || null,
-        votes: voteCount, // Real vote count from database
+        votes: voteCount,
         is_upvoted: voteState.isUpvoted,
         is_downvoted: voteState.isDownvoted,
         is_favorited: voteState.isFavorited,
@@ -408,8 +417,11 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       .map(id => transformedDeals.find(deal => deal.deal_id === id))
       .filter(deal => deal !== undefined) as DatabaseDeal[];
 
+    console.log(`🎯 Returning ${rankedDeals.length} ranked deals`);
+
     return rankedDeals;
   } catch (error) {
+    console.error('💥 Exception in fetchRankedDeals:', error);
     return [];
   }
 };
@@ -457,6 +469,7 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     isDownvoted: dbDeal.is_downvoted,
     isFavorited: dbDeal.is_favorited,
     cuisine: dbDeal.cuisine_name || undefined,
+    cuisineId: dbDeal.cuisine_id || undefined,
     timeAgo: timeAgo,
     author: dbDeal.is_anonymous ? 'Anonymous' : (dbDeal.user_display_name || 'Unknown'),
     milesAway: dbDeal.distance_miles ? `${dbDeal.distance_miles.toFixed(1)}mi` : '?mi',
@@ -467,7 +480,6 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     restaurantAddress: dbDeal.restaurant_address,
     isAnonymous: dbDeal.is_anonymous,
   };
-
 
   return transformedDeal;
 };
