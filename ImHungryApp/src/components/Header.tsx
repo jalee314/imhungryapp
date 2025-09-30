@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationPress }) => {
 const styles = StyleSheet.create({
   header: {
     width: '100%',
-    height: 110,
+    height: 100,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 0.5,
     borderBottomColor: '#DEDEDE',
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    paddingHorizontal: 16,
+    paddingHorizontal: 19,
   },
   appName: {
     fontFamily: 'MuseoModerno-Bold',

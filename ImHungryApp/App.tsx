@@ -3,8 +3,9 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
-import * as Font from 'expo-font';
 import * as Linking from 'expo-linking';
+import { supabase } from './lib/supabase';
+import { initializeAuthSession, setupAppStateListener } from './src/services/sessionService';
 
 
 import LandingScreen from './src/screens/onboarding/LandingScreen';
@@ -25,6 +26,10 @@ import FAQPage from './src/screens/profile/FAQPage';
 import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
 import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
 import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
+import Feed from './src/screens/deal_feed/Feed';
+import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
+import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
+import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 
 
@@ -50,13 +55,27 @@ const OnboardingStack = () => (
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
+    <Stack.Screen name="Feed" component={Feed} />
+    <Stack.Screen name="DealDetail" component={DealDetailScreen} />
+    <Stack.Screen name="ReportContent" component={ReportContentScreen} />
+    <Stack.Screen name="BlockUser" component={BlockUserScreen} />
   </Stack.Navigator>
 );
 
 const AppStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Feed" component={Feed} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
-    {/* Add other authenticated screens here */}
+    <Stack.Screen name="profileEdit" component={profileEdit} />
+    <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
+    <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
+    <Stack.Screen name="FAQPage" component={FAQPage} />
+    <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
+    <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
+    <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
+    <Stack.Screen name="DealDetail" component={DealDetailScreen} />
+    <Stack.Screen name="ReportContent" component={ReportContentScreen} />
+    <Stack.Screen name="BlockUser" component={BlockUserScreen} />
   </Stack.Navigator>
 );
 
@@ -73,7 +92,6 @@ const linking = {
   },
 };
 
-
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
@@ -83,14 +101,12 @@ export default function App() {
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);
-  // This state will determine which stack to show. 
-  // In a real app, you'd check for a token in AsyncStorage or a global state.
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setTimeoutReached(true);
-      console.log('Loading timeout');
     }, 3000);
 
     if (fontsLoaded) {
@@ -100,11 +116,52 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [fontsLoaded]);
 
-  if (fontError) {
-    console.log('Font loading error:', fontError);
-  }
+  // Initialize auth session and check login status
+  React.useEffect(() => {
+    const checkAndInitialize = async () => {
+      try {
+        const isAuth = await initializeAuthSession();
+        setIsLoggedIn(isAuth);
+      } catch (error) {
+        console.error('Error initializing:', error);
+        setIsLoggedIn(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAndInitialize();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth state changed:', event);
+      setIsLoggedIn(!!session);
+      
+      if (session && event === 'SIGNED_IN') {
+        await initializeAuthSession();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Setup app state listener for session management
+  React.useEffect(() => {
+    const cleanup = setupAppStateListener();
+    return cleanup;
+  }, []);
 
   if (!fontsLoaded && !fontError && !timeoutReached) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
+        <ActivityIndicator size="large" color="#FFA05C" />
+      </View>
+    );
+  }
+
+  if (isCheckingAuth) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
         <ActivityIndicator size="large" color="#FFA05C" />

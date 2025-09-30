@@ -1,47 +1,117 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { getBlockedUsers, unblockUser } from '../../services/blockService';
 
 interface BlockedUser {
-  id: string;
-  name: string;
-  isBlocked: boolean;
+  block_id: string;
+  blocked_user_id: string;
+  reason_code_id: string;
+  reason_text: string | null;
+  created_at: string;
+  blocked_user: {
+    user_id: string;
+    display_name: string | null;
+    profile_photo: string | null;
+  };
 }
 
 const BlockedUsersPage = () => {
   const navigation = useNavigation();
-  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([
-    { id: '1', name: 'Jason Lee', isBlocked: true },
-    { id: '2', name: 'Albert Chung', isBlocked: true },
-    { id: '3', name: 'Kevin Hu', isBlocked: true },
-  ]);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    loadBlockedUsers();
+  }, []);
 
-  const toggleBlockStatus = (userId: string) => {
-    setBlockedUsers(prevUsers =>
-      prevUsers.map(user =>
-        user.id === userId ? { ...user, isBlocked: !user.isBlocked } : user
-      )
-    );
+  const loadBlockedUsers = async () => {
+    try {
+      setLoading(true);
+      const users = await getBlockedUsers();
+      setBlockedUsers(users);
+      // Initialize all users as selected (checked) by default
+      setSelectedUsers(new Set(users.map(user => user.blocked_user_id)));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load blocked users');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const renderUserItem = (user: BlockedUser, index: number) => (
-    <View key={user.id}>
-      <TouchableOpacity 
-        style={styles.userItem} 
-        onPress={() => toggleBlockStatus(user.id)}
-      >
-        <Text style={styles.userName}>{user.name}</Text>
-        <View style={styles.checkbox}>
-          {user.isBlocked && (
-            <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
-          )}
-        </View>
-      </TouchableOpacity>
-      {index < blockedUsers.length - 1 && <View style={styles.separator} />}
-    </View>
-  );
+  const toggleUserSelection = (blockedUserId: string) => {
+    setSelectedUsers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(blockedUserId)) {
+        newSet.delete(blockedUserId);
+      } else {
+        newSet.add(blockedUserId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleUpdate = async () => {
+    const usersToUnblock = blockedUsers.filter(user => !selectedUsers.has(user.blocked_user_id));
+    
+    if (usersToUnblock.length === 0) {
+      Alert.alert('No Changes', 'No users selected for unblocking');
+      return;
+    }
+
+    try {
+      // Unblock all selected users
+      const unblockPromises = usersToUnblock.map(user => unblockUser(user.blocked_user_id));
+      const results = await Promise.all(unblockPromises);
+      
+      const successCount = results.filter(result => result.success).length;
+      
+      if (successCount > 0) {
+        // Remove successfully unblocked users from the list
+        setBlockedUsers(prevUsers => 
+          prevUsers.filter(user => selectedUsers.has(user.blocked_user_id))
+        );
+        setSelectedUsers(new Set(blockedUsers.filter(user => selectedUsers.has(user.blocked_user_id)).map(user => user.blocked_user_id)));
+        Alert.alert('Success', `${successCount} user(s) have been unblocked`, [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('Error', 'Failed to unblock users');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to unblock users');
+    }
+  };
+
+  const renderUserItem = (user: BlockedUser, index: number) => {
+    const isSelected = selectedUsers.has(user.blocked_user_id);
+    
+    return (
+      <View key={user.block_id}>
+        <TouchableOpacity 
+          style={styles.userItem} 
+          onPress={() => toggleUserSelection(user.blocked_user_id)}
+          activeOpacity={1}
+        >
+          <Text style={styles.userName}>
+            {user.blocked_user.display_name || 'Unknown User'}
+          </Text>
+          <TouchableOpacity 
+            style={[styles.checkbox, isSelected ? styles.checkedBox : styles.uncheckedBox]}
+            onPress={() => toggleUserSelection(user.blocked_user_id)}
+            activeOpacity={1}
+          >
+            {isSelected && (
+              <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+        {index < blockedUsers.length - 1 && <View style={styles.separator} />}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -51,16 +121,28 @@ const BlockedUsersPage = () => {
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.titleText}>Block Users</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={handleUpdate}>
           <Text style={styles.updateText}>Update</Text>
         </TouchableOpacity>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        <View style={styles.userList}>
-          {blockedUsers.map((user, index) => renderUserItem(user, index))}
-        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFA05C" />
+            <Text style={styles.loadingText}>Loading blocked users...</Text>
+          </View>
+        ) : blockedUsers.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No blocked users</Text>
+            <Text style={styles.emptySubtext}>You haven't blocked any users yet</Text>
+          </View>
+        ) : (
+          <View style={styles.userList}>
+            {blockedUsers.map((user, index) => renderUserItem(user, index))}
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -128,10 +210,49 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 20,
     height: 20,
-    backgroundColor: '#FFA05C',
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  checkedBox: {
+    backgroundColor: '#FFA05C',
+  },
+  uncheckedBox: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    fontFamily: 'Inter',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    fontFamily: 'Inter',
   },
   separator: {
     width: 373,
