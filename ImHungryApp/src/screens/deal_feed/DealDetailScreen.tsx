@@ -87,10 +87,6 @@ const DealDetailScreen: React.FC = () => {
     (navigation as any).navigate('BlockUser', { dealId: dealData.id, uploaderUserId: dealData.userId || "00000000-0000-0000-0000-000000000000" });
   };
 
-  const handleContentFeedback = () => {
-    setIsPopupVisible(false);
-    // Implement content feedback functionality
-  };
 
   // Get profile picture - use actual data or fallback to default
   const profilePicture = dealData.userProfilePhoto 
@@ -269,7 +265,6 @@ const DealDetailScreen: React.FC = () => {
         onClose={handleClosePopup}
         onReportContent={handleReportContent}
         onBlockUser={handleBlockUser}
-        onContentFeedback={handleContentFeedback}
         dealId={dealData.id}
         uploaderUserId={dealData.userId || "00000000-0000-0000-0000-000000000000"}
       />

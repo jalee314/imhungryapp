@@ -15,7 +15,6 @@ interface ThreeDotPopupProps {
   onClose: () => void;
   onReportContent: () => void;
   onBlockUser: () => void;
-  onContentFeedback: () => void;
   dealId?: string;
   uploaderUserId?: string;
 }
@@ -25,7 +24,6 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
   onClose,
   onReportContent,
   onBlockUser,
-  onContentFeedback,
   dealId,
   uploaderUserId,
 }) => {
@@ -58,11 +56,6 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
           <View style={styles.popupDivider} />
           <TouchableOpacity style={styles.popupItem} onPress={handleBlockUser}>
             <Text style={styles.popupItemText}>Block User</Text>
-            <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
-          </TouchableOpacity>
-          <View style={styles.popupDivider} />
-          <TouchableOpacity style={styles.popupItem} onPress={onContentFeedback}>
-            <Text style={styles.popupItemText}>Content Feedback</Text>
             <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
           </TouchableOpacity>
         </View>
