@@ -9,7 +9,7 @@ import {
   TextInput,
   FlatList,
 } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ListItem {
   id: string;
@@ -29,6 +29,9 @@ interface ListSelectionModalProps {
   searchQuery?: string;
 }
 
+// Create a proper separator component
+const ItemSeparator = () => <View style={styles.separator} />;
+
 const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   visible,
   onClose,
@@ -45,14 +48,12 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
 
   const isSearchModal = title === "Search Restaurant";
 
-  // Update selectedItems when modal becomes visible and initialSelected changes
   useEffect(() => {
     if (visible) {
       setSelectedItems(initialSelected);
     }
-  }, [visible, initialSelected.join(',')]); // Use join to avoid array reference issues
+  }, [visible, initialSelected.join(',')]);
 
-  // Update searchText when modal becomes visible and searchQuery changes
   useEffect(() => {
     if (visible) {
       setSearchText(searchQuery || '');
@@ -61,10 +62,8 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
 
   const handleSelectItem = (itemId: string) => {
     if (singleSelect || isSearchModal) {
-      // Single selection mode
       setSelectedItems(prev => (prev.includes(itemId) ? [] : [itemId]));
     } else {
-      // Multiple selection mode
       setSelectedItems(prev => 
         prev.includes(itemId) 
           ? prev.filter(id => id !== itemId)
@@ -134,7 +133,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
           data={filteredData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={ItemSeparator}
           contentContainerStyle={styles.listContentContainer}
         />
       </SafeAreaView>

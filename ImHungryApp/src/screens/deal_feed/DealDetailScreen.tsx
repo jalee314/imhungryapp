@@ -21,10 +21,10 @@ const DealDetailScreen: React.FC = () => {
   const route = useRoute<DealDetailRouteProp>();
   const { deal } = route.params;
 
-
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -90,6 +90,19 @@ const DealDetailScreen: React.FC = () => {
     setIsPopupVisible(false);
     // Implement content feedback functionality
   };
+    console.log('Get directions to:', dealData.restaurant);
+    // Implement directions functionality
+  };
+
+  // Get profile picture - use actual data or fallback to default
+  const profilePicture = dealData.userProfilePhoto 
+    ? { uri: dealData.userProfilePhoto }
+    : require('../../../img/Default_pfp.svg.png');
+
+  // Get display name - handle anonymous posts
+  const displayName = dealData.isAnonymous 
+    ? 'Anonymous' 
+    : (dealData.userDisplayName || 'Unknown User');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -114,47 +127,69 @@ const DealDetailScreen: React.FC = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Restaurant Header */}
         <View style={styles.restaurantSection}>
-          <View style={styles.restaurantInfo}>
+          {/* Top row with restaurant name and view count side by side */}
+          <View style={styles.restaurantTopRow}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
+            <View style={styles.viewCountContainer}>
+              <Text style={styles.viewCount}>{dealData.votes} viewed</Text>
+              <View style={styles.avatarGroup}>
+                {/* Mock viewer avatars */}
+                <Image 
+                  source={{ uri: 'https://via.placeholder.com/20x20/ff8c4c/ffffff?text=A' }} 
+                  style={[styles.viewerAvatar, { zIndex: 3 }]} 
+                />
+                <Image 
+                  source={{ uri: 'https://via.placeholder.com/20x20/4CAF50/ffffff?text=B' }} 
+                  style={[styles.viewerAvatar, { zIndex: 2, marginLeft: -8 }]} 
+                />
+                <Image 
+                  source={{ uri: 'https://via.placeholder.com/20x20/2196F3/ffffff?text=C' }} 
+                  style={[styles.viewerAvatar, { zIndex: 1, marginLeft: -8 }]} 
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Full width info rows below */}
+          <View style={styles.restaurantInfo}>
             <View style={styles.locationRow}>
-              <MaterialCommunityIcons name="map-marker" size={12} color="#FF8C4C" />
-              <Text style={styles.locationText}>3mi away • 14748 Beach Blvd, La Mirada, CA 90638</Text>
+              <MaterialCommunityIcons name="map-marker" size={12} color="#FF8C4C" style={styles.locationIcon} />
+              <Text style={styles.locationText}>
+                <Text style={styles.infoRegular}>{dealData.milesAway} away </Text>
+                <Text style={styles.infoBullet}>• </Text>
+                <Text style={styles.infoRegular}>{dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA 90638'}</Text>
+              </Text>
             </View>
             <View style={styles.validUntilRow}>
-              <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" />
+              <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={styles.clockIcon} />
               <Text style={styles.validUntilText}>Valid Until: September 20th, 2025</Text>
             </View>
             <View style={styles.categoryRow}>
-              <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" />
-              <Text style={styles.categoryText}>Asian • BOGO</Text>
-            </View>
-          </View>
-          <View style={styles.viewCountContainer}>
-            <Text style={styles.viewCount}>{dealData.votes} viewed</Text>
-            <View style={styles.avatarGroup}>
-              {/* Mock viewer avatars */}
-              <Image 
-                source={{ uri: 'https://via.placeholder.com/20x20/ff8c4c/ffffff?text=A' }} 
-                style={[styles.viewerAvatar, { zIndex: 3 }]} 
-              />
-              <Image 
-                source={{ uri: 'https://via.placeholder.com/20x20/4CAF50/ffffff?text=B' }} 
-                style={[styles.viewerAvatar, { zIndex: 2, marginLeft: -8 }]} 
-              />
-              <Image 
-                source={{ uri: 'https://via.placeholder.com/20x20/2196F3/ffffff?text=C' }} 
-                style={[styles.viewerAvatar, { zIndex: 1, marginLeft: -8 }]} 
-              />
+              <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
+              <Text style={styles.categoryText}>
+                <Text style={styles.infoRegular}>{dealData.cuisine || 'Asian'} </Text>
+                <Text style={styles.infoBullet}>• </Text>
+                <Text style={styles.infoRegular}>BOGO</Text>
+              </Text>
             </View>
           </View>
         </View>
+
+        {/* Separator after restaurant section */}
+        <View style={styles.separator} />
 
         {/* Deal Title */}
         <Text style={styles.dealTitle}>{dealData.title}</Text>
 
         {/* Deal Image */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: dealData.image }} style={styles.dealImage} />
+          <Image 
+            source={typeof dealData.image === 'string' 
+              ? { uri: dealData.image } 
+              : dealData.image
+            } 
+            style={styles.dealImage} 
+          />
         </View>
 
         {/* Action Buttons */}
@@ -200,28 +235,36 @@ const DealDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Details Section */}
-        <View style={styles.detailsSection}>
-          <Text style={styles.detailsTitle}>Details</Text>
-          <Text style={styles.detailsText}>
-            Buy any Sea Salt Coffee and get the second one free. Available at participating Boba Ya! locations. Offer valid for members only.
-          </Text>
-        </View>
+        {/* Only show Details section if details exist */}
+        {dealData.details && dealData.details.trim() !== '' && (
+          <>
+            {/* Separator after image/actions */}
+            <View style={styles.separator} />
+
+            {/* Details Section */}
+            <View style={styles.detailsSection}>
+              <Text style={styles.detailsTitle}>Details</Text>
+              <Text style={styles.detailsText}>{dealData.details}</Text>
+            </View>
+          </>
+        )}
+
+        {/* Separator before shared by section */}
+        <View style={styles.separator} />
 
         {/* Shared By Section */}
         <View style={styles.sharedByContainer}>
           <Image 
-            source={{ uri: 'https://via.placeholder.com/50x50/ff8c4c/ffffff?text=KH' }} 
+            source={profilePicture} 
             style={styles.profilePicture} 
           />
           <View style={styles.userInfo}>
             <Text style={styles.sharedByLabel}>Shared By</Text>
-            <Text style={styles.userName}>Kevin Hu</Text>
+            <Text style={styles.userName}>{displayName}</Text>
             <Text style={styles.userLocation}>Fullerton, California</Text>
           </View>
         </View>
       </ScrollView>
-
       {/* 3-Dot Popup Modal */}
       <ThreeDotPopup
         visible={isPopupVisible}
@@ -257,18 +300,21 @@ const styles = StyleSheet.create({
   rightHeaderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   directionsButton: {
-    backgroundColor: '#FF8C4C',
-    borderRadius: 20,
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255, 140, 76, 0.8)',
+    borderRadius: 30,
+    paddingHorizontal: 24,
     paddingVertical: 8,
   },
   directionsText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: '#000000',
+    fontWeight: '400',
     fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 15,
+    textAlign: 'center',
   },
   moreButton: {
     padding: 4,
@@ -277,30 +323,46 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   restaurantSection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingTop: 16,
+    paddingBottom: 16,
+  },
+  restaurantTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-  },
-  restaurantInfo: {
-    flex: 1,
+    marginBottom: 0,
   },
   restaurantName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#000000',
-    marginBottom: 8,
+    fontFamily: 'Inter',
+    lineHeight: 20,
+    flex: 1,
+    marginBottom: 0,
+  },
+  restaurantInfo: {
+    width: '100%',
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
+  locationIcon: {
+    marginRight: 4,
+  },
+  clockIcon: {
+    marginRight: 4,
+  },
+  tagIcon: {
+    marginRight: 4,
+  },
   locationText: {
     fontSize: 12,
-    color: '#666666',
-    marginLeft: 4,
+    lineHeight: 20,
+    flex: 1,
   },
   validUntilRow: {
     flexDirection: 'row',
@@ -308,9 +370,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   validUntilText: {
+    fontFamily: 'Inter-Regular',
     fontSize: 12,
-    color: '#666666',
-    marginLeft: 4,
+    fontWeight: '400',
+    lineHeight: 20,
+    color: '#000000',
   },
   categoryRow: {
     flexDirection: 'row',
@@ -318,16 +382,29 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 12,
-    color: '#666666',
-    marginLeft: 4,
+    lineHeight: 20,
+  },
+  infoRegular: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000000',
+  },
+  infoBullet: {
+    fontFamily: 'Inter-Light',
+    fontSize: 12,
+    fontWeight: '300',
+    color: '#000000',
   },
   viewCountContainer: {
     alignItems: 'flex-end',
+    marginLeft: 12,
   },
   viewCount: {
     fontSize: 12,
     color: '#666666',
     marginBottom: 4,
+    fontFamily: 'Inter',
   },
   avatarGroup: {
     flexDirection: 'row',
@@ -340,16 +417,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFFFFF',
   },
+  separator: {
+    height: 1,
+    backgroundColor: '#DEDEDE',
+    marginHorizontal: 24,
+    marginVertical: 16,
+  },
   dealTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#000000',
-    paddingHorizontal: 16,
-    marginTop: 16,
+    paddingHorizontal: 24,
     marginBottom: 16,
+    fontFamily: 'Inter',
+    lineHeight: 20,
   },
   imageContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     marginBottom: 16,
   },
   dealImage: {
@@ -362,8 +446,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    marginBottom: 8,
   },
   voteContainer: {
     flexDirection: 'row',
@@ -396,6 +480,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000000',
     marginHorizontal: 12,
+    fontFamily: 'Inter',
   },
   rightActions: {
     flexDirection: 'row',
@@ -415,25 +500,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF8C4C',
   },
   detailsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    paddingHorizontal: 24,
   },
   detailsTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#000000',
     marginBottom: 8,
+    fontFamily: 'Inter',
+    lineHeight: 20,
   },
   detailsText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666666',
     lineHeight: 20,
+    fontFamily: 'Inter',
+    fontWeight: '400',
   },
   sharedByContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingBottom: 32,
+    paddingTop: 8,
   },
   profilePicture: {
     width: 50,
@@ -448,16 +537,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666666',
     marginBottom: 2,
+    fontFamily: 'Inter',
   },
   userName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#000000',
     marginBottom: 2,
+    fontFamily: 'Inter',
   },
   userLocation: {
     fontSize: 12,
     color: '#666666',
+    fontFamily: 'Inter',
   },
 });
 

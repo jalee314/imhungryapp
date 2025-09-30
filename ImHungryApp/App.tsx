@@ -61,6 +61,7 @@ const OnboardingStack = () => (
 
 const AppStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Feed" component={Feed} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
     <Stack.Screen name="profileEdit" component={profileEdit} />
     <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
