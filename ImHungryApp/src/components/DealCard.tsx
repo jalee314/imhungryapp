@@ -363,7 +363,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#9796FF',
   },
   favorited: {
-    backgroundColor: '#FF8C4C',
+    // Don't change background - only the heart icon color changes
+    // The icon color is already handled in the component logic
   },
 });
 

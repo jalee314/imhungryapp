@@ -3,8 +3,9 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
-import * as Font from 'expo-font';
 import * as Linking from 'expo-linking';
+import { supabase } from './lib/supabase';
+import { initializeAuthSession, setupAppStateListener } from './src/services/sessionService';
 
 
 import LandingScreen from './src/screens/onboarding/LandingScreen';
@@ -91,7 +92,6 @@ const linking = {
   },
 };
 
-
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
@@ -101,9 +101,8 @@ export default function App() {
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);
-  // This state will determine which stack to show. 
-  // In a real app, you'd check for a token in AsyncStorage or a global state.
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -117,7 +116,52 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [fontsLoaded]);
 
+  // Initialize auth session and check login status
+  React.useEffect(() => {
+    const checkAndInitialize = async () => {
+      try {
+        const isAuth = await initializeAuthSession();
+        setIsLoggedIn(isAuth);
+      } catch (error) {
+        console.error('Error initializing:', error);
+        setIsLoggedIn(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAndInitialize();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth state changed:', event);
+      setIsLoggedIn(!!session);
+      
+      if (session && event === 'SIGNED_IN') {
+        await initializeAuthSession();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Setup app state listener for session management
+  React.useEffect(() => {
+    const cleanup = setupAppStateListener();
+    return cleanup;
+  }, []);
+
   if (!fontsLoaded && !fontError && !timeoutReached) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
+        <ActivityIndicator size="large" color="#FFA05C" />
+      </View>
+    );
+  }
+
+  if (isCheckingAuth) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
         <ActivityIndicator size="large" color="#FFA05C" />

@@ -13,6 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
+import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
 
@@ -37,28 +38,64 @@ const DealDetailScreen: React.FC = () => {
   };
 
   const handleUpvote = () => {
-    setDealData(prev => ({
-      ...prev,
-      votes: prev.isUpvoted ? prev.votes - 1 : prev.votes + (prev.isDownvoted ? 2 : 1),
-      isUpvoted: !prev.isUpvoted,
+    const previousState = { ...dealData };
+    const wasUpvoted = previousState.isUpvoted;
+    const wasDownvoted = previousState.isDownvoted;
+    
+    // 1. INSTANT UI update (synchronous)
+    setDealData({
+      ...previousState,
+      votes: wasUpvoted 
+        ? previousState.votes - 1 
+        : (wasDownvoted ? previousState.votes + 2 : previousState.votes + 1),
+      isUpvoted: !wasUpvoted,
       isDownvoted: false,
-    }));
+    });
+
+    // 2. Background database save (async, fire and forget)
+    toggleUpvote(previousState.id).catch((err) => {
+      console.error('Failed to save upvote, reverting:', err);
+      setDealData(previousState);
+    });
   };
 
   const handleDownvote = () => {
-    setDealData(prev => ({
-      ...prev,
-      votes: prev.isDownvoted ? prev.votes + 1 : prev.votes - (prev.isUpvoted ? 2 : 1),
-      isDownvoted: !prev.isDownvoted,
+    const previousState = { ...dealData };
+    const wasDownvoted = previousState.isDownvoted;
+    const wasUpvoted = previousState.isUpvoted;
+    
+    // 1. INSTANT UI update
+    setDealData({
+      ...previousState,
+      votes: wasDownvoted 
+        ? previousState.votes + 1 
+        : (wasUpvoted ? previousState.votes - 2 : previousState.votes - 1),
+      isDownvoted: !wasDownvoted,
       isUpvoted: false,
-    }));
+    });
+
+    // 2. Background database save
+    toggleDownvote(previousState.id).catch((err) => {
+      console.error('Failed to save downvote, reverting:', err);
+      setDealData(previousState);
+    });
   };
 
   const handleFavorite = () => {
-    setDealData(prev => ({
-      ...prev,
-      isFavorited: !prev.isFavorited,
-    }));
+    const previousState = { ...dealData };
+    const wasFavorited = previousState.isFavorited;
+    
+    // 1. INSTANT UI update
+    setDealData({
+      ...previousState,
+      isFavorited: !wasFavorited,
+    });
+
+    // 2. Background database save
+    toggleFavorite(previousState.id, wasFavorited).catch((err) => {
+      console.error('Failed to save favorite, reverting:', err);
+      setDealData(previousState);
+    });
   };
 
   const handleShare = () => {

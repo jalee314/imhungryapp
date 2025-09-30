@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,30 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import Header from '../../components/Header';
 import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
+import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
-import { feedService } from '../../services/feedService';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
+import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
+import { supabase } from '../../../lib/supabase';
+
+/**
+ * Get the current authenticated user's ID
+ */
+const getCurrentUserId = async (): Promise<string | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+};
 
 const Feed: React.FC = () => {
   const navigation = useNavigation();
@@ -26,7 +42,9 @@ const Feed: React.FC = () => {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const interactionChannel = useRef<RealtimeChannel | null>(null);
+  const favoriteChannel = useRef<RealtimeChannel | null>(null);
+  
   const cuisineFilters = [
     '🍕 Pizza',
     '🍔 Burgers', 
@@ -39,7 +57,6 @@ const Feed: React.FC = () => {
     '🍜 Vietnamese',
     '🥙 Mediterranean'
   ];
-
 
   // Fetch deals from database
   const loadDeals = async () => {
@@ -63,30 +80,188 @@ const Feed: React.FC = () => {
     loadDeals();
   }, []);
 
+  // Setup Realtime subscriptions
+  useEffect(() => {
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || deals.length === 0) return;
+
+      const userId = user.id;
+      const dealIds = deals.map(d => d.id);
+
+      // Subscribe to ALL interaction changes (not just current user)
+      interactionChannel.current = supabase
+        .channel('all-interactions')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // INSERT, UPDATE, DELETE
+            schema: 'public',
+            table: 'interaction',
+          },
+          async (payload) => {
+            const interaction = payload.new || payload.old;
+            
+            // Only update if it affects our visible deals
+            if (!dealIds.includes(interaction.deal_id)) return;
+            
+            console.log('⚡ Realtime interaction:', payload.eventType, interaction.interaction_type);
+            
+            // Recalculate vote counts and states
+            const [voteStates, voteCounts] = await Promise.all([
+              getUserVoteStates(dealIds),
+              calculateVoteCounts(dealIds)
+            ]);
+            
+            // Update deals with new data
+            setDeals(prevDeals => prevDeals.map(deal => ({
+              ...deal,
+              isUpvoted: voteStates[deal.id]?.isUpvoted || false,
+              isDownvoted: voteStates[deal.id]?.isDownvoted || false,
+              votes: voteCounts[deal.id] || 0,
+            })));
+          }
+        )
+        .subscribe((status) => {
+          console.log('📡 Interaction channel:', status);
+        });
+
+      // Subscribe to favorite changes (only current user)
+      favoriteChannel.current = supabase
+        .channel('user-favorites')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'favorite',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const dealId = payload.new?.deal_id || payload.old?.deal_id;
+            const isFavorited = payload.eventType === 'INSERT';
+            
+            console.log('⚡ Realtime favorite:', payload.eventType, dealId);
+            
+            setDeals(prevDeals => prevDeals.map(deal => 
+              deal.id === dealId ? { ...deal, isFavorited } : deal
+            ));
+          }
+        )
+        .subscribe((status) => {
+          console.log('📡 Favorite channel:', status);
+        });
+    };
+
+    if (deals.length > 0) {
+      setupRealtimeSubscription();
+    }
+
+    return () => {
+      if (interactionChannel.current) {
+        supabase.removeChannel(interactionChannel.current);
+      }
+      if (favoriteChannel.current) {
+        supabase.removeChannel(favoriteChannel.current);
+      }
+    };
+  }, [deals.length]);
+
   // Filter deals based on selected cuisine
   const filteredDeals = deals.filter(deal => {
     if (selectedCuisine === 'All') return true;
     return deal.cuisine?.toLowerCase().includes(selectedCuisine.toLowerCase()) || false;
   });
 
-  // Split deals into community and "for you" sections - but show both simultaneously
-  const communityDeals = filteredDeals.slice(0, 5); // First 5 deals for community section
-  const dealsForYou = filteredDeals; // ALL deals for "for you" section (not just the rest)
+  const communityDeals = filteredDeals.slice(0, 10);
+  const dealsForYou = filteredDeals;
 
   const handleCuisineFilterSelect = (filter: string) => {
     setSelectedCuisine(filter);
   };
 
   const handleUpvote = (dealId: string) => {
-    // TODO: Implement upvote functionality
+
+    const deal = deals.find(d => d.id === dealId);
+    if (!deal) return;
+
+    const wasUpvoted = deal.isUpvoted;
+    const wasDownvoted = deal.isDownvoted;
+
+    // 1. INSTANT UI update (synchronous, no await)
+    setDeals(prevDeals => prevDeals.map(d => {
+      if (d.id === dealId) {
+        return {
+          ...d,
+          isUpvoted: !wasUpvoted,
+          isDownvoted: false,
+          votes: wasUpvoted 
+            ? d.votes - 1
+            : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+        };
+      }
+      return d;
+    }));
+
+    // 2. Background database save (async, happens later)
+    toggleUpvote(dealId).catch((err) => {
+      console.error('Failed to save upvote, reverting:', err);
+      // Revert UI on failure
+      setDeals(prevDeals => prevDeals.map(d => 
+        d.id === dealId ? deal : d
+      ));
+    });
   };
 
   const handleDownvote = (dealId: string) => {
-    // TODO: Implement downvote functionality
+    const deal = deals.find(d => d.id === dealId);
+    if (!deal) return;
+
+    const wasDownvoted = deal.isDownvoted;
+    const wasUpvoted = deal.isUpvoted;
+
+    // 1. INSTANT UI update
+    setDeals(prevDeals => prevDeals.map(d => {
+      if (d.id === dealId) {
+        return {
+          ...d,
+          isDownvoted: !wasDownvoted,
+          isUpvoted: false,
+          votes: wasDownvoted 
+            ? d.votes + 1
+            : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+        };
+      }
+      return d;
+    }));
+
+    // 2. Background database save
+    toggleDownvote(dealId).catch((err) => {
+      console.error('Failed to save downvote, reverting:', err);
+      setDeals(prevDeals => prevDeals.map(d => 
+        d.id === dealId ? deal : d
+      ));
+    });
   };
 
   const handleFavorite = (dealId: string) => {
-    // TODO: Implement favorite functionality
+    const deal = deals.find(d => d.id === dealId);
+    if (!deal) return;
+
+    const wasFavorited = deal.isFavorited;
+
+    // 1. INSTANT UI update
+    setDeals(prevDeals => prevDeals.map(d => 
+      d.id === dealId ? { ...d, isFavorited: !wasFavorited } : d
+    ));
+
+    // 2. Background database save
+    toggleFavorite(dealId, wasFavorited).catch((err) => {
+      console.error('Failed to save favorite, reverting:', err);
+      setDeals(prevDeals => prevDeals.map(d => 
+        d.id === dealId ? deal : d
+      ));
+    });
   };
 
   const handleDealPress = (dealId: string) => {
@@ -97,15 +272,15 @@ const Feed: React.FC = () => {
   };
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
-  <DealCard
-    deal={item}
-    variant="horizontal"
-    onUpvote={handleUpvote}
-    onDownvote={handleDownvote}
-    onFavorite={handleFavorite}
-    onPress={handleDealPress}
-  />
-);
+    <DealCard
+      deal={item}
+      variant="horizontal"
+      onUpvote={handleUpvote}
+      onDownvote={handleDownvote}
+      onFavorite={handleFavorite}
+      onPress={handleDealPress}
+    />
+  );
 
   const renderDealForYou = ({ item }: { item: Deal }) => (
     <DealCard
@@ -120,8 +295,40 @@ const Feed: React.FC = () => {
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#FFA05C" />
-      <Text style={styles.loadingText}>Loading deals...</Text>
+      {/* Community Uploaded Skeleton Section */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
+        <TouchableOpacity style={styles.seeAllButton}>
+          <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
+        </TouchableOpacity>
+      </View>
+      
+      <FlatList
+        data={[1, 2, 3]} // Show 3 skeleton cards
+        renderItem={() => <DealCardSkeleton variant="horizontal" />}
+        keyExtractor={(item) => item.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.communityList}
+      />
+
+      {/* Section Separator */}
+      <View style={styles.sectionSeparator} />
+
+      {/* Deals For You Skeleton Section */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
+      </View>
+
+      <View style={styles.dealsGrid}>
+        {[1, 2, 3, 4, 5, 6].map((item, index) => (
+          <View key={item} style={[
+            index % 2 === 0 ? styles.leftCard : styles.rightCard
+          ]}>
+            <DealCardSkeleton variant="vertical" />
+          </View>
+        ))}
+      </View>
     </View>
   );
 
@@ -330,9 +537,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
+    paddingBottom: 100, // Space for bottom navigation
   },
   loadingText: {
     marginTop: 16,
