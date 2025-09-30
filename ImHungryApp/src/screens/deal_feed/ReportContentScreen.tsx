@@ -102,7 +102,7 @@ const ReportContentScreen: React.FC = () => {
         Alert.alert(
           'Report Submitted',
           'Thank you for your report. We will review it and take appropriate action.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+          [{ text: 'OK', onPress: () => navigation.navigate('Feed' as never) }]
         );
       } else {
         Alert.alert('Error', result.error || 'Failed to submit report. Please try again.');

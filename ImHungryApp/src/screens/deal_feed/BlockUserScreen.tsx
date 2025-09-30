@@ -13,6 +13,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { submitBlock } from '../../services/blockService';
+import { getDealUploaderId } from '../../services/dealService';
 
 type BlockUserRouteProp = RouteProp<{ BlockUser: { dealId: string; uploaderUserId: string } }, 'BlockUser'>;
 
@@ -47,9 +48,17 @@ const BlockUserScreen: React.FC = () => {
 
     try {
       // Check if uploaderUserId is valid (not the fallback UUID)
+      let finalUploaderUserId = uploaderUserId;
+      
       if (!uploaderUserId || uploaderUserId === "00000000-0000-0000-0000-000000000000") {
-        Alert.alert('Error', 'Unable to identify the user. Please try again later.');
-        return;
+        const fetchedUserId = await getDealUploaderId(dealId);
+        
+        if (!fetchedUserId) {
+          Alert.alert('Error', 'Unable to identify the user. Please try again later.');
+          return;
+        }
+        
+        finalUploaderUserId = fetchedUserId;
       }
 
       // Map selected reason to reason code ID (using actual UUIDs from database)
@@ -64,7 +73,7 @@ const BlockUserScreen: React.FC = () => {
       const reasonCodeId = reasonCodeMap[selectedReason] || '2deae166-7539-46d7-a279-ae235b419791'; // Default to "Other" UUID
       const reasonText = selectedOptions.includes('Other') ? additionalDetails : undefined;
 
-      const result = await submitBlock(uploaderUserId, reasonCodeId, reasonText);
+      const result = await submitBlock(finalUploaderUserId, reasonCodeId, reasonText);
 
       if (result.success) {
         Alert.alert(
