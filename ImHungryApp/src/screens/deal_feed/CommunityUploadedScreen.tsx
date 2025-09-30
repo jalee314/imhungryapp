@@ -6,19 +6,18 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
-import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
-import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
+import { dealCacheService } from '../../services/dealCacheService';
+import { supabase } from '../../../lib/supabase';
 
 const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -30,44 +29,34 @@ const CommunityUploadedScreen: React.FC = () => {
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
 
-  // Fetch deals from database
-  const loadDeals = async (isRefreshing = false) => {
-    try {
-      if (!isRefreshing) {
+  useEffect(() => {
+    const loadDeals = async () => {
+      try {
         setLoading(true);
-      }
-      setError(null);
-      
-      console.log(`📥 ${isRefreshing ? 'Refreshing' : 'Loading'} community deals...`);
-      
-      const dbDeals = await fetchRankedDeals();
-      const transformedDeals = dbDeals.map(transformDealForUI);
-      
-      console.log(`✅ Loaded ${transformedDeals.length} deals`);
-      setDeals(transformedDeals);
-    } catch (err) {
-      console.error('Error loading deals:', err);
-      setError('Failed to load deals. Please try again.');
-    } finally {
-      if (isRefreshing) {
-        setRefreshing(false);
-      } else {
+        const cachedDeals = await dealCacheService.getDeals();
+        setDeals(cachedDeals);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading deals:', err);
+        setError('Failed to load deals. Please try again.');
+      } finally {
         setLoading(false);
       }
-    }
-  };
+    };
 
-  // Pull-to-refresh handler
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadDeals(true);
-  }, []);
-
-  useEffect(() => {
     loadDeals();
+
+    // Subscribe to cache updates
+    const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
+      setDeals(updatedDeals);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  // Setup Realtime subscriptions
+  // Setup Realtime subscriptions for interactions and favorites
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -78,7 +67,7 @@ const CommunityUploadedScreen: React.FC = () => {
 
       // Subscribe to ALL interaction changes
       interactionChannel.current = supabase
-        .channel('all-interactions-community')
+        .channel('community-interactions')
         .on(
           'postgres_changes',
           {
@@ -89,24 +78,32 @@ const CommunityUploadedScreen: React.FC = () => {
           async (payload) => {
             const interaction = payload.new || payload.old;
             
+            // Only update if it affects our visible deals
             if (!dealIds.includes(interaction.deal_id)) return;
+            
+            // Skip click events (too noisy, not needed for UI updates)
             if (interaction.interaction_type === 'click') return;
             
+            // Debounce: Skip if we just processed this exact action
             const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
             if (recentActions.current.has(actionKey)) {
+              console.log('⏭️ Skipping duplicate realtime event');
               return;
             }
             
+            // Mark this action as processed
             recentActions.current.add(actionKey);
             setTimeout(() => recentActions.current.delete(actionKey), 1000);
             
             console.log('⚡ Realtime interaction:', payload.eventType, interaction.interaction_type);
             
+            // Recalculate vote counts and states
             const [voteStates, voteCounts] = await Promise.all([
               getUserVoteStates(dealIds),
               calculateVoteCounts(dealIds)
             ]);
             
+            // Update deals with new data
             setDeals(prevDeals => prevDeals.map(deal => ({
               ...deal,
               isUpvoted: voteStates[deal.id]?.isUpvoted || false,
@@ -115,11 +112,15 @@ const CommunityUploadedScreen: React.FC = () => {
             })));
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Community Interaction channel: SUBSCRIBED');
+          }
+        });
 
       // Subscribe to favorite changes
       favoriteChannel.current = supabase
-        .channel('user-favorites-community')
+        .channel('community-favorites')
         .on(
           'postgres_changes',
           {
@@ -132,12 +133,18 @@ const CommunityUploadedScreen: React.FC = () => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
             const isFavorited = payload.eventType === 'INSERT';
             
+            console.log('⚡ Realtime favorite:', payload.eventType, dealId);
+            
             setDeals(prevDeals => prevDeals.map(deal => 
               deal.id === dealId ? { ...deal, isFavorited } : deal
             ));
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Community Favorite channel: SUBSCRIBED');
+          }
+        });
     };
 
     if (deals.length > 0) {
@@ -154,6 +161,21 @@ const CommunityUploadedScreen: React.FC = () => {
       recentActions.current.clear();
     };
   }, [deals.length]);
+
+  // Refresh vote states when returning to screen
+  // REMOVED useFocusEffect - optimistic updates work without it!
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const freshDeals = await dealCacheService.getDeals(true);
+      setDeals(freshDeals);
+    } catch (err) {
+      console.error('Error refreshing deals:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const handleUpvote = (dealId: string) => {
     const deal = deals.find(d => d.id === dealId);
@@ -261,7 +283,7 @@ const CommunityUploadedScreen: React.FC = () => {
   const renderErrorState = () => (
     <View style={styles.errorContainer}>
       <Text style={styles.errorText}>{error}</Text>
-      <TouchableOpacity style={styles.retryButton} onPress={() => loadDeals()}>
+      <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
         <Text style={styles.retryButtonText}>Retry</Text>
       </TouchableOpacity>
     </View>
