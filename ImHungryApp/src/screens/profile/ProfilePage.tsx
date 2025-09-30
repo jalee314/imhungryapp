@@ -14,6 +14,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { fetchUserData, getFullUserProfile, clearUserCache } from '../../services/userService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileCacheService } from '../../services/profileCacheService';
+import { signOut } from '../../services/sessionService';
 
 interface ProfilePageProps {}
 
@@ -240,18 +241,15 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
   const confirmLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        Alert.alert('Error', 'Failed to log out. Please try again.');
-        return;
-      }
+      // Use the new session service sign out
+      await signOut();
       
-      // Clear profile cache on logout
+      // Clear profile cache
       await ProfileCacheService.clearCache();
       
       setShowLogoutModal(false);
-      // Navigate to login page
+      
+      // Navigate to login
       (navigation as any).navigate('LogIn');
     } catch (error) {
       console.error('Error during logout:', error);

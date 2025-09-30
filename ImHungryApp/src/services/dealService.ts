@@ -1,6 +1,8 @@
 import { supabase } from '../../lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';
+import { getCurrentUserLocation, calculateDistance, getRestaurantLocationsBatch } from './locationService';
+import { getUserVoteStates, calculateVoteCounts } from './voteService';
 
 // Get current user ID from Supabase auth
 const getCurrentUserId = async (): Promise<string | null> => {
@@ -230,6 +232,7 @@ export interface DatabaseDeal {
   is_downvoted: boolean;
   is_favorited: boolean;
   distance_miles: number | null;
+  restaurant_id: string;
 }
 
 // Get user's location for ranking
@@ -327,7 +330,10 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       return [];
     }
 
-    // Fetch deal data for the ranked IDs
+    // Get user location
+    const userLocation = await getCurrentUserLocation();
+
+    // Fetch deal data
     const { data: deals, error } = await supabase
       .from('deal_instance')
       .select(`
@@ -342,6 +348,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
           description,
           image_url,
           restaurant!inner(
+            restaurant_id,
             name,
             address
           ),
@@ -365,31 +372,66 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       return [];
     }
 
-    // Transform the data to match our interface
-    const transformedDeals: DatabaseDeal[] = deals.map(deal => ({
-      deal_id: deal.deal_id,
-      template_id: deal.template_id,
-      title: deal.deal_template.title,
-      description: deal.deal_template.description,
-      image_url: deal.deal_template.image_url,
-      restaurant_name: deal.deal_template.restaurant.name,
-      restaurant_address: deal.deal_template.restaurant.address,
-      cuisine_name: deal.deal_template.cuisine?.cuisine_name || null,
-      category_name: deal.deal_template.category?.category_name || null,
-      created_at: deal.created_at,
-      start_date: deal.start_date,
-      end_date: deal.end_date,
-      is_anonymous: deal.is_anonymous,
-      user_display_name: deal.deal_template.user?.display_name || null,
-      user_profile_photo: deal.deal_template.user?.profile_photo || null,
-      votes: 0, // You'll need to implement vote counting
-      is_upvoted: false, // You'll need to implement user vote status
-      is_downvoted: false,
-      is_favorited: false, // You'll need to implement user favorite status
-      distance_miles: null // You'll need to implement distance calculation
-    }));
+    // Batch fetch vote states and vote counts
+    const dealIds = deals.map(deal => deal.deal_id);
+    const [voteStates, voteCounts] = await Promise.all([
+      getUserVoteStates(dealIds),
+      calculateVoteCounts(dealIds)
+    ]);
 
-    // Sort by the ranking order from the function
+    // Batch fetch restaurant locations
+    const restaurantIds = [...new Set(deals.map(deal => deal.deal_template.restaurant.restaurant_id))];
+    let restaurantLocations: Record<string, { lat: number; lng: number }> = {};
+    
+    if (userLocation && restaurantIds.length > 0) {
+      restaurantLocations = await getRestaurantLocationsBatch(restaurantIds);
+    }
+
+    // Transform deals with all data
+    const transformedDeals: DatabaseDeal[] = deals.map((deal) => {
+      let distance_miles: number | null = null;
+      
+      if (userLocation) {
+        const restaurantLocation = restaurantLocations[deal.deal_template.restaurant.restaurant_id];
+        if (restaurantLocation) {
+          distance_miles = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            restaurantLocation.lat,
+            restaurantLocation.lng
+          );
+        }
+      }
+
+      const voteState = voteStates[deal.deal_id] || { isUpvoted: false, isDownvoted: false, isFavorited: false };
+      const voteCount = voteCounts[deal.deal_id] || 0;
+
+      return {
+        deal_id: deal.deal_id,
+        template_id: deal.template_id,
+        title: deal.deal_template.title,
+        description: deal.deal_template.description,
+        image_url: deal.deal_template.image_url,
+        restaurant_name: deal.deal_template.restaurant.name,
+        restaurant_address: deal.deal_template.restaurant.address,
+        restaurant_id: deal.deal_template.restaurant.restaurant_id,
+        cuisine_name: deal.deal_template.cuisine?.cuisine_name || null,
+        category_name: deal.deal_template.category?.category_name || null,
+        created_at: deal.created_at,
+        start_date: deal.start_date,
+        end_date: deal.end_date,
+        is_anonymous: deal.is_anonymous,
+        user_display_name: deal.deal_template.user?.display_name || null,
+        user_profile_photo: deal.deal_template.user?.profile_photo || null,
+        votes: voteCount, // Real vote count from database
+        is_upvoted: voteState.isUpvoted,
+        is_downvoted: voteState.isDownvoted,
+        is_favorited: voteState.isFavorited,
+        distance_miles
+      };
+    });
+
+    // Sort by ranking order
     const rankedDeals = rankedIds
       .map(id => transformedDeals.find(deal => deal.deal_id === id))
       .filter(deal => deal !== undefined) as DatabaseDeal[];
@@ -412,7 +454,6 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     if (dbDeal.image_url.startsWith('http')) {
       imageSource = { uri: dbDeal.image_url };
     } else {
-      // Get public URL from Supabase storage
       const { data } = supabase.storage
         .from('deal-images')
         .getPublicUrl(dbDeal.image_url);
@@ -426,7 +467,6 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     if (dbDeal.user_profile_photo.startsWith('http')) {
       userProfilePhotoUrl = dbDeal.user_profile_photo;
     } else {
-      // Get public URL from Supabase storage
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(dbDeal.user_profile_photo);
@@ -447,7 +487,7 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     cuisine: dbDeal.cuisine_name || undefined,
     timeAgo: timeAgo,
     author: dbDeal.is_anonymous ? 'Anonymous' : (dbDeal.user_display_name || 'Unknown'),
-    milesAway: dbDeal.distance_miles ? `${Math.round(dbDeal.distance_miles)}mi` : '?mi',
+    milesAway: dbDeal.distance_miles ? `${dbDeal.distance_miles.toFixed(1)}mi` : '?mi',
     // Add new fields
     userDisplayName: dbDeal.user_display_name,
     userProfilePhoto: userProfilePhotoUrl,
