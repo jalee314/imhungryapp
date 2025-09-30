@@ -185,7 +185,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
       .on('postgres_changes', {
         event: '*', // Listen for all events (insert, update, delete)
         schema: 'public',
-        table: 'categories'
+        table: 'category'
       }, () => {
         console.log('Categories table changed, refreshing data...');
         fetchAndCacheData();
@@ -203,12 +203,12 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
       })
       .subscribe();
       
-    // Add restaurant channel subscription
+    // Add restaurant channel subscription - FIXED: Listen to the actual 'restaurant' table
     const restaurantsChannel = supabase.channel('restaurants-changes')
       .on('postgres_changes', {
         event: '*', // Listen for all events (insert, update, delete)
         schema: 'public',
-        table: 'restaurant'
+        table: 'restaurant' // This should match your actual table name
       }, () => {
         console.log('Restaurants table changed, refreshing data...');
         fetchAndCacheData();

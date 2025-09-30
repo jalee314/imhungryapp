@@ -9,7 +9,7 @@ import {
   TextInput,
   FlatList,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // CHANGED: Back to original
+import { Ionicons } from '@expo/vector-icons';
 
 interface ListItem {
   id: string;
@@ -28,6 +28,9 @@ interface ListSelectionModalProps {
   onSearchChange?: (query: string) => void;
   searchQuery?: string;
 }
+
+// Create a proper separator component
+const ItemSeparator = () => <View style={styles.separator} />;
 
 const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   visible,
@@ -95,7 +98,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
       </View>
       {selectedItems.includes(item.id) ? (
         <View style={styles.checkmark}>
-          <Ionicons name="checkmark" size={16} color="#FFFFFF" /> {/* CHANGED: Back to original */}
+          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
         </View>
       ) : (
         <View style={styles.checkmarkPlaceholder} />
@@ -117,7 +120,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
         </View>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#8E8E93" /> {/* CHANGED: Back to original */}
+          <Ionicons name="search" size={20} color="#8E8E93" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search"
@@ -130,7 +133,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
           data={filteredData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={ItemSeparator}
           contentContainerStyle={styles.listContentContainer}
         />
       </SafeAreaView>
@@ -138,7 +141,6 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   );
 };
 
-// ... styles remain the same
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   filterCell: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#D7D7D7',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    gap: 4,
   },
   selectedFilterCell: {
     backgroundColor: '#FF8C4C',
@@ -121,6 +122,7 @@ const styles = StyleSheet.create({
   filterCellText: {
     fontFamily: 'Inter',
     fontSize: 12,
+    fontWeight: '400',
     color: '#000000',
     textAlign: 'center',
   },

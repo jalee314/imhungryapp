@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,23 @@ import {
   FlatList,
   StatusBar,
   Image,
+  SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import CuisineFilter from '../../components/CuisineFilter';
+import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 
 const Feed: React.FC = () => {
   const navigation = useNavigation();
   const [selectedCuisine, setSelectedCuisine] = useState<string>('All');
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const cuisineFilters = [
     '🍕 Pizza',
@@ -33,239 +39,80 @@ const Feed: React.FC = () => {
     '🥙 Mediterranean'
   ];
 
-  // Updated sample data with local images only
-  // Updated sample data with more deals and variety
-  const communityDeals: Deal[] = [
-    {
-      id: '1',
-      title: 'Buy 1 Get 1 FREE Sea Salt Coffee per Member',
-      restaurant: '85 Degrees Bakery',
-      details: 'Valid for members only',
-      image: require('../../../img/albert.webp'),
-      votes: 67,
-      isUpvoted: true,
-      isDownvoted: false,
-      isFavorited: false,
-      timeAgo: '3h ago',
-      author: 'Kevin Hu',
-      milesAway: '3mi'
-    },
-    {
-      id: '2',
-      title: '$6 plate when Dodgers win @ home',
-      restaurant: 'Panda Express',
-      details: 'When Dodgers win at home games',
-      image: require('../../../img/monkey.jpg'),
-      votes: 67,
-      isUpvoted: true,
-      isDownvoted: false,
-      isFavorited: false,
-      timeAgo: '3h ago',
-      author: 'Kevin Hu',
-      milesAway: '3mi'
-    },
-    {
-      id: '3',
-      title: 'Free Appetizer with Entree Purchase',
-      restaurant: 'Local Bistro',
-      details: 'Must purchase entree',
-      image: require('../../../img/albert.webp'),
-      votes: 45,
-      isUpvoted: false,
-      isDownvoted: false,
-      isFavorited: true,
-      timeAgo: '5h ago',
-      author: 'Sarah M',
-      milesAway: '2mi'
-    },
-    {
-      id: '4',
-      title: '50% Off All Boba Drinks Every Tuesday',
-      restaurant: 'Gong Cha',
-      details: 'Tuesday special only',
-      image: require('../../../img/monkey.jpg'),
-      votes: 89,
-      isUpvoted: false,
-      isDownvoted: false,
-      isFavorited: false,
-      timeAgo: '1h ago',
-      author: 'Alex T',
-      milesAway: '1mi'
-    },
-    {
-      id: '5',
-      title: 'Happy Hour: $3 Tacos 4-6pm',
-      restaurant: 'Taco Bell',
-      details: 'Weekdays only',
-      image: require('../../../img/albert.webp'),
-      votes: 112,
-      isUpvoted: true,
-      isDownvoted: false,
-      isFavorited: true,
-      timeAgo: '30min ago',
-      author: 'Maria L',
-      milesAway: '4mi'
+  // Fetch deals from database
+  const loadDeals = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const dbDeals = await fetchRankedDeals();
+      const transformedDeals = dbDeals.map(transformDealForUI);
+      
+      setDeals(transformedDeals);
+    } catch (err) {
+      console.error('Error loading deals:', err);
+      setError('Failed to load deals. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  ];
-  
-  const dealsForYou: Deal[] = [
-    {
-      id: '6',
-      title: '$1 Wings on Wednesdays',
-      restaurant: 'CyberWings',
-      details: 'Wednesdays only',
-      image: require('../../../img/monkey.jpg'),
-      votes: 67,
-      isUpvoted: false,
-      isDownvoted: false,
-      isFavorited: true,
-      timeAgo: '3h ago',
-      author: 'Kevin Hu',
-      milesAway: '3mi'
-    },
-    {
-      id: '7',
-      title: 'Buy 1 Get 1 FREE Sea Salt Coffee per Member',
-      restaurant: '85 Degrees Bakery',
-      details: 'Members only',
-      image: require('../../../img/albert.webp'),
-      votes: 67,
-      isUpvoted: false,
-      isDownvoted: true,
-      isFavorited: false,
-      timeAgo: '3h ago',
-      author: 'Sarah M',
-      milesAway: '3mi'
-    },
-    {
-      id: '8',
-      title: '$2 Chicken Tenders on Thursdays',
-      restaurant: 'Chicken Spot',
-      details: 'Thursday special',
-      image: require('../../../img/monkey.jpg'),
-      votes: 89,
-      isUpvoted: true,
-      isDownvoted: false,
-      isFavorited: false,
-      timeAgo: '2h ago',
-      author: 'Kevin Hu',
-      milesAway: '2mi'
-    },
-    {
-      id: '9',
-      title: '$6 plate when Dodgers win @ home',
-      restaurant: 'Stadium Food',
-      details: 'Game day special',
-      image: require('../../../img/albert.webp'),
-      votes: 123,
-      isUpvoted: false,
-      isDownvoted: false,
-      isFavorited: true,
-      timeAgo: '1h ago',
-      author: 'Sarah M',
-      milesAway: '4mi'
-    },
-    {
-      id: '10',
-      title: 'Free Donut with Any Coffee Purchase',
-      restaurant: 'Dunkin Donuts',
-      details: 'Valid all day',
-      image: require('../../../img/monkey.jpg'),
-      votes: 156,
-      isUpvoted: true,
-      isDownvoted: false,
-      isFavorited: false,
-      timeAgo: '45min ago',
-      author: 'Mike R',
-      milesAway: '1mi'
-    },
-    {
-      id: '11',
-      title: '25% Off Entire Menu After 9pm',
-      restaurant: 'In-N-Out Burger',
-      details: 'Late night special',
-      image: require('../../../img/albert.webp'),
-      votes: 201,
-      isUpvoted: false,
-      isDownvoted: false,
-      isFavorited: true,
-      timeAgo: '2h ago',
-      author: 'Jessica K',
-      milesAway: '5mi'
-    },
-    {
-      id: '12',
-      title: 'Buy 2 Get 1 Free Pizza Slices',
-      restaurant: 'Pizza Hut',
-      details: 'Lunch hours 11am-3pm',
-      image: require('../../../img/monkey.jpg'),
-      votes: 78,
-      isUpvoted: true,
-      isDownvoted: false,
-      isFavorited: false,
-      timeAgo: '4h ago',
-      author: 'Tom B',
-      milesAway: '3mi'
-    },
-    {
-      id: '13',
-      title: 'Student Discount: 15% Off with ID',
-      restaurant: 'Chipotle Mexican Grill',
-      details: 'Valid student ID required',
-      image: require('../../../img/albert.webp'),
-      votes: 93,
-      isUpvoted: false,
-      isDownvoted: false,
-      isFavorited: true,
-      timeAgo: '6h ago',
-      author: 'Amy S',
-      milesAway: '2mi'
-    }
-  ];
+  };
+
+  useEffect(() => {
+    loadDeals();
+  }, []);
+
+  // Filter deals based on selected cuisine
+  const filteredDeals = deals.filter(deal => {
+    if (selectedCuisine === 'All') return true;
+    return deal.cuisine?.toLowerCase().includes(selectedCuisine.toLowerCase()) || false;
+  });
+
+  // Split deals into community and "for you" sections - but show both simultaneously
+  const communityDeals = filteredDeals.slice(0, 5); // First 5 deals for community section
+  const dealsForYou = filteredDeals; // ALL deals for "for you" section (not just the rest)
 
   const handleCuisineFilterSelect = (filter: string) => {
     setSelectedCuisine(filter);
     console.log('Selected cuisine:', filter);
-    // Add logic to filter deals based on cuisine
   };
 
   const handleUpvote = (dealId: string) => {
     console.log('Upvote deal:', dealId);
-    // Implement upvote logic here
+    // TODO: Implement upvote functionality
   };
 
   const handleDownvote = (dealId: string) => {
     console.log('Downvote deal:', dealId);
-    // Implement downvote logic here
+    // TODO: Implement downvote functionality
   };
 
   const handleFavorite = (dealId: string) => {
     console.log('Favorite deal:', dealId);
-    // Implement favorite logic here
+    // TODO: Implement favorite functionality
   };
 
   const handleDealPress = (dealId: string) => {
-    const selectedDeal = [...communityDeals, ...dealsForYou].find(deal => deal.id === dealId);
+    const selectedDeal = deals.find(deal => deal.id === dealId);
     if (selectedDeal) {
       navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
     }
   };
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
-    <DealCard
-      deal={item}
-      variant="community"
-      onUpvote={handleUpvote}
-      onDownvote={handleDownvote}
-      onFavorite={handleFavorite}
-      onPress={handleDealPress}
-    />
-  );
+  <DealCard
+    deal={item}
+    variant="horizontal"
+    onUpvote={handleUpvote}
+    onDownvote={handleDownvote}
+    onFavorite={handleFavorite}
+    onPress={handleDealPress}
+  />
+);
 
   const renderDealForYou = ({ item }: { item: Deal }) => (
     <DealCard
       deal={item}
-      variant="standard"
+      variant="vertical"
       onUpvote={handleUpvote}
       onDownvote={handleDownvote}
       onFavorite={handleFavorite}
@@ -273,11 +120,47 @@ const Feed: React.FC = () => {
     />
   );
 
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#FFA05C" />
+      <Text style={styles.loadingText}>Loading deals...</Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorText}>{error}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={loadDeals}>
+        <Text style={styles.retryButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>No deals available</Text>
+      <Text style={styles.emptySubtext}>Check back later for new deals!</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" translucent={true} />
-      <Header />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
+      {/* Custom Header matching Figma design */}
+      <View style={styles.header}>
+        <View style={styles.logoLocation}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoText}>ImHungri</Text>
+          </View>
+          <View style={styles.locationContainer}>
+            <Ionicons name="location" size={16} color="#000000" />
+            <Text style={styles.locationText}>Fullerton, CA</Text>
+            <Ionicons name="chevron-down" size={12} color="#000000" />
+          </View>
+        </View>
+      </View>
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Cuisine Filters */}
         <CuisineFilter
@@ -286,47 +169,67 @@ const Feed: React.FC = () => {
           onFilterSelect={handleCuisineFilterSelect}
         />
 
-        {/* Community Uploaded Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
-          <TouchableOpacity style={styles.seeAllButton}>
-            <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
-          </TouchableOpacity>
-        </View>
+        {loading ? (
+          renderLoadingState()
+        ) : error ? (
+          renderErrorState()
+        ) : deals.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <>
+            {/* Community Uploaded Section - Show first 5 deals horizontally */}
+            {communityDeals.length > 0 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
+                  <TouchableOpacity style={styles.seeAllButton}>
+                    <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
+                  </TouchableOpacity>
+                </View>
 
-        <FlatList
-          data={communityDeals}
-          renderItem={renderCommunityDeal}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.communityList}
-        />
+                <FlatList
+                  data={communityDeals}
+                  renderItem={renderCommunityDeal}
+                  keyExtractor={(item) => item.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.communityList}
+                />
+              </>
+            )}
 
-        {/* Section Separator */}
-        <View style={styles.sectionSeparator} />
+            {/* Section Separator */}
+            {communityDeals.length > 0 && dealsForYou.length > 0 && (
+              <View style={styles.sectionSeparator} />
+            )}
 
-        {/* Deals For You Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
-        </View>
+            {/* Deals For You Section - Show ALL deals in grid */}
+            {dealsForYou.length > 0 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
+                </View>
 
-        <View style={styles.dealsGrid}>
-          {dealsForYou.map((deal, index) => (
-            <View key={deal.id} style={[
-              index % 2 === 0 ? styles.leftCard : styles.rightCard
-            ]}>
-              <DealCard
-                deal={deal}
-                variant="standard"
-                onUpvote={handleUpvote}
-                onDownvote={handleDownvote}
-                onFavorite={handleFavorite}
-                onPress={handleDealPress}
-              />
-            </View>
-          ))}
-        </View>
+                <View style={styles.dealsGrid}>
+                  {dealsForYou.map((deal, index) => (
+                    <View key={deal.id} style={[
+                      index % 2 === 0 ? styles.leftCard : styles.rightCard
+                    ]}>
+                      <DealCard
+                        deal={deal}
+                        variant="vertical"
+                        onUpvote={handleUpvote}
+                        onDownvote={handleDownvote}
+                        onFavorite={handleFavorite}
+                        onPress={handleDealPress}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
 
       <BottomNavigation activeTab="feed" />
@@ -337,12 +240,46 @@ const Feed: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // CHANGED: Pure white instead of eggshell
-    paddingTop: 0,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingTop: 44, // Status bar height
+    paddingBottom: 8,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#BCBCBC',
+  },
+  logoLocation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  logoContainer: {
+    height: 31,
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontFamily: 'MuseoModerno-Bold',
+    fontWeight: '700',
+    fontSize: 24,
+    color: '#FF8C4C',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  locationText: {
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000000',
   },
   content: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // CHANGED: Pure white instead of eggshell
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
     paddingTop: 4,
   },
@@ -378,98 +315,77 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     width: '100%',
   },
-dealsGrid: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  justifyContent: 'space-between',
-  paddingHorizontal: 4,
-},
-leftCard: {
-  width: '48%', // Takes up 48% of width, leaving space for gap
-  marginBottom: 8,
-},
-rightCard: {
-  width: '48%', // Takes up 48% of width, leaving space for gap  
-  marginBottom: 8,
-},
-  // Community variant styles
-  communityImage: {
-    width: 204,
-    height: 144,
-    borderRadius: 5,
-    borderWidth: 0.5,
-    borderColor: '#757575',
+  dealsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    paddingBottom: 100, // Space for bottom navigation
+  },
+  leftCard: {
+    width: '48%',
     marginBottom: 8,
   },
-  communityTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 15,
-    color: '#000000',
-    textAlign: 'left',
-    width: 204,
-    marginBottom: 4, // Reduced margin
+  rightCard: {
+    width: '48%',
+    marginBottom: 8,
   },
-  communityRestaurant: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    fontFamily: 'Inter',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontFamily: 'Inter',
+  },
+  retryButton: {
+    backgroundColor: '#FFA05C',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
     fontFamily: 'Inter',
     fontWeight: '600',
-    fontSize: 10,
-    lineHeight: 12,
-    color: '#000000',
-    width: 204,
-    marginBottom: 2,
-    textAlign: 'left',
   },
-  communityLocationAuthor: {
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
     fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 10,
-    lineHeight: 12,
-    color: '#666666',
-    width: 204,
-    marginBottom: 8,
-    textAlign: 'left',
-  },
-  
-  // Standard variant styles
-  standardTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 15,
-    color: '#000000',
-    textAlign: 'left',
-    width: 169,
-    marginBottom: 8,
-  },
-  standardImage: {
-    width: 169,
-    height: 144,
-    borderRadius: 5,
-    borderWidth: 0.5,
-    borderColor: '#757575',
-    marginBottom: 8,
-  },
-  standardRestaurant: {
-    fontFamily: 'Inter',
-    fontWeight: '600',
-    fontSize: 10,
-    lineHeight: 12,
-    color: '#000000',
-    width: 169,
-    marginBottom: 2,
-    textAlign: 'left',
-  },
-  standardLocationAuthor: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 10,
-    lineHeight: 12,
-    color: '#666666',
-    width: 169,
-    marginBottom: 8,
-    textAlign: 'left',
   },
 });
 

@@ -130,7 +130,13 @@ const DealDetailScreen: React.FC = () => {
 
         {/* Deal Image */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: dealData.image }} style={styles.dealImage} />
+          <Image 
+            source={typeof dealData.image === 'string' 
+              ? { uri: dealData.image } 
+              : dealData.image
+            } 
+            style={styles.dealImage} 
+          />
         </View>
 
         {/* Action Buttons */}
