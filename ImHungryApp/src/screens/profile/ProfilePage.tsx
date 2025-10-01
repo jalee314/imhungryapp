@@ -1244,7 +1244,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Keep this - only padding needed for bottom nav
   },
   leftCard: {
-    width: '43%',
+    width: '43%r',
     marginBottom: 8,
   },
   rightCard: {
