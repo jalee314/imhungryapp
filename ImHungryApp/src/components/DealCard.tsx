@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, TouchableWithoutFeedback } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export interface Deal {
@@ -13,7 +13,7 @@ export interface Deal {
   isDownvoted: boolean;
   isFavorited: boolean;
   cuisine?: string;
-  cuisineId?: string; // ADD THIS
+  cuisineId?: string;
   timeAgo: string;
   author?: string;
   milesAway?: string;
@@ -32,8 +32,12 @@ interface DealCardProps {
   onDownvote?: (dealId: string) => void;
   onFavorite?: (dealId: string) => void;
   onPress?: (dealId: string) => void;
+  hideAuthor?: boolean;
+  showDelete?: boolean; // Add this new prop
+  onDelete?: (dealId: string) => void; // Add delete handler
 }
 
+// Then update the component (around line 37)
 const DealCard: React.FC<DealCardProps> = ({
   deal,
   variant = 'vertical',
@@ -41,16 +45,22 @@ const DealCard: React.FC<DealCardProps> = ({
   onDownvote,
   onFavorite,
   onPress,
+  hideAuthor = false, // Add this
+  showDelete = false, // Add this
+  onDelete, // Add this
 }) => {
-  const handleUpvote = () => {
+  const handleUpvote = (e?: any) => {
+    e?.stopPropagation?.();
     onUpvote?.(deal.id);
   };
 
-  const handleDownvote = () => {
+  const handleDownvote = (e?: any) => {
+    e?.stopPropagation?.();
     onDownvote?.(deal.id);
   };
 
-  const handleFavorite = () => {
+  const handleFavorite = (e?: any) => {
+    e?.stopPropagation?.();
     onFavorite?.(deal.id);
   };
 
@@ -58,12 +68,16 @@ const DealCard: React.FC<DealCardProps> = ({
     onPress?.(deal.id);
   };
 
+  const handleDelete = (e?: any) => {
+    e?.stopPropagation?.();
+    onDelete?.(deal.id);
+  };
+
   const imageSource = typeof deal.image === 'string' 
     ? { uri: deal.image } 
     : deal.image;
 
   if (variant === 'horizontal') {
-    // Horizontal variant - this is actually a vertical card for the horizontal scroll
     const locationAuthorText = `${deal.restaurant}\n${deal.milesAway || '?mi'} away • ${deal.timeAgo} • By ${deal.author || 'Unknown'}`;
     
     return (
@@ -81,38 +95,43 @@ const DealCard: React.FC<DealCardProps> = ({
         <Text style={styles.horizontalDetails} numberOfLines={2}>{locationAuthorText}</Text>
         
         <View style={styles.horizontalInteractions}>
-          <View style={styles.horizontalVoteContainer}>
-            <TouchableOpacity 
-              style={[styles.horizontalVoteButton, deal.isUpvoted && styles.upvoted]}
-              onPress={handleUpvote}
-            >
-              <MaterialCommunityIcons
-                name="arrow-up"
-                size={12} 
-                color={deal.isUpvoted ? "#FFF" : "#000"} 
-              />
-            </TouchableOpacity>
-            <Text style={styles.horizontalVoteCount}>{deal.votes}</Text>
-            <View style={styles.horizontalVoteSeparator} />
-            <TouchableOpacity 
-              style={[styles.horizontalVoteButton, deal.isDownvoted && styles.downvoted]}
-              onPress={handleDownvote}
-            >
-              <MaterialCommunityIcons
-                name="arrow-down"
-                size={12} 
-                color={deal.isDownvoted ? "#FFF" : "#000"} 
-              />
-            </TouchableOpacity>
-          </View>
+          <TouchableWithoutFeedback onPress={handleUpvote}>
+            <View style={styles.horizontalVoteContainer}>
+              <TouchableOpacity 
+                style={[styles.horizontalVoteButton, deal.isUpvoted && styles.upvoted]}
+                onPress={handleUpvote}
+                activeOpacity={0.6}
+              >
+                <MaterialCommunityIcons
+                  name="arrow-up-thick"
+                  size={11} 
+                  color={deal.isUpvoted ? "#FFF" : "#000"} 
+                />
+              </TouchableOpacity>
+              <Text style={styles.horizontalVoteCount}>{deal.votes}</Text>
+              <View style={styles.horizontalVoteSeparator} />
+              <TouchableOpacity 
+                style={[styles.horizontalVoteButton, deal.isDownvoted && styles.downvoted]}
+                onPress={handleDownvote}
+                activeOpacity={0.6}
+              >
+                <MaterialCommunityIcons
+                  name="arrow-down-thick"
+                  size={11} 
+                  color={deal.isDownvoted ? "#FFF" : "#000"} 
+                />
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
           <View style={styles.horizontalFavoriteWrapper}>
             <TouchableOpacity 
               style={[styles.horizontalFavoriteButton, deal.isFavorited && styles.favorited]}
               onPress={handleFavorite}
+              activeOpacity={0.6}
             >
               <MaterialCommunityIcons
                 name={deal.isFavorited ? "heart" : "heart-outline"}
-                size={16} 
+                size={14} 
                 color={deal.isFavorited ? "#FF8C4C" : "#000"} 
               />
             </TouchableOpacity>
@@ -123,7 +142,9 @@ const DealCard: React.FC<DealCardProps> = ({
   }
 
   // Vertical variant - for the 2-column grid
-  const locationAuthorText = `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
+  const locationAuthorText = hideAuthor 
+  ? `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
+  : `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
   
   return (
     <TouchableOpacity
@@ -136,40 +157,61 @@ const DealCard: React.FC<DealCardProps> = ({
       <Text style={styles.verticalDetails} numberOfLines={2}>{locationAuthorText}</Text>
       
       <View style={styles.verticalInteractions}>
-        <View style={styles.verticalVoteContainer}>
+        <TouchableWithoutFeedback onPress={handleUpvote}>
+          <View style={styles.verticalVoteContainer}>
+            <TouchableOpacity 
+              style={[styles.verticalVoteButton, deal.isUpvoted && styles.upvoted]}
+              onPress={handleUpvote}
+              activeOpacity={0.6}
+            >
+              <MaterialCommunityIcons
+                name="arrow-up-thick"
+                size={11} 
+                color={deal.isUpvoted ? "#FFF" : "#000"} 
+              />
+            </TouchableOpacity>
+            <Text style={styles.verticalVoteCount}>{deal.votes}</Text>
+            <View style={styles.verticalVoteSeparator} />
+            <TouchableOpacity 
+              style={[styles.verticalVoteButton, deal.isDownvoted && styles.downvoted]}
+              onPress={handleDownvote}
+              activeOpacity={0.6}
+            >
+              <MaterialCommunityIcons
+                name="arrow-down-thick"
+                size={11} 
+                color={deal.isDownvoted ? "#FFF" : "#000"} 
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableWithoutFeedback>
+        
+        {/* Replace favorite button with delete button conditionally */}
+        {showDelete ? (
           <TouchableOpacity 
-            style={[styles.verticalVoteButton, deal.isUpvoted && styles.upvoted]}
-            onPress={handleUpvote}
+            style={styles.verticalDeleteButton}
+            onPress={handleDelete}
+            activeOpacity={0.6}
           >
             <MaterialCommunityIcons
-              name="arrow-up"
-              size={12} 
-              color={deal.isUpvoted ? "#FFF" : "#000"} 
+              name="delete-outline"
+              size={16} 
+              color="#FF4444" 
             />
           </TouchableOpacity>
-          <Text style={styles.verticalVoteCount}>{deal.votes}</Text>
-          <View style={styles.verticalVoteSeparator} />
+        ) : (
           <TouchableOpacity 
-            style={[styles.verticalVoteButton, deal.isDownvoted && styles.downvoted]}
-            onPress={handleDownvote}
+            style={[styles.verticalFavoriteButton, deal.isFavorited && styles.favorited]}
+            onPress={handleFavorite}
+            activeOpacity={0.6}
           >
             <MaterialCommunityIcons
-              name="arrow-down"
-              size={12} 
-              color={deal.isDownvoted ? "#FFF" : "#000"} 
+              name={deal.isFavorited ? "heart" : "heart-outline"}
+              size={14} 
+              color={deal.isFavorited ? "#FF8C4C" : "#000"} 
             />
           </TouchableOpacity>
-        </View>
-        <TouchableOpacity 
-          style={[styles.verticalFavoriteButton, deal.isFavorited && styles.favorited]}
-          onPress={handleFavorite}
-        >
-          <MaterialCommunityIcons
-            name={deal.isFavorited ? "heart" : "heart-outline"}
-            size={16} 
-            color={deal.isFavorited ? "#FF8C4C" : "#000"} 
-          />
-        </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -195,8 +237,8 @@ const styles = StyleSheet.create({
   horizontalTitleContainer: {
     width: '100%',
     marginBottom: 8,
-    height: 30, // Fixed height to accommodate 2 lines
-    justifyContent: 'flex-start', // Align to top
+    height: 30,
+    justifyContent: 'flex-start',
   },
   horizontalTitle: {
     fontFamily: 'Inter',
@@ -205,7 +247,7 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     color: '#000000',
     textAlign: 'left',
-    height: 30, // Fixed height
+    height: 30,
   },
   horizontalDetails: {
     fontFamily: 'Inter',
@@ -228,31 +270,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#D7D7D7',
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
+    height: 28,
   },
   horizontalVoteButton: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 2,
-    width: 12,
-    height: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 20,
+    height: 20,
   },
   horizontalVoteCount: {
     fontFamily: 'Inter',
     fontSize: 10,
+    fontWeight: '400',
     color: '#000000',
     marginHorizontal: 6,
   },
   horizontalVoteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D8D8D8',
+    backgroundColor: '#D7D7D7',
     marginHorizontal: 6,
   },
   horizontalFavoriteWrapper: {
@@ -268,6 +309,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 28,
   },
 
   // Vertical Card Styles (for 2-column grid)
@@ -318,34 +360,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#D7D7D7',
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
+    height: 28,
   },
   verticalVoteButton: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 2,
-    width: 12,
-    height: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 20,
+    height: 20,
   },
   verticalVoteCount: {
     fontFamily: 'Inter',
     fontSize: 10,
+    fontWeight: '400',
     color: '#000000',
     marginHorizontal: 6,
   },
   verticalVoteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D8D8D8',
+    backgroundColor: '#D7D7D7',
     marginHorizontal: 6,
   },
   verticalFavoriteButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 30,
+    width: 40,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  verticalDeleteButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
@@ -365,13 +416,11 @@ const styles = StyleSheet.create({
   },
   favorited: {
     // Don't change background - only the heart icon color changes
-    // The icon color is already handled in the component logic
   },
 });
 
-// ✨ NEW: Memoize component with custom comparison
+// Memoize component with custom comparison
 const arePropsEqual = (prevProps: DealCardProps, nextProps: DealCardProps) => {
-  // Only re-render if the specific deal data that affects rendering changed
   return (
     prevProps.deal.id === nextProps.deal.id &&
     prevProps.deal.votes === nextProps.deal.votes &&

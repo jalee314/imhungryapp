@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 4,
     marginBottom: 4,
   },
   sectionTitle: {
@@ -658,6 +658,7 @@ const styles = StyleSheet.create({
     height: 0.5,
     backgroundColor: '#AAAAAA',
     marginVertical: 8,
+    marginHorizontal: -10,
     width: '100%',
   },
 

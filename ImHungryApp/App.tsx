@@ -33,6 +33,7 @@ import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
+import CuisineEdit from './src/screens/profile/CuisineEdit';
 
 
 const Stack = createNativeStackNavigator();
@@ -65,6 +66,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
+    <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
   </Stack.Navigator>
 );
 
@@ -83,6 +85,7 @@ const AppStack = () => (
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
+    <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
   </Stack.Navigator>
 );
 
