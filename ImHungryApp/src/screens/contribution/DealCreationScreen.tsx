@@ -83,7 +83,6 @@ export default function DealCreationScreen() {
   const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [nearbyRestaurants, setNearbyRestaurants] = useState<Restaurant[]>([]);
   
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
@@ -134,64 +133,6 @@ export default function DealCreationScreen() {
     }
   };
 
-  // NEW: Load nearby restaurants when modal opens
-  const loadNearbyRestaurants = async () => {
-    setIsSearching(true);
-    setSearchError(null);
-
-    try {
-      // Get device's current location
-      const deviceLocation = await getDeviceLocation();
-      
-      if (!deviceLocation) {
-        setSearchError('Location permission needed to show nearby restaurants');
-        setNearbyRestaurants([]);
-        setIsSearching(false);
-        return;
-      }
-
-      console.log('📍 Got device location:', deviceLocation);
-
-      // Search for generic "restaurants" nearby
-      const result = await searchRestaurants(
-        'restaurant', // Generic search to get all restaurants
-        deviceLocation.lat,
-        deviceLocation.lng,
-        5 // 5 mile radius for initial recommendations
-      );
-
-      if (!result.success) {
-        setSearchError(result.error || 'Failed to load nearby restaurants');
-        setNearbyRestaurants([]);
-      } else if (result.count === 0) {
-        setSearchError('No restaurants found nearby');
-        setNearbyRestaurants([]);
-      } else {
-        // Transform and limit to 15 results
-        const transformed = result.restaurants
-          .slice(0, 15)
-          .map((place: GooglePlaceResult) => ({
-            id: place.google_place_id,
-            name: place.name,
-            subtext: `${place.address} • ${place.distance_miles} mi away`,
-            google_place_id: place.google_place_id,
-            lat: place.lat,
-            lng: place.lng,
-            address: place.address,
-          }));
-        
-        setNearbyRestaurants(transformed);
-        setSearchError(null);
-      }
-    } catch (error) {
-      console.error('Error loading nearby restaurants:', error);
-      setSearchError('An error occurred');
-      setNearbyRestaurants([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   // Debounced Google Places search (when user types)
   const debouncedSearch = useCallback(
     debounce(async (query: string) => {
@@ -219,15 +160,14 @@ export default function DealCreationScreen() {
         const result = await searchRestaurants(
           query,
           deviceLocation.lat,
-          deviceLocation.lng,
-          10 // 10 mile radius for user searches
+          deviceLocation.lng
         );
 
         if (!result.success) {
           setSearchError(result.error || 'Failed to search restaurants');
           setSearchResults([]);
         } else if (result.count === 0) {
-          setSearchError('No restaurants found nearby');
+          setSearchError('No restaurants found');
           setSearchResults([]);
         } else {
           // Transform results to match Restaurant interface
@@ -299,9 +239,8 @@ export default function DealCreationScreen() {
   // Handle restaurant selection with Google Places persistence
   const handleDoneSearch = async (selectedIds: string[]) => {
     if (selectedIds.length > 0) {
-      // Get selected restaurant from either search results or nearby restaurants
-      const allRestaurants = searchQuery.trim().length > 0 ? searchResults : nearbyRestaurants;
-      const selectedPlace = allRestaurants.find(r => r.id === selectedIds[0]);
+      // Get selected restaurant from search results
+      const selectedPlace = searchResults.find(r => r.id === selectedIds[0]);
       
       if (selectedPlace && selectedPlace.google_place_id) {
         setIsSearchModalVisible(false);
@@ -318,7 +257,6 @@ export default function DealCreationScreen() {
           });
 
           if (result.success && result.restaurant_id) {
-            // Set the restaurant with the database ID
             setSelectedRestaurant({
               id: result.restaurant_id,
               name: selectedPlace.name,
@@ -338,7 +276,6 @@ export default function DealCreationScreen() {
     setSearchQuery('');
     setSearchResults([]);
     setSearchError(null);
-    setNearbyRestaurants([]);
   };
 
   const handleClearRestaurant = () => setSelectedRestaurant(null);
@@ -347,11 +284,7 @@ export default function DealCreationScreen() {
     setSearchQuery('');
     setSearchResults([]);
     setSearchError(null);
-    setNearbyRestaurants([]);
     setIsSearchModalVisible(true);
-    
-    // Load nearby restaurants when modal opens
-    loadNearbyRestaurants();
   };
 
   const handlePreview = async () => {
@@ -641,21 +574,18 @@ export default function DealCreationScreen() {
           setSearchQuery('');
           setSearchResults([]);
           setSearchError(null);
-          setNearbyRestaurants([]);
         }} 
         onDone={handleDoneSearch} 
         data={
           isSearching 
-            ? [{ id: 'loading', name: searchQuery.trim().length > 0 ? 'Searching restaurants...' : 'Finding nearby restaurants...', subtext: '' }]
+            ? [{ id: 'loading', name: 'Searching restaurants...', subtext: '' }]
             : searchError
-            ? [{ id: 'error', name: searchError, subtext: 'Try a different search or check your location settings' }]
+            ? [{ id: 'error', name: searchError, subtext: 'Try a different search' }]
             : searchQuery.trim().length > 0
             ? (searchResults.length > 0 
                 ? searchResults 
                 : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
-            : (nearbyRestaurants.length > 0
-                ? nearbyRestaurants
-                : [{ id: 'empty', name: 'Loading nearby restaurants...', subtext: '' }])
+            : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
         } 
         title="Search Restaurant"
         onSearchChange={handleSearchChange}

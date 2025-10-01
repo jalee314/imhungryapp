@@ -18,26 +18,26 @@ export interface RestaurantSearchResult {
 
 /**
  * Search restaurants using Google Places API via Edge Function
+ * Uses maximum allowed radius (~31 miles / 50km)
  */
 export const searchRestaurants = async (
   query: string,
   userLat: number,
-  userLng: number,
-  radius: number = 10
+  userLng: number
 ): Promise<RestaurantSearchResult> => {
   try {
     if (!query || query.trim().length === 0) {
       return { success: true, restaurants: [], count: 0 };
     }
 
-    console.log(`🔍 Searching for "${query}" within ${radius} miles...`);
+    console.log(`🔍 Searching for "${query}" (max radius: ~31 miles)...`);
 
     const { data, error } = await supabase.functions.invoke('search-restaurants', {
       body: {
         query: query.trim(),
         userLat,
         userLng,
-        radius,
+        radius: 31, // 31 miles = ~50km (Google's maximum)
       },
     });
 
@@ -65,52 +65,33 @@ export const searchRestaurants = async (
 };
 
 /**
- * Get or create restaurant in database
+ * Get or create restaurant in database using RPC
+ * Handles brand matching automatically via database function
  * Returns restaurant_id for deal creation
  */
 export const getOrCreateRestaurant = async (
   placeData: GooglePlaceResult
 ): Promise<{ success: boolean; restaurant_id?: string; error?: string }> => {
   try {
-    // First, check if restaurant already exists by google_place_id
-    const { data: existing, error: searchError } = await supabase
-      .from('restaurant')
-      .select('restaurant_id')
-      .eq('google_place_id', placeData.google_place_id)
-      .maybeSingle();
+    console.log('🔄 Getting/creating restaurant via RPC:', placeData.name);
 
-    if (searchError && searchError.code !== 'PGRST116') {
-      console.error('Error checking existing restaurant:', searchError);
-      return { success: false, error: 'Database error' };
+    // Call the RPC function that handles duplicate checking and brand matching
+    const { data: restaurantId, error: rpcError } = await supabase
+      .rpc('get_or_create_restaurant', {
+        p_google_place_id: placeData.google_place_id,
+        p_name: placeData.name,
+        p_address: placeData.address,
+        p_lat: placeData.lat,
+        p_lng: placeData.lng,
+      });
+
+    if (rpcError) {
+      console.error('RPC error:', rpcError);
+      return { success: false, error: 'Failed to create/fetch restaurant' };
     }
 
-    if (existing) {
-      console.log('✅ Restaurant already exists:', existing.restaurant_id);
-      return { success: true, restaurant_id: existing.restaurant_id };
-    }
-
-    // Restaurant doesn't exist, create it
-    console.log('🆕 Creating new restaurant:', placeData.name);
-
-    const { data: newRestaurant, error: insertError } = await supabase
-      .from('restaurant')
-      .insert({
-        name: placeData.name,
-        address: placeData.address,
-        location: `POINT(${placeData.lng} ${placeData.lat})`,
-        google_place_id: placeData.google_place_id,
-        source: 'google_places',
-      })
-      .select('restaurant_id')
-      .single();
-
-    if (insertError) {
-      console.error('Error creating restaurant:', insertError);
-      return { success: false, error: 'Failed to create restaurant' };
-    }
-
-    console.log('✅ Restaurant created:', newRestaurant.restaurant_id);
-    return { success: true, restaurant_id: newRestaurant.restaurant_id };
+    console.log('✅ Restaurant ID:', restaurantId);
+    return { success: true, restaurant_id: restaurantId };
   } catch (error) {
     console.error('Error in getOrCreateRestaurant:', error);
     return { success: false, error: 'An unexpected error occurred' };

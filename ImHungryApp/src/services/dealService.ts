@@ -108,17 +108,6 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       }
     }
 
-    const { data: restaurant, error: restaurantError } = await supabase
-      .from('restaurant')
-      .select('brand_id')
-      .eq('restaurant_id', dealData.restaurantId)
-      .single();
-
-    if (restaurantError) {
-      console.error('Error fetching restaurant:', restaurantError);
-      return { success: false, error: 'Failed to fetch restaurant information' };
-    }
-
     const dealTemplateData = {
       restaurant_id: dealData.restaurantId,
       user_id: userId, // Always track the user_id, even for anonymous posts
@@ -128,6 +117,7 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       category_id: dealData.categoryId,
       cuisine_id: dealData.cuisineId,
       is_anonymous: dealData.isAnonymous, // This flag controls client-side display
+      source_type: 'user_submitted', // ✅ ADD this field
     };
 
 
