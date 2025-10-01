@@ -94,7 +94,6 @@ export interface CreateDealData {
 // Create deal template and instance
 export const createDeal = async (dealData: CreateDealData): Promise<{ success: boolean; error?: string }> => {
   try {
-
     const userId = await getCurrentUserId();
     if (!userId) {
       return { success: false, error: 'No authenticated user found' };
@@ -110,27 +109,42 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
 
     const dealTemplateData = {
       restaurant_id: dealData.restaurantId,
-      user_id: userId, // Always track the user_id, even for anonymous posts
+      user_id: userId,
       title: dealData.title,
       description: dealData.description || null,
       image_url: imageUrl,
       category_id: dealData.categoryId,
       cuisine_id: dealData.cuisineId,
-      is_anonymous: dealData.isAnonymous, // This flag controls client-side display
-      source_type: 'user_submitted', // ✅ ADD this field
+      is_anonymous: dealData.isAnonymous,
+      source_type: 'community_uploaded', // ✅ Fixed: Use correct enum value
     };
 
+    console.log('📝 Attempting to insert deal template:', dealTemplateData);
 
-    // Insert the deal template. The database trigger will handle creating the instances.
-    const { error: templateError } = await supabase
+    // Insert the deal template
+    const { data, error: templateError } = await supabase
       .from('deal_template')
-      .insert(dealTemplateData);
+      .insert(dealTemplateData)
+      .select();
 
     if (templateError) {
-      return { success: false, error: 'Failed to create deal template' };
+      console.error('❌ Deal template error:', templateError);
+      console.error('Error details:', {
+        message: templateError.message,
+        details: templateError.details,
+        hint: templateError.hint,
+        code: templateError.code,
+      });
+      return { 
+        success: false, 
+        error: `Failed to create deal: ${templateError.message}` 
+      };
     }
+
+    console.log('✅ Deal template created successfully:', data);
     return { success: true };
   } catch (error) {
+    console.error('❌ Unexpected error in createDeal:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
 };
