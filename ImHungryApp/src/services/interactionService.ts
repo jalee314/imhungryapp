@@ -4,14 +4,16 @@ import { getCurrentDatabaseSessionId } from './sessionService';
 // Interaction types matching your enum
 export type InteractionType = 
   | 'impression'
-  | 'click'
+  | 'click-open'
+  | 'click-through'
   | 'upvote'
   | 'downvote'
   | 'save'
   | 'favorite'
   | 'redemption_proxy'
   | 'report'
-  | 'block';
+  | 'block'
+  | 'share';
 
 /**
  * Get the current authenticated user's ID
@@ -74,7 +76,21 @@ export const logInteraction = async (
  * Log a click interaction when user opens a deal
  */
 export const logClick = async (dealId: string, positionInFeed?: number): Promise<boolean> => {
-  return await logInteraction(dealId, 'click', positionInFeed);
+  return await logInteraction(dealId, 'click-open', positionInFeed);
+};
+
+/**
+ * Log a share interaction when user shares a deal
+ */
+export const logShare = async (dealId: string): Promise<boolean> => {
+  return await logInteraction(dealId, 'share');
+};
+
+/**
+ * Log a click-through interaction when user clicks directions/map
+ */
+export const logClickThrough = async (dealId: string): Promise<boolean> => {
+  return await logInteraction(dealId, 'click-through');
 };
 
 /**
@@ -114,7 +130,7 @@ export const getDealViewCount = async (dealId: string): Promise<number> => {
       .from('interaction')
       .select('*', { count: 'exact', head: true })
       .eq('deal_id', dealId)
-      .eq('interaction_type', 'click');
+      .eq('interaction_type', 'click-open');
 
     if (error) {
       console.error('Error fetching view count:', error);
@@ -139,7 +155,7 @@ export const getDealViewCounts = async (dealIds: string[]): Promise<Record<strin
       .from('interaction')
       .select('deal_id')
       .in('deal_id', dealIds)
-      .eq('interaction_type', 'click');
+      .eq('interaction_type', 'click-open');
 
     if (error) {
       console.error('Error fetching view counts:', error);

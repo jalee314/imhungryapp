@@ -19,7 +19,7 @@ import LocationPermissions from './src/screens/onboarding/LocationPermissions';
 import InstantNotifications from './src/screens/onboarding/InstantNotifications';
 import CuisinePreferences from './src/screens/onboarding/CuisinePreferences';
 import ProfilePage from './src/screens/profile/ProfilePage';
-import profileEdit from './src/screens/profile/profileEdit';
+import ProfileEdit from './src/screens/profile/ProfileEdit';
 import BlockedUsersPage from './src/screens/profile/BlockedUsersPage';
 import ContactUsPage from './src/screens/profile/ContactUsPage';
 import FAQPage from './src/screens/profile/FAQPage';
@@ -53,7 +53,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
-    <Stack.Screen name="profileEdit" component={profileEdit} />
+    <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
     <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
     <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
     <Stack.Screen name="FAQPage" component={FAQPage} />
@@ -72,7 +72,7 @@ const AppStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Feed" component={Feed} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
-    <Stack.Screen name="profileEdit" component={profileEdit} />
+    <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
     <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
     <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
     <Stack.Screen name="FAQPage" component={FAQPage} />

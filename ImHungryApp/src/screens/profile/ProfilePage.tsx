@@ -162,7 +162,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       return;
     }
     
-    (navigation as any).navigate('profileEdit', { profile });
+    (navigation as any).navigate('ProfileEdit', { profile });
   };
 
   const handleProfilePhotoPress = () => {

@@ -8,6 +8,10 @@ import {
   ScrollView,
   Image,
   StatusBar,
+  Share,
+  Linking,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -15,7 +19,7 @@ import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
-import { getDealViewCount } from '../../services/interactionService';
+import { getDealViewCount, logShare, logClickThrough } from '../../services/interactionService';
 import { supabase } from '../../../lib/supabase';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
@@ -147,12 +151,62 @@ const DealDetailScreen: React.FC = () => {
     });
   };
 
-  const handleShare = () => {
-    // Implement share functionality
+  const handleShare = async () => {
+    try {
+      // Log the share interaction
+      logShare(dealData.id).catch(err => {
+        console.error('Failed to log share interaction:', err);
+      });
+
+      // Share the deal
+      const result = await Share.share({
+        message: `Check out this deal at ${dealData.restaurant}: ${dealData.title}`,
+        title: dealData.title,
+      });
+
+      if (result.action === Share.sharedAction) {
+        console.log('Deal shared successfully');
+      }
+    } catch (error) {
+      console.error('Error sharing deal:', error);
+      Alert.alert('Error', 'Unable to share this deal');
+    }
   };
 
-  const handleDirections = () => {
-    // Implement directions functionality
+  const handleDirections = async () => {
+    try {
+      // Log the click-through interaction
+      logClickThrough(dealData.id).catch(err => {
+        console.error('Failed to log click-through interaction:', err);
+      });
+
+      const address = dealData.restaurantAddress || dealData.restaurant;
+      const encodedAddress = encodeURIComponent(address);
+      
+      // Try to open platform-specific map apps
+      let url = '';
+      
+      if (Platform.OS === 'ios') {
+        // iOS - try Apple Maps first
+        url = `maps://maps.apple.com/?daddr=${encodedAddress}`;
+      } else {
+        // Android - use Google Maps
+        url = `google.navigation:q=${encodedAddress}`;
+      }
+
+      const supported = await Linking.canOpenURL(url);
+      
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        // Fallback to web-based maps
+        const webUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        await Linking.openURL(webUrl);
+      }
+    } catch (error) {
+      console.error('Error opening directions:', error);
+      Alert.alert('Error', 'Unable to open maps for directions');
+    }
   };
 
   const handleMoreButtonPress = () => {
