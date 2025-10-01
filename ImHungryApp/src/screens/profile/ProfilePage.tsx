@@ -15,6 +15,11 @@ import { fetchUserData, getFullUserProfile, clearUserCache } from '../../service
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileCacheService } from '../../services/profileCacheService';
 import { signOut } from '../../services/sessionService';
+import DealCard, { Deal } from '../../components/DealCard';
+import DealCardSkeleton from '../../components/DealCardSkeleton';
+import { fetchUserPosts, deleteDeal, transformDealForUI } from '../../services/dealService';
+import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
+import { logClick } from '../../services/interactionService';
 
 interface ProfilePageProps {}
 
@@ -45,6 +50,10 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
   // Only show loading skeleton if we have NO data at all
   const [hasData, setHasData] = useState(false);
+
+  const [userPosts, setUserPosts] = useState<Deal[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsError, setPostsError] = useState<string | null>(null);
 
   
 
@@ -431,6 +440,171 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     }
   };
 
+  const loadUserPosts = async () => {
+    try {
+      setPostsLoading(true);
+      setPostsError(null);
+      const posts = await fetchUserPosts();
+      const transformedPosts = posts.map(transformDealForUI);
+      setUserPosts(transformedPosts);
+    } catch (error) {
+      console.error('Error loading user posts:', error);
+      setPostsError('Failed to load your posts');
+    } finally {
+      setPostsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'posts' && hasData) {
+      loadUserPosts();
+    }
+  }, [activeTab, hasData]);
+
+  const handleUpvote = (dealId: string) => {
+    let originalDeal: Deal | undefined;
+    
+    setUserPosts(prevPosts => {
+      return prevPosts.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasUpvoted = d.isUpvoted;
+          const wasDownvoted = d.isDownvoted;
+          
+          return {
+            ...d,
+            isUpvoted: !wasUpvoted,
+            isDownvoted: false,
+            votes: wasUpvoted 
+              ? d.votes - 1
+              : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+          };
+        }
+        return d;
+      });
+    });
+
+    toggleUpvote(dealId).catch((err) => {
+      console.error('Failed to save upvote, reverting:', err);
+      if (originalDeal) {
+        setUserPosts(prevPosts => prevPosts.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
+    });
+  };
+
+  const handleDownvote = (dealId: string) => {
+    let originalDeal: Deal | undefined;
+    
+    setUserPosts(prevPosts => {
+      return prevPosts.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasDownvoted = d.isDownvoted;
+          const wasUpvoted = d.isUpvoted;
+          
+          return {
+            ...d,
+            isDownvoted: !wasDownvoted,
+            isUpvoted: false,
+            votes: wasDownvoted 
+              ? d.votes + 1
+              : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+          };
+        }
+        return d;
+      });
+    });
+
+    toggleDownvote(dealId).catch((err) => {
+      console.error('Failed to save downvote, reverting:', err);
+      if (originalDeal) {
+        setUserPosts(prevPosts => prevPosts.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
+    });
+  };
+
+  const handleFavorite = (dealId: string) => {
+    let originalDeal: Deal | undefined;
+    
+    setUserPosts(prevPosts => {
+      return prevPosts.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          return {
+            ...d,
+            isFavorited: !d.isFavorited
+          };
+        }
+        return d;
+      });
+    });
+
+    const wasFavorited = originalDeal?.isFavorited || false;
+    
+    toggleFavorite(dealId, wasFavorited).catch((err) => {
+      console.error('Failed to save favorite, reverting:', err);
+      if (originalDeal) {
+        setUserPosts(prevPosts => prevPosts.map(d => 
+          d.id === dealId ? originalDeal! : d
+        ));
+      }
+    });
+  };
+
+  const handleDealPress = (dealId: string) => {
+    const selectedDeal = userPosts.find(deal => deal.id === dealId);
+    if (selectedDeal) {
+      const positionInFeed = userPosts.findIndex(d => d.id === dealId);
+      
+      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+        console.error('Failed to log click:', err);
+      });
+      
+      navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
+    }
+  };
+
+  const handleDeletePost = async (dealId: string) => {
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await deleteDeal(dealId);
+              
+              if (result.success) {
+                // Remove from local state
+                setUserPosts(prevPosts => prevPosts.filter(post => post.id !== dealId));
+                
+                // Update deal count
+                setDealCount(prev => Math.max(0, prev - 1));
+                
+                Alert.alert('Success', 'Post deleted successfully');
+              } else {
+                Alert.alert('Error', result.error || 'Failed to delete post');
+              }
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert('Error', 'An unexpected error occurred');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Show skeleton only if we have NO data at all
   if (!hasData) {
     return (
@@ -478,15 +652,13 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             </View>
           </View>
           
-          <View style={styles.bottomSpacing} />
+          {/* Show skeleton bottom nav */}
+          <View style={styles.skeletonBottomNav}>
+            {[1, 2, 3, 4, 5].map((_, index) => (
+              <View key={index} style={[styles.skeleton, styles.skeletonNavItem]} />
+            ))}
+          </View>
         </ScrollView>
-        
-        {/* Show skeleton bottom nav */}
-        <View style={styles.skeletonBottomNav}>
-          {[1, 2, 3, 4, 5].map((_, index) => (
-            <View key={index} style={[styles.skeleton, styles.skeletonNavItem]} />
-          ))}
-        </View>
       </SafeAreaView>
     );
   }
@@ -497,6 +669,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent} // Add this
       >
         
         {/* User Profile Container */}
@@ -569,11 +742,56 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
           </TouchableOpacity>
         </View>
           {activeTab === 'posts' && (
-            <View style={styles.textContainer}>
-          <Text style={styles.contentText}>
-            Support the platform by posting food deals you see!
-          </Text>
-        </View>
+            <View style={styles.postsContainer}>
+              {postsLoading ? (
+                <View style={styles.dealsGrid}>
+                  {[1, 2, 3, 4, 5, 6].map((item, index) => (
+                    <View key={item} style={[
+                      index % 2 === 0 ? styles.leftCard : styles.rightCard
+                    ]}>
+                      <DealCardSkeleton variant="vertical" />
+                    </View>
+                  ))}
+                </View>
+              ) : postsError ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{postsError}</Text>
+                  <TouchableOpacity 
+                    style={styles.retryButton} 
+                    onPress={loadUserPosts}
+                  >
+                    <Text style={styles.retryButtonText}>Retry</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : userPosts.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <MaterialCommunityIcons name="food-off" size={48} color="#999" />
+                  <Text style={styles.emptyText}>No posts yet</Text>
+                  <Text style={styles.emptySubtext}>
+                    Support the platform by posting food deals you see!
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.dealsGrid}>
+                  {userPosts.map((post, index) => (
+                    <View key={post.id} style={[
+                      index % 2 === 0 ? styles.leftCard : styles.rightCard
+                    ]}>
+                      <DealCard
+                        deal={post}
+                        variant="vertical"
+                        onUpvote={handleUpvote}
+                        onDownvote={handleDownvote}
+                        onPress={handleDealPress}
+                        showDelete={true}
+                        onDelete={handleDeletePost}
+                        hideAuthor={true}
+                      />
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
           )}
           
           {activeTab === 'settings' && (
@@ -643,9 +861,6 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               </View>
             )}
         </View>
-        
-        {/* Bottom spacing to prevent content from being hidden behind navigation */}
-        <View style={styles.bottomSpacing} />
 
       </ScrollView>
       
@@ -722,6 +937,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollViewContent: {
+    flexGrow: 1, // Add this - allows content to grow and fill space
+  },
   
   userProfileContainer: {
     paddingVertical: 20,
@@ -743,11 +961,10 @@ const styles = StyleSheet.create({
   
   contentArea: {
     backgroundColor: '#F5F5F5',
-    flex: 1,
-    minHeight: 550,
+    flex: 1, // This makes it fill remaining space
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    position: 'relative',
+    paddingTop: 20,
+    // Remove paddingBottom from here - it's already in dealsGrid
   },
   
   header: {
@@ -876,16 +1093,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-  bottomSpacing: {
-    height: 100,
-  },
-
+  
   settingsList: {
     backgroundColor: '#fff',
     borderRadius: 7,
     borderWidth: 1,
     borderColor: '#FFA05C',
     overflow: 'hidden',
+    marginBottom: 100, // Add this so settings also has space for bottom nav
   },
   settingItem: {
     flexDirection: 'row',
@@ -1015,6 +1230,129 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666',
+  },
+  postsContainer: {
+    flex: 1,
+    width: '100%',
+    marginHorizontal: -20, // Counteract contentArea's paddingHorizontal: 20
+  },
+  dealsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingBottom: 100, // Keep this - only padding needed for bottom nav
+  },
+  leftCard: {
+    width: '43%',
+    marginBottom: 8,
+  },
+  rightCard: {
+    width: '43%', 
+    marginBottom: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+    fontFamily: 'Inter',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    fontFamily: 'Inter',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+},
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontFamily: 'Inter',
+  },
+  retryButton: {
+    backgroundColor: '#FFA05C',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter',
+  },
+  verticalInteractions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  verticalVoteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0',
+    borderRadius: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  verticalVoteButton: {
+    padding: 4,
+  },
+  upvoted: {
+    backgroundColor: '#FFA05C',
+  },
+  downvoted: {
+    backgroundColor: '#FFA05C',
+  },
+  verticalVoteCount: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#000',
+    marginHorizontal: 8,
+  },
+  verticalVoteSeparator: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#000',
+    marginHorizontal: 8,
+  },
+  verticalFavoriteButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 30,
+    width: 40,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  favorited: {
+    backgroundColor: '#FF8C4C',
+  },
+  verticalDeleteButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 30,
+    width: 40,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

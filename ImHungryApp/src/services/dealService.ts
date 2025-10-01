@@ -532,4 +532,203 @@ const getTimeAgo = (date: Date): string => {
   }
 };
 
+// Fetch user's own posts
+export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const userLocation = await getUserLocation();
+    if (!userLocation) {
+      throw new Error('Unable to get user location');
+    }
+
+    // Fetch user's deals from database
+    const { data: deals, error } = await supabase
+      .from('deal_instance')
+      .select(`
+        deal_id,
+        template_id,
+        is_anonymous,
+        start_date,
+        end_date,
+        created_at,
+        deal_template!inner(
+          template_id,
+          user_id,
+          title,
+          description,
+          image_url,
+          category_id,
+          cuisine_id,
+          restaurant_id,
+          category:category_id(category_name),
+          cuisine:cuisine_id(cuisine_name),
+          restaurant:restaurant_id(
+            restaurant_id,
+            name,
+            address,
+            location
+          ),
+          user:user_id(
+            user_id,
+            display_name,
+            profile_photo
+          )
+        )
+      `)
+      .eq('deal_template.user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user posts:', error);
+      throw error;
+    }
+
+    if (!deals || deals.length === 0) {
+      return [];
+    }
+
+    // Get all restaurant locations for distance calculation
+    const restaurantIds = deals.map(d => d.deal_template.restaurant.restaurant_id);
+    const locationMap = await getRestaurantLocationsBatch(restaurantIds);
+
+    // Get vote states and vote counts
+    const dealIds = deals.map(d => d.deal_id);
+    const [voteStates, voteCounts] = await Promise.all([
+      getUserVoteStates(dealIds),
+      calculateVoteCounts(dealIds)
+    ]);
+
+    // Transform deals to DatabaseDeal format
+    const transformedDeals: DatabaseDeal[] = deals.map(deal => {
+      const template = deal.deal_template;
+      const restaurant = template.restaurant;
+      const restaurantLocation = locationMap[restaurant.restaurant_id];
+      
+      // Calculate distance
+      let distanceMiles = null;
+      if (restaurantLocation && userLocation) {
+        distanceMiles = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          restaurantLocation.lat,
+          restaurantLocation.lng
+        );
+      }
+
+      const voteState = voteStates[deal.deal_id] || {
+        isUpvoted: false,
+        isDownvoted: false,
+        isFavorited: false
+      };
+
+      return {
+        deal_id: deal.deal_id,
+        template_id: deal.template_id,
+        title: template.title,
+        description: template.description,
+        image_url: template.image_url,
+        restaurant_name: restaurant.name,
+        restaurant_address: restaurant.address,
+        cuisine_name: template.cuisine?.cuisine_name || null,
+        cuisine_id: template.cuisine_id,
+        category_name: template.category?.category_name || null,
+        created_at: deal.created_at,
+        start_date: deal.start_date,
+        end_date: deal.end_date,
+        is_anonymous: deal.is_anonymous,
+        user_id: template.user_id,
+        user_display_name: template.user?.display_name || null,
+        user_profile_photo: template.user?.profile_photo || null,
+        votes: voteCounts[deal.deal_id] || 0,
+        is_upvoted: voteState.isUpvoted,
+        is_downvoted: voteState.isDownvoted,
+        is_favorited: voteState.isFavorited,
+        distance_miles: distanceMiles,
+        restaurant_id: restaurant.restaurant_id,
+      };
+    });
+
+    return transformedDeals;
+  } catch (error) {
+    console.error('Error in fetchUserPosts:', error);
+    throw error;
+  }
+};
+
+// Delete a deal (both instance and template)
+export const deleteDeal = async (dealId: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // First, get the deal instance to find the template_id and verify ownership
+    const { data: dealInstance, error: fetchError } = await supabase
+      .from('deal_instance')
+      .select(`
+        template_id,
+        deal_template!inner(
+          user_id,
+          image_url
+        )
+      `)
+      .eq('deal_id', dealId)
+      .single();
+
+    if (fetchError || !dealInstance) {
+      console.error('Error fetching deal:', fetchError);
+      return { success: false, error: 'Deal not found' };
+    }
+
+    // Verify the user owns this deal
+    if (dealInstance.deal_template.user_id !== userId) {
+      return { success: false, error: 'Unauthorized: You can only delete your own posts' };
+    }
+
+    // Delete the image from storage if it exists
+    if (dealInstance.deal_template.image_url) {
+      const { error: storageError } = await supabase.storage
+        .from('deal-images')
+        .remove([dealInstance.deal_template.image_url]);
+      
+      if (storageError) {
+        console.warn('Failed to delete image from storage:', storageError);
+        // Continue anyway - the database records are more important
+      }
+    }
+
+    // Delete the deal instance (this will cascade to related records like interactions, favorites, etc.)
+    const { error: deleteInstanceError } = await supabase
+      .from('deal_instance')
+      .delete()
+      .eq('deal_id', dealId);
+
+    if (deleteInstanceError) {
+      console.error('Error deleting deal instance:', deleteInstanceError);
+      return { success: false, error: 'Failed to delete deal' };
+    }
+
+    // Delete the deal template
+    const { error: deleteTemplateError } = await supabase
+      .from('deal_template')
+      .delete()
+      .eq('template_id', dealInstance.template_id);
+
+    if (deleteTemplateError) {
+      console.error('Error deleting deal template:', deleteTemplateError);
+      return { success: false, error: 'Failed to delete deal template' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in deleteDeal:', error);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
+};
+
 

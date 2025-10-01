@@ -32,8 +32,12 @@ interface DealCardProps {
   onDownvote?: (dealId: string) => void;
   onFavorite?: (dealId: string) => void;
   onPress?: (dealId: string) => void;
+  hideAuthor?: boolean;
+  showDelete?: boolean; // Add this new prop
+  onDelete?: (dealId: string) => void; // Add delete handler
 }
 
+// Then update the component (around line 37)
 const DealCard: React.FC<DealCardProps> = ({
   deal,
   variant = 'vertical',
@@ -41,6 +45,9 @@ const DealCard: React.FC<DealCardProps> = ({
   onDownvote,
   onFavorite,
   onPress,
+  hideAuthor = false, // Add this
+  showDelete = false, // Add this
+  onDelete, // Add this
 }) => {
   const handleUpvote = (e?: any) => {
     e?.stopPropagation?.();
@@ -59,6 +66,11 @@ const DealCard: React.FC<DealCardProps> = ({
 
   const handlePress = () => {
     onPress?.(deal.id);
+  };
+
+  const handleDelete = (e?: any) => {
+    e?.stopPropagation?.();
+    onDelete?.(deal.id);
   };
 
   const imageSource = typeof deal.image === 'string' 
@@ -130,7 +142,9 @@ const DealCard: React.FC<DealCardProps> = ({
   }
 
   // Vertical variant - for the 2-column grid
-  const locationAuthorText = `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
+  const locationAuthorText = hideAuthor 
+  ? `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
+  : `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
   
   return (
     <TouchableOpacity
@@ -171,17 +185,33 @@ const DealCard: React.FC<DealCardProps> = ({
             </TouchableOpacity>
           </View>
         </TouchableWithoutFeedback>
-        <TouchableOpacity 
-          style={[styles.verticalFavoriteButton, deal.isFavorited && styles.favorited]}
-          onPress={handleFavorite}
-          activeOpacity={0.6}
-        >
-          <MaterialCommunityIcons
-            name={deal.isFavorited ? "heart" : "heart-outline"}
-            size={14} 
-            color={deal.isFavorited ? "#FF8C4C" : "#000"} 
-          />
-        </TouchableOpacity>
+        
+        {/* Replace favorite button with delete button conditionally */}
+        {showDelete ? (
+          <TouchableOpacity 
+            style={styles.verticalDeleteButton}
+            onPress={handleDelete}
+            activeOpacity={0.6}
+          >
+            <MaterialCommunityIcons
+              name="delete-outline"
+              size={16} 
+              color="#FF4444" 
+            />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.verticalFavoriteButton, deal.isFavorited && styles.favorited]}
+            onPress={handleFavorite}
+            activeOpacity={0.6}
+          >
+            <MaterialCommunityIcons
+              name={deal.isFavorited ? "heart" : "heart-outline"}
+              size={14} 
+              color={deal.isFavorited ? "#FF8C4C" : "#000"} 
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -357,6 +387,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   verticalFavoriteButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 30,
+    width: 40,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  verticalDeleteButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
