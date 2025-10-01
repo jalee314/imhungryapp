@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import BottomNavigation from '../../components/BottomNavigation';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
@@ -22,20 +23,38 @@ import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../context/DataCacheContext';
 import { fetchUserData, clearUserCache } from '../../services/userService';
-import { createDeal, checkDealContentForProfanity } from '../../services/dealService'; // Import the deal service
+import { createDeal, checkDealContentForProfanity } from '../../services/dealService';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ProfileCacheService } from '../../services/profileCacheService';
+import { searchRestaurants, getOrCreateRestaurant, GooglePlaceResult } from '../../services/restaurantService';
+import { getCurrentUserLocation } from '../../services/locationService';
+
+// --- Debounce Helper Function ---
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
 
 // --- Interfaces and Data ---
 interface Restaurant {
   id: string;
   name: string;
   subtext: string;
+  google_place_id?: string;
+  lat?: number;
+  lng?: number;
+  address?: string;
 }
 
 export default function DealCreationScreen() {
-  // Get data from the context
-  const { categories, cuisines, restaurants, loading: dataLoading, error } = useDataCache();
+  // Get data from the context (removed 'restaurants')
+  const { categories, cuisines, loading: dataLoading, error } = useDataCache();
   
   const [userData, setUserData] = useState({
     username: '',
@@ -52,7 +71,6 @@ export default function DealCreationScreen() {
   const [isFoodTagsModalVisible, setIsFoodTagsModalVisible] = useState(false);
   const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
-  // Changed from arrays to single values
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -60,6 +78,13 @@ export default function DealCreationScreen() {
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  
+  // Google Places search state
+  const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [nearbyRestaurants, setNearbyRestaurants] = useState<Restaurant[]>([]);
+  
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -83,19 +108,158 @@ export default function DealCreationScreen() {
     }, [])
   );
 
-  // Filter restaurants based on search query
-  const filteredRestaurants = restaurants
-    .filter(r => r && r.name && r.address)
-    .map(r => ({
-      id: r.id,
-      name: r.name,
-      subtext: r.address
-    }))
-    .filter(r => 
-      searchQuery.trim() === '' || 
-      r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.subtext.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  // NEW: Get device's current location (not from database)
+  const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+        if (newStatus !== 'granted') {
+          return null;
+        }
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      return {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      };
+    } catch (error) {
+      console.error('Error getting device location:', error);
+      return null;
+    }
+  };
+
+  // NEW: Load nearby restaurants when modal opens
+  const loadNearbyRestaurants = async () => {
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      // Get device's current location
+      const deviceLocation = await getDeviceLocation();
+      
+      if (!deviceLocation) {
+        setSearchError('Location permission needed to show nearby restaurants');
+        setNearbyRestaurants([]);
+        setIsSearching(false);
+        return;
+      }
+
+      console.log('📍 Got device location:', deviceLocation);
+
+      // Search for generic "restaurants" nearby
+      const result = await searchRestaurants(
+        'restaurant', // Generic search to get all restaurants
+        deviceLocation.lat,
+        deviceLocation.lng,
+        5 // 5 mile radius for initial recommendations
+      );
+
+      if (!result.success) {
+        setSearchError(result.error || 'Failed to load nearby restaurants');
+        setNearbyRestaurants([]);
+      } else if (result.count === 0) {
+        setSearchError('No restaurants found nearby');
+        setNearbyRestaurants([]);
+      } else {
+        // Transform and limit to 15 results
+        const transformed = result.restaurants
+          .slice(0, 15)
+          .map((place: GooglePlaceResult) => ({
+            id: place.google_place_id,
+            name: place.name,
+            subtext: `${place.address} • ${place.distance_miles} mi away`,
+            google_place_id: place.google_place_id,
+            lat: place.lat,
+            lng: place.lng,
+            address: place.address,
+          }));
+        
+        setNearbyRestaurants(transformed);
+        setSearchError(null);
+      }
+    } catch (error) {
+      console.error('Error loading nearby restaurants:', error);
+      setSearchError('An error occurred');
+      setNearbyRestaurants([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced Google Places search (when user types)
+  const debouncedSearch = useCallback(
+    debounce(async (query: string) => {
+      if (!query || query.trim().length < 2) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      setSearchError(null);
+
+      try {
+        // Get device location for search
+        const deviceLocation = await getDeviceLocation();
+        
+        if (!deviceLocation) {
+          setSearchError('Location not available. Please enable location services.');
+          setSearchResults([]);
+          setIsSearching(false);
+          return;
+        }
+
+        // Search via Google Places API
+        const result = await searchRestaurants(
+          query,
+          deviceLocation.lat,
+          deviceLocation.lng,
+          10 // 10 mile radius for user searches
+        );
+
+        if (!result.success) {
+          setSearchError(result.error || 'Failed to search restaurants');
+          setSearchResults([]);
+        } else if (result.count === 0) {
+          setSearchError('No restaurants found nearby');
+          setSearchResults([]);
+        } else {
+          // Transform results to match Restaurant interface
+          const transformed = result.restaurants.map((place: GooglePlaceResult) => ({
+            id: place.google_place_id,
+            name: place.name,
+            subtext: `${place.address} • ${place.distance_miles} mi away`,
+            google_place_id: place.google_place_id,
+            lat: place.lat,
+            lng: place.lng,
+            address: place.address,
+          }));
+          
+          setSearchResults(transformed);
+          setSearchError(null);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchError('An error occurred while searching');
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500),
+    []
+  );
+
+  // Handle search query change
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    debouncedSearch(text);
+  };
   
   // All existing handler functions remain the same
   const handleAddPhoto = () => setIsCameraModalVisible(true);
@@ -122,30 +286,72 @@ export default function DealCreationScreen() {
     setIsCalendarModalVisible(false);
   };
 
-  // Updated to handle single selection
   const handleDoneCategories = (categoryIds: string[]) => {
     setSelectedCategory(categoryIds.length > 0 ? categoryIds[0] : null);
     setIsCategoriesModalVisible(false);
   };
 
-  // Updated to handle single selection
   const handleDoneCuisines = (cuisineIds: string[]) => {
     setSelectedCuisine(cuisineIds.length > 0 ? cuisineIds[0] : null);
     setIsFoodTagsModalVisible(false);
   };
 
-  const handleDoneSearch = (selectedIds: string[]) => {
+  // Handle restaurant selection with Google Places persistence
+  const handleDoneSearch = async (selectedIds: string[]) => {
     if (selectedIds.length > 0) {
-      const restaurant = filteredRestaurants.find(r => r.id === selectedIds[0]);
-      if (restaurant) setSelectedRestaurant(restaurant);
+      // Get selected restaurant from either search results or nearby restaurants
+      const allRestaurants = searchQuery.trim().length > 0 ? searchResults : nearbyRestaurants;
+      const selectedPlace = allRestaurants.find(r => r.id === selectedIds[0]);
+      
+      if (selectedPlace && selectedPlace.google_place_id) {
+        setIsSearchModalVisible(false);
+        
+        try {
+          // Persist to database and get restaurant_id
+          const result = await getOrCreateRestaurant({
+            google_place_id: selectedPlace.google_place_id,
+            name: selectedPlace.name,
+            address: selectedPlace.address || selectedPlace.subtext.split(' • ')[0],
+            lat: selectedPlace.lat!,
+            lng: selectedPlace.lng!,
+            distance_miles: 0,
+          });
+
+          if (result.success && result.restaurant_id) {
+            // Set the restaurant with the database ID
+            setSelectedRestaurant({
+              id: result.restaurant_id,
+              name: selectedPlace.name,
+              subtext: selectedPlace.subtext,
+            });
+          } else {
+            Alert.alert('Error', 'Failed to save restaurant. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error saving restaurant:', error);
+          Alert.alert('Error', 'An unexpected error occurred.');
+        }
+      }
     }
-    setIsSearchModalVisible(false);
+    
+    // Clear search state
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+    setNearbyRestaurants([]);
   };
 
   const handleClearRestaurant = () => setSelectedRestaurant(null);
+  
   const handleSearchPress = () => {
     setSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+    setNearbyRestaurants([]);
     setIsSearchModalVisible(true);
+    
+    // Load nearby restaurants when modal opens
+    loadNearbyRestaurants();
   };
 
   const handlePreview = async () => {
@@ -192,13 +398,14 @@ export default function DealCreationScreen() {
       // Check for profanity before proceeding
       const profanityCheck = await checkDealContentForProfanity(dealData.title, dealData.description);
       if (!profanityCheck.success) {
-        return { success: false, error: profanityCheck.error };
+        Alert.alert("Content Review", profanityCheck.error || "Content contains inappropriate language.");
+        setIsPosting(false);
+        return;
       }
 
       const result = await createDeal(dealData);
       
       if (result.success) {
-        // ✨ NEW: Force refresh profile cache after successful deal post
         await ProfileCacheService.forceRefresh();
         
         Alert.alert(
@@ -259,7 +466,6 @@ export default function DealCreationScreen() {
     }, 100);
   };
 
-  // Helper functions to display selected items (updated for single selection)
   const getSelectedCategoryName = () => {
     if (!selectedCategory) return '';
     return categories.find(c => c.id === selectedCategory)?.name || '';
@@ -430,13 +636,29 @@ export default function DealCreationScreen() {
       />
       <ListSelectionModal 
         visible={isSearchModalVisible} 
-        onClose={() => setIsSearchModalVisible(false)} 
+        onClose={() => {
+          setIsSearchModalVisible(false);
+          setSearchQuery('');
+          setSearchResults([]);
+          setSearchError(null);
+          setNearbyRestaurants([]);
+        }} 
         onDone={handleDoneSearch} 
-        data={filteredRestaurants.length > 0 ? filteredRestaurants : [
-          { id: 'placeholder', name: 'No restaurants found', subtext: 'Try a different search' }
-        ]} 
+        data={
+          isSearching 
+            ? [{ id: 'loading', name: searchQuery.trim().length > 0 ? 'Searching restaurants...' : 'Finding nearby restaurants...', subtext: '' }]
+            : searchError
+            ? [{ id: 'error', name: searchError, subtext: 'Try a different search or check your location settings' }]
+            : searchQuery.trim().length > 0
+            ? (searchResults.length > 0 
+                ? searchResults 
+                : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
+            : (nearbyRestaurants.length > 0
+                ? nearbyRestaurants
+                : [{ id: 'empty', name: 'Loading nearby restaurants...', subtext: '' }])
+        } 
         title="Search Restaurant"
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         searchQuery={searchQuery}
       />
 
