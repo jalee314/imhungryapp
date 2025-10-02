@@ -50,7 +50,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' },
     { id: 'search', icon: 'magnify', label: 'Search', screen: 'DiscoverFeed' }, // CHANGED: Now routes to DiscoverFeed
     { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
-    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'Feed' }, // Temporarily use Feed until FavoritesScreen is created
+    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesPage' },
     { id: 'profile', icon: 'account-circle-outline', label: 'Profile', screen: 'ProfilePage' },
   ];
 
