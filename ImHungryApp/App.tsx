@@ -204,10 +204,8 @@ export default function App() {
     return cleanup;
   }, []);
 
-  React.useEffect(() => {
-    // Preload the logo image when app starts
-    Image.prefetch(Image.resolveAssetSource(require('./img/hungri_logo.png')).uri);
-  }, []);
+  // Preload the logo image when app starts
+  // Image.prefetch(Image.resolveAssetSource(require('./img/hungri_logo.png')).uri);
 
   if (!fontsLoaded && !fontError && !timeoutReached) {
     return (

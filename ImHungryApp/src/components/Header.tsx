@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -7,23 +7,23 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = memo(({ onLocationPress }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  // const [imageLoaded, setImageLoaded] = useState(false);
 
   // Preload image immediately when component mounts
-  useEffect(() => {
-    const preloadImage = async () => {
-      try {
-        // Use the same preload method as in App.tsx
-        await Image.prefetch(Image.resolveAssetSource(require('../../img/hungri_logo.png')).uri);
-        setImageLoaded(true);
-      } catch (error) {
-        console.error('Error preloading header image:', error);
-        setImageLoaded(true); // Still show image even if preload fails
-      }
-    };
+  // useEffect(() => {
+  //   const preloadImage = async () => {
+  //     try {
+  //       // Use the same preload method as in App.tsx
+  //       await Image.prefetch(Image.resolveAssetSource(require('../../img/hungri_logo.png')).uri);
+  //       setImageLoaded(true);
+  //     } catch (error) {
+  //       console.error('Error preloading header image:', error);
+  //       setImageLoaded(true); // Still show image even if preload fails
+  //     }
+  //   };
 
-    preloadImage();
-  }, []);
+  //   preloadImage();
+  // }, []);
 
   return (
     <View style={styles.header}>
@@ -38,9 +38,9 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress }) => {
             // Add these props for better performance
             cache="force-cache"
             // Show image immediately without waiting for onLoad
-            onLoadStart={() => setImageLoaded(true)}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageLoaded(true)}
+            onLoadStart={() => {}}
+            onLoad={() => {}}
+            onError={() => {}}
           />
         </View>
         <TouchableOpacity onPress={onLocationPress} style={styles.locationIconContainer}>
