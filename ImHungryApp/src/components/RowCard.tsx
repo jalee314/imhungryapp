@@ -44,7 +44,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, style }) => {
               
               <View style={styles.dealDetails}>
                 <Text style={[styles.subtitleText, styles.exploreSubtitle]}>
-                  Posted {data.postedDate} • Expires {data.expiresIn} • {data.views} views
+                  Posted {data.postedDate} • {data.expiresIn} • {data.views} views
                 </Text>
               </View>
             </View>
@@ -130,13 +130,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 8,
-    marginHorizontal: 20,
+    marginHorizontal: 0, // Remove horizontal margin
     marginVertical: 4,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
+    paddingHorizontal: 16, // Match restaurant info section exactly
   },
   frame: {
     alignItems: 'center',

@@ -246,7 +246,7 @@ const DiscoverFeed: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
   },
   searchContainer: {
     paddingHorizontal: 20,

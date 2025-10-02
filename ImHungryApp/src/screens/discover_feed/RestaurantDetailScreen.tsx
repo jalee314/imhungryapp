@@ -104,12 +104,21 @@ const RestaurantDetailScreen: React.FC = () => {
             .eq('deal_id', deal.deal_id)
             .eq('interaction_type', 'click-open');
 
+          // Debug: Check what interaction types exist for this deal
+          const { data: interactionTypes } = await supabase
+            .from('interaction')
+            .select('interaction_type')
+            .eq('deal_id', deal.deal_id)
+            .limit(10);
+          
+          console.log('Available interaction types for deal', deal.deal_id, ':', interactionTypes);
+
           // Get vote count from click-on interactions
           const { count: voteCount } = await supabase
             .from('interaction')
             .select('*', { count: 'exact', head: true })
             .eq('deal_id', deal.deal_id)
-            .eq('interaction_type', 'click-on');
+            .in('interaction_type', ['click-on', 'upvote', 'vote', 'click']);
 
           // Get favorite status
           const { data: favoriteData } = await supabase
@@ -124,7 +133,7 @@ const RestaurantDetailScreen: React.FC = () => {
             description: deal.deal_template.description,
             image_url: deal.deal_template.image_url,
             created_at: deal.created_at,
-            end_date: deal.end_date, // Now using deal.end_date instead of deal.deal_template.end_date
+            end_date: deal.end_date,
             views: viewCount || 0,
             votes: voteCount || 0,
             is_upvoted: false,
@@ -190,16 +199,13 @@ const RestaurantDetailScreen: React.FC = () => {
   };
 
   const convertToRowCardData = (deal: RestaurantDeal): RowCardData => {
+    console.log('Converting deal:', deal); // Debug log
+    
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now.getTime() - date.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) return '1 day ago';
-      if (diffDays < 7) return `${diffDays} days ago`;
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-      return `${Math.floor(diffDays / 30)} months ago`;
+      const month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
+      const day = date.getDate();
+      return `${month}/${day}`;
     };
 
     const formatExpiration = (endDate: string | null) => {
@@ -211,16 +217,36 @@ const RestaurantDetailScreen: React.FC = () => {
       
       if (diffDays < 0) return 'Expired';
       if (diffDays === 0) return 'Expires today';
-      if (diffDays === 1) return 'Expires tomorrow';
-      return `Expires in ${diffDays} days`;
+      if (diffDays === 1) return 'Expires 1 day';
+      return `Expires ${diffDays} days`;
     };
 
-    return {
+    // Convert relative image URL to full Supabase URL
+    const getImageSource = () => {
+      if (deal.image_url) {
+        if (deal.image_url.startsWith('http')) {
+          return { uri: deal.image_url };
+        } else {
+          // Convert relative path to full Supabase URL using your deal-images bucket
+          const baseUrl = 'https://bvknlrdpapqsztvyypwe.supabase.co/storage/v1/object/public/deal-images';
+          return { uri: `${baseUrl}/${deal.image_url}` };
+        }
+      }
+      return require('../../../img/Default_pfp.svg.png');
+    };
+
+    const result = {
       id: deal.deal_id,
       title: deal.title,
-      subtitle: `Posted ${formatDate(deal.created_at)} • ${formatExpiration(deal.end_date)} • ${deal.views} views`,
-      image: deal.image_url ? { uri: deal.image_url } : require('../../../img/Default_pfp.svg.png'),
+      subtitle: '', // Not used for explore-deal-card variant
+      postedDate: formatDate(deal.created_at),
+      expiresIn: formatExpiration(deal.end_date),
+      views: deal.views,
+      image: getImageSource(),
     };
+    
+    console.log('Converted RowCardData:', result); // Debug log
+    return result;
   };
 
   const renderDealCard = ({ item }: { item: RestaurantDeal }) => (
@@ -261,27 +287,39 @@ const RestaurantDetailScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Header */}
+      {/* Simple Header with Back Arrow and Directions */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000000" />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
+        <View style={styles.headerButtons}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={20} color="#000000" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.directionsButton} onPress={handleDirections}>
+            <Text style={styles.directionsButtonText}>Directions</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Restaurant Info */}
-      <View style={styles.restaurantInfo}>
-        <Text style={styles.restaurantName}>{restaurant.name}</Text>
-        <Text style={styles.restaurantDetails}>
-          <Text style={styles.cuisineText}>🍽 {cuisineName}</Text>
-          <Text style={styles.distanceText}> 📍 {formatDistance(restaurant.distance_miles)}mi away </Text>
-          <Text style={styles.separator}>•</Text>
-          <Text style={styles.addressText}> {restaurant.address}</Text>
-        </Text>
+      {/* Restaurant Info Section */}
+      <View style={styles.restaurantInfoSection}>
+        <View style={styles.restaurantHeader}>
+          <Text style={styles.restaurantName}>{restaurant.name}</Text>
+          <TouchableOpacity style={styles.heartButton}>
+            <Ionicons name="heart-outline" size={22} color="#000000" />
+          </TouchableOpacity>
+        </View>
         
-        <TouchableOpacity style={styles.directionsButton} onPress={handleDirections}>
-          <Ionicons name="navigate" size={16} color="#FF8C4C" />
-          <Text style={styles.directionsText}>Get Directions</Text>
-        </TouchableOpacity>
+        <View style={styles.restaurantDetailsContainer}>
+          <Text style={styles.restaurantDetails}>
+            <Text style={styles.cuisineText}>🍽 {cuisineName || 'Cuisine'}</Text>
+          </Text>
+          <Text style={styles.restaurantDetails}>
+            <Text style={styles.distanceText}>📍 {formatDistance(restaurant.distance_miles)}mi away </Text>
+            <Text style={styles.separator}>• </Text>
+            <Text style={styles.addressText}>{restaurant.address}</Text>
+          </Text>
+        </View>
       </View>
 
       {/* Deals List */}
@@ -306,38 +344,78 @@ const RestaurantDetailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#D7D7D7',
+    paddingTop: 50, // Account for status bar
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  headerSpacer: {
+    height: 20, // Space to push buttons down
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   backButton: {
-    padding: 8,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  restaurantInfo: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
+  directionsButton: {
+    backgroundColor: '#FF8C4C',
+    borderRadius: 30,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  directionsButtonText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000000',
+    fontFamily: 'Inter',
+  },
+  restaurantInfoSection: {
+    paddingHorizontal: 16,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
+  },
+  restaurantHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   restaurantName: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '700',
     color: '#000000',
-    marginBottom: 8,
+    fontFamily: 'Inter',
+    lineHeight: 24,
+  },
+  heartButton: {
+    width: 22,
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  restaurantDetailsContainer: {
+    flexDirection: 'column',
   },
   restaurantDetails: {
-    fontSize: 14,
-    color: '#666666',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000000',
+    fontFamily: 'Inter',
     lineHeight: 20,
-    marginBottom: 12,
   },
   cuisineText: {
     color: '#000000',
@@ -346,31 +424,21 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   separator: {
-    color: '#666666',
+    color: '#000000',
+    fontWeight: '300',
+    marginHorizontal: 4,
   },
   addressText: {
-    color: '#666666',
-  },
-  directionsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#FFF5F0',
-    borderRadius: 16,
-  },
-  directionsText: {
+    color: '#000000',
     marginLeft: 4,
-    fontSize: 12,
-    color: '#FF8C4C',
-    fontWeight: '600',
   },
   dealsContainer: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   dealsList: {
     paddingVertical: 8,
+    paddingBottom: 64,
   },
   loadingContainer: {
     flex: 1,
@@ -406,6 +474,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   emptyContainer: {
+    flex: 1,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
