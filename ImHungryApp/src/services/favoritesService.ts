@@ -88,7 +88,8 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       return [];
     }
 
-    const dealIds = favoriteData.map(fav => fav.deal_id);
+    // Filter out null values from dealIds
+    const dealIds = favoriteData.map(fav => fav.deal_id).filter((id): id is string => id !== null);
 
     // Get deal details with all related data using separate queries
     const { data: deals, error: dealsError } = await supabase
@@ -293,7 +294,8 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       return [];
     }
 
-    const dealIds = favoriteData.map(fav => fav.deal_id);
+    // Also fix the second occurrence
+    const dealIds = favoriteData.map(fav => fav.deal_id).filter((id): id is string => id !== null);
 
     // Get deal details to get restaurant information
     const { data: deals, error: dealsError } = await supabase
