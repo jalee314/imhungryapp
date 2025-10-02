@@ -493,7 +493,11 @@ const Feed: React.FC = () => {
       <View style={styles.header}>
         <View style={styles.logoLocation}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>ImHungri</Text>
+            <Image 
+              source={require('../../../img/hungri_logo.png')} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
           <View style={styles.locationContainer}>
             <Ionicons name="location" size={16} color="#000000" />
@@ -615,28 +619,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
+    width: '100%',
+    height: 100,
     backgroundColor: '#FFFFFF',
-    paddingTop: 44, // Status bar height
-    paddingBottom: 8,
-    paddingHorizontal: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#BCBCBC',
+    borderBottomColor: '#DEDEDE',
+    justifyContent: 'flex-end',
+    paddingBottom: 4, // Much smaller padding to get closer to bottom
   },
   logoLocation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    width: '100%',
+    paddingHorizontal: 19,
   },
   logoContainer: {
-    height: 31,
+    height: 40,
     justifyContent: 'center',
   },
-  logoText: {
-    fontFamily: 'MuseoModerno-Bold',
-    fontWeight: '700',
-    fontSize: 24,
-    color: '#FF8C4C',
+  logoImage: {
+    width: 120, // Much larger width
+    // Let height scale automatically based on aspect ratio
   },
   locationContainer: {
     flexDirection: 'row',

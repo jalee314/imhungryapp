@@ -196,7 +196,7 @@ const DealCard: React.FC<DealCardProps> = ({
             <MaterialCommunityIcons
               name="delete-outline"
               size={16} 
-              color="#FF4444" 
+              color="#000000" 
             />
           </TouchableOpacity>
         ) : (

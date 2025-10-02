@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface HeaderProps {
@@ -10,7 +10,11 @@ const Header: React.FC<HeaderProps> = ({ onLocationPress }) => {
   return (
     <View style={styles.header}>
       <View style={styles.headerBottomFrame}>
-        <Text style={styles.appName}>ImHungri</Text>
+        <Image 
+          source={require('../../img/hungri_logo.png')} 
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
         <TouchableOpacity onPress={onLocationPress} style={styles.locationIconContainer}>
           <Ionicons name="location-sharp" size={26} color="#1D1B20" />
         </TouchableOpacity>
@@ -36,12 +40,17 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 19,
   },
-  appName: {
-    fontFamily: 'MuseoModerno-Bold',
-    fontWeight: '700',
-    fontSize: 24,
-    color: '#FF8C4C',
+  logoImage: {
+    height: 31,
+    width: 106, // Updated to match Figma specs
   },
+  // Remove or comment out appName style since we're using an image now
+  // appName: {
+  //   fontFamily: 'MuseoModerno-Bold',
+  //   fontWeight: '700',
+  //   fontSize: 24,
+  //   color: '#FF8C4C',
+  // },
   locationIconContainer: {
     padding: 4, // Reduced padding to make the icon container smaller
     justifyContent: 'center',
