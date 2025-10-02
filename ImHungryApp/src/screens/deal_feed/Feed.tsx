@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -408,6 +409,11 @@ const Feed: React.FC = () => {
     });
   };
 
+  const handleLocationPress = () => {
+    // Add your location handling logic here
+    console.log('Location pressed');
+  };
+
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
     <DealCard
       deal={item}
@@ -489,23 +495,7 @@ const Feed: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Custom Header matching Figma design */}
-      <View style={styles.header}>
-        <View style={styles.logoLocation}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../../img/hungri_logo.png')} 
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.locationContainer}>
-            <Ionicons name="location" size={16} color="#000000" />
-            <Text style={styles.locationText}>Fullerton, CA</Text>
-            <Ionicons name="chevron-down" size={12} color="#000000" />
-          </View>
-        </View>
-      </View>
+      <Header onLocationPress={handleLocationPress} />
 
       <ScrollView 
         style={styles.content} 
@@ -625,33 +615,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: '#DEDEDE',
     justifyContent: 'flex-end',
-    paddingBottom: 4, // Much smaller padding to get closer to bottom
+    paddingBottom: 4,
   },
-  logoLocation: {
+  headerBottomFrame: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
     paddingHorizontal: 19,
   },
-  logoContainer: {
-    height: 40,
-    justifyContent: 'center',
-  },
   logoImage: {
-    width: 120, // Much larger width
+    width: 120,
     // Let height scale automatically based on aspect ratio
   },
-  locationContainer: {
-    flexDirection: 'row',
+  locationIconContainer: {
+    padding: 4,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-  },
-  locationText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#000000',
   },
   content: {
     flex: 1,

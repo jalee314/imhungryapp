@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
@@ -38,6 +38,7 @@ import { FavoritesProvider } from './src/context/FavoritesContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
 import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
 import FavoritesPage from './src/screens/favorites/FavoritesPage';
+import ImageCacheService from './src/services/imageCacheService';
 
 
 const Stack = createNativeStackNavigator();
@@ -201,6 +202,11 @@ export default function App() {
   React.useEffect(() => {
     const cleanup = setupAppStateListener();
     return cleanup;
+  }, []);
+
+  React.useEffect(() => {
+    // Preload the logo image when app starts
+    Image.prefetch(Image.resolveAssetSource(require('./img/hungri_logo.png')).uri);
   }, []);
 
   if (!fontsLoaded && !fontError && !timeoutReached) {
