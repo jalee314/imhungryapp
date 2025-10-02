@@ -331,7 +331,7 @@ const RestaurantDetailScreen: React.FC = () => {
             <Ionicons 
               name={isRestaurantFavorited ? "heart" : "heart-outline"} 
               size={22} 
-              color={isRestaurantFavorited ? "#FF4444" : "#000000"} 
+              color={isRestaurantFavorited ? "#FF8C4C" : "#000000"} 
             />
           </TouchableOpacity>
         </View>
