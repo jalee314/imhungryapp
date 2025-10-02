@@ -410,7 +410,7 @@ const DealDetailScreen: React.FC = () => {
               <MaterialCommunityIcons 
                 name={dealData.isFavorited ? "heart" : "heart-outline"} 
                 size={20} 
-                color={dealData.isFavorited ? "#FF8C4C" : "#000"} 
+                color={dealData.isFavorited ? "#FF1E00" : "#000"} 
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>

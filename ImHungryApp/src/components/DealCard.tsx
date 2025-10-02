@@ -104,7 +104,7 @@ const DealCard: React.FC<DealCardProps> = ({
               >
                 <MaterialCommunityIcons
                   name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                  size={deal.isUpvoted ? 23 : 19} 
+                  size={deal.isUpvoted ? 23 : 17} 
                   color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
                 />
               </TouchableOpacity>
@@ -117,7 +117,7 @@ const DealCard: React.FC<DealCardProps> = ({
               >
                 <MaterialCommunityIcons
                   name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                  size={deal.isDownvoted ? 22: 19} 
+                  size={deal.isDownvoted ? 22 : 17} 
                   color={deal.isDownvoted ? "#9796FF" : "#000"} 
                 />
               </TouchableOpacity>
@@ -131,8 +131,8 @@ const DealCard: React.FC<DealCardProps> = ({
             >
               <MaterialCommunityIcons
                 name={deal.isFavorited ? "heart" : "heart-outline"}
-                size={14} 
-                color={deal.isFavorited ? "#FF8C4C" : "#000"} 
+                size={19} 
+                color={deal.isFavorited ? "#FF1E00" : "#000"} 
               />
             </TouchableOpacity>
           </View>
@@ -166,7 +166,7 @@ const DealCard: React.FC<DealCardProps> = ({
             >
                 <MaterialCommunityIcons
                   name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                  size={deal.isUpvoted ? 23 : 19} 
+                  size={deal.isUpvoted ? 23 : 17} 
                   color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
                 />
             </TouchableOpacity>
@@ -179,7 +179,7 @@ const DealCard: React.FC<DealCardProps> = ({
             >
                 <MaterialCommunityIcons
                   name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                  size={deal.isDownvoted ? 22 : 19} 
+                  size={deal.isDownvoted ? 22 : 17} 
                   color={deal.isDownvoted ? "#9796FF" : "#000"} 
                 />
             </TouchableOpacity>
@@ -207,8 +207,8 @@ const DealCard: React.FC<DealCardProps> = ({
           >
             <MaterialCommunityIcons
               name={deal.isFavorited ? "heart" : "heart-outline"}
-              size={14} 
-              color={deal.isFavorited ? "#FF8C4C" : "#000"} 
+              size={19} 
+              color={deal.isFavorited ? "#FF1E00" : "#000"} 
             />
           </TouchableOpacity>
         )}
@@ -227,6 +227,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 273,
     justifyContent: 'center',
+    overflow: 'visible',
   },
   horizontalImage: {
     width: '100%',
@@ -264,6 +265,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+    overflow: 'visible',
   },
   horizontalVoteContainer: {
     flexDirection: 'row',
@@ -282,6 +284,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 20,
     height: 24,
+    borderRadius: 4,
   },
   horizontalVoteCount: {
     fontFamily: 'Inter',
@@ -299,6 +302,7 @@ const styles = StyleSheet.create({
   horizontalFavoriteWrapper: {
     width: 62,
     alignItems: 'flex-end',
+    overflow: 'visible',
   },
   horizontalFavoriteButton: {
     backgroundColor: '#FFFFFF',
@@ -306,12 +310,11 @@ const styles = StyleSheet.create({
     borderColor: '#D7D7D7',
     borderRadius: 30,
     paddingHorizontal: 12,
-    paddingVertical: 6,
     justifyContent: 'center',
     alignItems: 'center',
     height: 28,
+    overflow: 'visible',
   },
-
   // Vertical Card Styles (for 2-column grid)
   verticalCard: {
     backgroundColor: '#FFFFFF',
@@ -372,6 +375,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 20,
     height: 20,
+    borderRadius: 4,
   },
   verticalVoteCount: {
     fontFamily: 'Inter',

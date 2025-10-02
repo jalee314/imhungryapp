@@ -215,6 +215,7 @@ const FavoritesPage: React.FC = () => {
             event: '*',
             schema: 'public',
             table: 'favorite',
+            filter: `user_id=eq.${userId}`,
           },
           (payload: any) => {
             console.log('🔄 Favorites realtime update:', payload.eventType);
