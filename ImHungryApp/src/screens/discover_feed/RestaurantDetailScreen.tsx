@@ -270,7 +270,11 @@ const RestaurantDetailScreen: React.FC = () => {
         milesAway: formatDistance(restaurant.distance_miles),
         userId: dealData.user_display_name ? dealData.user_display_name : undefined,
         userDisplayName: dealData.user_display_name,
-        userProfilePhoto: dealData.user_profile_photo,
+        userProfilePhoto: dealData.user_profile_photo ? 
+          (dealData.user_profile_photo.startsWith('http') 
+            ? dealData.user_profile_photo 
+            : supabase.storage.from('avatars').getPublicUrl(dealData.user_profile_photo).data.publicUrl
+          ) : null,
         restaurantAddress: restaurant.address,
         isAnonymous: dealData.is_anonymous,
       };
@@ -406,7 +410,7 @@ const RestaurantDetailScreen: React.FC = () => {
       {/* Header with Title and Navigation */}
       <View style={styles.header}>
         
-        <View style={styles.headerButtons}>z
+        <View style={styles.headerButtons}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20} color="#000000" />
           </TouchableOpacity>
