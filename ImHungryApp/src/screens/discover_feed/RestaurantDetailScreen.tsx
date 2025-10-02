@@ -249,14 +249,23 @@ const RestaurantDetailScreen: React.FC = () => {
       return `${diffDays} days`;
     };
 
+    // Convert relative image URL to full Supabase URL
     const getImageSource = () => {
       if (!deal.image_url) {
         return require('../../../img/gallery.jpg');
       }
       
-      // Construct Supabase public URL
-      const baseUrl = 'https://your-supabase-project.supabase.co/storage/v1/object/public';
-      return { uri: `${baseUrl}/${deal.image_url}` };
+      // Check if it's already a full URL
+      if (deal.image_url.startsWith('http')) {
+        return { uri: deal.image_url };
+      }
+      
+      // Use Supabase storage to get the public URL
+      const { data } = supabase.storage
+        .from('deal-images')
+        .getPublicUrl(deal.image_url);
+      
+      return { uri: data.publicUrl };
     };
 
     return {
