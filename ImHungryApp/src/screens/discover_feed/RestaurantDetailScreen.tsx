@@ -59,12 +59,20 @@ const RestaurantDetailScreen: React.FC = () => {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
+    console.log('🔄 useEffect triggered for restaurant:', restaurant.restaurant_id);
+    console.log('🔄 Restaurant object:', { id: restaurant.restaurant_id, name: restaurant.name });
     loadRestaurantDeals();
     loadRestaurantCuisine();
     checkRestaurantFavoriteStatus();
   }, [restaurant.restaurant_id]); // Add dependency
 
+  // Debug deals state changes
+  useEffect(() => {
+    console.log('🔍 Deals state changed:', { length: deals.length, deals: deals.map(d => ({ id: d.deal_id, title: d.title })) });
+  }, [deals]);
+
   const loadRestaurantDeals = async () => {
+    console.log('🔄 loadRestaurantDeals called for restaurant:', restaurant.restaurant_id);
     try {
       setLoading(true);
       setError(null);
@@ -125,11 +133,14 @@ const RestaurantDetailScreen: React.FC = () => {
             .eq('deal_id', deal.deal_id)
             .single();
 
+          const template = Array.isArray(deal.deal_template) ? deal.deal_template[0] : deal.deal_template;
+          const user = Array.isArray(template.user) ? template.user[0] : template.user;
+          
           return {
             deal_id: deal.deal_id,
-            title: deal.deal_template.title,
-            description: deal.deal_template.description,
-            image_url: deal.deal_template.image_url,
+            title: template.title,
+            description: template.description,
+            image_url: template.image_url,
             created_at: deal.created_at,
             end_date: deal.end_date,
             views: viewCount || 0,
@@ -137,15 +148,18 @@ const RestaurantDetailScreen: React.FC = () => {
             is_upvoted: false,
             is_downvoted: false,
             is_favorited: !!favoriteData,
-            user_id: deal.deal_template.is_anonymous ? null : deal.deal_template.user_id, // Add this line
-            user_display_name: deal.deal_template.is_anonymous ? null : deal.deal_template.user.display_name,
-            user_profile_photo: deal.deal_template.is_anonymous ? null : deal.deal_template.user.profile_photo,
-            is_anonymous: deal.deal_template.is_anonymous,
+            user_id: template.user_id, // Add user_id for profile navigation
+            user_display_name: template.is_anonymous ? null : user.display_name,
+            user_profile_photo: template.is_anonymous ? null : user.profile_photo,
+            is_anonymous: template.is_anonymous,
           };
         })
       );
 
+      console.log('🔍 Loaded deals:', processedDeals.map(d => ({ id: d.deal_id, title: d.title })));
+      console.log('🔍 Setting deals state with length:', processedDeals.length);
       setDeals(processedDeals);
+      console.log('🔍 Deals state set successfully');
     } catch (err) {
       console.error('Error loading restaurant deals:', err);
       setError('Failed to load deals');
@@ -167,7 +181,8 @@ const RestaurantDetailScreen: React.FC = () => {
         .limit(1);
 
       if (!error && data && data.length > 0) {
-        setCuisineName(data[0].cuisine.cuisine_name);
+        const cuisine = Array.isArray(data[0].cuisine) ? data[0].cuisine[0] : data[0].cuisine;
+        setCuisineName(cuisine.cuisine_name);
       }
     } catch (err) {
       console.error('Error loading restaurant cuisine:', err);
@@ -226,15 +241,13 @@ const RestaurantDetailScreen: React.FC = () => {
       console.log('🔍 handleDealPress called with dealId:', dealId);
       console.log('🔍 Available deals count:', deals.length);
       console.log('🔍 Available deal IDs:', deals.map(d => d.deal_id));
-      
+
       // Find the deal data
       const dealData = deals.find(deal => deal.deal_id === dealId);
       if (!dealData) {
-        console.error('❌ Deal not found:', dealId);
+        console.error('Deal not found:', dealId);
         return;
       }
-
-      console.log('✅ Deal found:', dealData.title);
 
       // Convert RestaurantDeal to Deal format
       const dealForDetail: Deal = {
@@ -255,15 +268,15 @@ const RestaurantDetailScreen: React.FC = () => {
         timeAgo: formatTimeAgo(dealData.created_at),
         author: dealData.user_display_name || 'Anonymous',
         milesAway: formatDistance(restaurant.distance_miles),
-        userId: dealData.user_id, // Fix: use the actual user_id
+        userId: dealData.user_display_name ? dealData.user_display_name : undefined,
         userDisplayName: dealData.user_display_name,
         userProfilePhoto: dealData.user_profile_photo,
         restaurantAddress: restaurant.address,
         isAnonymous: dealData.is_anonymous,
       };
 
-      // Log the click interaction with source 'search'
-      logClick(dealId, 'search').catch(err => {
+      // Log the click interaction
+      logClick(dealId).catch(err => {
         console.error('Failed to log click:', err);
       });
 
@@ -324,6 +337,11 @@ const RestaurantDetailScreen: React.FC = () => {
         return { uri: deal.image_url };
       }
       
+      // Check if it's already a full URL
+      if (deal.image_url.startsWith('http')) {
+        return { uri: deal.image_url };
+      }
+      
       // Use Supabase storage to get the public URL
       const { data } = supabase.storage
         .from('deal-images')
@@ -340,6 +358,9 @@ const RestaurantDetailScreen: React.FC = () => {
       postedDate: formatDate(deal.created_at),
       expiresIn: formatExpiration(deal.end_date),
       views: deal.views,
+      userId: deal.user_id, // Add userId for user profile navigation
+      userDisplayName: deal.user_display_name || undefined,
+      userProfilePhoto: deal.user_profile_photo || undefined,
     };
   }, []); // Empty dependency array since it doesn't depend on any props/state
 
@@ -382,10 +403,10 @@ const RestaurantDetailScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Simple Header with Back Arrow and Directions */}
+      {/* Header with Title and Navigation */}
       <View style={styles.header}>
-        <View style={styles.headerSpacer} />
-        <View style={styles.headerButtons}>
+        
+        <View style={styles.headerButtons}>z
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20} color="#000000" />
           </TouchableOpacity>
@@ -455,8 +476,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  headerSpacer: {
-    height: 20, // Space to push buttons down
+  headerTop: {
+    marginBottom: 12,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -574,7 +595,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   emptyContainer: {
-    flex: 1,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

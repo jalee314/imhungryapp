@@ -273,56 +273,73 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     const now = Date.now();
     const lastFetch = cache.lastFetch.get(cacheKey) || 0;
     
+    console.log('🔍 Cache check:', {
+      cacheKey,
+      now,
+      lastFetch,
+      cacheAge: now - lastFetch,
+      cacheDuration: cache.CACHE_DURATION,
+      hasCachedData: cache.restaurants.has(cacheKey)
+    });
+    
     if (now - lastFetch < cache.CACHE_DURATION && cache.restaurants.has(cacheKey)) {
-      return cache.restaurants.get(cacheKey)!;
+      const cachedData = cache.restaurants.get(cacheKey)!;
+      console.log('📦 Returning cached data:', cachedData);
+      return cachedData;
     }
+    
+    console.log('🔄 Cache miss or expired, fetching fresh data');
+    
+    // Clear cache to force fresh fetch
+    cache.restaurants.delete(cacheKey);
+    cache.lastFetch.delete(cacheKey);
 
     const userLocation = await getCurrentUserLocation();
 
-    // Get favorite deal IDs first
+    // Get ONLY directly favorited restaurants (not restaurants with favorited deals)
     const { data: favoriteData, error: favoriteError } = await supabase
       .from('favorite')
-      .select('deal_id')
-      .eq('user_id', userId);
+      .select('restaurant_id, created_at')
+      .eq('user_id', userId)
+      .not('restaurant_id', 'is', null);
 
     if (favoriteError) {
       console.error('Error fetching favorites:', favoriteError);
       return [];
     }
 
+    console.log('🔍 Raw favorite data:', favoriteData);
+    console.log('🔍 Favorite data length:', favoriteData?.length || 0);
+
     if (!favoriteData || favoriteData.length === 0) {
+      console.log('❌ No favorite data found');
       return [];
     }
 
-    // Also fix the second occurrence
-    const dealIds = favoriteData.map(fav => fav.deal_id).filter((id): id is string => id !== null);
+    // Log each favorite entry to see the structure
+    favoriteData.forEach((fav, index) => {
+      console.log(`📝 Favorite ${index + 1}:`, {
+        restaurant_id: fav.restaurant_id,
+        created_at: fav.created_at
+      });
+    });
 
-    // Get deal details to get restaurant information
-    const { data: deals, error: dealsError } = await supabase
-      .from('deal_instance')
-      .select('template_id')
-      .in('deal_id', dealIds);
+    // Get ONLY directly favorited restaurants
+    const directRestaurantIds = favoriteData
+      .map(fav => fav.restaurant_id)
+      .filter((id): id is string => id !== null);
 
-    if (dealsError) {
-      console.error('Error fetching deal details:', dealsError);
+    console.log('🏪 Direct restaurant IDs:', directRestaurantIds);
+
+    if (directRestaurantIds.length === 0) {
+      console.log('❌ No directly favorited restaurants found');
       return [];
     }
 
-    const templateIds = [...new Set((deals || []).map(deal => deal.template_id))];
+    const allRestaurantIds = directRestaurantIds;
+    console.log('🍽️ Restaurant IDs to fetch:', allRestaurantIds);
 
-    // Get template details to get restaurant IDs
-    const { data: templates, error: templatesError } = await supabase
-      .from('deal_template')
-      .select('template_id, restaurant_id, cuisine_id')
-      .in('template_id', templateIds);
-
-    if (templatesError) {
-      console.error('Error fetching templates:', templatesError);
-      return [];
-    }
-
-    const restaurantIds = [...new Set((templates || []).map(template => template.restaurant_id))];
-    const cuisineIds = [...new Set((templates || []).map(template => template.cuisine_id).filter(Boolean))];
+    console.log('🔍 About to fetch restaurant details for IDs:', allRestaurantIds);
 
     // Execute all queries in parallel for much better performance
     const [
@@ -332,31 +349,58 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       dealCountsResult
     ] = await Promise.all([
       // Get restaurant coordinates for distance calculation
-      userLocation && restaurantIds.length > 0 
+      userLocation && allRestaurantIds.length > 0 
         ? supabase
             .from('restaurants_with_coords')
             .select('restaurant_id, lat, lng')
-            .in('restaurant_id', restaurantIds)
+            .in('restaurant_id', allRestaurantIds)
         : Promise.resolve({ data: [] }),
       
       // Get all restaurant details in one batch query
       supabase
         .from('restaurant')
-        .select('restaurant_id, name, address, image_url')
-        .in('restaurant_id', restaurantIds),
+        .select('restaurant_id, name, address, logo_image')
+        .in('restaurant_id', allRestaurantIds),
       
-      // Get all cuisine details in one batch query
-      cuisineIds.length > 0
+      // Get cuisine details for restaurants
+      allRestaurantIds.length > 0
         ? supabase
-            .from('cuisine')
-            .select('cuisine_id, cuisine_name')
-            .in('cuisine_id', cuisineIds)
+            .from('restaurant_cuisine')
+            .select(`
+              restaurant_id,
+              cuisine!inner(
+                cuisine_id,
+                cuisine_name
+              )
+            `)
+            .in('restaurant_id', allRestaurantIds)
         : Promise.resolve({ data: [] }),
       
-      // Get deal counts for all restaurants in one query
-      supabase
-        .rpc('get_deal_counts_for_restaurants', { r_ids: restaurantIds })
+      // Get deal counts for all restaurants (simplified approach)
+      allRestaurantIds.length > 0
+        ? supabase
+            .from('deal_template')
+            .select('restaurant_id')
+            .in('restaurant_id', allRestaurantIds)
+            .then(result => {
+              // Count deals per restaurant
+              const counts: any[] = [];
+              const dealCounts: Record<string, number> = {};
+              result.data?.forEach(deal => {
+                dealCounts[deal.restaurant_id] = (dealCounts[deal.restaurant_id] || 0) + 1;
+              });
+              Object.entries(dealCounts).forEach(([restaurant_id, deal_count]) => {
+                counts.push({ restaurant_id, deal_count });
+              });
+              return { data: counts, error: null };
+            })
+        : Promise.resolve({ data: [] })
     ]);
+
+    console.log('🔍 Restaurant coords result:', restaurantCoordsResult);
+    console.log('🔍 Restaurants result:', restaurantsResult);
+    console.log('🔍 Cuisines result:', cuisinesResult);
+    console.log('🔍 Deal counts result:', dealCountsResult);
 
     // Process restaurant coordinates
     const restaurantLocations: Record<string, { lat: number; lng: number }> = {};
@@ -371,64 +415,82 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
 
     // Create maps for quick lookup
     const restaurantsMap = new Map(restaurantsResult.data?.map(r => [r.restaurant_id, r]) || []);
-    const cuisinesMap = new Map(cuisinesResult.data?.map(c => [c.cuisine_id, c]) || []);
-    const dealCountsMap = new Map(dealCountsResult.data?.map((dc: any) => [dc.restaurant_id, dc.deal_count]) || []);
-
-    // Group by restaurant and get unique restaurants
-    const restaurantMap = new Map<string, FavoriteRestaurant>();
-
-    for (const template of templates || []) {
-      const restaurantId = template.restaurant_id;
-
-      if (!restaurantMap.has(restaurantId)) {
-        const restaurantData = restaurantsMap.get(restaurantId);
-        if (!restaurantData) continue;
-
-        const cuisineData = cuisinesMap.get(template.cuisine_id);
-
-        // Calculate distance if user location is available
-        let distance = 'Unknown';
-        if (userLocation && restaurantLocations[restaurantId]) {
-          const coords = restaurantLocations[restaurantId];
-          const distanceKm = calculateDistance(
-            userLocation.lat,
-            userLocation.lng,
-            coords.lat,
-            coords.lng
-          );
-          distance = distanceKm < 1 
-            ? `${Math.round(distanceKm * 1000)}m` 
-            : `${distanceKm.toFixed(1)}mi`;
-        }
-
-        // Process restaurant image URL - add Supabase storage prefix if needed
-        let imageUrl = '';
-        if (restaurantData.image_url) {
-          if (restaurantData.image_url.startsWith('http')) {
-            imageUrl = restaurantData.image_url;
-          } else {
-            const { data } = supabase.storage
-              .from('restaurant-images')
-              .getPublicUrl(restaurantData.image_url);
-            imageUrl = data.publicUrl;
-          }
-        }
-
-        restaurantMap.set(restaurantId, {
-          id: restaurantId,
-          name: restaurantData.name,
-          address: restaurantData.address,
-          imageUrl,
-          distance,
-          dealCount: Number(dealCountsMap.get(restaurantId)) || 0,
-          cuisineName: cuisineData?.cuisine_name || 'Unknown',
-          isFavorited: true,
-        });
-      }
-    }
-
-    const restaurants = Array.from(restaurantMap.values());
     
+    // Process cuisine data from restaurant_cuisine table
+    const cuisinesMap = new Map();
+    cuisinesResult.data?.forEach((item: any) => {
+      const cuisine = Array.isArray(item.cuisine) ? item.cuisine[0] : item.cuisine;
+      cuisinesMap.set(item.restaurant_id, cuisine);
+    });
+    
+    const dealCountsMap = new Map(dealCountsResult.data?.map((dc: any) => [dc.restaurant_id, dc.deal_count]) || []);
+    
+    console.log('🔍 Restaurants map size:', restaurantsMap.size);
+    console.log('🔍 Restaurants map keys:', Array.from(restaurantsMap.keys()));
+    console.log('🔍 Cuisines map size:', cuisinesMap.size);
+    console.log('🔍 Deal counts map size:', dealCountsMap.size);
+
+    // Create favorite restaurants from all restaurant IDs
+    const restaurants: FavoriteRestaurant[] = [];
+
+    for (const restaurantId of allRestaurantIds) {
+      console.log(`🔍 Processing restaurant ID: ${restaurantId}`);
+      const restaurantData = restaurantsMap.get(restaurantId);
+      console.log(`🔍 Restaurant data for ${restaurantId}:`, restaurantData);
+      if (!restaurantData) {
+        console.log(`❌ No restaurant data found for ${restaurantId}`);
+        continue;
+      }
+
+      // Find cuisine for this restaurant
+      let cuisineName = 'Unknown';
+      const cuisineData = cuisinesMap.get(restaurantId);
+      if (cuisineData) {
+        cuisineName = cuisineData.cuisine_name;
+      }
+
+      // Calculate distance if user location is available
+      let distance = 'Unknown';
+      if (userLocation && restaurantLocations[restaurantId]) {
+        const coords = restaurantLocations[restaurantId];
+        const distanceKm = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          coords.lat,
+          coords.lng
+        );
+        distance = distanceKm < 1 
+          ? `${Math.round(distanceKm * 1000)}m` 
+          : `${distanceKm.toFixed(1)}mi`;
+      }
+
+      // Process restaurant image URL - add Supabase storage prefix if needed
+      let imageUrl = '';
+      if (restaurantData.logo_image) {
+        if (restaurantData.logo_image.startsWith('http')) {
+          imageUrl = restaurantData.logo_image;
+        } else {
+          const { data } = supabase.storage
+            .from('restaurant-images')
+            .getPublicUrl(restaurantData.logo_image);
+          imageUrl = data.publicUrl;
+        }
+      }
+
+      restaurants.push({
+        id: restaurantId,
+        name: restaurantData.name,
+        address: restaurantData.address,
+        imageUrl,
+        distance,
+        dealCount: Number(dealCountsMap.get(restaurantId)) || 0,
+        cuisineName,
+        isFavorited: true,
+      });
+    }
+    
+    console.log('✅ Final restaurants:', restaurants);
+
     // Cache the results
     cache.restaurants.set(cacheKey, restaurants);
     cache.lastFetch.set(cacheKey, now);
@@ -437,6 +499,47 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
   } catch (error) {
     console.error('Error in fetchFavoriteRestaurants:', error);
     return [];
+  }
+};
+
+/**
+ * Toggle restaurant favorite status
+ */
+export const toggleRestaurantFavorite = async (
+  restaurantId: string, 
+  isCurrentlyFavorited: boolean
+): Promise<boolean> => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    if (isCurrentlyFavorited) {
+      // Remove from favorites
+      const { error } = await supabase
+        .from('favorite')
+        .delete()
+        .eq('user_id', userId)
+        .eq('restaurant_id', restaurantId);
+      
+      if (error) throw error;
+      return false;
+    } else {
+      // Add to favorites
+      const { error } = await supabase
+        .from('favorite')
+        .insert({
+          user_id: userId,
+          restaurant_id: restaurantId,
+        });
+      
+      if (error) throw error;
+      return true;
+    }
+  } catch (error) {
+    console.error('Error toggling restaurant favorite:', error);
+    throw error;
   }
 };
 

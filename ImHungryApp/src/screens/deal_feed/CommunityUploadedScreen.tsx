@@ -62,29 +62,34 @@ const CommunityUploadedScreen: React.FC = () => {
   // ✨ NEW: Sync updated deals from context when screen comes into focus (same as Feed)
   useFocusEffect(
     React.useCallback(() => {
-      const dealsToClean: string[] = [];
-      
-      setDeals(prevDeals => {
-        let hasChanges = false;
-        const updatedDeals = prevDeals.map(deal => {
-          const updatedDeal = getUpdatedDeal(deal.id);
-          if (updatedDeal) {
-            hasChanges = true;
-            dealsToClean.push(deal.id); // Mark for cleanup, don't clear yet
-            return updatedDeal;
-          }
-          return deal;
+      // Use setTimeout to defer the state update until after the current render cycle
+      const timeoutId = setTimeout(() => {
+        const dealsToClean: string[] = [];
+        
+        setDeals(prevDeals => {
+          let hasChanges = false;
+          const updatedDeals = prevDeals.map(deal => {
+            const updatedDeal = getUpdatedDeal(deal.id);
+            if (updatedDeal) {
+              hasChanges = true;
+              dealsToClean.push(deal.id); // Mark for cleanup, don't clear yet
+              return updatedDeal;
+            }
+            return deal;
+          });
+          
+          return hasChanges ? updatedDeals : prevDeals;
         });
         
-        return hasChanges ? updatedDeals : prevDeals;
-      });
-      
-      // Clear after render completes
-      if (dealsToClean.length > 0) {
-        setTimeout(() => {
-          dealsToClean.forEach(id => clearUpdatedDeal(id));
-        }, 0);
-      }
+        // Clear after render completes
+        if (dealsToClean.length > 0) {
+          setTimeout(() => {
+            dealsToClean.forEach(id => clearUpdatedDeal(id));
+          }, 0);
+        }
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
     }, [getUpdatedDeal, clearUpdatedDeal])
   );
 

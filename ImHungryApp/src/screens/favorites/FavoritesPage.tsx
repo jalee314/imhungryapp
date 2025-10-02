@@ -14,22 +14,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 import RowCard from '../../components/RowCard';
 import BottomNavigation from '../../components/BottomNavigation';
-import { fetchFavoriteDeals, fetchFavoriteRestaurants, clearFavoritesCache, FavoriteDeal, FavoriteRestaurant } from '../../services/favoritesService';
+import { fetchFavoriteDeals, fetchFavoriteRestaurants, clearFavoritesCache, toggleRestaurantFavorite, FavoriteDeal, FavoriteRestaurant } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
 import { useFavorites } from '../../context/FavoritesContext';
 
 const FavoritesPage: React.FC = () => {
   const navigation = useNavigation();
   const { markAsUnfavorited, isUnfavorited, clearUnfavorited } = useFavorites();
-  const [activeTab, setActiveTab] = useState<'restaurants' | 'deals'>('restaurants');
+  const [activeTab, setActiveTab] = useState<'restaurants' | 'deals'>('deals');
   const [restaurants, setRestaurants] = useState<FavoriteRestaurant[]>([]);
   const [deals, setDeals] = useState<FavoriteDeal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [restaurantsLoading, setRestaurantsLoading] = useState(false);
   const [dealsLoading, setDealsLoading] = useState(false);
   const [unfavoritingIds, setUnfavoritingIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const favoriteChannel = useRef<any>(null);
+  const refreshInterval = useRef<NodeJS.Timeout | null>(null);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
 
   const loadData = async () => {
     try {
@@ -53,9 +56,19 @@ const FavoritesPage: React.FC = () => {
   const loadRestaurants = async () => {
     try {
       setRestaurantsLoading(true);
+      console.log('🔄 Loading restaurants...');
+      
+      // Clear unfavorited state on initial load
+      if (!hasLoadedInitialData) {
+        clearUnfavorited();
+        setHasLoadedInitialData(true);
+      }
+      
       const restaurantsData = await fetchFavoriteRestaurants();
+      console.log('📊 Raw restaurants data:', restaurantsData);
       // Filter out unfavorited restaurants
       const filteredData = restaurantsData.filter(restaurant => !isUnfavorited(restaurant.id, 'restaurant'));
+      console.log('🔍 Filtered restaurants:', filteredData);
       setRestaurants(filteredData);
     } catch (error) {
       console.error('Error loading restaurants:', error);
@@ -67,6 +80,13 @@ const FavoritesPage: React.FC = () => {
   const loadDeals = async () => {
     try {
       setDealsLoading(true);
+      
+      // Clear unfavorited state on initial load
+      if (!hasLoadedInitialData) {
+        clearUnfavorited();
+        setHasLoadedInitialData(true);
+      }
+      
       const dealsData = await fetchFavoriteDeals();
       // Filter out unfavorited deals
       const filteredData = dealsData.filter(deal => !isUnfavorited(deal.id, 'deal'));
@@ -80,14 +100,30 @@ const FavoritesPage: React.FC = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Clear cache to ensure fresh data
-    clearFavoritesCache();
-    await loadData();
-    setRefreshing(false);
+    try {
+      // Clear cache to ensure fresh data
+      clearFavoritesCache();
+      
+      // Only refresh the active tab's data, preserve other state
+      if (activeTab === 'deals') {
+        await loadDeals();
+      } else {
+        await loadRestaurants();
+      }
+    } catch (error) {
+      console.error('Error refreshing favorites:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
-    loadData();
+    // Only load the initial tab's data for faster startup
+    if (activeTab === 'restaurants') {
+      loadRestaurants();
+    } else {
+      loadDeals();
+    }
     setupRealtimeSubscription();
     
     return () => {
@@ -95,14 +131,22 @@ const FavoritesPage: React.FC = () => {
       if (favoriteChannel.current) {
         supabase.removeChannel(favoriteChannel.current);
       }
+      // Cleanup refresh interval
+      if (refreshInterval.current) {
+        clearInterval(refreshInterval.current);
+        refreshInterval.current = null;
+      }
     };
   }, []);
 
-  // Load data when tab changes (only if not already loaded)
+  // Load data when tab changes
   useEffect(() => {
-    if (activeTab === 'restaurants' && restaurants.length === 0 && !restaurantsLoading) {
+    console.log('🔄 Tab changed to:', activeTab);
+    if (activeTab === 'restaurants' && !restaurantsLoading) {
+      console.log('🔄 Loading restaurants for tab switch');
       loadRestaurants();
-    } else if (activeTab === 'deals' && deals.length === 0 && !dealsLoading) {
+    } else if (activeTab === 'deals' && !dealsLoading) {
+      console.log('🔄 Loading deals for tab switch');
       loadDeals();
     }
   }, [activeTab]);
@@ -123,22 +167,64 @@ const FavoritesPage: React.FC = () => {
 
   const setupRealtimeSubscription = async () => {
     try {
+      // Skip realtime if disabled
+      if (!realtimeEnabled) {
+        console.log('🔄 Realtime disabled, using fallback refresh mechanism');
+        if (!refreshInterval.current) {
+          refreshInterval.current = setInterval(() => {
+            console.log('🔄 Fallback refresh triggered');
+            if (activeTab === 'deals') {
+              loadDeals();
+            } else {
+              loadRestaurants();
+            }
+          }, 30000); // Refresh every 30 seconds
+        }
+        return;
+      }
+
+      // Prevent multiple subscriptions
+      if (favoriteChannel.current) {
+        console.log('🔄 Realtime subscription already exists, cleaning up first...');
+        supabase.removeChannel(favoriteChannel.current);
+        favoriteChannel.current = null;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !user.id) {
+        console.log('❌ No user found for realtime subscription');
+        return;
+      }
+
+      console.log('🔗 Setting up favorites realtime for user:', user.id);
+
+      // Ensure user ID is properly formatted for Supabase filter
+      const userId = user.id.trim();
+      if (!userId) {
+        console.error('❌ Invalid user ID for realtime subscription');
+        return;
+      }
 
       // Subscribe to favorite changes for the current user
+      // Use a more specific channel name to avoid conflicts
       favoriteChannel.current = supabase
-        .channel('favorites-realtime')
+        .channel(`favorites-realtime-${userId}`)
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
             table: 'favorite',
-            filter: `user_id=eq.${user.id}`,
           },
           (payload: any) => {
             console.log('🔄 Favorites realtime update:', payload.eventType);
+            
+            // Check if this change is for the current user
+            const payloadUserId = payload.new?.user_id || payload.old?.user_id;
+            if (payloadUserId !== userId) {
+              console.log('🔄 Ignoring realtime update for different user:', payloadUserId);
+              return;
+            }
             
             // Handle specific changes for better performance
             if (payload.eventType === 'INSERT') {
@@ -169,11 +255,35 @@ const FavoritesPage: React.FC = () => {
             }
           }
         )
-        .subscribe((status: any) => {
+        .subscribe((status: any, err: any) => {
           if (status === 'SUBSCRIBED') {
             console.log('📡 Favorites realtime channel: SUBSCRIBED');
+            // Clear any existing refresh interval since realtime is working
+            if (refreshInterval.current) {
+              clearInterval(refreshInterval.current);
+              refreshInterval.current = null;
+            }
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Favorites realtime channel error');
+            console.error('❌ Favorites realtime channel error:', err);
+            // Disable realtime after multiple failures and use fallback
+            console.log('🔄 Disabling realtime due to persistent errors, using fallback refresh');
+            setRealtimeEnabled(false);
+            // Set up fallback refresh mechanism
+            if (!refreshInterval.current) {
+              console.log('🔄 Setting up fallback refresh mechanism...');
+              refreshInterval.current = setInterval(() => {
+                console.log('🔄 Fallback refresh triggered');
+                if (activeTab === 'deals') {
+                  loadDeals();
+                } else {
+                  loadRestaurants();
+                }
+              }, 30000); // Refresh every 30 seconds
+            }
+          } else if (status === 'TIMED_OUT') {
+            console.error('⏰ Favorites realtime channel timed out');
+          } else if (status === 'CLOSED') {
+            console.log('🔒 Favorites realtime channel closed');
           }
         });
     } catch (error) {
@@ -182,7 +292,23 @@ const FavoritesPage: React.FC = () => {
   };
 
   const handleRestaurantPress = (restaurantId: string) => {
-    (navigation as any).navigate('RestaurantDetail', { restaurantId });
+    // Find the restaurant object from the restaurants array
+    const restaurant = restaurants.find(r => r.id === restaurantId);
+    if (restaurant) {
+      // Transform FavoriteRestaurant to DiscoverRestaurant format expected by RestaurantDetailScreen
+      const restaurantForDetail = {
+        restaurant_id: restaurant.id,
+        name: restaurant.name,
+        address: restaurant.address,
+        logo_image: restaurant.imageUrl,
+        deal_count: restaurant.dealCount,
+        distance_miles: parseFloat(restaurant.distance.replace('mi', '').replace('m', '')) || 0,
+        lat: 0, // We'll need to get this from the restaurant data if needed
+        lng: 0, // We'll need to get this from the restaurant data if needed
+      };
+      
+      (navigation as any).navigate('RestaurantDetail', { restaurant: restaurantForDetail });
+    }
   };
 
   const handleDealPress = (dealId: string) => {
@@ -256,15 +382,10 @@ const FavoritesPage: React.FC = () => {
       
       // 3. BACKGROUND API CALLS (fire and forget)
       if (type === 'restaurant') {
-        const restaurant = restaurants.find(r => r.id === id);
-        if (restaurant) {
-          const restaurantDeals = deals.filter(d => d.restaurantName === restaurant.name);
-          // Unfavorite all deals from this restaurant in background
-          Promise.all(restaurantDeals.map(deal => toggleFavorite(deal.id, true)))
-            .catch(err => {
-              console.error('Failed to unfavorite restaurant deals:', err);
-            });
-        }
+        // Unfavorite restaurant directly in background
+        toggleRestaurantFavorite(id, true).catch(err => {
+          console.error('Failed to unfavorite restaurant:', err);
+        });
       } else {
         // Unfavorite specific deal in background
         toggleFavorite(id, true).catch(err => {
@@ -354,20 +475,21 @@ const FavoritesPage: React.FC = () => {
 
       {/* Tab Selector */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'restaurants' && styles.activeTab]}
-          onPress={() => setActiveTab('restaurants')}
-        >
-          <Text style={[styles.tabText, activeTab === 'restaurants' && styles.activeTabText]}>
-            🍽 Restaurants
-          </Text>
-        </TouchableOpacity>
+        
         <TouchableOpacity
           style={[styles.tab, activeTab === 'deals' && styles.activeTab]}
           onPress={() => setActiveTab('deals')}
         >
           <Text style={[styles.tabText, activeTab === 'deals' && styles.activeTabText]}>
             🤝 Deals
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'restaurants' && styles.activeTab]}
+          onPress={() => setActiveTab('restaurants')}
+        >
+          <Text style={[styles.tabText, activeTab === 'restaurants' && styles.activeTabText]}>
+            🍽 Restaurants
           </Text>
         </TouchableOpacity>
       </View>

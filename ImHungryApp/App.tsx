@@ -44,7 +44,11 @@ const Stack = createNativeStackNavigator();
 
 const OnboardingStack = () => (
   <Stack.Navigator 
-    screenOptions={{ headerShown: false }}
+    screenOptions={{ 
+      headerShown: false,
+      animation: 'none',
+      gestureEnabled: false
+    }}
     initialRouteName="LogIn"
   >
     <Stack.Screen name="Landing" component={LandingScreen} />
@@ -78,24 +82,46 @@ const OnboardingStack = () => (
 );
 
 const AppStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Feed" component={Feed} />
-    <Stack.Screen name="DiscoverFeed" component={DiscoverFeed} />
+  <Stack.Navigator screenOptions={{ 
+    headerShown: false
+  }}>
+    <Stack.Screen 
+      name="Feed" 
+      component={Feed} 
+      options={{ animation: 'none' }}
+    />
+    <Stack.Screen 
+      name="DiscoverFeed" 
+      component={DiscoverFeed} 
+      options={{ animation: 'none' }}
+    />
     <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
-    <Stack.Screen name="ProfilePage" component={ProfilePage} />
+    <Stack.Screen 
+      name="ProfilePage" 
+      component={ProfilePage} 
+      options={{ animation: 'none' }}
+    />
     <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
     <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
     <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
     <Stack.Screen name="FAQPage" component={FAQPage} />
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
+    <Stack.Screen 
+      name="DealCreationScreen" 
+      component={DealCreationScreen} 
+      options={{ animation: 'none' }}
+    />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
     <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
-    <Stack.Screen name="FavoritesPage" component={FavoritesPage} />
+    <Stack.Screen 
+      name="FavoritesPage" 
+      component={FavoritesPage} 
+      options={{ animation: 'none' }}
+    />
   </Stack.Navigator>
 );
 
