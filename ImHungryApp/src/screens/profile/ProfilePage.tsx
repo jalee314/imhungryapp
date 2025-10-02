@@ -4,7 +4,7 @@ import {
   TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator 
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
 import BottomNavigation from '../../components/BottomNavigation';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,9 +17,26 @@ import { ProfileCacheService } from '../../services/profileCacheService';
 import { signOut } from '../../services/sessionService';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
+import { loadCompleteUserProfile, loadCriticalProfileData, updateUserProfileCache } from '../../services/profileLoadingService';
+import { UserProfileCache } from '../../services/userProfileService';
 import { fetchUserPosts, deleteDeal, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { logClick } from '../../services/interactionService';
+import { 
+  uploadProfilePhoto, 
+  handleTakePhoto, 
+  handleChooseFromLibrary, 
+  handleUserLogout, 
+  handleAccountDeletion 
+} from '../../services/profileActionsService';
+import { 
+  formatJoinDate, 
+  getDisplayName, 
+  getUsernameFontSize, 
+  showProfilePhotoOptions,
+  showLogoutConfirmation,
+  showDeleteAccountConfirmation
+} from '../../services/profileUtilsService';
 
 interface ProfilePageProps {}
 
@@ -38,21 +55,30 @@ interface UserProfile {
 
 const ProfilePage: React.FC<ProfilePageProps> = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  
+  // Get route parameters for viewing other users
+  const { viewUser, username, userId } = route.params as any || {};
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [currentUserPhotoUrl, setCurrentUserPhotoUrl] = useState<string | null>(null);
   const [dealCount, setDealCount] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share'>('posts');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  
+  // Simple cache for user profiles to avoid re-fetching
+  const [userProfileCache, setUserProfileCache] = useState<Map<string, UserProfileCache>>(new Map());
 
   // Only show loading skeleton if we have NO data at all
   const [hasData, setHasData] = useState(false);
 
   const [userPosts, setUserPosts] = useState<Deal[]>([]);
-  const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
 
   
@@ -65,6 +91,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       if (cached) {
         setProfile(cached.profile);
         setPhotoUrl(cached.photoUrl);
+        setCurrentUserPhotoUrl(cached.photoUrl); // Also set current user's photo
         setDealCount(cached.dealCount);
         setHasData(true); // We have data, no need for skeleton
       }
@@ -81,6 +108,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         if (dataChanged) {
           setProfile(freshData.profile);
           setPhotoUrl(freshData.photoUrl);
+          setCurrentUserPhotoUrl(freshData.photoUrl); // Also set current user's photo
           setDealCount(freshData.dealCount);
           
           // Cache the fresh data for next time
@@ -100,8 +128,12 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   };
 
   useEffect(() => {
-    loadProfileData();
-  }, []);
+    if (viewUser && userId) {
+      loadOtherUserProfile(userId);
+    } else {
+      loadProfileData();
+    }
+  }, [viewUser, userId]);
 
   // Only reload if no data exists
   useFocusEffect(
@@ -118,48 +150,82 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     if (freshData) {
       setProfile(freshData.profile);
       setPhotoUrl(freshData.photoUrl);
+      setCurrentUserPhotoUrl(freshData.photoUrl); // Also set current user's photo
       setDealCount(freshData.dealCount);
+    }
+  };
+
+  // Load another user's profile using the new service
+  const loadOtherUserProfile = async (targetUserId: string) => {
+    try {
+      setLoading(true);
+      setProfileLoading(true);
+      
+      // Phase 1: Load critical profile data first (fast display)
+      console.log('Loading critical profile data for user:', targetUserId);
+      const criticalData = await loadCriticalProfileData(targetUserId, currentUserPhotoUrl);
+      
+      // Update state with critical data immediately
+      setProfile(criticalData.profile);
+      setPhotoUrl(criticalData.photoUrl);
+      setCurrentUserPhotoUrl(criticalData.currentUserPhotoUrl || null);
+      setUserData(criticalData.userData);
+      setDealCount(criticalData.dealCount);
+      setHasData(true);
+      setLoading(false);
+      setProfileLoading(false);
+      
+      // Phase 2: Load posts in background (non-blocking)
+      console.log('Loading posts in background for user:', targetUserId);
+      setPostsLoading(true);
+      
+      try {
+        const { fetchUserPosts } = await import('../../services/userPostsService');
+        const posts = await fetchUserPosts(targetUserId, 20);
+        const { updatePostsWithUserInfo } = await import('../../services/userPostsService');
+        const updatedPosts = updatePostsWithUserInfo(posts, criticalData.userData.username, criticalData.photoUrl);
+        
+        setUserPosts(updatedPosts);
+        
+        // Update cache with complete data
+        const cacheData = {
+          profile: criticalData.profile,
+          photoUrl: criticalData.photoUrl,
+          dealCount: criticalData.dealCount,
+          userData: criticalData.userData,
+          userPosts: updatedPosts
+        };
+        setUserProfileCache(prev => updateUserProfileCache(prev, targetUserId, cacheData));
+        
+      } catch (postsError) {
+        console.error('Error loading posts (non-critical):', postsError);
+        // Don't show error to user since posts are non-critical
+      } finally {
+        setPostsLoading(false);
+      }
+      
+    } catch (error) {
+      console.error('Error loading other user profile:', error);
+      Alert.alert('Error', 'Could not load user profile');
+      setLoading(false);
+      setProfileLoading(false);
+      setPostsLoading(false);
     }
   };
 
   // Add the new useFocusEffect here:
   useFocusEffect(
     React.useCallback(() => {
-      // Force refresh the profile data when screen comes into focus
-      refreshProfile();
-    }, [])
+      // Only refresh profile data for current user, not when viewing other users
+      if (!viewUser) {
+        refreshProfile();
+      }
+    }, [viewUser])
   );
 
-  const formatJoinDate = (profile: UserProfile | null) => {
-    if (!profile) return 'Joined recently';
-    
-    const dateString = profile.created_at || profile.createdAt || profile.date_created || 
-                      profile.inserted_at || profile.created || profile.registered_at || profile.signup_date;
-    
-    if (!dateString) return 'Joined recently';
-    
-    try {
-    const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Joined recently';
-    return `Joined ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-    } catch (error) {
-      return 'Joined recently';
-    }
-  };
-
-  // Use userData for display instead of profile
-  const getDisplayName = () => {
-    return userData?.username || profile?.display_name || '';
-  };
-
-  const getUsernameFontSize = () => {
-    const username = getDisplayName();
-    const length = username.length;
-    
-    if (length <= 8) return 26;
-    if (length <= 12) return 24;
-    return 22;
-  };
+  // Use utility functions from service
+  const getDisplayNameValue = () => getDisplayName(userData, profile);
+  const getUsernameFontSizeValue = () => getUsernameFontSize(getDisplayNameValue());
 
   
   const handleEditProfile = () => {
@@ -175,107 +241,21 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   };
 
   const handleProfilePhotoPress = () => {
-    Alert.alert(
-      'Update Profile Photo',
-      'Choose how you want to update your profile photo',
-      [
-        {
-          text: 'Take Photo',
-          onPress: handleTakePhoto,
-        },
-        {
-          text: 'Choose from Library',
-          onPress: handleChooseFromLibrary,
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
+    showProfilePhotoOptions(
+      () => handleTakePhoto(uploadPhoto),
+      () => handleChooseFromLibrary(uploadPhoto)
     );
   };
 
-  const handleTakePhoto = async () => {
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Sorry, we need camera permissions to take a photo!');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await uploadPhoto(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
-    }
-  };
-
-  const handleChooseFromLibrary = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to select a photo!');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await uploadPhoto(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
+  // Photo handling functions moved to service
 
   const handleLogout = () => {
     setShowLogoutModal(true);
   };
 
   const confirmLogout = async () => {
-    try {
-      setShowLogoutModal(false);
-      
-      // Use the session service sign out
-      await signOut();
-      
-      // Clear profile cache
-      await ProfileCacheService.clearCache();
-      
-      // Clear any remaining auth data
-      await AsyncStorage.multiRemove(['userData', 'userDataTimestamp', 'supabase_auth_session']);
-      
-      // Force a second signOut to ensure auth state is cleared
-      await supabase.auth.signOut();
-      
-      // Clear additional cache
-      await AsyncStorage.multiRemove([
-        'userData', 
-        'userDataTimestamp', 
-        'supabase_auth_session',
-        'current_db_session_id',
-        'db_session_start_time'
-      ]);
-    } catch (error) {
-      console.error('Error during logout:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    }
+    setShowLogoutModal(false);
+    await handleUserLogout();
   };
 
   const cancelLogout = () => {
@@ -287,75 +267,16 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   };
 
   const confirmDeleteAccount = async () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure? All your information is going to be deleted.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) {
-                Alert.alert('Error', 'User not found');
-                return;
-              }
-
-      // Delete profile photo from storage if it exists
-      if (profile?.profile_photo && profile.profile_photo !== 'default_avatar.png') {
-        const photoPath = profile.profile_photo.startsWith('public/') 
-          ? profile.profile_photo 
-          : `public/${profile.profile_photo}`;
-          
-        const { error: deletePhotoError } = await supabase.storage
-          .from('avatars')
-          .remove([photoPath]);
-        
-        if (deletePhotoError) {
-          console.error('Error deleting profile photo:', deletePhotoError);
+    showDeleteAccountConfirmation(
+      async () => {
+        setShowDeleteModal(false);
+        const success = await handleAccountDeletion(profile);
+        if (success) {
+          // Navigate to login page
+          (navigation as any).navigate('LogIn');
         }
-      }
-
-      // Delete user from public.user table (if record exists)
-      const { error: deleteUserError } = await supabase
-        .from('user')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteUserError) {
-        console.error('Error deleting user from public.user:', deleteUserError);
-        // Don't fail if user record doesn't exist in public.user table
-      }
-
-      // Note: User will remain in auth.users table - delete manually from Supabase dashboard
-      console.log('User deleted from app. Manual deletion from auth.users required.');
-
-
-
-      // Sign out the user (this will end their session)
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) {
-        console.error('Error signing out user:', signOutError);
-        // Continue with deletion even if sign out fails
-      }
-
-              setShowDeleteModal(false);
-              Alert.alert('Success', 'Account deleted successfully');
-              
-              // Navigate to login page
-              (navigation as any).navigate('LogIn');
-            } catch (error) {
-              console.error('Error during account deletion:', error);
-              Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-            }
-          },
-        },
-      ]
+      },
+      () => setShowDeleteModal(false)
     );
   };
 
@@ -364,84 +285,22 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   };
 
   const uploadPhoto = async (photoUri: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const fileExt = photoUri.split('.').pop()?.toLowerCase() || 'jpg';
-      const userEmail = user.email || 'unknown';
-      const emailPrefix = userEmail.split('@')[0];
-      const username = profile?.username || profile?.display_name || 'user';
-      
-      // Use the same filename format as onboarding
-      const fileName = `user_${emailPrefix}_${username}_${Date.now()}.${fileExt}`;
-
-      // Store reference to old photo before upload
-      const oldPhotoPath = profile?.profile_photo && profile.profile_photo !== 'default_avatar.png' 
-        ? (profile.profile_photo.startsWith('public/') ? profile.profile_photo : `public/${profile.profile_photo}`)
-        : null;
-
-      // Read the file as base64 and convert using toByteArray (same as onboarding)
-      const base64 = await FileSystem.readAsStringAsync(photoUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      
-      const byteArray = toByteArray(base64);
-
-      // Upload new photo using the same pattern as onboarding
-      const { data, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(`public/${fileName}`, byteArray, {
-          contentType: `image/${fileExt}`,
-          cacheControl: '3600',
-          upsert: false // Same as onboarding - timestamp prevents collisions
-        });
-
-      if (uploadError) throw uploadError;
-
-      // The uploaded path will be `public/${fileName}`, which matches onboarding
-      const uploadedPath = data?.path || `public/${fileName}`;
-
-      // Update profile with new photo path
-      await supabase.from('user').update({ profile_photo: uploadedPath }).eq('user_id', user.id);
-      await supabase.auth.updateUser({ data: { profile_photo_url: uploadedPath } });
-
-      // Clear ALL caches so everything updates
-      await clearUserCache();
-      await ProfileCacheService.clearCache();
-
-      // Only delete old photo after successful upload and database update
-      if (oldPhotoPath) {
-        const { error: deleteError } = await supabase.storage
-          .from('avatars')
-          .remove([oldPhotoPath]);
-        
-        if (deleteError) {
-          console.warn('Failed to delete old photo:', deleteError);
-          // Don't throw here - the upload was successful, deletion is cleanup
-        }
-      }
-
-      // Update UI with new URL
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(uploadedPath);
-      setPhotoUrl(urlData.publicUrl);
-      
-      // Force refresh to update everything including BottomNavigation
-      await refreshProfile();
-      
-      // Add a small delay and trigger a re-render
-      setTimeout(() => {
-        setPhotoUrl(urlData.publicUrl + `?t=${Date.now()}`);
-      }, 100);
-      
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      Alert.alert('Error', 'Failed to update profile photo. Please try again.');
-    }
+    await uploadProfilePhoto(
+      photoUri,
+      profile,
+      setPhotoUrl,
+      setCurrentUserPhotoUrl,
+      refreshProfile
+    );
   };
 
   const loadUserPosts = async () => {
     try {
+      console.log('loadUserPosts called - viewUser:', viewUser);
+      if (viewUser) {
+        console.log('Skipping loadUserPosts because viewing another user');
+        return;
+      }
       setPostsLoading(true);
       setPostsError(null);
       const posts = await fetchUserPosts();
@@ -456,10 +315,10 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'posts' && hasData) {
+    if (activeTab === 'posts' && hasData && !viewUser) {
       loadUserPosts();
     }
-  }, [activeTab, hasData]);
+  }, [activeTab, hasData, viewUser]);
 
   const handleUpvote = (dealId: string) => {
     let originalDeal: Deal | undefined;
@@ -564,7 +423,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         console.error('Failed to log click:', err);
       });
       
-      navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
+      (navigation as any).navigate('DealDetail', { deal: selectedDeal });
     }
   };
 
@@ -603,6 +462,22 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         },
       ]
     );
+  };
+
+  const handleProfileTabPress = () => {
+    // Reset to current user's profile when profile tab is pressed
+    if (viewUser) {
+      // Reset state to show current user's profile
+      setProfile(null);
+      setPhotoUrl(null);
+      setUserData(null);
+      setUserPosts([]);
+      setDealCount(0);
+      setHasData(false);
+      
+      // Load current user's profile data
+      loadProfileData();
+    }
   };
 
   // Show skeleton only if we have NO data at all
@@ -674,14 +549,28 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         
         {/* User Profile Container */}
         <View style={styles.userProfileContainer}>
+        {/* Back Button for Other Users */}
+        {viewUser && (
+          <View style={styles.backButtonContainer}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#404040" />
+            </TouchableOpacity>
+          </View>
+        )}
+        
         {/* Header Section with Profile Photo */}
         <View style={styles.header}>
           <View style={styles.leftSection}>
             <View style={styles.userInfo}>
-              <Text style={[styles.userName, { fontSize: getUsernameFontSize() }]}>{getDisplayName()}</Text>
-              <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-                <MaterialCommunityIcons name="pencil" size={16} color="#000" />
-              </TouchableOpacity>
+              <Text style={[styles.userName, { fontSize: getUsernameFontSizeValue() }]}>{getDisplayNameValue()}</Text>
+              {!viewUser && (
+                <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+                  <MaterialCommunityIcons name="pencil" size={16} color="#000" />
+                </TouchableOpacity>
+              )}
             </View>
               <Text style={styles.joinDate}>{formatJoinDate(profile)}</Text>
               <Text style={styles.location}>{profile?.location_city || 'Location not set'}</Text>
@@ -696,16 +585,30 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
           </View>
           
           <View style={styles.rightSection}>
-              <TouchableOpacity 
-                style={styles.profilePhotoContainer}
-                onPress={handleProfilePhotoPress}
-              >
-            {photoUrl ? (
-              <Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
-            ) : (
-                  <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.profilePhoto} />
-                )}
-              </TouchableOpacity>
+              {!viewUser ? (
+                <TouchableOpacity 
+                  style={styles.profilePhotoContainer}
+                  onPress={handleProfilePhotoPress}
+                >
+                  {photoUrl ? (
+                    <Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
+                  ) : (
+                    <View style={[styles.profilePhoto, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+                      <MaterialCommunityIcons name="account" size={40} color="#999" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.profilePhotoContainer}>
+                  {photoUrl ? (
+                    <Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
+                  ) : (
+                    <View style={[styles.profilePhoto, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+                      <MaterialCommunityIcons name="account" size={40} color="#999" />
+                    </View>
+                  )}
+                </View>
+              )}
           </View>
           </View>
         </View>
@@ -718,18 +621,20 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             onPress={() => setActiveTab('posts')}
           >
             <Text style={[styles.actionButtonText, activeTab === 'posts' && styles.activeButtonText]}>
-              My Posts
+              {viewUser ? 'Posts' : 'My Posts'}
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={[styles.actionButton, activeTab === 'settings' && styles.activeButton]}
-            onPress={() => setActiveTab('settings')}
-          >
-            <Text style={[styles.actionButtonText, activeTab === 'settings' && styles.activeButtonText]}>
-              Settings
-            </Text>
-          </TouchableOpacity>
+          {!viewUser && (
+            <TouchableOpacity 
+              style={[styles.actionButton, activeTab === 'settings' && styles.activeButton]}
+              onPress={() => setActiveTab('settings')}
+            >
+              <Text style={[styles.actionButtonText, activeTab === 'settings' && styles.activeButtonText]}>
+                Settings
+              </Text>
+            </TouchableOpacity>
+          )}
           
           <View style={styles.extraSpacing} />
           
@@ -768,7 +673,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                   <MaterialCommunityIcons name="food-off" size={48} color="#999" />
                   <Text style={styles.emptyText}>No posts yet</Text>
                   <Text style={styles.emptySubtext}>
-                    Support the platform by posting food deals you see!
+                    {viewUser ? 'This user hasn\'t posted any deals yet.' : 'Support the platform by posting food deals you see!'}
                   </Text>
                 </View>
               ) : (
@@ -783,7 +688,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                         onUpvote={handleUpvote}
                         onDownvote={handleDownvote}
                         onPress={handleDealPress}
-                        showDelete={true}
+                        showDelete={!viewUser}
                         onDelete={handleDeletePost}
                         hideAuthor={true}
                       />
@@ -794,7 +699,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             </View>
           )}
           
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && !viewUser && (
             <View style={styles.settingsList}>
               <TouchableOpacity 
                 style={styles.settingItem}
@@ -866,10 +771,12 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       
       {/* Bottom Navigation - Fixed at bottom */}
       <BottomNavigation 
-        photoUrl={photoUrl} 
+        photoUrl={currentUserPhotoUrl} 
         activeTab="profile"
         onTabPress={(tab) => {
-          // Handle navigation to different tabs
+          if (tab === 'profile') {
+            handleProfileTabPress();
+          }
         }}
       />
 
@@ -944,6 +851,13 @@ const styles = StyleSheet.create({
   userProfileContainer: {
     paddingVertical: 20,
     backgroundColor: '#fff',
+  },
+  
+  backButtonContainer: {
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    padding: 4,
   },
   
   actionButtonsContainer: {
@@ -1235,6 +1149,8 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     marginHorizontal: -20, // Counteract contentArea's paddingHorizontal: 20
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dealsGrid: {
     flexDirection: 'row',
@@ -1244,7 +1160,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Keep this - only padding needed for bottom nav
   },
   leftCard: {
-    width: '43%r',
+    width: '43%',
     marginBottom: 8,
   },
   rightCard: {
@@ -1257,6 +1173,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 60,
     paddingHorizontal: 40,
+    width: '100%',
+    marginLeft: 40,
+
   },
   emptyText: {
     fontSize: 18,
@@ -1265,12 +1184,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
     fontFamily: 'Inter',
+    textAlign: 'center',
+    width: '100%',
   },
   emptySubtext: {
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
     fontFamily: 'Inter',
+    width: '100%',
   },
   errorContainer: {
     flex: 1,

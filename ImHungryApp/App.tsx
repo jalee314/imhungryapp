@@ -34,8 +34,10 @@ import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
+import { FavoritesProvider } from './src/context/FavoritesContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
 import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
+import FavoritesPage from './src/screens/favorites/FavoritesPage';
 
 
 const Stack = createNativeStackNavigator();
@@ -71,6 +73,7 @@ const OnboardingStack = () => (
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
     <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
+    <Stack.Screen name="FavoritesPage" component={FavoritesPage} />
   </Stack.Navigator>
 );
 
@@ -92,6 +95,7 @@ const AppStack = () => (
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
     <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
+    <Stack.Screen name="FavoritesPage" component={FavoritesPage} />
   </Stack.Navigator>
 );
 
@@ -193,12 +197,14 @@ export default function App() {
   return (
     <DataCacheProvider>
       <DealUpdateProvider>
-        <NavigationContainer 
-          linking={linking}
-          key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
-        >
-          {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-        </NavigationContainer>
+        <FavoritesProvider>
+          <NavigationContainer 
+            linking={linking}
+            key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
+          >
+            {isLoggedIn ? <AppStack /> : <OnboardingStack />}
+          </NavigationContainer>
+        </FavoritesProvider>
       </DealUpdateProvider>
     </DataCacheProvider>
   );

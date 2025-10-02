@@ -12,18 +12,29 @@ export interface RowCardData {
   views?: number;
   postedDate?: string;
   expiresIn?: string;
+  // User profile information for favorites
+  userId?: string;
+  userProfilePhoto?: string;
+  userDisplayName?: string;
 }
 
 interface RowCardProps {
   data: RowCardData;
   variant: 'explore-deal-card' | 'rest-deal' | 'favorites-deal-card';
   onPress?: (id: string) => void;
+  onUserPress?: (userId: string) => void;
   style?: any;
 }
 
-const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, style }) => {
+const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, style }) => {
   const handlePress = () => {
     onPress?.(data.id);
+  };
+
+  const handleUserPress = () => {
+    if (data.userId && onUserPress) {
+      onUserPress(data.userId);
+    }
   };
 
   const renderContent = () => {
@@ -100,6 +111,31 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, style }) => {
                 <Text style={[styles.subtitleText, styles.favoritesSubtitle]}>
                   {data.subtitle}
                 </Text>
+                
+                {/* User profile section */}
+                {data.userDisplayName && (
+                  <View style={styles.userProfileSection}>
+                    <TouchableOpacity 
+                      style={styles.userProfileContainer}
+                      onPress={handleUserPress}
+                      activeOpacity={0.7}
+                    >
+                      {data.userProfilePhoto ? (
+                        <Image 
+                          source={{ uri: data.userProfilePhoto }} 
+                          style={styles.userProfileImage} 
+                        />
+                      ) : (
+                        <View style={styles.userProfilePlaceholder}>
+                          <Ionicons name="person" size={12} color="#666" />
+                        </View>
+                      )}
+                      <Text style={styles.userProfileText}>
+                        Shared by {data.userDisplayName}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
             
@@ -219,6 +255,35 @@ const styles = StyleSheet.create({
   },
   'favorites-deal-card': {
     height: 86,
+  },
+  // User profile styles
+  userProfileSection: {
+    marginTop: 4,
+  },
+  userProfileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userProfileImage: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 6,
+  },
+  userProfilePlaceholder: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  userProfileText: {
+    fontFamily: 'Inter',
+    fontSize: 11,
+    fontWeight: '400',
+    color: '#888888',
   },
 });
 

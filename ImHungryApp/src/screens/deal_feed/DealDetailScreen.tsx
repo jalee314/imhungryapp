@@ -12,6 +12,7 @@ import {
   Linking,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,7 @@ import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
 import { getDealViewCount, logShare, logClickThrough } from '../../services/interactionService';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { supabase } from '../../../lib/supabase';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
@@ -34,11 +36,32 @@ const DealDetailScreen: React.FC = () => {
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [viewCount, setViewCount] = useState<number>(0);
+  
+  // Loading states
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   // ✨ NEW: Update context whenever deal data changes
   useEffect(() => {
     updateDeal(dealData);
   }, [dealData, updateDeal]);
+
+  // Image loading handlers
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  // Reset image loading state when deal changes
+  useEffect(() => {
+    setImageLoading(true);
+    setImageError(false);
+  }, [dealData.id]);
 
   // Fetch initial view count and subscribe to realtime updates
   useEffect(() => {
@@ -227,6 +250,16 @@ const DealDetailScreen: React.FC = () => {
     (navigation as any).navigate('BlockUser', { dealId: dealData.id, uploaderUserId: dealData.userId || "00000000-0000-0000-0000-000000000000" });
   };
 
+  const handleUserPress = () => {
+    if (dealData.userId && dealData.userDisplayName) {
+      (navigation as any).navigate('ProfilePage', { 
+        viewUser: true, 
+        username: dealData.userDisplayName,
+        userId: dealData.userId 
+      });
+    }
+  };
+
 
   // Get profile picture - use actual data or fallback to default
   const profilePicture = dealData.userProfilePhoto 
@@ -317,13 +350,36 @@ const DealDetailScreen: React.FC = () => {
 
         {/* Deal Image */}
         <View style={styles.imageContainer}>
-          <Image 
-            source={typeof dealData.image === 'string' 
-              ? { uri: dealData.image } 
-              : dealData.image
-            } 
-            style={styles.dealImage} 
-          />
+          <View style={styles.imageWrapper}>
+            {imageLoading && (
+              <View style={styles.imageLoadingContainer}>
+                <SkeletonLoader width="100%" height={300} borderRadius={10} />
+              </View>
+            )}
+            
+            <Image 
+              source={typeof dealData.image === 'string' 
+                ? { uri: dealData.image } 
+                : dealData.image
+              } 
+              style={[
+                styles.dealImage,
+                imageLoading && styles.imageLoading,
+                imageError && styles.imageError
+              ]}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              resizeMode="cover"
+              fadeDuration={200}
+            />
+            
+            {imageError && (
+              <View style={styles.imageErrorContainer}>
+                <MaterialCommunityIcons name="image-off" size={48} color="#ccc" />
+                <Text style={styles.imageErrorText}>Failed to load image</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Action Buttons */}
@@ -387,7 +443,11 @@ const DealDetailScreen: React.FC = () => {
         <View style={styles.separator} />
 
         {/* Shared By Section */}
-        <View style={styles.sharedByContainer}>
+        <TouchableOpacity 
+          style={styles.sharedByContainer}
+          onPress={handleUserPress}
+          activeOpacity={0.7}
+        >
           <Image 
             source={profilePicture} 
             style={styles.profilePicture} 
@@ -397,7 +457,7 @@ const DealDetailScreen: React.FC = () => {
             <Text style={styles.userName}>{displayName}</Text>
             <Text style={styles.userLocation}>Fullerton, California</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       </ScrollView>
       {/* 3-Dot Popup Modal */}
       <ThreeDotPopup
@@ -569,11 +629,52 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 16,
   },
-  dealImage: {
+  imageWrapper: {
+    position: 'relative',
     width: '100%',
     height: 300,
     borderRadius: 10,
     backgroundColor: '#F0F0F0',
+    overflow: 'hidden',
+  },
+  dealImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  imageLoading: {
+    opacity: 0,
+  },
+  imageError: {
+    opacity: 0.3,
+  },
+  imageLoadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 10,
+    zIndex: 1,
+  },
+  imageErrorContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 10,
+    zIndex: 1,
+  },
+  imageErrorText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#999',
+    fontFamily: 'Inter',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -653,6 +754,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
     paddingTop: 8,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    backgroundColor: 'transparent',
   },
   profilePicture: {
     width: 50,
