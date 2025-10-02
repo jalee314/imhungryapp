@@ -98,27 +98,27 @@ const DealCard: React.FC<DealCardProps> = ({
           <TouchableWithoutFeedback onPress={handleUpvote}>
             <View style={styles.horizontalVoteContainer}>
               <TouchableOpacity 
-                style={[styles.horizontalVoteButton, deal.isUpvoted && styles.upvoted]}
+                style={[styles.horizontalVoteButton, deal.isUpvoted && styles.upvotedcom]}
                 onPress={handleUpvote}
                 activeOpacity={0.6}
               >
                 <MaterialCommunityIcons
-                  name="arrow-up-thick"
-                  size={11} 
-                  color={deal.isUpvoted ? "#FFF" : "#000"} 
+                  name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
+                  size={deal.isUpvoted ? 23 : 19} 
+                  color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
                 />
               </TouchableOpacity>
               <Text style={styles.horizontalVoteCount}>{deal.votes}</Text>
               <View style={styles.horizontalVoteSeparator} />
               <TouchableOpacity 
-                style={[styles.horizontalVoteButton, deal.isDownvoted && styles.downvoted]}
+                style={[styles.horizontalVoteButton, deal.isDownvoted && styles.downvotedcom]}
                 onPress={handleDownvote}
                 activeOpacity={0.6}
               >
                 <MaterialCommunityIcons
-                  name="arrow-down-thick"
-                  size={11} 
-                  color={deal.isDownvoted ? "#FFF" : "#000"} 
+                  name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
+                  size={deal.isDownvoted ? 22: 19} 
+                  color={deal.isDownvoted ? "#9796FF" : "#000"} 
                 />
               </TouchableOpacity>
             </View>
@@ -160,28 +160,28 @@ const DealCard: React.FC<DealCardProps> = ({
         <TouchableWithoutFeedback onPress={handleUpvote}>
           <View style={styles.verticalVoteContainer}>
             <TouchableOpacity 
-              style={[styles.verticalVoteButton, deal.isUpvoted && styles.upvoted]}
+              style={[styles.verticalVoteButton, deal.isUpvoted && styles.upvoteddeals]}
               onPress={handleUpvote}
               activeOpacity={0.6}
             >
-              <MaterialCommunityIcons
-                name="arrow-up-thick"
-                size={11} 
-                color={deal.isUpvoted ? "#FFF" : "#000"} 
-              />
+                <MaterialCommunityIcons
+                  name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
+                  size={deal.isUpvoted ? 23 : 19} 
+                  color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
+                />
             </TouchableOpacity>
             <Text style={styles.verticalVoteCount}>{deal.votes}</Text>
             <View style={styles.verticalVoteSeparator} />
             <TouchableOpacity 
-              style={[styles.verticalVoteButton, deal.isDownvoted && styles.downvoted]}
+              style={[styles.verticalVoteButton, deal.isDownvoted && styles.downvoteddeals]}
               onPress={handleDownvote}
               activeOpacity={0.6}
             >
-              <MaterialCommunityIcons
-                name="arrow-down-thick"
-                size={11} 
-                color={deal.isDownvoted ? "#FFF" : "#000"} 
-              />
+                <MaterialCommunityIcons
+                  name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
+                  size={deal.isDownvoted ? 22 : 19} 
+                  color={deal.isDownvoted ? "#9796FF" : "#000"} 
+                />
             </TouchableOpacity>
           </View>
         </TouchableWithoutFeedback>
@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
     height: 28,
   },
   horizontalVoteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     width: 20,
-    height: 20,
+    height: 24,
   },
   horizontalVoteCount: {
     fontFamily: 'Inter',
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     height: 28,
   },
   verticalVoteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     width: 20,
@@ -408,11 +408,21 @@ const styles = StyleSheet.create({
   },
 
   // Shared styles
-  upvoted: {
-    backgroundColor: '#FF8C4C',
+  upvotedcom: {
+    // No background change - only icon color changes
+    marginBottom: 2,
   },
-  downvoted: {
-    backgroundColor: '#9796FF',
+  downvotedcom: {
+    // No background change - only icon color changes
+    marginBottom: 1,
+  },
+  upvoteddeals: {
+    // No background change - only icon color changes
+    marginBottom: 5,
+  },
+  downvoteddeals: {
+    // No background change - only icon color changes
+    marginBottom: 2,
   },
   favorited: {
     // Don't change background - only the heart icon color changes

@@ -384,9 +384,9 @@ const DealDetailScreen: React.FC = () => {
               onPress={handleUpvote}
             >
               <MaterialCommunityIcons 
-                name="arrow-up" 
-                size={16} 
-                color={dealData.isUpvoted ? "#FFF" : "#000"} 
+                name={dealData.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
+                size={dealData.isUpvoted ? 28 : 22} 
+                color={dealData.isUpvoted ? "#FF8C4C" : "#000"} 
               />
             </TouchableOpacity>
             <Text style={styles.voteCount}>{dealData.votes}</Text>
@@ -395,9 +395,9 @@ const DealDetailScreen: React.FC = () => {
               onPress={handleDownvote}
             >
               <MaterialCommunityIcons 
-                name="arrow-down" 
-                size={16} 
-                color={dealData.isDownvoted ? "#FFF" : "#000"} 
+                name={dealData.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
+                size={dealData.isDownvoted ? 28 : 22} 
+                color={dealData.isDownvoted ? "#9796FF" : "#000"} 
               />
             </TouchableOpacity>
           </View>
@@ -688,20 +688,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   voteButton: {
-    backgroundColor: '#F8F4F4',
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 4,
+    backgroundColor: 'transparent',
     width: 28,
     height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
   upvoted: {
-    backgroundColor: '#FF8C4C',
+    // No background change - only icon color changes
+    marginBottom: 1,
   },
   downvoted: {
-    backgroundColor: '#9796FF',
+    // No background change - only icon color changes
+    marginBottom: 1,
   },
   voteCount: {
     fontSize: 16,
