@@ -19,6 +19,8 @@ import { DiscoverRestaurant } from '../../services/discoverService';
 import { getCurrentUserLocation } from '../../services/locationService';
 import { calculateDistance } from '../../services/locationService';
 import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '../../services/restaurantFavoriteService';
+import { Deal } from '../../components/DealCard';
+import { logClick } from '../../services/interactionService';
 
 type RestaurantDetailRouteProp = RouteProp<{ 
   RestaurantDetail: { 
@@ -38,6 +40,7 @@ export interface RestaurantDeal {
   is_upvoted: boolean;
   is_downvoted: boolean;
   is_favorited: boolean;
+  user_id: string | null; // Add this field
   user_display_name: string | null;
   user_profile_photo: string | null;
   is_anonymous: boolean;
@@ -134,6 +137,7 @@ const RestaurantDetailScreen: React.FC = () => {
             is_upvoted: false,
             is_downvoted: false,
             is_favorited: !!favoriteData,
+            user_id: deal.deal_template.is_anonymous ? null : deal.deal_template.user_id, // Add this line
             user_display_name: deal.deal_template.is_anonymous ? null : deal.deal_template.user.display_name,
             user_profile_photo: deal.deal_template.is_anonymous ? null : deal.deal_template.user.profile_photo,
             is_anonymous: deal.deal_template.is_anonymous,
@@ -204,10 +208,70 @@ const RestaurantDetailScreen: React.FC = () => {
     }
   };
 
-  const handleDealPress = (dealId: string) => {
-    // Navigate to deal detail screen
-    // You'll need to implement this navigation
-    console.log('Deal pressed:', dealId);
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const handleDealPress = async (dealId: string) => {
+    try {
+      console.log('🔍 handleDealPress called with dealId:', dealId);
+      console.log('🔍 Available deals count:', deals.length);
+      console.log('🔍 Available deal IDs:', deals.map(d => d.deal_id));
+      
+      // Find the deal data
+      const dealData = deals.find(deal => deal.deal_id === dealId);
+      if (!dealData) {
+        console.error('❌ Deal not found:', dealId);
+        return;
+      }
+
+      console.log('✅ Deal found:', dealData.title);
+
+      // Convert RestaurantDeal to Deal format
+      const dealForDetail: Deal = {
+        id: dealData.deal_id,
+        title: dealData.title,
+        restaurant: restaurant.name,
+        details: dealData.description || '',
+        image: dealData.image_url ? 
+          (dealData.image_url.startsWith('http') 
+            ? dealData.image_url 
+            : supabase.storage.from('deal-images').getPublicUrl(dealData.image_url).data.publicUrl
+          ) : require('../../../img/gallery.jpg'),
+        votes: dealData.votes,
+        isUpvoted: dealData.is_upvoted,
+        isDownvoted: dealData.is_downvoted,
+        isFavorited: dealData.is_favorited,
+        cuisine: cuisineName,
+        timeAgo: formatTimeAgo(dealData.created_at),
+        author: dealData.user_display_name || 'Anonymous',
+        milesAway: formatDistance(restaurant.distance_miles),
+        userId: dealData.user_id, // Fix: use the actual user_id
+        userDisplayName: dealData.user_display_name,
+        userProfilePhoto: dealData.user_profile_photo,
+        restaurantAddress: restaurant.address,
+        isAnonymous: dealData.is_anonymous,
+      };
+
+      // Log the click interaction with source 'search'
+      logClick(dealId, 'search').catch(err => {
+        console.error('Failed to log click:', err);
+      });
+
+      // Navigate to deal detail screen
+      (navigation as any).navigate('DealDetail', { deal: dealForDetail });
+    } catch (error) {
+      console.error('Error handling deal press:', error);
+    }
   };
 
   const handleDirections = async () => {
@@ -286,7 +350,7 @@ const RestaurantDetailScreen: React.FC = () => {
       variant="explore-deal-card"
       onPress={handleDealPress}
     />
-  ), [convertToRowCardData]);
+  ), [convertToRowCardData, handleDealPress]);
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
@@ -376,6 +440,7 @@ const RestaurantDetailScreen: React.FC = () => {
   );
 };
 
+// ... existing styles remain the same ...
 const styles = StyleSheet.create({
   container: {
     flex: 1,

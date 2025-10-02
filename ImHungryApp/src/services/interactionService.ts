@@ -15,6 +15,14 @@ export type InteractionType =
   | 'block'
   | 'share';
 
+// Source types for interactions
+export type InteractionSource = 
+  | 'feed'
+  | 'search'
+  | 'favorites'
+  | 'profile'
+  | 'discover';
+
 /**
  * Get the current authenticated user's ID
  */
@@ -34,6 +42,7 @@ const getCurrentUserId = async (): Promise<string | null> => {
 export const logInteraction = async (
   dealId: string,
   interactionType: InteractionType,
+  source: InteractionSource = 'feed',
   positionInFeed?: number,
   dwellTime?: number
 ): Promise<boolean> => {
@@ -54,7 +63,7 @@ export const logInteraction = async (
         deal_id: dealId,
         session_id: sessionId,
         interaction_type: interactionType,
-        source: 'feed',
+        source: source,
         position_in_feed: positionInFeed || null,
         dwell_time: dwellTime || null,
       });
@@ -64,7 +73,7 @@ export const logInteraction = async (
       return false;
     }
 
-    console.log(`✅ ${interactionType} logged for deal ${dealId}`);
+    console.log(`✅ ${interactionType} logged for deal ${dealId} from ${source}`);
     return true;
   } catch (error) {
     console.error('Error in logInteraction:', error);
@@ -75,22 +84,22 @@ export const logInteraction = async (
 /**
  * Log a click interaction when user opens a deal
  */
-export const logClick = async (dealId: string, positionInFeed?: number): Promise<boolean> => {
-  return await logInteraction(dealId, 'click-open', positionInFeed);
+export const logClick = async (dealId: string, source: InteractionSource = 'feed', positionInFeed?: number): Promise<boolean> => {
+  return await logInteraction(dealId, 'click-open', source, positionInFeed);
 };
 
 /**
  * Log a share interaction when user shares a deal
  */
-export const logShare = async (dealId: string): Promise<boolean> => {
-  return await logInteraction(dealId, 'share');
+export const logShare = async (dealId: string, source: InteractionSource = 'feed'): Promise<boolean> => {
+  return await logInteraction(dealId, 'share', source);
 };
 
 /**
  * Log a click-through interaction when user clicks directions/map
  */
-export const logClickThrough = async (dealId: string): Promise<boolean> => {
-  return await logInteraction(dealId, 'click-through');
+export const logClickThrough = async (dealId: string, source: InteractionSource = 'feed'): Promise<boolean> => {
+  return await logInteraction(dealId, 'click-through', source);
 };
 
 /**

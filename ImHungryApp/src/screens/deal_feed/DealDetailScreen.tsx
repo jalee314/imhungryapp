@@ -176,8 +176,8 @@ const DealDetailScreen: React.FC = () => {
 
   const handleShare = async () => {
     try {
-      // Log the share interaction
-      logShare(dealData.id).catch(err => {
+      // Log the share interaction with source 'feed'
+      logShare(dealData.id, 'feed').catch(err => {
         console.error('Failed to log share interaction:', err);
       });
 
@@ -198,8 +198,8 @@ const DealDetailScreen: React.FC = () => {
 
   const handleDirections = async () => {
     try {
-      // Log the click-through interaction
-      logClickThrough(dealData.id).catch(err => {
+      // Log the click-through interaction with source 'feed'
+      logClickThrough(dealData.id, 'feed').catch(err => {
         console.error('Failed to log click-through interaction:', err);
       });
 
@@ -207,28 +207,22 @@ const DealDetailScreen: React.FC = () => {
       const encodedAddress = encodeURIComponent(address);
       
       // Try to open platform-specific map apps
-      let url = '';
+      const url = Platform.OS === 'ios' 
+        ? `maps://maps.google.com/maps?daddr=${encodedAddress}`
+        : `geo:0,0?q=${encodedAddress}`;
       
-      if (Platform.OS === 'ios') {
-        // iOS - try Apple Maps first
-        url = `maps://maps.apple.com/?daddr=${encodedAddress}`;
-      } else {
-        // Android - use Google Maps
-        url = `google.navigation:q=${encodedAddress}`;
-      }
-
       const supported = await Linking.canOpenURL(url);
       
       if (supported) {
         await Linking.openURL(url);
       } else {
-        // Fallback to web-based maps
-        const webUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        // Fallback to web maps
+        const webUrl = `https://maps.google.com/maps?daddr=${encodedAddress}`;
         await Linking.openURL(webUrl);
       }
     } catch (error) {
       console.error('Error opening directions:', error);
-      Alert.alert('Error', 'Unable to open maps for directions');
+      Alert.alert('Error', 'Unable to open directions');
     }
   };
 

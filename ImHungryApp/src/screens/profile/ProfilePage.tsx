@@ -419,7 +419,8 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     if (selectedDeal) {
       const positionInFeed = userPosts.findIndex(d => d.id === dealId);
       
-      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+      // Log the click interaction with source 'profile'
+      logClick(dealId, 'profile', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
         console.error('Failed to log click:', err);
       });
       

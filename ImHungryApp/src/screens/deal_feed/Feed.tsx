@@ -302,8 +302,8 @@ const Feed: React.FC = () => {
       // Find the position of this deal in the filtered feed
       const positionInFeed = filteredDeals.findIndex(d => d.id === dealId);
       
-      // Log the click interaction
-      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+      // Log the click interaction with source 'feed'
+      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
         console.error('Failed to log click:', err);
       });
       

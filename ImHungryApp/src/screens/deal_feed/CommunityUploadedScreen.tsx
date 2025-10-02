@@ -324,7 +324,8 @@ const CommunityUploadedScreen: React.FC = () => {
     if (selectedDeal) {
       const positionInFeed = deals.findIndex(d => d.id === dealId);
       
-      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+      // Log the click interaction with source 'feed'
+      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
         console.error('Failed to log click:', err);
       });
       
