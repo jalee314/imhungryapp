@@ -27,6 +27,7 @@ import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
 import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
 import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
 import Feed from './src/screens/deal_feed/Feed';
+import DiscoverFeed from './src/screens/discover_feed/DiscoverFeed';
 import CommunityUploadedScreen from './src/screens/deal_feed/CommunityUploadedScreen';
 import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
@@ -34,6 +35,7 @@ import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
+import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -62,6 +64,8 @@ const OnboardingStack = () => (
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="Feed" component={Feed} />
+    <Stack.Screen name="DiscoverFeed" component={DiscoverFeed} />
+    <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
@@ -73,6 +77,8 @@ const OnboardingStack = () => (
 const AppStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Feed" component={Feed} />
+    <Stack.Screen name="DiscoverFeed" component={DiscoverFeed} />
+    <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
     <Stack.Screen name="ProfilePage" component={ProfilePage} />
     <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
     <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
