@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -60,7 +61,9 @@ const Feed: React.FC = () => {
       try {
         setLoading(true);
         const cachedDeals = await dealCacheService.getDeals();
-        setDeals(cachedDeals);
+        setTimeout(() => {
+          setDeals(cachedDeals);
+        }, 0);
         setError(null);
       } catch (err) {
         console.error('Error loading deals:', err);
@@ -78,7 +81,9 @@ const Feed: React.FC = () => {
     // Subscribe to cache updates for deal_instance changes
     const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
       console.log('📬 Received deal_instance cache update');
-      setDeals(updatedDeals);
+      setTimeout(() => {
+        setDeals(updatedDeals);
+      }, 0);
     });
 
     // Cleanup on unmount
@@ -136,17 +141,19 @@ const Feed: React.FC = () => {
             ]);
             
             // ✅ FIX: Only update the specific deal that changed
-            setDeals(prevDeals => prevDeals.map(deal => {
-              if (deal.id === changedDealId) {
-                return {
-                  ...deal,
-                  isUpvoted: voteStates[changedDealId]?.isUpvoted || false,
-                  isDownvoted: voteStates[changedDealId]?.isDownvoted || false,
-                  votes: voteCounts[changedDealId] || 0,
-                };
-              }
-              return deal; // ✅ Return unchanged deal object (no re-render)
-            }));
+            setTimeout(() => {
+              setDeals(prevDeals => prevDeals.map(deal => {
+                if (deal.id === changedDealId) {
+                  return {
+                    ...deal,
+                    isUpvoted: voteStates[changedDealId]?.isUpvoted || false,
+                    isDownvoted: voteStates[changedDealId]?.isDownvoted || false,
+                    votes: voteCounts[changedDealId] || 0,
+                  };
+                }
+                return deal; // ✅ Return unchanged deal object (no re-render)
+              }));
+            }, 0);
           }
         )
         .subscribe((status) => {
@@ -172,9 +179,11 @@ const Feed: React.FC = () => {
             
             console.log('⚡ Realtime favorite:', payload.eventType, dealId);
             
-            setDeals(prevDeals => prevDeals.map(deal => 
-              deal.id === dealId ? { ...deal, isFavorited } : deal
-            ));
+            setTimeout(() => {
+              setDeals(prevDeals => prevDeals.map(deal => 
+                deal.id === dealId ? { ...deal, isFavorited } : deal
+              ));
+            }, 0);
           }
         )
         .subscribe((status) => {
@@ -202,20 +211,25 @@ const Feed: React.FC = () => {
   // ✨ NEW: Sync updated deals from context when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      setDeals(prevDeals => {
-        let hasChanges = false;
-        const updatedDeals = prevDeals.map(deal => {
-          const updatedDeal = getUpdatedDeal(deal.id);
-          if (updatedDeal) {
-            hasChanges = true;
-            clearUpdatedDeal(deal.id); // Clear after applying
-            return updatedDeal;
-          }
-          return deal;
+      // Use setTimeout to defer the state update until after the current render cycle
+      const timeoutId = setTimeout(() => {
+        setDeals(prevDeals => {
+          let hasChanges = false;
+          const updatedDeals = prevDeals.map(deal => {
+            const updatedDeal = getUpdatedDeal(deal.id);
+            if (updatedDeal) {
+              hasChanges = true;
+              clearUpdatedDeal(deal.id); // Clear after applying
+              return updatedDeal;
+            }
+            return deal;
+          });
+          
+          return hasChanges ? updatedDeals : prevDeals;
         });
-        
-        return hasChanges ? updatedDeals : prevDeals;
-      });
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
     }, [getUpdatedDeal, clearUpdatedDeal])
   );
 
@@ -224,7 +238,9 @@ const Feed: React.FC = () => {
     setRefreshing(true);
     try {
       const freshDeals = await dealCacheService.getDeals(true);
-      setDeals(freshDeals);
+      setTimeout(() => {
+        setDeals(freshDeals);
+      }, 0);
     } catch (err) {
       console.error('Error refreshing deals:', err);
     } finally {
@@ -259,28 +275,30 @@ const Feed: React.FC = () => {
     // Store original state for revert
     let originalDeal: Deal | undefined;
     
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          // Capture original for revert
-          originalDeal = d;
-          
-          // Use values from CURRENT state (d) not old state
-          const wasUpvoted = d.isUpvoted;
-          const wasDownvoted = d.isDownvoted;
-          
-          return {
-            ...d,
-            isUpvoted: !wasUpvoted,
-            isDownvoted: false,
-            votes: wasUpvoted 
-              ? d.votes - 1
-              : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-          };
-        }
-        return d;
+    setTimeout(() => {
+      setDeals(prevDeals => {
+        return prevDeals.map(d => {
+          if (d.id === dealId) {
+            // Capture original for revert
+            originalDeal = d;
+            
+            // Use values from CURRENT state (d) not old state
+            const wasUpvoted = d.isUpvoted;
+            const wasDownvoted = d.isDownvoted;
+            
+            return {
+              ...d,
+              isUpvoted: !wasUpvoted,
+              isDownvoted: false,
+              votes: wasUpvoted 
+                ? d.votes - 1
+                : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+            };
+          }
+          return d;
+        });
       });
-    });
+    }, 0);
 
     // ❌ REMOVED: Cache service update (causing circular updates)
     // dealCacheService.updateDealInCache(...)
@@ -289,9 +307,11 @@ const Feed: React.FC = () => {
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
       if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
+        setTimeout(() => {
+          setDeals(prevDeals => prevDeals.map(d => 
+            d.id === dealId ? originalDeal! : d
+          ));
+        }, 0);
       }
     });
   };
@@ -302,8 +322,8 @@ const Feed: React.FC = () => {
       // Find the position of this deal in the filtered feed
       const positionInFeed = filteredDeals.findIndex(d => d.id === dealId);
       
-      // Log the click interaction
-      logClick(dealId, positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+      // Log the click interaction with source 'feed'
+      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
         console.error('Failed to log click:', err);
       });
       
@@ -316,35 +336,39 @@ const Feed: React.FC = () => {
   const handleDownvote = (dealId: string) => {
     let originalDeal: Deal | undefined;
     
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          
-          const wasDownvoted = d.isDownvoted;
-          const wasUpvoted = d.isUpvoted;
-          
-          return {
-            ...d,
-            isDownvoted: !wasDownvoted,
-            isUpvoted: false,
-            votes: wasDownvoted 
-              ? d.votes + 1
-              : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-          };
-        }
-        return d;
+    setTimeout(() => {
+      setDeals(prevDeals => {
+        return prevDeals.map(d => {
+          if (d.id === dealId) {
+            originalDeal = d;
+            
+            const wasDownvoted = d.isDownvoted;
+            const wasUpvoted = d.isUpvoted;
+            
+            return {
+              ...d,
+              isDownvoted: !wasDownvoted,
+              isUpvoted: false,
+              votes: wasDownvoted 
+                ? d.votes + 1
+                : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+            };
+          }
+          return d;
+        });
       });
-    });
+    }, 0);
 
     // ❌ REMOVED: Cache service update
     
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
       if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
+        setTimeout(() => {
+          setDeals(prevDeals => prevDeals.map(d => 
+            d.id === dealId ? originalDeal! : d
+          ));
+        }, 0);
       }
     });
   };
@@ -352,19 +376,21 @@ const Feed: React.FC = () => {
   const handleFavorite = (dealId: string) => {
     let originalDeal: Deal | undefined;
     
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          
-          return {
-            ...d,
-            isFavorited: !d.isFavorited
-          };
-        }
-        return d;
+    setTimeout(() => {
+      setDeals(prevDeals => {
+        return prevDeals.map(d => {
+          if (d.id === dealId) {
+            originalDeal = d;
+            
+            return {
+              ...d,
+              isFavorited: !d.isFavorited
+            };
+          }
+          return d;
+        });
       });
-    });
+    }, 0);
 
     // ❌ REMOVED: Cache service update
 
@@ -374,11 +400,18 @@ const Feed: React.FC = () => {
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
       if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
+        setTimeout(() => {
+          setDeals(prevDeals => prevDeals.map(d => 
+            d.id === dealId ? originalDeal! : d
+          ));
+        }, 0);
       }
     });
+  };
+
+  const handleLocationPress = () => {
+    // Add your location handling logic here
+    console.log('Location pressed');
   };
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
@@ -462,19 +495,7 @@ const Feed: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Custom Header matching Figma design */}
-      <View style={styles.header}>
-        <View style={styles.logoLocation}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>ImHungri</Text>
-          </View>
-          <View style={styles.locationContainer}>
-            <Ionicons name="location" size={16} color="#000000" />
-            <Text style={styles.locationText}>Fullerton, CA</Text>
-            <Ionicons name="chevron-down" size={12} color="#000000" />
-          </View>
-        </View>
-      </View>
+      <Header onLocationPress={handleLocationPress} />
 
       <ScrollView 
         style={styles.content} 
@@ -588,39 +609,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
+    width: '100%',
+    height: 100,
     backgroundColor: '#FFFFFF',
-    paddingTop: 44, // Status bar height
-    paddingBottom: 8,
-    paddingHorizontal: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#BCBCBC',
+    borderBottomColor: '#DEDEDE',
+    justifyContent: 'flex-end',
+    paddingBottom: 4,
   },
-  logoLocation: {
+  headerBottomFrame: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    width: '100%',
+    paddingHorizontal: 19,
   },
-  logoContainer: {
-    height: 31,
+  logoImage: {
+    width: 120,
+    // Let height scale automatically based on aspect ratio
+  },
+  locationIconContainer: {
+    padding: 4,
     justifyContent: 'center',
-  },
-  logoText: {
-    fontFamily: 'MuseoModerno-Bold',
-    fontWeight: '700',
-    fontSize: 24,
-    color: '#FF8C4C',
-  },
-  locationContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  locationText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#000000',
   },
   content: {
     flex: 1,

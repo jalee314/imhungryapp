@@ -122,15 +122,16 @@ export default function CuisinePreferencesScreen() {
         
         const { data, error } = await supabase.storage
           .from('avatars')
-          .upload(`public/${fileName}`, byteArray.buffer, {
+          .upload(`public/${fileName}`, byteArray, { // Remove .buffer
             contentType: `image/${fileExt}`,
             cacheControl: '3600',
             upsert: false
           });
 
         if (error) {
-          // It's good practice to log the specific storage error
           console.error('Supabase storage error:', error.message);
+          // Keep default avatar if upload fails
+          profilePhotoUrl = 'default_avatar.png';
         } else if (data) {
           profilePhotoUrl = data.path;
         }

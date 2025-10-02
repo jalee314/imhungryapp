@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
   },
   
-  // Horizontal Card Styles (matching DealCard dimensions)
+  // Horizontal Card Styles (matching DealCard dimensions exactly)
   horizontalCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   horizontalTitleSkeleton: {
-    width: '85%',
+    width: '90%',
     height: 12,
     borderRadius: 6,
     marginBottom: 4,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   },
   horizontalVoteContainerSkeleton: {
     width: 80,
-    height: 24,
+    height: 28,
     borderRadius: 30,
   },
   horizontalFavoriteSkeleton: {
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
 
-  // Vertical Card Styles (matching DealCard dimensions)
+  // Vertical Card Styles (matching DealCard dimensions exactly)
   verticalCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   verticalTitleSkeleton: {
-    width: '90%',
+    width: 161,
     height: 30,
     borderRadius: 4,
     marginBottom: 8,
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   verticalVoteContainerSkeleton: {
     width: 70,
-    height: 24,
+    height: 28,
     borderRadius: 30,
   },
   verticalFavoriteSkeleton: {

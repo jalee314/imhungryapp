@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
@@ -27,20 +27,29 @@ import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
 import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
 import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
 import Feed from './src/screens/deal_feed/Feed';
+import DiscoverFeed from './src/screens/discover_feed/DiscoverFeed';
 import CommunityUploadedScreen from './src/screens/deal_feed/CommunityUploadedScreen';
 import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
+import { FavoritesProvider } from './src/context/FavoritesContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
+import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
+import FavoritesPage from './src/screens/favorites/FavoritesPage';
+import ImageCacheService from './src/services/imageCacheService';
 
 
 const Stack = createNativeStackNavigator();
 
 const OnboardingStack = () => (
   <Stack.Navigator 
-    screenOptions={{ headerShown: false }}
+    screenOptions={{ 
+      headerShown: false,
+      animation: 'none',
+      gestureEnabled: false
+    }}
     initialRouteName="LogIn"
   >
     <Stack.Screen name="Landing" component={LandingScreen} />
@@ -62,30 +71,58 @@ const OnboardingStack = () => (
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
     <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="Feed" component={Feed} />
+    <Stack.Screen name="DiscoverFeed" component={DiscoverFeed} />
+    <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
     <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
+    <Stack.Screen name="FavoritesPage" component={FavoritesPage} />
   </Stack.Navigator>
 );
 
 const AppStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Feed" component={Feed} />
-    <Stack.Screen name="ProfilePage" component={ProfilePage} />
+  <Stack.Navigator screenOptions={{ 
+    headerShown: false
+  }}>
+    <Stack.Screen 
+      name="Feed" 
+      component={Feed} 
+      options={{ animation: 'none' }}
+    />
+    <Stack.Screen 
+      name="DiscoverFeed" 
+      component={DiscoverFeed} 
+      options={{ animation: 'none' }}
+    />
+    <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
+    <Stack.Screen 
+      name="ProfilePage" 
+      component={ProfilePage} 
+      options={{ animation: 'none' }}
+    />
     <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
     <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
     <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
     <Stack.Screen name="FAQPage" component={FAQPage} />
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
+    <Stack.Screen 
+      name="DealCreationScreen" 
+      component={DealCreationScreen} 
+      options={{ animation: 'none' }}
+    />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
     <Stack.Screen name="BlockUser" component={BlockUserScreen} />
     <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
+    <Stack.Screen 
+      name="FavoritesPage" 
+      component={FavoritesPage} 
+      options={{ animation: 'none' }}
+    />
   </Stack.Navigator>
 );
 
@@ -167,6 +204,11 @@ export default function App() {
     return cleanup;
   }, []);
 
+  React.useEffect(() => {
+    // Preload the logo image when app starts
+    Image.prefetch(Image.resolveAssetSource(require('./img/hungri_logo.png')).uri);
+  }, []);
+
   if (!fontsLoaded && !fontError && !timeoutReached) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
@@ -187,12 +229,14 @@ export default function App() {
   return (
     <DataCacheProvider>
       <DealUpdateProvider>
-        <NavigationContainer 
-          linking={linking}
-          key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
-        >
-          {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-        </NavigationContainer>
+        <FavoritesProvider>
+          <NavigationContainer 
+            linking={linking}
+            key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
+          >
+            {isLoggedIn ? <AppStack /> : <OnboardingStack />}
+          </NavigationContainer>
+        </FavoritesProvider>
       </DealUpdateProvider>
     </DataCacheProvider>
   );

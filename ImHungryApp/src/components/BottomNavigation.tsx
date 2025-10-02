@@ -47,10 +47,10 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   );
 
   const navItems = [
-    { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' }, // CHANGED: Back to original
-    { id: 'search', icon: 'magnify', label: 'Search', screen: 'Feed' },
+    { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' },
+    { id: 'search', icon: 'magnify', label: 'Search', screen: 'DiscoverFeed' }, // CHANGED: Now routes to DiscoverFeed
     { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
-    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'Feed' }, // Temporarily use Feed until FavoritesScreen is created
+    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesPage' },
     { id: 'profile', icon: 'account-circle-outline', label: 'Profile', screen: 'ProfilePage' },
   ];
 
@@ -122,11 +122,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
-    paddingVertical: 6,
+    paddingVertical: 3, // CHANGED: Reduced from 6 to 3 to move icons up slightly
     paddingHorizontal: 15,
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingBottom: 34,
+    paddingBottom: 30, // CHANGED: Increased from 34 to 44 for more space from bottom
   },
   navItem: {
     alignItems: 'center',
