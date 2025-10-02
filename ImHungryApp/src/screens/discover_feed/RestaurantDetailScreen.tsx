@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import RowCard, { RowCardData } from '../../components/RowCard';
 import { DiscoverRestaurant } from '../../services/discoverService';
 import { getCurrentUserLocation } from '../../services/locationService';
 import { calculateDistance } from '../../services/locationService';
+import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '../../services/restaurantFavoriteService';
 
 type RestaurantDetailRouteProp = RouteProp<{ 
   RestaurantDetail: { 
@@ -51,11 +52,14 @@ const RestaurantDetailScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cuisineName, setCuisineName] = useState<string>('');
+  const [isRestaurantFavorited, setIsRestaurantFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
     loadRestaurantDeals();
     loadRestaurantCuisine();
-  }, []);
+    checkRestaurantFavoriteStatus();
+  }, [restaurant.restaurant_id]); // Add dependency
 
   const loadRestaurantDeals = async () => {
     try {
@@ -104,21 +108,12 @@ const RestaurantDetailScreen: React.FC = () => {
             .eq('deal_id', deal.deal_id)
             .eq('interaction_type', 'click-open');
 
-          // Debug: Check what interaction types exist for this deal
-          const { data: interactionTypes } = await supabase
-            .from('interaction')
-            .select('interaction_type')
-            .eq('deal_id', deal.deal_id)
-            .limit(10);
-          
-          console.log('Available interaction types for deal', deal.deal_id, ':', interactionTypes);
-
-          // Get vote count from click-on interactions
+          // Get vote count from click-open interactions
           const { count: voteCount } = await supabase
             .from('interaction')
             .select('*', { count: 'exact', head: true })
             .eq('deal_id', deal.deal_id)
-            .in('interaction_type', ['click-on', 'upvote', 'vote', 'click']);
+            .in('interaction_type', ['click-open', 'upvote', 'vote', 'click']);
 
           // Get favorite status
           const { data: favoriteData } = await supabase
@@ -175,6 +170,40 @@ const RestaurantDetailScreen: React.FC = () => {
     }
   };
 
+  const checkRestaurantFavoriteStatus = async () => {
+    try {
+      const favorited = await checkRestaurantFavorited(restaurant.restaurant_id);
+      setIsRestaurantFavorited(favorited);
+    } catch (err) {
+      console.error('Error checking restaurant favorite status:', err);
+    }
+  };
+
+  const handleRestaurantFavorite = async () => {
+    try {
+      setFavoriteLoading(true);
+      
+      const result = await toggleRestaurantFavorite(
+        restaurant.restaurant_id,
+        isRestaurantFavorited, // Pass current state
+        // Optimistic update callback - immediately update UI
+        (isFavorited) => {
+          setIsRestaurantFavorited(isFavorited);
+        }
+      );
+      
+      if (!result.success) {
+        // Only show error if the operation failed
+        Alert.alert('Error', result.error || 'Failed to update favorites');
+      }
+    } catch (err) {
+      console.error('Error toggling restaurant favorite:', err);
+      Alert.alert('Error', 'Failed to update favorites');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
   const handleDealPress = (dealId: string) => {
     // Navigate to deal detail screen
     // You'll need to implement this navigation
@@ -198,64 +227,57 @@ const RestaurantDetailScreen: React.FC = () => {
     }
   };
 
-  const convertToRowCardData = (deal: RestaurantDeal): RowCardData => {
-    console.log('Converting deal:', deal); // Debug log
-    
+  // Memoize the convertToRowCardData function to prevent unnecessary re-creations
+  const convertToRowCardData = useCallback((deal: RestaurantDeal): RowCardData => {
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
-      const month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
-      const day = date.getDate();
+      const month = (date.getMonth() + 1).toString();
+      const day = date.getDate().toString();
       return `${month}/${day}`;
     };
 
     const formatExpiration = (endDate: string | null) => {
       if (!endDate) return 'No expiration';
-      const date = new Date(endDate);
+      
+      const end = new Date(endDate);
       const now = new Date();
-      const diffTime = date.getTime() - now.getTime();
+      const diffTime = end.getTime() - now.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      if (diffDays < 0) return 'Expired';
-      if (diffDays === 0) return 'Expires today';
-      if (diffDays === 1) return 'Expires 1 day';
-      return `Expires ${diffDays} days`;
+      if (diffDays <= 0) return 'Expired';
+      if (diffDays === 1) return '1 day';
+      return `${diffDays} days`;
     };
 
-    // Convert relative image URL to full Supabase URL
     const getImageSource = () => {
-      if (deal.image_url) {
-        if (deal.image_url.startsWith('http')) {
-          return { uri: deal.image_url };
-        } else {
-          // Convert relative path to full Supabase URL using your deal-images bucket
-          const baseUrl = 'https://bvknlrdpapqsztvyypwe.supabase.co/storage/v1/object/public/deal-images';
-          return { uri: `${baseUrl}/${deal.image_url}` };
-        }
+      if (!deal.image_url) {
+        return require('../../../img/gallery.jpg');
       }
-      return require('../../../img/Default_pfp.svg.png');
+      
+      // Construct Supabase public URL
+      const baseUrl = 'https://your-supabase-project.supabase.co/storage/v1/object/public';
+      return { uri: `${baseUrl}/${deal.image_url}` };
     };
 
-    const result = {
+    return {
       id: deal.deal_id,
       title: deal.title,
-      subtitle: '', // Not used for explore-deal-card variant
+      subtitle: '',
+      image: getImageSource(),
       postedDate: formatDate(deal.created_at),
       expiresIn: formatExpiration(deal.end_date),
       views: deal.views,
-      image: getImageSource(),
     };
-    
-    console.log('Converted RowCardData:', result); // Debug log
-    return result;
-  };
+  }, []); // Empty dependency array since it doesn't depend on any props/state
 
-  const renderDealCard = ({ item }: { item: RestaurantDeal }) => (
+  // Memoize the renderDealCard function
+  const renderDealCard = useCallback(({ item }: { item: RestaurantDeal }) => (
     <RowCard
       data={convertToRowCardData(item)}
       variant="explore-deal-card"
       onPress={handleDealPress}
     />
-  );
+  ), [convertToRowCardData]);
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
@@ -305,8 +327,12 @@ const RestaurantDetailScreen: React.FC = () => {
       <View style={styles.restaurantInfoSection}>
         <View style={styles.restaurantHeader}>
           <Text style={styles.restaurantName}>{restaurant.name}</Text>
-          <TouchableOpacity style={styles.heartButton}>
-            <Ionicons name="heart-outline" size={22} color="#000000" />
+          <TouchableOpacity style={styles.heartButton} onPress={handleRestaurantFavorite} disabled={favoriteLoading}>
+            <Ionicons 
+              name={isRestaurantFavorited ? "heart" : "heart-outline"} 
+              size={22} 
+              color={isRestaurantFavorited ? "#FF4444" : "#000000"} 
+            />
           </TouchableOpacity>
         </View>
         

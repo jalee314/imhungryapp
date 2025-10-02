@@ -54,7 +54,7 @@ export const logInteraction = async (
         deal_id: dealId,
         session_id: sessionId,
         interaction_type: interactionType,
-        source: 'community_uploaded',
+        source: 'feed',
         position_in_feed: positionInFeed || null,
         dwell_time: dwellTime || null,
       });
