@@ -174,11 +174,11 @@ export default function DealCreationScreen() {
           const transformed = result.restaurants.map((place: GooglePlaceResult) => ({
             id: place.google_place_id,
             name: place.name,
-            subtext: `${place.address} • ${place.distance_miles} mi away`,
+            subtext: place.address.replace(/, USA$/, ''), // Remove ", USA" from the end
             google_place_id: place.google_place_id,
             lat: place.lat,
             lng: place.lng,
-            address: place.address,
+            address: place.address.replace(/, USA$/, ''), // Also clean the address field
           }));
           
           setSearchResults(transformed);
@@ -604,6 +604,7 @@ export default function DealCreationScreen() {
         expirationDate={expirationDate}
         selectedRestaurant={selectedRestaurant}
         selectedCategory={getSelectedCategoryName()}
+        selectedCuisine={getSelectedCuisineName()}
         userData={userData}
         isPosting={isPosting}
       />

@@ -39,6 +39,7 @@ interface DealPreviewScreenProps {
     expirationDate: string | null;
     selectedRestaurant: Restaurant | null;
     selectedCategory: string; // Changed from array to single string
+    selectedCuisine: string; // Add this new prop
     userData: User;
     isPosting?: boolean; // Added loading state prop
 }
@@ -53,6 +54,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     expirationDate,
     selectedRestaurant,
     selectedCategory,
+    selectedCuisine, // Add this parameter
     userData,
     isPosting = false,
 }) => {
@@ -139,10 +141,16 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             <View style={styles.restaurantInfo}>
                                 <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
                                 <Text style={styles.restaurantSubtext}>
-                                    {isCalculatingDistance ? 'Calculating...' : distance} • {selectedCategory}
+                                    {isCalculatingDistance ? 'Calculating...' : distance} • {selectedRestaurant?.subtext}
                                 </Text>
-                                <Text style={styles.restaurantSubtext}>{selectedRestaurant?.subtext}</Text>
-                                <Text style={styles.restaurantSubtext}>Expires - {formatDate(expirationDate)}</Text>
+                                <Text style={styles.restaurantSubtext}>
+                                    Valid until: {formatDate(expirationDate)}
+                                </Text>
+                                <Text style={styles.restaurantSubtext}>
+                                    {selectedCuisine && selectedCategory ? `${selectedCuisine} • ${selectedCategory}` : 
+                                     selectedCuisine ? selectedCuisine : 
+                                     selectedCategory ? selectedCategory : ''}
+                                </Text>
                             </View>
                         </View>
 
