@@ -11,14 +11,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
 
 interface Restaurant {
   id: string;
   name: string;
-  subtext: string; // This will be used for the address
-  lat?: number; // Add lat/lng to restaurant interface
+  subtext: string;
+  lat?: number;
   lng?: number;
 }
 
@@ -38,10 +38,10 @@ interface DealPreviewScreenProps {
     imageUri: string | null;
     expirationDate: string | null;
     selectedRestaurant: Restaurant | null;
-    selectedCategory: string; // Changed from array to single string
-    selectedCuisine: string; // Add this new prop
+    selectedCategory: string;
+    selectedCuisine: string;
     userData: User;
-    isPosting?: boolean; // Added loading state prop
+    isPosting?: boolean;
 }
 
 const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
@@ -54,14 +54,13 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     expirationDate,
     selectedRestaurant,
     selectedCategory,
-    selectedCuisine, // Add this parameter
+    selectedCuisine,
     userData,
     isPosting = false,
 }) => {
     const [distance, setDistance] = useState<string>('?mi away');
     const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
 
-    // Calculate distance when component mounts or restaurant changes
     useEffect(() => {
         const calculateRestaurantDistance = async () => {
             if (!selectedRestaurant?.lat || !selectedRestaurant?.lng) {
@@ -82,10 +81,10 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         selectedRestaurant.lng
                     );
                     
-                    // Format distance to 1 decimal place
-                    const formattedDistance = distanceMiles < 0.1 
-                        ? '<0.1mi away' 
-                        : `${distanceMiles.toFixed(1)}mi away`;
+                    // Format distance with no decimals
+                    const formattedDistance = distanceMiles < 1 
+                        ? '<1mi away' 
+                        : `${Math.round(distanceMiles)}mi away`;
                     
                     setDistance(formattedDistance);
                 } else {
@@ -118,57 +117,102 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
         <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
             <SafeAreaView style={styles.container}>
                 <StatusBar style="dark" />
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={onClose} disabled={isPosting}>
-                        <Ionicons name="arrow-back" size={24} color={isPosting ? "#ccc" : "#404040"} />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={[styles.postButton, isPosting && styles.disabledButton]} 
-                        onPress={onPost}
-                        disabled={isPosting}
-                    >
-                        {isPosting ? (
-                            <ActivityIndicator size="small" color="#000000" />
-                        ) : (
-                            <Text style={styles.postButtonText}>POST</Text>
-                        )}
-                    </TouchableOpacity>
+                
+                {/* Header with background and content */}
+                <View style={styles.headerBackground}>
+                    <View style={styles.headerContent}>
+                        <TouchableOpacity onPress={onClose} disabled={isPosting}>
+                            <Ionicons name="arrow-back" size={20} color={isPosting ? "#ccc" : "#000000"} />
+                        </TouchableOpacity>
+                        <View style={styles.shareButtonWrapper}>
+                            <TouchableOpacity 
+                                style={[styles.shareButton, isPosting && styles.disabledButton]} 
+                                onPress={onPost}
+                                disabled={isPosting}
+                            >
+                                {isPosting ? (
+                                    <ActivityIndicator size="small" color="#000000" />
+                                ) : (
+                                    <Text style={styles.shareButtonText}>Share</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContainer}>
                     <View style={styles.card}>
-                        <View style={styles.restaurantHeader}>
-                            <View style={styles.restaurantInfo}>
-                                <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
-                                <Text style={styles.restaurantSubtext}>
-                                    {isCalculatingDistance ? 'Calculating...' : distance} • {selectedRestaurant?.subtext}
-                                </Text>
-                                <Text style={styles.restaurantSubtext}>
-                                    Valid until: {formatDate(expirationDate)}
-                                </Text>
-                                <Text style={styles.restaurantSubtext}>
-                                    {selectedCuisine && selectedCategory ? `${selectedCuisine} • ${selectedCategory}` : 
-                                     selectedCuisine ? selectedCuisine : 
-                                     selectedCategory ? selectedCategory : ''}
-                                </Text>
+                        {/* Restaurant Info */}
+                        <View style={styles.restaurantWrapper}>
+                            <Text style={styles.restaurantText}>
+                                <Text style={styles.restaurantName}>{selectedRestaurant?.name}{'\n'}</Text>
+                                <Text style={styles.infoText}>📍 {isCalculatingDistance ? 'Calculating...' : distance} </Text>
+                                <Text style={styles.bulletText}>•</Text>
+                                <Text style={styles.infoText} numberOfLines={1}> {selectedRestaurant?.subtext}{'\n'}⏳ Valid Until: {formatDate(expirationDate)}{'\n'}🍽 {selectedCuisine || 'Cuisine'} </Text>
+                                {selectedCategory && (
+                                    <>
+                                        <Text style={styles.bulletText}>•</Text>
+                                        <Text style={styles.infoText}> {selectedCategory}</Text>
+                                    </>
+                                )}
+                            </Text>
+                        </View>
+
+                        {/* Separator */}
+                        <View style={styles.separator} />
+
+                        {/* Deal Title */}
+                        <Text style={styles.dealTitle}>{dealTitle}</Text>
+
+                        {/* Deal Image */}
+                        {imageUri && <Image source={{ uri: imageUri }} style={styles.dealImage} />}
+
+                        {/* Interactions */}
+                        <View style={styles.interactionsContainer}>
+                            <View style={styles.voteContainer}>
+                                <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
+                                    <MaterialCommunityIcons name="arrow-up-bold-outline" size={17} color="#000" />
+                                </TouchableOpacity>
+                                <Text style={styles.voteCount}>0</Text>
+                                <View style={styles.voteSeparator} />
+                                <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
+                                    <MaterialCommunityIcons name="arrow-down-bold-outline" size={17} color="#000" />
+                                </TouchableOpacity>
+                            </View>
+                            
+                            <View style={styles.favContainer}>
+                                <TouchableOpacity style={styles.favoriteButton} activeOpacity={1}>
+                                    <MaterialCommunityIcons name="heart-outline" size={19} color="#000" />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.shareIconButton} activeOpacity={1}>
+                                    <MaterialCommunityIcons name="share-outline" size={16} color="#000" />
+                                </TouchableOpacity>
                             </View>
                         </View>
 
-                        <Text style={styles.dealTitle}>{dealTitle}</Text>
-                        {imageUri && <Image source={{ uri: imageUri }} style={styles.dealImage} />}
-                        {dealDetails ? <Text style={styles.dealDetails}>{dealDetails}</Text> : null}
+                        {/* Separator */}
+                        <View style={styles.separator} />
 
-                        <View style={styles.sharedByContainer}>
+                        {/* Deal Details */}
+                        {dealDetails ? (
+                            <View style={styles.detailsSection}>
+                                <Text style={styles.detailsHeader}>Details</Text>
+                                <Text style={styles.detailsContent}>{dealDetails}</Text>
+                            </View>
+                        ) : null}
+
+                        {/* Shared By Section */}
+                        <View style={styles.sharedByComponent}>
                             {userData.profilePicture ? (
                                 <Image source={{ uri: userData.profilePicture }} style={styles.pfp} />
                             ) : (
                                 <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.pfp} />
                             )}
-                            <View>
-                                <Text style={styles.sharedByLabel}>Shared By</Text>
-                                <Text style={styles.userName}>{userData.username}</Text>
-                                <Text style={styles.userLocation}>{`${userData.city}, ${userData.state}`}</Text>
-                            </View>
+                            <Text style={styles.sharedByText}>
+                                <Text style={styles.sharedByLabel}>Shared By{'\n'}</Text>
+                                <Text style={styles.userName}>{userData.username}{'\n'}</Text>
+                                <Text style={styles.userLocation}>{userData.city}, {userData.state}</Text>
+                            </Text>
                         </View>
                     </View>
                 </ScrollView>
@@ -180,130 +224,226 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
   },
-  header: {
+  headerBackground: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#DEDEDE',
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    width: '100%',
+    height: 28,
   },
-  postButton: {
-    backgroundColor: '#FF8C4C',
-    borderRadius: 30,
-    paddingVertical: 5,
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    minWidth: 60,
+  shareButtonWrapper: {
+    width: 90,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  shareButton: {
+    backgroundColor: '#FF8C4CCC',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+    width: '100%',
+    height: '100%',
   },
   disabledButton: {
     opacity: 0.6,
   },
-  postButtonText: {
+  shareButtonText: {
     color: '#000000',
-    fontWeight: '700',
-    fontSize: 12,
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 16,
+    textAlign: 'center',
   },
   scrollContainer: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingHorizontal: 24,
+    paddingTop: 16,
   },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 20,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-    gap: 8,
+    paddingVertical: 16,
+    gap: 12,
   },
-  restaurantHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  restaurantWrapper: {
+    alignSelf: 'stretch',
     alignItems: 'flex-start',
+    justifyContent: 'space-around',
   },
-  restaurantInfo: {
-    flex: 1,
-    marginRight: 8,
+  restaurantText: {
+    width: 329,
+    alignSelf: 'stretch',
+    color: '#000000',
+    fontFamily: 'Inter',
+    fontSize: 18,
+    fontWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 20,
+    marginTop: -10,
   },
   restaurantName: {
-    fontFamily: 'Inter',
     fontWeight: '700',
-    fontSize: 16,
-    color: '#000000',
-    lineHeight: 15,
   },
-  restaurantSubtext: {
+  infoText: {
     fontFamily: 'Inter',
     fontSize: 12,
-    color: '#555555',
-    lineHeight: 15,
+  },
+  bulletText: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    fontWeight: '300',
+  },
+  separator: {
+    alignSelf: 'stretch',
+    height: 1,
+    backgroundColor: '#D7D7D7',
+    width: '100%',
   },
   dealTitle: {
+    alignSelf: 'stretch',
+    color: '#000000',
     fontFamily: 'Inter',
     fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 19,
-    color: '#000000',
+    fontSize: 18,
+    letterSpacing: 0,
+    lineHeight: 18,
+    marginTop: 1,
   },
   dealImage: {
+    alignSelf: 'stretch',
+    aspectRatio: 0.75,
     width: '100%',
-    aspectRatio: 4 / 5,
-    borderRadius: 10,
     backgroundColor: '#EFEFEF',
+    borderRadius: 8,
   },
-  dealDetails: {
+  interactionsContainer: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  voteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F4F4',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 30,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    height: 28,
+  },
+  voteButton: {
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 20,
+    height: 24,
+  },
+  voteCount: {
     fontFamily: 'Inter',
+    fontSize: 10,
     fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 15,
-    color: '#757575',
+    color: '#000000',
+    marginHorizontal: 6,
   },
-  sharedByContainer: {
+  voteSeparator: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#D7D7D7',
+    marginHorizontal: 6,
+  },
+  favContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 28,
+  },
+  favoriteButton: {
+    backgroundColor: '#F8F4F4',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 30,
+    paddingHorizontal: 12,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareIconButton: {
+    backgroundColor: '#F8F4F4',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 30,
+    width: 40,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detailsSection: {
+    alignSelf: 'stretch',
+  },
+  detailsHeader: {
+    fontFamily: 'Inter',
+    fontWeight: '700',
+    fontSize: 18,
+    lineHeight: 20,
+    color: '#000000',
+    marginBottom: 10,
+  },
+  detailsContent: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#000000',
+    fontWeight: '400',
+  },
+  sharedByComponent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-    paddingTop: 16,
-    width: 244.25,
+    paddingVertical: 16,
   },
   pfp: {
     width: 50.25,
     height: 50.25,
-    borderRadius: 25,
+    borderRadius: 25.125,
   },
-  sharedByLabel: {
+  sharedByText: {
+    color: '#000000',
     fontFamily: 'Inter',
     fontSize: 10,
+    fontWeight: '400',
+    height: 46.5,
+    letterSpacing: 0.2,
     lineHeight: 15,
+    marginTop: -1,
+    width: 186,
+  },
+  sharedByLabel: {
     letterSpacing: 0.02,
-    color: '#000000',
   },
   userName: {
     fontFamily: 'Inter',
-    fontSize: 10,
-    lineHeight: 15,
-    letterSpacing: 0.02,
-    color: '#000000',
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.03,
   },
   userLocation: {
-    fontFamily: 'Inter',
-    fontSize: 10,
-    lineHeight: 15,
     letterSpacing: 0.02,
-    color: '#000000',
   },
 });
 
