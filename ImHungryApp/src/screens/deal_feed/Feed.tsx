@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#AAAAAA',
     marginVertical: 8,
     marginHorizontal: -10,
-    width: '100%',
+    width: '110%',
   },
 
   dealsGrid: {

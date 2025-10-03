@@ -27,7 +27,7 @@ import { createDeal, checkDealContentForProfanity } from '../../services/dealSer
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ProfileCacheService } from '../../services/profileCacheService';
 import { searchRestaurants, getOrCreateRestaurant, GooglePlaceResult } from '../../services/restaurantService';
-import { getCurrentUserLocation } from '../../services/locationService';
+import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
 
 // --- Debounce Helper Function ---
 function debounce<T extends (...args: any[]) => any>(
@@ -261,6 +261,8 @@ export default function DealCreationScreen() {
               id: result.restaurant_id,
               name: selectedPlace.name,
               subtext: selectedPlace.subtext,
+              lat: selectedPlace.lat!, // Add lat
+              lng: selectedPlace.lng!, // Add lng
             });
           } else {
             Alert.alert('Error', 'Failed to save restaurant. Please try again.');

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,14 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
 
 interface Restaurant {
   id: string;
   name: string;
   subtext: string; // This will be used for the address
+  lat?: number; // Add lat/lng to restaurant interface
+  lng?: number;
 }
 
 interface User {
@@ -53,6 +56,52 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     userData,
     isPosting = false,
 }) => {
+    const [distance, setDistance] = useState<string>('?mi away');
+    const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+
+    // Calculate distance when component mounts or restaurant changes
+    useEffect(() => {
+        const calculateRestaurantDistance = async () => {
+            if (!selectedRestaurant?.lat || !selectedRestaurant?.lng) {
+                setDistance('?mi away');
+                return;
+            }
+
+            setIsCalculatingDistance(true);
+            
+            try {
+                const userLocation = await getCurrentUserLocation();
+                
+                if (userLocation) {
+                    const distanceMiles = calculateDistance(
+                        userLocation.lat,
+                        userLocation.lng,
+                        selectedRestaurant.lat,
+                        selectedRestaurant.lng
+                    );
+                    
+                    // Format distance to 1 decimal place
+                    const formattedDistance = distanceMiles < 0.1 
+                        ? '<0.1mi away' 
+                        : `${distanceMiles.toFixed(1)}mi away`;
+                    
+                    setDistance(formattedDistance);
+                } else {
+                    setDistance('?mi away');
+                }
+            } catch (error) {
+                console.error('Error calculating distance:', error);
+                setDistance('?mi away');
+            } finally {
+                setIsCalculatingDistance(false);
+            }
+        };
+
+        if (visible && selectedRestaurant) {
+            calculateRestaurantDistance();
+        }
+    }, [visible, selectedRestaurant]);
+
     const formatDate = (dateString: string | null) => {
         if (!dateString || dateString === 'Unknown') return 'Not Known';
         const date = new Date(dateString);
@@ -89,7 +138,9 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         <View style={styles.restaurantHeader}>
                             <View style={styles.restaurantInfo}>
                                 <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
-                                <Text style={styles.restaurantSubtext}>3mi away • {selectedCategory}</Text>
+                                <Text style={styles.restaurantSubtext}>
+                                    {isCalculatingDistance ? 'Calculating...' : distance} • {selectedCategory}
+                                </Text>
                                 <Text style={styles.restaurantSubtext}>{selectedRestaurant?.subtext}</Text>
                                 <Text style={styles.restaurantSubtext}>Expires - {formatDate(expirationDate)}</Text>
                             </View>
