@@ -47,14 +47,14 @@ const OnboardingStack = () => (
   <Stack.Navigator 
     screenOptions={{ 
       headerShown: false,
-      animation: 'none',
+      animation: 'slide_from_right',
       gestureEnabled: false
     }}
-    initialRouteName="LogIn"
+    initialRouteName="Landing"
   >
     <Stack.Screen name="Landing" component={LandingScreen} />
-    <Stack.Screen name="SignUp" component={SignUp} />
-    <Stack.Screen name="LogIn" component={LogIn} />
+    <Stack.Screen name="SignUp" component={SignUp} options={{ animation: 'slide_from_left' }} />
+    <Stack.Screen name="LogIn" component={LogIn}  />
     <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
     <Stack.Screen name="ResetPassword" component={ResetPassword} />
     <Stack.Screen name="Username" component={UsernameScreen} />

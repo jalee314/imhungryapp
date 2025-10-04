@@ -298,14 +298,7 @@ export default function CuisinePreferencesScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={['rgba(255, 245, 171, 0.1)', 'rgba(255, 225, 0, 0.8)']}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        pointerEvents="none"
-      />
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -381,7 +374,7 @@ export default function CuisinePreferencesScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: 'rgba(255, 245, 171, 0.5)' 
+    backgroundColor: 'white' 
   },
 
   keyboardAvoidingView: { flex: 1 },
@@ -447,7 +440,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cuisineButtonSelected: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FF8C4C',
     borderWidth: 1,
     borderColor: '#ddd',
   },
@@ -471,7 +464,7 @@ const styles = StyleSheet.create({
     width: '100%', 
     maxWidth: 343,
     height: 44, 
-    backgroundColor: '#FFA05C', 
+    backgroundColor: '#FF8C4C', 
     borderRadius: 22, 
     alignItems: 'center', 
     justifyContent: 'center',

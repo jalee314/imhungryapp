@@ -1,19 +1,12 @@
 import React from 'react';
-import { StyleSheet, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import OutlinedText from '../../components/OutlinedText';
+import { StyleSheet, Pressable, View, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 export default function LandingScreen() {
   const navigation = useNavigation();
 
   return (
-    <LinearGradient
-      colors={['rgba(255, 245, 171, 0.5)', 'rgba(255, 225, 0, 0.5)']}
-      style={styles.centered}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-    >
+    <View style={styles.centered}>
       <StatusBar style="dark" />
       <Pressable
         style={styles.fill}
@@ -22,9 +15,13 @@ export default function LandingScreen() {
         accessibilityLabel="Continue to sign up"
         hitSlop={8}
       >
-        <OutlinedText />
+        <Image 
+          source={require('../../../img/testimg.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </Pressable>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -33,11 +30,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'white',
   },
   fill: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+  },
+  logo: {
+    width: 365,
+    height: 400,
+    maxWidth: '90%',
   },
 });
