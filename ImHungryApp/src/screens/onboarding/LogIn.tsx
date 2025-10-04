@@ -67,7 +67,7 @@ export default function LogInScreen() {
   };
 
   const handleBack = () => {
-    (navigation as any).navigate('SignUp');
+    (navigation as any).navigate('SignUp', { fromLogin: true });
   };
 
   const handleForgotPassword = () => {

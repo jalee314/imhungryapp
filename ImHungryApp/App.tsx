@@ -52,8 +52,14 @@ const OnboardingStack = () => (
     }}
     initialRouteName="Landing"
   >
-    <Stack.Screen name="Landing" component={LandingScreen} />
-    <Stack.Screen name="SignUp" component={SignUp} options={{ animation: 'slide_from_left' }} />
+    <Stack.Screen name="Landing" component={LandingScreen}  />
+    <Stack.Screen 
+      name="SignUp" 
+      component={SignUp} 
+      options={({ route }) => ({
+        animation: (route.params as any)?.fromLogin ? 'slide_from_left' : 'slide_from_right'
+      })}
+    />
     <Stack.Screen name="LogIn" component={LogIn}  />
     <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
     <Stack.Screen name="ResetPassword" component={ResetPassword} />
