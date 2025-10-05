@@ -82,11 +82,16 @@ export class ProfileCacheService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Fetch profile data and deal count in parallel
+      // Fetch profile data with image metadata and deal count in parallel
       const [profileResult, dealCount] = await Promise.all([
         supabase
           .from('user')
-          .select('*')
+          .select(`
+            *,
+            image_metadata:profile_photo_metadata_id (
+              variants
+            )
+          `)
           .eq('user_id', user.id)
           .single(),
         this.fetchUserDealCount(user.id)
@@ -101,10 +106,17 @@ export class ProfileCacheService {
         throw new Error('Invalid profile data received from database');
       }
 
-      // Generate photo URL if needed
+      // Use Cloudinary variants if available, fallback to old Supabase Storage
       let photoUrl = null;
-      if (profile.profile_photo && profile.profile_photo !== 'default_avatar.png') {
-        // Always generate fresh URL from the database value (don't use stale cache)
+      
+      if (profile.image_metadata?.variants) {
+        // Use Cloudinary URL (prioritize medium variant)
+        photoUrl = profile.image_metadata.variants.medium 
+          || profile.image_metadata.variants.small
+          || profile.image_metadata.variants.thumbnail;
+        console.log('✅ Using Cloudinary photo URL:', photoUrl);
+      } else if (profile.profile_photo && profile.profile_photo !== 'default_avatar.png') {
+        // Fallback to old Supabase Storage for legacy photos
         const photoPath = profile.profile_photo.startsWith('public/') 
           ? profile.profile_photo 
           : `public/${profile.profile_photo}`;
@@ -114,6 +126,7 @@ export class ProfileCacheService {
           .getPublicUrl(photoPath);
         
         photoUrl = urlData.publicUrl;
+        console.log('⚠️ Using legacy Supabase Storage URL:', photoUrl);
       }
 
       return { profile, photoUrl, dealCount };

@@ -206,7 +206,11 @@ export default function DealCreationScreen() {
   const handleCloseCameraModal = () => setIsCameraModalVisible(false);
 
   const handleTakePhoto = async () => {
-    let result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality: 1 });
+    let result = await ImagePicker.launchCameraAsync({ 
+      allowsEditing: true, 
+      aspect: [4, 3], 
+      quality: 0.7  // Add this - compresses to 70% quality
+    });
     handleCloseCameraModal();
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
@@ -214,7 +218,11 @@ export default function DealCreationScreen() {
   };
 
   const handleChooseFromAlbum = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [4, 3], quality: 1 });
+    let result = await ImagePicker.launchImageLibraryAsync({ 
+      allowsEditing: true, 
+      aspect: [4, 3], 
+      quality: 0.7  // Add this - compresses to 70% quality
+    });
     handleCloseCameraModal();
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);

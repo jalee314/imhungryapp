@@ -7,6 +7,7 @@ import { clearUserCache } from './userService';
 import { ProfileCacheService } from './profileCacheService';
 import { signOut } from './sessionService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { processImageWithEdgeFunction, ImageType } from './imageProcessingService';
 
 /**
  * Handle profile photo upload
@@ -19,81 +20,48 @@ export const uploadProfilePhoto = async (
   refreshProfile: () => Promise<void>
 ) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const fileExt = photoUri.split('.').pop()?.toLowerCase() || 'jpg';
-    const userEmail = user.email || 'unknown';
-    const emailPrefix = userEmail.split('@')[0];
-    const username = profile?.username || profile?.display_name || 'user';
+    console.log('Starting profile photo upload...');
     
-    // Use the same filename format as onboarding
-    const fileName = `user_${emailPrefix}_${username}_${Date.now()}.${fileExt}`;
-
-    // Store reference to old photo before upload
-    const oldPhotoPath = profile?.profile_photo && profile.profile_photo !== 'default_avatar.png' 
-      ? (profile.profile_photo.startsWith('public/') ? profile.profile_photo : `public/${profile.profile_photo}`)
-      : null;
-
-    // Read the file as base64 and convert using toByteArray (same as onboarding)
-    const base64 = await FileSystem.readAsStringAsync(photoUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    // Process image with Cloudinary via edge function
+    const result = await processImageWithEdgeFunction(photoUri, 'profile_image');
     
-    const byteArray = toByteArray(base64);
-
-    // Upload new photo using the same pattern as onboarding
-    const { data, error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(`public/${fileName}`, byteArray, {
-        contentType: `image/${fileExt}`,
-        cacheControl: '3600',
-        upsert: false // Same as onboarding - timestamp prevents collisions
-      });
-
-    if (uploadError) throw uploadError;
-
-    // The uploaded path will be `public/${fileName}`, which matches onboarding
-    const uploadedPath = data?.path || `public/${fileName}`;
-
-    // Update profile with new photo path
-    await supabase.from('user').update({ profile_photo: uploadedPath }).eq('user_id', user.id);
-    await supabase.auth.updateUser({ data: { profile_photo_url: uploadedPath } });
-
-    // Clear ALL caches so everything updates
-    await clearUserCache();
-    await ProfileCacheService.clearCache();
-
-    // Only delete old photo after successful upload and database update
-    if (oldPhotoPath) {
-      const { error: deleteError } = await supabase.storage
-        .from('avatars')
-        .remove([oldPhotoPath]);
-      
-      if (deleteError) {
-        console.warn('Failed to delete old photo:', deleteError);
-        // Don't throw here - the upload was successful, deletion is cleanup
-      }
+    if (!result.success || !result.metadataId) {
+      Alert.alert('Upload Failed', result.error || 'Failed to process image');
+      return;
     }
-
-    // Update UI with new URL
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(uploadedPath);
-    setPhotoUrl(urlData.publicUrl);
-    setCurrentUserPhotoUrl(urlData.publicUrl); // Also update current user's photo
     
-    // Force refresh to update everything including BottomNavigation
+    console.log('Image processed successfully, metadataId:', result.metadataId);
+    
+    // Update user profile with image_metadata_id
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { error: updateError } = await supabase
+      .from('user')
+      .update({ 
+        profile_photo_metadata_id: result.metadataId  // Fixed: use correct column name
+      })
+      .eq('user_id', user.id);
+    
+    if (updateError) {
+      console.error('Error updating profile:', updateError);
+      Alert.alert('Error', 'Failed to update profile photo');
+      return;
+    }
+    
+    // Use the optimized URL for display
+    const displayUrl = result.variants?.medium || result.variants?.small || result.variants?.thumbnail;
+    if (displayUrl) {
+      setPhotoUrl(displayUrl);
+      setCurrentUserPhotoUrl(displayUrl);
+    }
+    
     await refreshProfile();
-    
-    // Add a small delay and trigger a re-render
-    setTimeout(() => {
-      const newUrl = urlData.publicUrl + `?t=${Date.now()}`;
-      setPhotoUrl(newUrl);
-      setCurrentUserPhotoUrl(newUrl); // Also update current user's photo
-    }, 100);
+    Alert.alert('Success', 'Profile photo updated!');
     
   } catch (error) {
     console.error('Error uploading photo:', error);
-    Alert.alert('Error', 'Failed to update profile photo. Please try again.');
+    Alert.alert('Error', 'Failed to upload photo');
   }
 };
 
@@ -107,22 +75,23 @@ export const handleTakePhoto = async (
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Sorry, we need camera permissions to take a photo!');
+      Alert.alert('Permission Required', 'Camera access is needed to take photos.');
       return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.7,  // Add compression
     });
 
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       await uploadPhoto(result.assets[0].uri);
     }
   } catch (error) {
     console.error('Error taking photo:', error);
-    Alert.alert('Error', 'Failed to take photo. Please try again.');
+    Alert.alert('Error', 'Failed to take photo');
   }
 };
 
@@ -136,23 +105,23 @@ export const handleChooseFromLibrary = async (
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to select a photo!');
+      Alert.alert('Permission Required', 'Photo library access is needed.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.7,  // Add compression
     });
 
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       await uploadPhoto(result.assets[0].uri);
     }
   } catch (error) {
-    console.error('Error picking image:', error);
-    Alert.alert('Error', 'Failed to pick image. Please try again.');
+    console.error('Error choosing photo:', error);
+    Alert.alert('Error', 'Failed to select photo');
   }
 };
 

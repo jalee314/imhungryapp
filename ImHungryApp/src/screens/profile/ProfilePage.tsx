@@ -100,12 +100,18 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       const freshData = await ProfileCacheService.fetchFreshProfile();
       
       if (freshData) {
+        console.log('�� Fresh profile data fetched:', {
+          hasPhotoUrl: !!freshData.photoUrl,
+          photoUrl: freshData.photoUrl
+        });
+        
         // Only update if data actually changed
         const dataChanged = JSON.stringify(freshData.profile) !== JSON.stringify(profile) ||
                             freshData.photoUrl !== photoUrl ||
                             freshData.dealCount !== dealCount;
         
         if (dataChanged) {
+          console.log('✅ Updating profile with new photo URL:', freshData.photoUrl);
           setProfile(freshData.profile);
           setPhotoUrl(freshData.photoUrl);
           setCurrentUserPhotoUrl(freshData.photoUrl); // Also set current user's photo
@@ -602,7 +608,13 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               ) : (
                 <View style={styles.profilePhotoContainer}>
                   {photoUrl ? (
-                    <Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
+                    <Image 
+                      key={photoUrl} // Force re-render when URL changes
+                      source={{ uri: photoUrl }} 
+                      style={styles.profilePhoto}
+                      onError={(e) => console.log('❌ Image load error:', e.nativeEvent.error)}
+                      onLoad={() => console.log('✅ Image loaded successfully:', photoUrl)}
+                    />
                   ) : (
                     <View style={[styles.profilePhoto, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
                       <MaterialCommunityIcons name="account" size={40} color="#999" />

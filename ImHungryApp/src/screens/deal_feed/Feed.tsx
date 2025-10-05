@@ -55,24 +55,25 @@ const Feed: React.FC = () => {
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
   
+  // ✅ Move loadDeals function here, outside the useEffect
+  const loadDeals = async () => {
+    try {
+      setLoading(true);
+      const cachedDeals = await dealCacheService.getDeals();
+      setTimeout(() => {
+        setDeals(cachedDeals);
+      }, 0);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading deals:', err);
+      setError('Failed to load deals. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load deals on mount
   useEffect(() => {
-    const loadDeals = async () => {
-      try {
-        setLoading(true);
-        const cachedDeals = await dealCacheService.getDeals();
-        setTimeout(() => {
-          setDeals(cachedDeals);
-        }, 0);
-        setError(null);
-      } catch (err) {
-        console.error('Error loading deals:', err);
-        setError('Failed to load deals. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadDeals();
 
     // Initialize deal_instance realtime

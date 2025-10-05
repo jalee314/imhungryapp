@@ -6,7 +6,7 @@ export interface DiscoverRestaurant {
   restaurant_id: string;
   name: string;
   address: string;
-  logo_image?: string;
+  restaurant_image_metadata?: string; // Changed from logo_image
   deal_count: number;
   distance_miles: number;
   lat: number;
@@ -71,7 +71,7 @@ export const getRestaurantsWithDeals = async (): Promise<DiscoverResult> => {
       restaurant_id: restaurant.restaurant_id,
       name: restaurant.name,
       address: restaurant.address,
-      logo_image: restaurant.logo_image,
+      restaurant_image_metadata: restaurant.restaurant_image_metadata, // Changed
       deal_count: parseInt(restaurant.deal_count) || 0,
       distance_miles: parseFloat(restaurant.distance_miles) || 0,
       lat: parseFloat(restaurant.lat),
@@ -154,7 +154,7 @@ export const getRestaurantsWithDealsDirect = async (): Promise<DiscoverResult> =
     // Get restaurant details with coordinates
     const { data: restaurants, error: restaurantsError } = await supabase
       .from('restaurants_with_coords')
-      .select('restaurant_id, name, address, logo_image, lat, lng')
+      .select('restaurant_id, name, address, restaurant_image_metadata, lat, lng') // Changed
       .in('restaurant_id', uniqueRestaurantIds);
 
     if (restaurantsError) {
@@ -198,7 +198,7 @@ export const getRestaurantsWithDealsDirect = async (): Promise<DiscoverResult> =
           restaurant_id: restaurant.restaurant_id,
           name: restaurant.name,
           address: restaurant.address,
-          logo_image: restaurant.logo_image,
+          restaurant_image_metadata: restaurant.restaurant_image_metadata, // Changed
           deal_count: dealCounts[restaurant.restaurant_id] || 0,
           distance_miles: Math.round(distance * 10) / 10, // Round to 1 decimal place
           lat: restaurant.lat,

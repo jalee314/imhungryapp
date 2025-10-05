@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import OptimizedImage from './OptimizedImage';
 
 export interface Deal {
   id: string;
@@ -8,6 +9,7 @@ export interface Deal {
   restaurant: string;
   details: string;
   image: string | any;
+  imageVariants?: any; // Add this field
   votes: number;
   isUpvoted: boolean;
   isDownvoted: boolean;
@@ -17,7 +19,6 @@ export interface Deal {
   timeAgo: string;
   author?: string;
   milesAway?: string;
-
   userId?: string;
   userDisplayName?: string;
   userProfilePhoto?: string;
@@ -33,11 +34,10 @@ interface DealCardProps {
   onFavorite?: (dealId: string) => void;
   onPress?: (dealId: string) => void;
   hideAuthor?: boolean;
-  showDelete?: boolean; // Add this new prop
-  onDelete?: (dealId: string) => void; // Add delete handler
+  showDelete?: boolean;
+  onDelete?: (dealId: string) => void;
 }
 
-// Then update the component (around line 37)
 const DealCard: React.FC<DealCardProps> = ({
   deal,
   variant = 'vertical',
@@ -45,9 +45,9 @@ const DealCard: React.FC<DealCardProps> = ({
   onDownvote,
   onFavorite,
   onPress,
-  hideAuthor = false, // Add this
-  showDelete = false, // Add this
-  onDelete, // Add this
+  hideAuthor = false,
+  showDelete = false,
+  onDelete,
 }) => {
   const handleUpvote = (e?: any) => {
     e?.stopPropagation?.();
@@ -73,9 +73,36 @@ const DealCard: React.FC<DealCardProps> = ({
     onDelete?.(deal.id);
   };
 
-  const imageSource = typeof deal.image === 'string' 
-    ? { uri: deal.image } 
-    : deal.image;
+  const getImageSource = () => {
+    if (deal.imageVariants) {
+      // Use OptimizedImage for database images with variants
+      const displaySize = variant === 'horizontal' 
+        ? { width: 220, height: 144 }
+        : { width: 185, height: 144 };
+      
+      return (
+        <OptimizedImage
+          variants={deal.imageVariants}
+          componentType="deal"
+          displaySize={displaySize}
+          style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage}
+          fallbackSource={typeof deal.image === 'string' ? { uri: deal.image } : deal.image}
+        />
+      );
+    } else {
+      // Fallback to regular Image for static images or simple URIs
+      const imageSource = typeof deal.image === 'string' 
+        ? { uri: deal.image } 
+        : deal.image;
+      
+      return (
+        <Image 
+          source={imageSource} 
+          style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage} 
+        />
+      );
+    }
+  };
 
   if (variant === 'horizontal') {
     const locationAuthorText = `${deal.restaurant}\n${deal.milesAway || '?mi'} away • ${deal.timeAgo} • By ${deal.author || 'Unknown'}`;
@@ -86,7 +113,7 @@ const DealCard: React.FC<DealCardProps> = ({
         onPress={handlePress}
         activeOpacity={0.8}
       >
-        <Image source={imageSource} style={styles.horizontalImage} />
+        {getImageSource()}
         <View style={styles.horizontalTitleContainer}>
           <Text style={styles.horizontalTitle} numberOfLines={2} ellipsizeMode="tail">
             {deal.title}
@@ -152,7 +179,7 @@ const DealCard: React.FC<DealCardProps> = ({
       onPress={handlePress}
       activeOpacity={0.8}
     >
-      <Image source={imageSource} style={styles.verticalImage} />
+      {getImageSource()}
       <Text style={styles.verticalTitle} numberOfLines={2}>{deal.title}</Text>
       <Text style={styles.verticalDetails} numberOfLines={2}>{locationAuthorText}</Text>
       
