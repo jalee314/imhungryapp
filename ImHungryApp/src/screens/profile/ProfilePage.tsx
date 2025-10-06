@@ -65,7 +65,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [currentUserPhotoUrl, setCurrentUserPhotoUrl] = useState<string | null>(null);
   const [dealCount, setDealCount] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share' >('posts');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -100,7 +100,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       const freshData = await ProfileCacheService.fetchFreshProfile();
       
       if (freshData) {
-        console.log('�� Fresh profile data fetched:', {
+        console.log('📦 Fresh profile data fetched:', {
           hasPhotoUrl: !!freshData.photoUrl,
           photoUrl: freshData.photoUrl
         });
@@ -577,11 +577,6 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.joinDate}>{formatJoinDate(profile)}</Text>
                 <Text style={styles.location}>{profile?.location_city || 'Location not set'}</Text>
               </View>
-              {!viewUser && (
-                <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-                  <MaterialCommunityIcons name="pencil" size={16} color="#000" />
-                </TouchableOpacity>
-              )}
             </View>
           </View>
           
@@ -709,6 +704,16 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
           
           {activeTab === 'settings' && !viewUser && (
             <View style={styles.settingsList}>
+              {/* Add Profile option at the top */}
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={handleEditProfile}
+              >
+                <MaterialCommunityIcons name="account-edit" size={20} color="#000" />
+                <Text style={styles.settingText}>Profile</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity 
                 style={styles.settingItem}
                 onPress={() => navigation.navigate('FAQPage' as never)}
@@ -894,14 +899,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     paddingTop: 16,
+    paddingBottom: 0,
     alignItems: 'center',
     justifyContent: 'space-between',
+    height: 117,
   },
   leftSection: {
     flex: 1,
     flexDirection: 'column',
     gap: 24,
     justifyContent: 'center',
+    alignSelf: 'stretch',
   },
   rightSection: {
     alignItems: 'center',
@@ -916,8 +924,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     color: '#000',
-    letterSpacing: 0.36,
-    lineHeight: 20,
+    letterSpacing: 0.48,
+    lineHeight: 24,
+    marginTop: -1,
   },
   editButton: {
     padding: 4,
@@ -945,6 +954,8 @@ const styles = StyleSheet.create({
     width: 75,
     height: 75,
     borderRadius: 9999,
+    borderWidth: 2,
+    borderColor: '#FFA05C',
   },
 
   statsContainer: {
@@ -994,12 +1005,10 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 14,
-    fontWeight: 'bold',
     color: '#000',
   },
   activeButtonText: {
     color: '#000',
-    fontWeight: 'bold',
   },
   shareButtonIcon: {
     color: '#000',
@@ -1188,8 +1197,6 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
     paddingHorizontal: 40,
     width: '100%',
-    marginLeft: 40,
-
   },
   emptyText: {
     fontSize: 18,
