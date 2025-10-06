@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavigation from '../../components/BottomNavigation';
 import RowCard, { RowCardData } from '../../components/RowCard';
+import SquareCard, { SquareCardData } from '../../components/SquareCard';
 import Header from '../../components/Header';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
 
@@ -89,10 +90,29 @@ const DiscoverFeed: React.FC = () => {
     dealCount: restaurant.deal_count,
   });
 
+  // Convert DiscoverRestaurant to SquareCardData
+  const convertToSquareCardData = (restaurant: DiscoverRestaurant): SquareCardData => ({
+    id: restaurant.restaurant_id,
+    title: restaurant.name,
+    subtitle: restaurant.address,
+    image: restaurant.restaurant_image_metadata 
+      ? { uri: restaurant.restaurant_image_metadata } 
+      : require('../../../img/gallery.jpg'),
+    distance: `${restaurant.distance_miles}mi`,
+    dealCount: restaurant.deal_count,
+  });
+
   const renderRestaurantCard = ({ item }: { item: DiscoverRestaurant }) => (
     <RowCard
       data={convertToRowCardData(item)}
       variant="rest-deal"
+      onPress={handleRowCardPress}
+    />
+  );
+
+  const renderSquareCard = ({ item }: { item: DiscoverRestaurant }) => (
+    <SquareCard
+      data={convertToSquareCardData(item)}
       onPress={handleRowCardPress}
     />
   );
@@ -232,11 +252,14 @@ const DiscoverFeed: React.FC = () => {
       <View style={styles.content}>
         <FlatList
           data={filteredRestaurants}
-          renderItem={renderRestaurantCard}
+          renderItem={searchQuery.length > 0 ? renderSquareCard : renderRestaurantCard}
           keyExtractor={(item) => item.restaurant_id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyState}
+          numColumns={searchQuery.length > 0 ? 3 : 1}
+          key={searchQuery.length > 0 ? 'grid' : 'list'} // Force re-render when switching layouts
+          columnWrapperStyle={searchQuery.length > 0 ? styles.gridRow : undefined}
         />
       </View>
 
@@ -289,8 +312,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.41,
     lineHeight: 22,
     padding: 0,
-    background: 'transparent',
-    border: 'none',
   },
   clearButton: {
     padding: 4,
@@ -301,6 +322,10 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 20,
+  },
+  gridRow: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
   },
   loadingContainer: {
     flex: 1,
