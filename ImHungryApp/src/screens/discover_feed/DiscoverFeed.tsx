@@ -213,7 +213,10 @@ const DiscoverFeed: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      searchQuery.length > 0 && styles.containerWithSearch
+    ]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       <Header onLocationPress={() => console.log('Location pressed')} />
@@ -273,6 +276,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  containerWithSearch: {
+    backgroundColor: '#F5F5F5',
+  },
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -324,8 +330,9 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   gridRow: {
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start', // Changed from 'space-between' to 'flex-start'
     paddingHorizontal: 20,
+    gap: 10, // Add gap between items for consistent spacing
   },
   loadingContainer: {
     flex: 1,

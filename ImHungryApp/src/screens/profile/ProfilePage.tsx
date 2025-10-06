@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
     gap: 4,
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5', // Changed from '#fff' to grey
   },
   
   extraSpacing: {
@@ -1171,24 +1171,28 @@ const styles = StyleSheet.create({
   postsContainer: {
     flex: 1,
     width: '100%',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Changed from 'center' to 'flex-start'
     alignItems: 'center',
   },
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 4,
     paddingTop: 8,
     paddingBottom: 100,
+    paddingHorizontal: 8,
+    width: '100%', // Ensure full width
   },
   leftCard: {
     width: 185,
     marginBottom: 4,
+    alignSelf: 'flex-start', // Force left alignment
   },
   rightCard: {
     width: 185,
     marginBottom: 4,
+    alignSelf: 'flex-start', // Force left alignment
   },
   emptyContainer: {
     flex: 1,
