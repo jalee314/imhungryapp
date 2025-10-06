@@ -1,3 +1,4 @@
+import { Deal } from '../components/DealCard';
 import { supabase } from '../../lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';
@@ -207,6 +208,12 @@ export interface DatabaseDeal {
     variants: ImageVariants;
     image_type: ImageType;
   };
+  // Add user profile metadata
+  user_profile_metadata?: {
+    variants: ImageVariants;
+  };
+  // Add distance
+  distance_miles?: number | null;
 }
 
 // Get user's location for ranking
@@ -282,6 +289,45 @@ const getRankedDealIds = async (): Promise<string[]> => {
   }
 };
 
+// Utility function to add distance information to deals
+export const addDistancesToDeals = async (deals: DatabaseDeal[]): Promise<DatabaseDeal[]> => {
+  try {
+    // Get user location
+    const userLocation = await getCurrentUserLocation();
+    if (!userLocation) {
+      console.log('No user location available for distance calculation');
+      return deals; // Return deals without distance if no user location
+    }
+
+    // Get all restaurant locations
+    const restaurantIds = deals.map(deal => deal.restaurant_id);
+    const locationMap = await getRestaurantLocationsBatch(restaurantIds);
+
+    // Add distance to each deal
+    return deals.map(deal => {
+      const restaurantLocation = locationMap[deal.restaurant_id];
+      let distanceMiles = null;
+      
+      if (restaurantLocation) {
+        distanceMiles = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          restaurantLocation.lat,
+          restaurantLocation.lng
+        );
+      }
+
+      return {
+        ...deal,
+        distance_miles: distanceMiles
+      };
+    });
+  } catch (error) {
+    console.error('Error adding distances to deals:', error);
+    return deals; // Return deals without distance if error
+  }
+};
+
 // Update fetchRankedDeals to use the correct tables from your current schema
 export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
   try {
@@ -337,32 +383,32 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
     const transformedDeals = deals?.map(deal => ({
       deal_id: deal.deal_id,
       template_id: deal.template_id,
-      title: deal.deal_template.title,
-      description: deal.deal_template.description,
-      image_url: deal.deal_template.image_url,
-      restaurant_name: deal.deal_template.restaurant.name,
-      restaurant_address: deal.deal_template.restaurant.address,
-      cuisine_name: deal.deal_template.cuisine?.cuisine_name || null,
-      cuisine_id: deal.deal_template.cuisine_id,
-      category_name: deal.deal_template.category?.category_name || null,
+      title: (deal.deal_template as any).title,
+      description: (deal.deal_template as any).description,
+      image_url: (deal.deal_template as any).image_url,
+      restaurant_name: (deal.deal_template as any).restaurant.name,
+      restaurant_address: (deal.deal_template as any).restaurant.address,
+      cuisine_name: (deal.deal_template as any).cuisine?.cuisine_name || null,
+      cuisine_id: (deal.deal_template as any).cuisine_id,
+      category_name: (deal.deal_template as any).category?.category_name || null,
       created_at: deal.created_at,
       start_date: deal.start_date,
       end_date: deal.end_date,
       is_anonymous: deal.is_anonymous,
-      user_id: deal.deal_template.user_id,
-      user_display_name: deal.deal_template.user?.display_name || null,
-      user_profile_photo: deal.deal_template.user?.profile_photo || null,
-      restaurant_id: deal.deal_template.restaurant_id,
+      user_id: (deal.deal_template as any).user_id,
+      user_display_name: (deal.deal_template as any).user?.display_name || null,
+      user_profile_photo: (deal.deal_template as any).user?.profile_photo || null,
+      restaurant_id: (deal.deal_template as any).restaurant_id,
       // Add image metadata with fallback
-      image_metadata: deal.deal_template.image_metadata || null,
+      image_metadata: (deal.deal_template as any).image_metadata || null,
       // Add user profile image metadata
-      user_profile_metadata: deal.deal_template.user?.image_metadata || null
+      user_profile_metadata: (deal.deal_template as any).user?.image_metadata || null
     })) || [];
 
     // Reorder based on ranking
     const orderedDeals = rankedIds
       .map(id => transformedDeals.find(deal => deal.deal_id === id))
-      .filter((deal): deal is DatabaseDeal => deal !== undefined);
+      .filter(deal => deal !== undefined) as DatabaseDeal[];
 
     return orderedDeals;
   } catch (error) {
@@ -401,6 +447,12 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
   }
   // If no Cloudinary variant, leave as null (will show default avatar icon)
 
+  // Format distance
+  let milesAway = '?mi';
+  if (dbDeal.distance_miles !== null && dbDeal.distance_miles !== undefined) {
+    milesAway = `${Math.round(dbDeal.distance_miles * 10) / 10}mi`;
+  }
+
   return {
     id: dbDeal.deal_id,
     title: dbDeal.title,
@@ -413,13 +465,13 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     isDownvoted: false,
     isFavorited: false,
     cuisine: dbDeal.cuisine_name || 'Cuisine',
-    cuisineId: dbDeal.cuisine_id,
+    cuisineId: dbDeal.cuisine_id || undefined,
     timeAgo: timeAgo,
     author: dbDeal.is_anonymous ? 'Anonymous' : (dbDeal.user_display_name || 'Unknown'),
-    milesAway: '?mi',
+    milesAway: milesAway,
     userId: dbDeal.user_id,
-    userDisplayName: dbDeal.user_display_name,
-    userProfilePhoto: userProfilePhoto,  // Only Cloudinary or null
+    userDisplayName: dbDeal.user_display_name || undefined,
+    userProfilePhoto: userProfilePhoto || undefined,  // Only Cloudinary or null
     restaurantAddress: dbDeal.restaurant_address,
     isAnonymous: dbDeal.is_anonymous,
   };
@@ -443,7 +495,7 @@ export const getDealUploaderId = async (dealId: string): Promise<string | null> 
       return null;
     }
 
-    const userId = data.deal_template?.user_id;
+    const userId = (data.deal_template as any)?.user_id;
     return userId;
   } catch (error) {
     return null;
@@ -537,7 +589,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
     }
 
     // Get all restaurant locations for distance calculation
-    const restaurantIds = deals.map(d => d.deal_template.restaurant.restaurant_id);
+    const restaurantIds = deals.map(d => (d.deal_template as any).restaurant.restaurant_id);
     const locationMap = await getRestaurantLocationsBatch(restaurantIds);
 
     // Get vote states and vote counts
@@ -549,7 +601,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
 
     // Transform deals to DatabaseDeal format
     const transformedDeals: DatabaseDeal[] = deals.map(deal => {
-      const template = deal.deal_template;
+      const template = deal.deal_template as any;
       const restaurant = template.restaurant;
       const restaurantLocation = locationMap[restaurant.restaurant_id];
       
@@ -633,15 +685,15 @@ export const deleteDeal = async (dealId: string): Promise<{ success: boolean; er
     }
 
     // Verify the user owns this deal
-    if (dealInstance.deal_template.user_id !== userId) {
+    if ((dealInstance.deal_template as any).user_id !== userId) {
       return { success: false, error: 'Unauthorized: You can only delete your own posts' };
     }
 
     // Delete the image from storage if it exists
-    if (dealInstance.deal_template.image_url) {
+    if ((dealInstance.deal_template as any).image_url) {
       const { error: storageError } = await supabase.storage
         .from('deal-images')
-        .remove([dealInstance.deal_template.image_url]);
+        .remove([(dealInstance.deal_template as any).image_url]);
       
       if (storageError) {
         console.warn('Failed to delete image from storage:', storageError);

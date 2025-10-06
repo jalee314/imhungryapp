@@ -1,7 +1,7 @@
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Deal } from '../components/DealCard';
-import { fetchRankedDeals, transformDealForUI } from './dealService';
+import { fetchRankedDeals, transformDealForUI, addDistancesToDeals } from './dealService';
 import { getUserVoteStates, calculateVoteCounts } from './voteService';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -65,7 +65,9 @@ class DealCacheService {
     try {
       console.log('🔄 Fetching fresh deals...');
       const dbDeals = await fetchRankedDeals();
-      const transformedDeals = dbDeals.map(transformDealForUI);
+      // Add distance information to deals before transforming
+      const dealsWithDistance = await addDistancesToDeals(dbDeals);
+      const transformedDeals = dealsWithDistance.map(transformDealForUI);
       
       this.cachedDeals = transformedDeals;
       
