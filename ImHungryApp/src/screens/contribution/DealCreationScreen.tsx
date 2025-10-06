@@ -367,18 +367,23 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
             {
               text: "OK",
               onPress: () => {
-                // Clear the form
-                setDealTitle('');
-                setDealDetails('');
-                setImageUri(null);
-                setExpirationDate(null);
-                setSelectedCategory(null);
-                setSelectedCuisine(null);
-                setSelectedRestaurant(null);
-                setIsAnonymous(false);
+                // First close the preview screen
                 setIsPreviewVisible(false);
-                // Navigate back to the previous screen
-                onClose();
+                
+                // Clear the form after a brief delay
+                setTimeout(() => {
+                  setDealTitle('');
+                  setDealDetails('');
+                  setImageUri(null);
+                  setExpirationDate(null);
+                  setSelectedCategory(null);
+                  setSelectedCuisine(null);
+                  setSelectedRestaurant(null);
+                  setIsAnonymous(false);
+                  
+                  // Then close the main modal
+                  onClose();
+                }, 200);
               }
             }
           ]
@@ -724,7 +729,7 @@ const styles = StyleSheet.create({
     width: 369,
     height: 48,
     backgroundColor: 'rgba(255, 255, 255, 0.93)',
-    borderRadius: 30,
+    borderRadius: 10,
     gap: 8,
     paddingHorizontal: 16,
   },
@@ -739,12 +744,12 @@ const styles = StyleSheet.create({
   selectedRestaurantContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     width: 369,
-    height: 48,
+    height: 59,
     backgroundColor: 'rgba(255, 255, 255, 0.93)',
-    borderRadius: 30,
+    borderRadius: 10,
   },
   restaurantTextContainer: {
     flex: 1,
