@@ -385,18 +385,20 @@ const DealDetailScreen: React.FC = () => {
             >
               <MaterialCommunityIcons 
                 name={dealData.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                size={dealData.isUpvoted ? 28 : 22} 
+                size={dealData.isUpvoted ? 23 : 17} 
                 color={dealData.isUpvoted ? "#FF8C4C" : "#000"} 
               />
             </TouchableOpacity>
             <Text style={styles.voteCount}>{dealData.votes}</Text>
+            {/* Vertical separator line */}
+            <View style={styles.voteSeparator} />
             <TouchableOpacity 
               style={[styles.voteButton, dealData.isDownvoted && styles.downvoted]}
               onPress={handleDownvote}
             >
               <MaterialCommunityIcons 
                 name={dealData.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                size={dealData.isDownvoted ? 28 : 22} 
+                size={dealData.isDownvoted ? 22 : 17} 
                 color={dealData.isDownvoted ? "#9796FF" : "#000"} 
               />
             </TouchableOpacity>
@@ -409,12 +411,12 @@ const DealDetailScreen: React.FC = () => {
             >
               <MaterialCommunityIcons 
                 name={dealData.isFavorited ? "heart" : "heart-outline"} 
-                size={20} 
+                size={19} 
                 color={dealData.isFavorited ? "#FF1E00" : "#000"} 
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <MaterialCommunityIcons name="share-outline" size={20} color="#000" />
+              <MaterialCommunityIcons name="share-outline" size={19} color="#000" />
             </TouchableOpacity>
           </View>
         </View>
@@ -605,10 +607,10 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   separator: {
-    height: 1,
+    height: 0.5,
     backgroundColor: '#DEDEDE',
     marginHorizontal: 24,
-    marginVertical: 16,
+    marginVertical: 12,
   },
   dealTitle: {
     fontSize: 18,
@@ -630,6 +632,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#F0F0F0',
     overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: '#AAAAAA',
   },
   dealImage: {
     width: '100%',
@@ -680,17 +684,18 @@ const styles = StyleSheet.create({
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D8D8D8',
-    borderRadius: 25,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 30,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    height: 28,
   },
   voteButton: {
     backgroundColor: 'transparent',
-    width: 28,
-    height: 28,
+    width: 20,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -703,23 +708,29 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   voteCount: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '400',
     color: '#000000',
-    marginHorizontal: 12,
+    marginHorizontal: 6,
     fontFamily: 'Inter',
+  },
+  voteSeparator: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#D8D8D8',
+    marginHorizontal: 4,
   },
   rightActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 4,
   },
   actionButton: {
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D8D8D8',
-    borderRadius: 25,
-    width: 44,
-    height: 44,
+    borderRadius: 30,
+    width: 40,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -736,8 +747,8 @@ const styles = StyleSheet.create({
   },
   detailsText: {
     fontSize: 12,
-    color: '#666666',
-    lineHeight: 20,
+    color: '#000000',
+    lineHeight: 18,
     fontFamily: 'Inter',
     fontWeight: '400',
   },
@@ -746,37 +757,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 32,
-    paddingTop: 8,
+    paddingTop: 16,
     borderRadius: 8,
-    marginHorizontal: 16,
+    marginHorizontal: 0,
     backgroundColor: 'transparent',
   },
   profilePicture: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
+    width: 50.25,
+    height: 50.25,
+    borderRadius: 25.125,
+    marginRight: 8,
   },
   userInfo: {
     flex: 1,
   },
   sharedByLabel: {
-    fontSize: 12,
-    color: '#666666',
-    marginBottom: 2,
+    fontSize: 10,
+    color: '#000000',
+    marginBottom: 0,
     fontFamily: 'Inter',
+    fontWeight: '400',
+    letterSpacing: 0.2,
   },
   userName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#000000',
-    marginBottom: 2,
+    marginBottom: 0,
     fontFamily: 'Inter',
+    letterSpacing: 0.24,
   },
   userLocation: {
-    fontSize: 12,
-    color: '#666666',
+    fontSize: 10,
+    color: '#000000',
     fontFamily: 'Inter',
+    fontWeight: '400',
+    letterSpacing: 0.2,
   },
 });
 

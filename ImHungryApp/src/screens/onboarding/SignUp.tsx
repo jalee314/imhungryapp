@@ -77,17 +77,20 @@ export default function SignUpScreen() {
     }
     
     try {
-      const { data, error } = await supabase
-        .from('user') 
-        .select(dbField)
-        .eq(dbField, queryValue)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      // Use database functions that can be called by anonymous users
+      let exists = false;
+      
+      if (field === 'email') {
+        const { data, error } = await supabase.rpc('check_email_exists', { email_input: queryValue });
+        if (error) throw error;
+        exists = data;
+      } else if (field === 'phoneNumber') {
+        const { data, error } = await supabase.rpc('check_phone_exists', { phone_input: queryValue });
+        if (error) throw error;
+        exists = data;
       }
 
-      if (data) {
+      if (exists) {
         setErrors(prev => ({ ...prev, [field]: `${field === 'email' ? 'Email' : 'Phone number'} is already taken.` }));
       }
     } catch (err) {

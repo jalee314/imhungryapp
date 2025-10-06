@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface HeaderProps {
   onLocationPress?: () => void;
+  currentLocation?: string;
 }
 
-const Header: React.FC<HeaderProps> = memo(({ onLocationPress }) => {
+const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation }) => {
   // const [imageLoaded, setImageLoaded] = useState(false);
 
   // Preload image immediately when component mounts
@@ -35,16 +36,20 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress }) => {
             resizeMode="contain"
             // Remove fadeDuration to prevent flickering
             fadeDuration={0}
-            // Add these props for better performance
-            cache="force-cache"
             // Show image immediately without waiting for onLoad
             onLoadStart={() => {}}
             onLoad={() => {}}
             onError={() => {}}
           />
         </View>
-        <TouchableOpacity onPress={onLocationPress} style={styles.locationIconContainer}>
-          <Ionicons name="location-sharp" size={26} color="#1D1B20" />
+        <TouchableOpacity onPress={onLocationPress} style={styles.locationContainer}>
+          <View style={styles.locationInfo}>
+            <Ionicons name="location-sharp" size={16} color="#1D1B20" />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {currentLocation || 'Location'}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color="#666" />
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -78,6 +83,22 @@ const styles = StyleSheet.create({
   logoImage: {
     width: 120,
     // Remove height constraint to let it scale naturally
+  },
+  locationContainer: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    maxWidth: 120,
   },
   locationIconContainer: {
     padding: 4,

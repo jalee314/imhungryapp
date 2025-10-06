@@ -51,13 +51,10 @@ export default function UsernameScreen() {
     setError('');
 
     try {
-      const { data, error: queryError } = await supabase
-        .from('user')
-        .select('display_name')
-        .eq('display_name', name)
-        .single();
+      // Use database function that can be called by anonymous users
+      const { data, error: queryError } = await supabase.rpc('check_username_exists', { username_input: name });
 
-      if (queryError && queryError.code !== 'PGRST116') { 
+      if (queryError) { 
         throw queryError;
       }
 

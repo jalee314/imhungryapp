@@ -141,7 +141,9 @@ export const getDeviceLocation = async (): Promise<{ latitude: number; longitude
     }
 
     const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+      accuracy: Location.Accuracy.High,
+      timeInterval: 10000,
+      distanceInterval: 1,
     });
 
     return {

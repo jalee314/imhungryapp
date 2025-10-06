@@ -21,6 +21,7 @@ import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
+import LocationModal from '../../components/LocationModal';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
@@ -51,6 +52,8 @@ const Feed: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<string>('Location');
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
@@ -91,6 +94,25 @@ const Feed: React.FC = () => {
     return () => {
       unsubscribe();
     };
+  }, []);
+
+  // Load current location on mount
+  useEffect(() => {
+    const loadCurrentLocation = async () => {
+      try {
+        const { getCurrentUserLocation, getCityFromCoordinates } = await import('../../services/locationService');
+        const location = await getCurrentUserLocation();
+        if (location) {
+          const cityName = location.city || await getCityFromCoordinates(location.lat, location.lng);
+          // Format as "City, ST" (e.g., "Fullerton, CA")
+          setCurrentLocation(`${cityName}, CA`);
+        }
+      } catch (error) {
+        console.error('Error loading current location:', error);
+      }
+    };
+
+    loadCurrentLocation();
   }, []);
 
   // Setup Realtime subscriptions for interactions and favorites
@@ -411,8 +433,23 @@ const Feed: React.FC = () => {
   };
 
   const handleLocationPress = () => {
-    // Add your location handling logic here
-    console.log('Location pressed');
+    setLocationModalVisible(true);
+  };
+
+  const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
+    // Update the current location display - format like "Fullerton, CA"
+    const locationDisplay = location.state === 'Current Location' 
+      ? location.city 
+      : `${location.city}, ${location.state.split(' ')[0].slice(0, 2).toUpperCase()}`;
+    
+    setCurrentLocation(locationDisplay);
+    
+    // Here you could also update the user's location in the database
+    // and refresh the deals to reflect the new location-based filtering
+    console.log('Location updated to:', location);
+    
+    // TODO: Refresh deals with new location-based filtering
+    // loadDeals();
   };
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
@@ -496,7 +533,10 @@ const Feed: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      <Header onLocationPress={handleLocationPress} />
+      <Header 
+        onLocationPress={handleLocationPress} 
+        currentLocation={currentLocation}
+      />
 
       <ScrollView 
         style={styles.content} 
@@ -600,6 +640,12 @@ const Feed: React.FC = () => {
       </ScrollView>
 
       <BottomNavigation activeTab="feed" />
+      
+      <LocationModal
+        visible={locationModalVisible}
+        onClose={() => setLocationModalVisible(false)}
+        onLocationUpdate={handleLocationUpdate}
+      />
     </View>
   );
 };
