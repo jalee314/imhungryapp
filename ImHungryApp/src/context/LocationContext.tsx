@@ -17,6 +17,7 @@ interface LocationContextType {
   updateLocation: (location: LocationItem) => void;
   loadCurrentLocation: () => Promise<void>;
   isLoading: boolean;
+  selectedCoordinates: { lat: number; lng: number } | null;
 }
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
@@ -28,6 +29,7 @@ interface LocationProviderProps {
 export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) => {
   const [currentLocation, setCurrentLocation] = useState<string>('Location');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCoordinates, setSelectedCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
   const loadCurrentLocation = async () => {
     try {
@@ -53,6 +55,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     
     setCurrentLocation(locationDisplay);
     
+    // Store the coordinates if available
+    if (location.coordinates) {
+      setSelectedCoordinates(location.coordinates);
+    }
+    
     // Log the location update
     console.log('Global location updated to:', location);
   };
@@ -68,6 +75,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     updateLocation,
     loadCurrentLocation,
     isLoading,
+    selectedCoordinates,
   };
 
   return (

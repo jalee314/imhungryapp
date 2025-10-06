@@ -48,7 +48,7 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache(); // Get cuisines and loading state
-  const { currentLocation, updateLocation } = useLocation();
+  const { currentLocation, updateLocation, selectedCoordinates } = useLocation();
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +63,7 @@ const Feed: React.FC = () => {
   const loadDeals = async () => {
     try {
       setLoading(true);
-      const cachedDeals = await dealCacheService.getDeals();
+      const cachedDeals = await dealCacheService.getDeals(false, selectedCoordinates || undefined);
       setTimeout(() => {
         setDeals(cachedDeals);
       }, 0);
@@ -76,7 +76,7 @@ const Feed: React.FC = () => {
     }
   };
 
-  // Load deals on mount
+  // Load deals on mount and when location changes
   useEffect(() => {
     loadDeals();
 
@@ -95,7 +95,9 @@ const Feed: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [selectedCoordinates]); // Re-load when selectedCoordinates changes
+
+  // Load current location is now handled by LocationContext
 
   // Setup Realtime subscriptions for interactions and favorites
   useEffect(() => {
@@ -419,15 +421,11 @@ const Feed: React.FC = () => {
   };
 
   const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
-    // Use the global location context to update location
+    // Update the location in the global context
     updateLocation(location);
     
-    // Here you could also update the user's location in the database
-    // and refresh the deals to reflect the new location-based filtering
+    // Deals will automatically reload due to the useEffect dependency on selectedCoordinates
     console.log('Location updated to:', location);
-    
-    // TODO: Refresh deals with new location-based filtering
-    // loadDeals();
   };
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (

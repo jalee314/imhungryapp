@@ -331,13 +331,22 @@ export const addVotesToDeals = async (deals: DatabaseDeal[]): Promise<DatabaseDe
 };
 
 // Utility function to add distance information to deals
-export const addDistancesToDeals = async (deals: DatabaseDeal[]): Promise<DatabaseDeal[]> => {
+export const addDistancesToDeals = async (deals: DatabaseDeal[], customCoordinates?: { lat: number; lng: number }): Promise<DatabaseDeal[]> => {
   try {
-    // Get user location
-    const userLocation = await getCurrentUserLocation();
-    if (!userLocation) {
-      console.log('No user location available for distance calculation');
-      return deals; // Return deals without distance if no user location
+    // Get location for distance calculation
+    let locationToUse: { lat: number; lng: number } | null = null;
+    
+    if (customCoordinates) {
+      console.log('📍 Using custom coordinates for distance calculation:', customCoordinates);
+      locationToUse = customCoordinates;
+    } else {
+      // Get user location
+      const userLocation = await getCurrentUserLocation();
+      if (!userLocation) {
+        console.log('No user location available for distance calculation');
+        return deals; // Return deals without distance if no user location
+      }
+      locationToUse = userLocation;
     }
 
     // Get all restaurant locations
@@ -351,8 +360,8 @@ export const addDistancesToDeals = async (deals: DatabaseDeal[]): Promise<Databa
       
       if (restaurantLocation) {
         distanceMiles = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
+          locationToUse!.lat,
+          locationToUse!.lng,
           restaurantLocation.lat,
           restaurantLocation.lng
         );

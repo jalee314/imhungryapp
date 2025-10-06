@@ -48,7 +48,7 @@ class DealCacheService {
   }
 
   // Fetch fresh deals and cache them
-  async fetchAndCache(force = false): Promise<Deal[]> {
+  async fetchAndCache(force = false, customCoordinates?: { lat: number; lng: number }): Promise<Deal[]> {
     // Prevent multiple simultaneous fetches
     if (this.isFetching && !force) {
       return this.cachedDeals;
@@ -69,7 +69,7 @@ class DealCacheService {
       
       // Add distance and vote information to deals before transforming
       console.log('📍 Adding distance information...');
-      const dealsWithDistance = await addDistancesToDeals(dbDeals);
+      const dealsWithDistance = await addDistancesToDeals(dbDeals, customCoordinates);
       
       console.log('🗳️ Adding vote information...');
       const dealsWithVotes = await addVotesToDeals(dealsWithDistance);
@@ -110,10 +110,10 @@ class DealCacheService {
   }
 
   // Get deals (from cache or fetch)
-  async getDeals(forceRefresh = false): Promise<Deal[]> {
-    // If forced refresh, fetch immediately
-    if (forceRefresh) {
-      return this.fetchAndCache(true);
+  async getDeals(forceRefresh = false, customCoordinates?: { lat: number; lng: number }): Promise<Deal[]> {
+    // If forced refresh OR custom coordinates provided, fetch immediately to recalculate distances
+    if (forceRefresh || customCoordinates) {
+      return this.fetchAndCache(true, customCoordinates);
     }
 
     // If we have cached deals and cache is fresh, return them
@@ -128,7 +128,7 @@ class DealCacheService {
     }
 
     // Otherwise fetch fresh data
-    return this.fetchAndCache();
+    return this.fetchAndCache(false, customCoordinates);
   }
 
   // Initialize realtime subscriptions

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates } from '../services/locationService';
+import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity } from '../services/locationService';
 
 interface LocationItem {
   id: string;
@@ -155,7 +155,24 @@ const LocationModal: React.FC<LocationModalProps> = ({
         setIsUpdatingLocation(false);
       }
     } else {
-      locationToUpdate = searchResults.find(loc => loc.id === selectedLocation) || null;
+      // Get the selected location from search results
+      const selectedLocationItem = searchResults.find(loc => loc.id === selectedLocation);
+      if (selectedLocationItem) {
+        // Get coordinates for the selected city
+        setIsUpdatingLocation(true);
+        try {
+          const coordinates = await getCoordinatesFromCity(selectedLocationItem.city, selectedLocationItem.state);
+          locationToUpdate = {
+            ...selectedLocationItem,
+            coordinates: coordinates || undefined
+          };
+        } catch (error) {
+          console.error('Error getting coordinates for city:', error);
+          locationToUpdate = selectedLocationItem;
+        } finally {
+          setIsUpdatingLocation(false);
+        }
+      }
     }
 
     if (locationToUpdate) {

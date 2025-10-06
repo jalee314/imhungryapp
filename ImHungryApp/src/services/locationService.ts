@@ -177,6 +177,26 @@ export const getCityFromCoordinates = async (latitude: number, longitude: number
 };
 
 /**
+ * Get coordinates from city name using forward geocoding
+ */
+export const getCoordinatesFromCity = async (cityName: string, state: string = 'California'): Promise<{ lat: number; lng: number } | null> => {
+  try {
+    const geocode = await Location.geocodeAsync(`${cityName}, ${state}, USA`);
+    
+    if (geocode && geocode.length > 0) {
+      const location = geocode[0];
+      return {
+        lat: location.latitude,
+        lng: location.longitude
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to get coordinates from city:', error);
+  }
+  return null;
+};
+
+/**
  * Update user's location in database
  */
 export const updateUserLocation = async (

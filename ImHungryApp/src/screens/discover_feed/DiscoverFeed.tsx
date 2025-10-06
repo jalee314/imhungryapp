@@ -28,14 +28,14 @@ const { width: screenWidth } = Dimensions.get('window');
 
 const DiscoverFeed: React.FC = () => {
   const navigation = useNavigation();
-  const { currentLocation, updateLocation } = useLocation();
+  const { currentLocation, updateLocation, selectedCoordinates } = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<DiscoverRestaurant[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
 
-  // Load restaurants on mount
+  // Load restaurants on mount and when location changes
   useEffect(() => {
     const loadRestaurants = async () => {
       try {
@@ -43,12 +43,13 @@ const DiscoverFeed: React.FC = () => {
         setError(null);
         
         // Try the RPC function first, fallback to direct query
-        let result = await getRestaurantsWithDeals();
+        // Pass selectedCoordinates if available
+        let result = await getRestaurantsWithDeals(selectedCoordinates || undefined);
         
         // If RPC function fails, try direct query
         if (!result.success && result.error?.includes('function')) {
           console.log('RPC function not available, trying direct query...');
-          result = await getRestaurantsWithDealsDirect();
+          result = await getRestaurantsWithDealsDirect(selectedCoordinates || undefined);
         }
         
         if (result.success) {
@@ -65,17 +66,20 @@ const DiscoverFeed: React.FC = () => {
     };
 
     loadRestaurants();
-  }, []);
+  }, [selectedCoordinates]); // Re-load when selectedCoordinates changes
 
-  const handleSearchChange = (text: string) => {
-    setSearchQuery(text);
-  };
+  // Load current location on mount and when location changes
+  // This is now handled by LocationContext, so we can remove this effect
 
   // Filter restaurants based on search query
   const filteredRestaurants = restaurants.filter(restaurant => 
     restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     restaurant.address.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+  };
 
   const handleRowCardPress = (id: string) => {
     const restaurant = restaurants.find(r => r.restaurant_id === id);
@@ -91,15 +95,11 @@ const DiscoverFeed: React.FC = () => {
   };
 
   const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
-    // Use the global location context to update location
+    // Update the location in the global context
     updateLocation(location);
     
-    // Here you could also update the user's location in the database
-    // and refresh the restaurants to reflect the new location-based filtering
+    // Restaurants will automatically reload due to the useEffect dependency on selectedCoordinates
     console.log('Location updated to:', location);
-    
-    // TODO: Refresh restaurants with new location-based filtering
-    // loadRestaurants();
   };
 
   // Convert DiscoverRestaurant to RowCardData
@@ -192,10 +192,7 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <Header 
-          onLocationPress={handleLocationPress} 
-          currentLocation={currentLocation}
-        />
+        <Header onLocationPress={() => console.log('Location pressed')} />
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Ionicons name="search" size={20} color="#666" />
@@ -219,10 +216,7 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <Header 
-          onLocationPress={handleLocationPress} 
-          currentLocation={currentLocation}
-        />
+        <Header onLocationPress={() => console.log('Location pressed')} />
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Ionicons name="search" size={20} color="#666" />
