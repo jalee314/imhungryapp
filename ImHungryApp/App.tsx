@@ -34,6 +34,7 @@ import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
+import { LocationProvider } from './src/context/LocationContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
 import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
 import FavoritesPage from './src/screens/favorites/FavoritesPage';
@@ -227,12 +228,14 @@ export default function App() {
     <DataCacheProvider>
       <DealUpdateProvider>
         <FavoritesProvider>
-          <NavigationContainer 
-            linking={linking}
-            key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
-          >
-            {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-          </NavigationContainer>
+          <LocationProvider>
+            <NavigationContainer 
+              linking={linking}
+              key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
+            >
+              {isLoggedIn ? <AppStack /> : <OnboardingStack />}
+            </NavigationContainer>
+          </LocationProvider>
         </FavoritesProvider>
       </DealUpdateProvider>
     </DataCacheProvider>

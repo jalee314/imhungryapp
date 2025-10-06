@@ -29,6 +29,7 @@ import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
 import { useDataCache } from '../../context/DataCacheContext';
+import { useLocation } from '../../context/LocationContext';
 
 /**
  * Get the current authenticated user's ID
@@ -47,13 +48,13 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache(); // Get cuisines and loading state
+  const { currentLocation, updateLocation } = useLocation();
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<string>('Location');
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
@@ -94,25 +95,6 @@ const Feed: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, []);
-
-  // Load current location on mount
-  useEffect(() => {
-    const loadCurrentLocation = async () => {
-      try {
-        const { getCurrentUserLocation, getCityFromCoordinates } = await import('../../services/locationService');
-        const location = await getCurrentUserLocation();
-        if (location) {
-          const cityName = location.city || await getCityFromCoordinates(location.lat, location.lng);
-          // Format as "City, ST" (e.g., "Fullerton, CA")
-          setCurrentLocation(`${cityName}, CA`);
-        }
-      } catch (error) {
-        console.error('Error loading current location:', error);
-      }
-    };
-
-    loadCurrentLocation();
   }, []);
 
   // Setup Realtime subscriptions for interactions and favorites
@@ -437,12 +419,8 @@ const Feed: React.FC = () => {
   };
 
   const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
-    // Update the current location display - format like "Fullerton, CA"
-    const locationDisplay = location.state === 'Current Location' 
-      ? location.city 
-      : `${location.city}, ${location.state.split(' ')[0].slice(0, 2).toUpperCase()}`;
-    
-    setCurrentLocation(locationDisplay);
+    // Use the global location context to update location
+    updateLocation(location);
     
     // Here you could also update the user's location in the database
     // and refresh the deals to reflect the new location-based filtering

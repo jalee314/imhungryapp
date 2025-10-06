@@ -1,31 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   FlatList,
   StatusBar,
-  TouchableOpacity,
+  Image,
+  SafeAreaView,
   ActivityIndicator,
-  Dimensions,
+  RefreshControl,
+  TextInput,
+  Dimensions, // Add this import
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import BottomNavigation from '../../components/BottomNavigation';
 import RowCard, { RowCardData } from '../../components/RowCard';
 import SquareCard, { SquareCardData } from '../../components/SquareCard';
 import Header from '../../components/Header';
+import LocationModal from '../../components/LocationModal';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
+import { useLocation } from '../../context/LocationContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const DiscoverFeed: React.FC = () => {
   const navigation = useNavigation();
+  const { currentLocation, updateLocation } = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<DiscoverRestaurant[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
 
   // Load restaurants on mount
   useEffect(() => {
@@ -59,15 +67,15 @@ const DiscoverFeed: React.FC = () => {
     loadRestaurants();
   }, []);
 
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+  };
+
   // Filter restaurants based on search query
   const filteredRestaurants = restaurants.filter(restaurant => 
     restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     restaurant.address.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleSearchChange = (text: string) => {
-    setSearchQuery(text);
-  };
 
   const handleRowCardPress = (id: string) => {
     const restaurant = restaurants.find(r => r.restaurant_id === id);
@@ -76,6 +84,22 @@ const DiscoverFeed: React.FC = () => {
         restaurant 
       } as never);
     }
+  };
+
+  const handleLocationPress = () => {
+    setLocationModalVisible(true);
+  };
+
+  const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
+    // Use the global location context to update location
+    updateLocation(location);
+    
+    // Here you could also update the user's location in the database
+    // and refresh the restaurants to reflect the new location-based filtering
+    console.log('Location updated to:', location);
+    
+    // TODO: Refresh restaurants with new location-based filtering
+    // loadRestaurants();
   };
 
   // Convert DiscoverRestaurant to RowCardData
@@ -168,7 +192,10 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <Header onLocationPress={() => console.log('Location pressed')} />
+        <Header 
+          onLocationPress={handleLocationPress} 
+          currentLocation={currentLocation}
+        />
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Ionicons name="search" size={20} color="#666" />
@@ -192,7 +219,10 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <Header onLocationPress={() => console.log('Location pressed')} />
+        <Header 
+          onLocationPress={handleLocationPress} 
+          currentLocation={currentLocation}
+        />
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Ionicons name="search" size={20} color="#666" />
@@ -219,7 +249,10 @@ const DiscoverFeed: React.FC = () => {
     ]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      <Header onLocationPress={() => console.log('Location pressed')} />
+      <Header 
+        onLocationPress={handleLocationPress} 
+        currentLocation={currentLocation}
+      />
 
       <View style={styles.searchContainer}>
         <View style={[
@@ -267,6 +300,12 @@ const DiscoverFeed: React.FC = () => {
       </View>
 
       <BottomNavigation activeTab="search" />
+      
+      <LocationModal
+        visible={locationModalVisible}
+        onClose={() => setLocationModalVisible(false)}
+        onLocationUpdate={handleLocationUpdate}
+      />
     </View>
   );
 };
