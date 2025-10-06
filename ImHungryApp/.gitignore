@@ -3,6 +3,8 @@
 # dependencies
 node_modules/
 
+dev_data.sql
+
 # Expo
 .expo/
 dist/
