@@ -1,7 +1,7 @@
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Deal } from '../components/DealCard';
-import { fetchRankedDeals, transformDealForUI, addDistancesToDeals } from './dealService';
+import { fetchRankedDeals, transformDealForUI, addDistancesToDeals, addVotesToDeals } from './dealService';
 import { getUserVoteStates, calculateVoteCounts } from './voteService';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -65,9 +65,27 @@ class DealCacheService {
     try {
       console.log('🔄 Fetching fresh deals...');
       const dbDeals = await fetchRankedDeals();
-      // Add distance information to deals before transforming
+      console.log(`📊 Fetched ${dbDeals.length} deals from database`);
+      
+      // Add distance and vote information to deals before transforming
+      console.log('📍 Adding distance information...');
       const dealsWithDistance = await addDistancesToDeals(dbDeals);
-      const transformedDeals = dealsWithDistance.map(transformDealForUI);
+      
+      console.log('🗳️ Adding vote information...');
+      const dealsWithVotes = await addVotesToDeals(dealsWithDistance);
+      
+      // Log some vote states for debugging
+      const voteSample = dealsWithVotes.slice(0, 3).map(deal => ({
+        id: deal.deal_id,
+        title: deal.title.substring(0, 30),
+        votes: deal.votes,
+        isUpvoted: deal.is_upvoted,
+        isDownvoted: deal.is_downvoted,
+        isFavorited: deal.is_favorited
+      }));
+      console.log('🔍 Vote sample:', voteSample);
+      
+      const transformedDeals = dealsWithVotes.map(transformDealForUI);
       
       this.cachedDeals = transformedDeals;
       
@@ -77,7 +95,7 @@ class DealCacheService {
         AsyncStorage.setItem(CACHE_TIMESTAMP_KEY, JSON.stringify(new Date().toISOString()))
       ]);
       
-      console.log(`✅ Fetched and cached ${transformedDeals.length} deals`);
+      console.log(`✅ Fetched and cached ${transformedDeals.length} deals with votes and distances`);
       
       // Notify all subscribers
       this.notifySubscribers(transformedDeals);

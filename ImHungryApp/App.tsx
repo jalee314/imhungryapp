@@ -25,7 +25,6 @@ import ContactUsPage from './src/screens/profile/ContactUsPage';
 import FAQPage from './src/screens/profile/FAQPage';
 import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
 import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
-import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
 import Feed from './src/screens/deal_feed/Feed';
 import DiscoverFeed from './src/screens/discover_feed/DiscoverFeed';
 import CommunityUploadedScreen from './src/screens/deal_feed/CommunityUploadedScreen';
@@ -75,7 +74,6 @@ const OnboardingStack = () => (
     <Stack.Screen name="FAQPage" component={FAQPage} />
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="Feed" component={Feed} />
     <Stack.Screen name="DiscoverFeed" component={DiscoverFeed} />
     <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
@@ -114,11 +112,6 @@ const AppStack = () => (
     <Stack.Screen name="FAQPage" component={FAQPage} />
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen 
-      name="DealCreationScreen" 
-      component={DealCreationScreen} 
-      options={{ animation: 'none' }}
-    />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />

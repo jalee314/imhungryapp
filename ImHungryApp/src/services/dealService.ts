@@ -214,6 +214,11 @@ export interface DatabaseDeal {
   };
   // Add distance
   distance_miles?: number | null;
+  // Add vote information
+  votes?: number;
+  is_upvoted?: boolean;
+  is_downvoted?: boolean;
+  is_favorited?: boolean;
 }
 
 // Get user's location for ranking
@@ -286,6 +291,42 @@ const getRankedDealIds = async (): Promise<string[]> => {
     return data.map((item: any) => item.deal_id).filter(Boolean);
   } catch (error) {
     return [];
+  }
+};
+
+// Utility function to add vote information to deals
+export const addVotesToDeals = async (deals: DatabaseDeal[]): Promise<DatabaseDeal[]> => {
+  try {
+    if (deals.length === 0) return deals;
+
+    // Get deal IDs
+    const dealIds = deals.map(deal => deal.deal_id);
+    
+    // Fetch vote states and counts in parallel
+    const [voteStates, voteCounts] = await Promise.all([
+      getUserVoteStates(dealIds),
+      calculateVoteCounts(dealIds)
+    ]);
+
+    // Add vote information to each deal
+    return deals.map(deal => {
+      const voteState = voteStates[deal.deal_id] || {
+        isUpvoted: false,
+        isDownvoted: false,
+        isFavorited: false
+      };
+
+      return {
+        ...deal,
+        votes: voteCounts[deal.deal_id] || 0,
+        is_upvoted: voteState.isUpvoted,
+        is_downvoted: voteState.isDownvoted,
+        is_favorited: voteState.isFavorited
+      };
+    });
+  } catch (error) {
+    console.error('Error adding votes to deals:', error);
+    return deals; // Return deals without vote info if error
   }
 };
 
@@ -460,10 +501,10 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     details: dbDeal.description || '',
     image: imageSource,
     imageVariants: imageVariants,  // Only set if Cloudinary variants exist
-    votes: 0,
-    isUpvoted: false,
-    isDownvoted: false,
-    isFavorited: false,
+    votes: dbDeal.votes || 0,
+    isUpvoted: dbDeal.is_upvoted || false,
+    isDownvoted: dbDeal.is_downvoted || false,
+    isFavorited: dbDeal.is_favorited || false,
     cuisine: dbDeal.cuisine_name || 'Cuisine',
     cuisineId: dbDeal.cuisine_id || undefined,
     timeAgo: timeAgo,

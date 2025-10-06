@@ -9,14 +9,13 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
-  Animated,
+  Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import BottomNavigation from '../../components/BottomNavigation';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
@@ -53,10 +52,14 @@ interface Restaurant {
   address?: string;
 }
 
-export default function DealCreationScreen() {
+interface DealCreationScreenProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export default function DealCreationScreen({ visible, onClose }: DealCreationScreenProps) {
   // Get data from the context (removed 'restaurants')
   const { categories, cuisines, loading: dataLoading, error } = useDataCache();
-  const navigation = useNavigation();
   
   const [userData, setUserData] = useState({
     username: '',
@@ -86,9 +89,6 @@ export default function DealCreationScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   
-  // Animation for bottom modal entrance
-  const slideAnim = useRef(new Animated.Value(1000)).current; // Start off-screen (bottom)
-  
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -103,20 +103,17 @@ export default function DealCreationScreen() {
   };
 
   useEffect(() => {
-    loadUserData();
-    
-    // Animate the modal sliding up from bottom with no bounce
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+    if (visible) {
+      loadUserData();
+    }
+  }, [visible]);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadUserData();
-    }, [])
+      if (visible) {
+        loadUserData();
+      }
+    }, [visible])
   );
 
   // NEW: Get device's current location (not from database)
@@ -380,6 +377,8 @@ export default function DealCreationScreen() {
                 setSelectedRestaurant(null);
                 setIsAnonymous(false);
                 setIsPreviewVisible(false);
+                // Navigate back to the previous screen
+                onClose();
               }
             }
           ]
@@ -432,25 +431,17 @@ export default function DealCreationScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      
-      {/* Show a loading indicator when data is being loaded */}
-      {dataLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#FFA05C" />
-        </View>
-      )}
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        
+        {/* Show a loading indicator when data is being loaded */}
+        {dataLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#FFA05C" />
+          </View>
+        )}
 
-      <Animated.View 
-        style={[
-          styles.animatedContainer,
-          {
-            transform: [{ translateY: slideAnim }]
-          }
-        ]}
-      >
-        <SafeAreaView style={styles.safeArea}>
         <KeyboardAwareScrollView
           ref={scrollViewRef}
           style={styles.mainFrame}
@@ -466,7 +457,7 @@ export default function DealCreationScreen() {
           <View style={styles.topButtonRow}>
             <TouchableOpacity 
               style={styles.backButton} 
-              onPress={() => navigation.goBack()}
+              onPress={onClose}
             >
               <Ionicons name="arrow-back" size={20} color="#000000" />
             </TouchableOpacity>
@@ -606,9 +597,8 @@ export default function DealCreationScreen() {
         </View>
         </KeyboardAwareScrollView>
       </SafeAreaView>
-      </Animated.View>
 
-      {/* Modals and BottomNavigation outside the SafeAreaView */}
+      {/* Modals outside the SafeAreaView */}
       <PhotoActionModal
         visible={isCameraModalVisible}
         onClose={handleCloseCameraModal}
@@ -673,13 +663,7 @@ export default function DealCreationScreen() {
         userData={userData}
         isPosting={isPosting}
       />
-
-      <BottomNavigation
-          photoUrl={userData.profilePicture ? { uri: userData.profilePicture } : require('../../../img/Default_pfp.svg.png')}
-          activeTab="contribute"
-          onTabPress={(tab) => console.log('Tab pressed:', tab)}
-      />
-    </View>
+    </Modal>
   );
 }
 
@@ -687,12 +671,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-  },
-  animatedContainer: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
   },
   mainFrame: {
     flex: 1,
@@ -793,7 +771,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     flex: 1,
-    minHeight: 580,
+    minHeight: 600,
   },
   dealTitleSection: {
     flexDirection: 'row',
@@ -817,7 +795,8 @@ const styles = StyleSheet.create({
   extraDetailsInputContainer: {
     paddingHorizontal: 15,
     paddingVertical: 4,
-    minHeight: 120,
+    flex: 1,
+    minHeight: 200,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
@@ -851,7 +830,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 14,
     color: '#000000',
-    minHeight: 110,
+    flex: 1,
+    minHeight: 180,
     textAlignVertical: 'top',
     paddingHorizontal: 0,
     paddingTop: 0,

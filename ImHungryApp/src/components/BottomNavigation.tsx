@@ -4,6 +4,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
 import { isAuthenticated } from '../services/sessionService';
+import DealCreationScreen from '../screens/contribution/DealCreationScreen';
 
 interface BottomNavigationProps {
   photoUrl?: any;
@@ -18,6 +19,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 }) => {
   const navigation = useNavigation();
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
+  const [showContributeModal, setShowContributeModal] = useState(false);
 
   const loadUserData = async () => {
     try {
@@ -55,12 +57,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   ];
 
   const handleTabPress = (screenName: string) => {
-    navigation.navigate(screenName as never);
-
-    if (onTabPress) {
-      const tab = navItems.find(item => item.screen === screenName);
-      if (tab) {
-        onTabPress(tab.id);
+    if (screenName === 'DealCreationScreen') {
+      setShowContributeModal(true);
+      if (onTabPress) {
+        onTabPress('contribute');
+      }
+    } else {
+      navigation.navigate(screenName as never);
+      if (onTabPress) {
+        const tab = navItems.find(item => item.screen === screenName);
+        if (tab) {
+          onTabPress(tab.id);
+        }
       }
     }
   };
@@ -106,9 +114,16 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   return (
-    <View style={styles.bottomNav}>
-      {navItems.map(renderNavItem)}
-    </View>
+    <>
+      <View style={styles.bottomNav}>
+        {navItems.map(renderNavItem)}
+      </View>
+      
+      <DealCreationScreen
+        visible={showContributeModal}
+        onClose={() => setShowContributeModal(false)}
+      />
+    </>
   );
 };
 
