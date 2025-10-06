@@ -252,8 +252,7 @@ export const processImageWithEdgeFunction = async (
       body: {
         tempPath: tempPath,
         bucket: bucket,
-        userId: user.id,
-        type,
+        type 
       }
     });
     
