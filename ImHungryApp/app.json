@@ -22,7 +22,9 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "imhungri",
-            "CFBundleURLSchemes": ["imhungri"]
+            "CFBundleURLSchemes": [
+              "imhungri"
+            ]
           }
         ]
       }
@@ -32,7 +34,10 @@
         "backgroundColor": "#FFF5AB"
       },
       "edgeToEdgeEnabled": true,
-      "package": "Adaluna.imhungry"
+      "package": "Adaluna.imhungry",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -45,7 +50,10 @@
     "extra": {
       "supabaseUrl": "${SUPABASE_URL}",
       "supabaseAnonKey": "${SUPABASE_ANON_KEY}",
-      "googleClientId": "${GOOGLE_CLIENT_ID}"
+      "googleClientId": "${GOOGLE_CLIENT_ID}",
+      "eas": {
+        "projectId": "7d0c2bef-b815-4809-8ea8-f3c1d72a8dde"
+      }
     }
   }
 }
