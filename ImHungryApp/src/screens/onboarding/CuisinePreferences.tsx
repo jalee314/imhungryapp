@@ -3,9 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidin
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import * as FileSystem from 'expo-file-system';
 import { supabase } from '../../../lib/supabase';
-import { toByteArray } from 'base64-js';
+import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
 
 const cuisines = [
   'Italian', 'French', 'Spanish', 'Greek',
@@ -108,34 +107,9 @@ export default function CuisinePreferencesScreen() {
       const phoneDigits = userData.phoneNumber.replace(/\D/g, '');
       const e164Phone = phoneDigits.length === 10 ? `+1${phoneDigits}` : `+${phoneDigits}`;
       
-      // Upload profile photo
-      let profilePhotoUrl = 'default_avatar.png';
-      if (userData.profile_photo_url && userData.profile_photo_url !== 'default_avatar') {
-        const fileExt = userData.profile_photo_url.split('.').pop() || 'jpg';
-        const fileName = `user_${userData.email.split('@')[0]}_${userData.username}_${Date.now()}.${fileExt}`;
-        
-        const base64 = await FileSystem.readAsStringAsync(userData.profile_photo_url, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-
-        const byteArray = toByteArray(base64);
-        
-        const { data, error } = await supabase.storage
-          .from('avatars')
-          .upload(`public/${fileName}`, byteArray, { // Remove .buffer
-            contentType: `image/${fileExt}`,
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (error) {
-          console.error('Supabase storage error:', error.message);
-          // Keep default avatar if upload fails
-          profilePhotoUrl = 'default_avatar.png';
-        } else if (data) {
-          profilePhotoUrl = data.path;
-        }
-      }
+      // Note: We'll process the profile photo after user creation
+      // During signup, the user isn't authenticated yet, so we can't use processImageWithEdgeFunction
+      // We'll pass the photo URI and process it after successful signup
 
       // Create new user account with all information
       const { data: signUpResult, error } = await supabase.auth.signUp({
@@ -148,7 +122,7 @@ export default function CuisinePreferencesScreen() {
             phone_number: e164Phone,
             username: userData.username,
             full_name: `${userData.firstName} ${userData.lastName}`,
-            profile_photo_url: profilePhotoUrl,
+            profile_photo_metadata_id: null, // Will be updated after photo processing
             cuisine_preferences: selectedCuisines,
             // Include location data in auth metadata
             location_data: userData.locationData,
@@ -161,7 +135,6 @@ export default function CuisinePreferencesScreen() {
         console.error('Detailed signup error:', {
           message: error.message,
           status: error.status,
-          statusText: error.statusText,
           userData: userData,
         });
         
@@ -203,6 +176,65 @@ export default function CuisinePreferencesScreen() {
         if (userData.locationData) {
           await saveUserLocation(signUpResult.user.id, userData.locationData);
         }
+
+        // Process profile photo after user creation
+        if (userData.profile_photo_url && userData.profile_photo_url !== 'default_avatar') {
+          console.log('Processing profile photo with Cloudinary...');
+          try {
+            // Wait for user record to be created by trigger with retry mechanism
+            let userExists = false;
+            let retries = 0;
+            const maxRetries = 5;
+            
+            while (!userExists && retries < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * (retries + 1))); // Exponential backoff
+              
+              const { data: userCheck, error: userCheckError } = await supabase
+                .from('user')
+                .select('user_id')
+                .eq('user_id', signUpResult.user.id)
+                .single();
+              
+              if (userCheckError) {
+                console.error(`User record not found yet (attempt ${retries + 1}):`, userCheckError);
+                retries++;
+              } else {
+                console.log('User record confirmed exists:', userCheck);
+                userExists = true;
+              }
+            }
+            
+            if (!userExists) {
+              throw new Error('User record was not created after multiple attempts');
+            }
+            
+            const result = await processImageWithEdgeFunction(userData.profile_photo_url, 'profile_image');
+            
+            if (result.success && result.metadataId) {
+              console.log('Profile photo processed successfully, metadataId:', result.metadataId);
+              console.log('Updating user profile for user ID:', signUpResult.user.id);
+              
+              // Update user profile with the image metadata ID
+              const { data: updateData, error: updateError } = await supabase
+                .from('user')
+                .update({ profile_photo_metadata_id: result.metadataId })
+                .eq('user_id', signUpResult.user.id)
+                .select();
+              
+              if (updateError) {
+                console.error('Error updating profile photo metadata:', updateError);
+                console.error('Update error details:', JSON.stringify(updateError, null, 2));
+              } else {
+                console.log('Profile photo metadata updated successfully:', updateData);
+              }
+            } else {
+              console.error('Profile photo processing failed:', result.error);
+            }
+          } catch (photoError) {
+            console.error('Error processing profile photo:', photoError);
+            // Continue with signup even if photo processing fails
+          }
+        }
       }
 
       // Let the authentication state change handle navigation
@@ -227,32 +259,8 @@ export default function CuisinePreferencesScreen() {
       const phoneDigits = userData.phoneNumber.replace(/\D/g, '');
       const e164Phone = phoneDigits.length === 10 ? `+1${phoneDigits}` : `+${phoneDigits}`;
       
-      // Upload profile photo
-      let profilePhotoUrl = 'default_avatar.png';
-      if (userData.profile_photo_url && userData.profile_photo_url !== 'default_avatar') {
-        const fileExt = userData.profile_photo_url.split('.').pop() || 'jpg';
-        const fileName = `user_${userData.email.split('@')[0]}_${userData.username}_${Date.now()}.${fileExt}`;
-        
-        const base64 = await FileSystem.readAsStringAsync(userData.profile_photo_url, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        
-        const byteArray = toByteArray(base64);
-        
-        const { data, error } = await supabase.storage
-          .from('avatars')
-          .upload(`public/${fileName}`, byteArray.buffer, {
-            contentType: `image/${fileExt}`,
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (error) {
-          console.error('Supabase storage error:', error.message);
-        } else if (data) {
-          profilePhotoUrl = data.path;
-        }
-      }
+      // Note: We'll process the profile photo after user creation
+      // During signup, the user isn't authenticated yet, so we can't use processImageWithEdgeFunction
 
       // Create new user account with all information (no cuisine preferences)
       const { data: signUpResult, error } = await supabase.auth.signUp({
@@ -265,7 +273,7 @@ export default function CuisinePreferencesScreen() {
             phone_number: e164Phone,
             username: userData.username,
             full_name: `${userData.firstName} ${userData.lastName}`,
-            profile_photo_url: profilePhotoUrl,
+            profile_photo_metadata_id: null, // Will be updated after photo processing
             cuisine_preferences: [],
             // Include location data in auth metadata
           },
@@ -286,6 +294,65 @@ export default function CuisinePreferencesScreen() {
       // Save location data if available
       if (signUpResult.user && userData.locationData) {
         await saveUserLocation(signUpResult.user.id, userData.locationData);
+      }
+
+      // Process profile photo after user creation
+      if (signUpResult.user && userData.profile_photo_url && userData.profile_photo_url !== 'default_avatar') {
+        console.log('Processing profile photo with Cloudinary...');
+        try {
+          // Wait for user record to be created by trigger with retry mechanism
+          let userExists = false;
+          let retries = 0;
+          const maxRetries = 5;
+          
+          while (!userExists && retries < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retries + 1))); // Exponential backoff
+            
+            const { data: userCheck, error: userCheckError } = await supabase
+              .from('user')
+              .select('user_id')
+              .eq('user_id', signUpResult.user.id)
+              .single();
+            
+            if (userCheckError) {
+              console.error(`User record not found yet (attempt ${retries + 1}):`, userCheckError);
+              retries++;
+            } else {
+              console.log('User record confirmed exists:', userCheck);
+              userExists = true;
+            }
+          }
+          
+          if (!userExists) {
+            throw new Error('User record was not created after multiple attempts');
+          }
+          
+          const result = await processImageWithEdgeFunction(userData.profile_photo_url, 'profile_image');
+          
+          if (result.success && result.metadataId) {
+            console.log('Profile photo processed successfully, metadataId:', result.metadataId);
+            console.log('Updating user profile for user ID:', signUpResult.user.id);
+            
+            // Update user profile with the image metadata ID
+            const { data: updateData, error: updateError } = await supabase
+              .from('user')
+              .update({ profile_photo_metadata_id: result.metadataId })
+              .eq('user_id', signUpResult.user.id)
+              .select();
+            
+            if (updateError) {
+              console.error('Error updating profile photo metadata:', updateError);
+              console.error('Update error details:', JSON.stringify(updateError, null, 2));
+            } else {
+              console.log('Profile photo metadata updated successfully:', updateData);
+            }
+          } else {
+            console.error('Profile photo processing failed:', result.error);
+          }
+        } catch (photoError) {
+          console.error('Error processing profile photo:', photoError);
+          // Continue with signup even if photo processing fails
+        }
       }
       // Let the authentication state change handle navigation
       // The app will automatically switch to OnboardingStack after signup

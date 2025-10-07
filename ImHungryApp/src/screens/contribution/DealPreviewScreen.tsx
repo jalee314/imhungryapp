@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-  Image,
-  ActivityIndicator,
+    Modal,
+    View,
+    Text,
+    Image,
+    StyleSheet,
+    SafeAreaView,
+    TouchableOpacity,
+    ScrollView,
+    ActivityIndicator,
+    Animated,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -60,6 +61,25 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
 }) => {
     const [distance, setDistance] = useState<string>('?mi away');
     const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+    const slideAnim = useRef(new Animated.Value(400)).current; // Start off-screen to the right
+
+    useEffect(() => {
+        if (visible) {
+            // Slide in from right
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            // Animate out to the right when closing
+            Animated.timing(slideAnim, {
+                toValue: 400,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [visible]);
 
     useEffect(() => {
         const calculateRestaurantDistance = async () => {
@@ -114,9 +134,17 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     };
 
     return (
-        <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-            <SafeAreaView style={styles.container}>
-                <StatusBar style="dark" />
+        <Modal visible={visible} animationType="none" onRequestClose={onClose}>
+            <Animated.View 
+                style={[
+                    styles.animatedContainer,
+                    {
+                        transform: [{ translateX: slideAnim }]
+                    }
+                ]}
+            >
+                <SafeAreaView style={styles.container}>
+                    <StatusBar style="dark" />
                 
                 {/* Header with background and content */}
                 <View style={styles.headerBackground}>
@@ -217,11 +245,15 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                     </View>
                 </ScrollView>
             </SafeAreaView>
+            </Animated.View>
         </Modal>
     );
 };
 
 const styles = StyleSheet.create({
+  animatedContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',

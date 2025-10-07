@@ -41,6 +41,11 @@
       "expo-image-picker",
       "expo-font",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "supabaseUrl": "${SUPABASE_URL}",
+      "supabaseAnonKey": "${SUPABASE_ANON_KEY}",
+      "googleClientId": "${GOOGLE_CLIENT_ID}"
+    }
   }
 }

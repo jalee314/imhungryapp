@@ -64,7 +64,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [currentUserPhotoUrl, setCurrentUserPhotoUrl] = useState<string | null>(null);
   const [dealCount, setDealCount] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share' >('posts');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -99,7 +99,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       const freshData = await ProfileCacheService.fetchFreshProfile();
       
       if (freshData) {
-        console.log('�� Fresh profile data fetched:', {
+        console.log('📦 Fresh profile data fetched:', {
           hasPhotoUrl: !!freshData.photoUrl,
           photoUrl: freshData.photoUrl
         });
@@ -571,23 +571,12 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         <View style={styles.header}>
           <View style={styles.leftSection}>
             <View style={styles.userInfo}>
-              <Text style={[styles.userName, { fontSize: getUsernameFontSizeValue() }]}>{getDisplayNameValue()}</Text>
-              {!viewUser && (
-                <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-                  <MaterialCommunityIcons name="pencil" size={16} color="#000" />
-                </TouchableOpacity>
-              )}
-            </View>
-              <Text style={styles.joinDate}>{formatJoinDate(profile)}</Text>
-              <Text style={styles.location}>{profile?.location_city || 'Location not set'}</Text>
-              
-              {/* Statistics with real deal count */}
-              <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{dealCount}</Text>
-                  <Text style={styles.statLabel}>Deals Posted</Text>
-                </View>
+              <View>
+                <Text style={styles.userName}>{getDisplayNameValue()}</Text>
+                <Text style={styles.joinDate}>{formatJoinDate(profile)}</Text>
+                <Text style={styles.location}>{profile?.location_city || 'Location not set'}</Text>
               </View>
+            </View>
           </View>
           
           <View style={styles.rightSection}>
@@ -600,7 +589,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                     <Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
                   ) : (
                     <View style={[styles.profilePhoto, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
-                      <MaterialCommunityIcons name="account" size={40} color="#999" />
+                      <MaterialCommunityIcons name="account" size={35} color="#999" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -616,18 +605,18 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                     />
                   ) : (
                     <View style={[styles.profilePhoto, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
-                      <MaterialCommunityIcons name="account" size={40} color="#999" />
+                      <MaterialCommunityIcons name="account" size={35} color="#999" />
                     </View>
                   )}
                 </View>
               )}
           </View>
-          </View>
+        </View>
         </View>
 
-        {/* Gray Scrollable Content Container */}
-        <View style={styles.contentArea}>
+        {/* Tabs Section */}
         <View style={styles.actionButtonsContainer}>
+        <View style={{ flexDirection: 'row', gap: 4 }}>
           <TouchableOpacity 
             style={[styles.actionButton, activeTab === 'posts' && styles.activeButton]}
             onPress={() => setActiveTab('posts')}
@@ -647,17 +636,18 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               </Text>
             </TouchableOpacity>
           )}
-          
-          <View style={styles.extraSpacing} />
-          
-          <TouchableOpacity 
-            style={[styles.shareActionButton, styles.shareActionButton]}
-            onPress={() => setActiveTab('share')}
-          >
-            <Text style={styles.shareButtonText}>Share</Text>
-            <MaterialCommunityIcons name="share-variant" size={16} color="#000" />
-          </TouchableOpacity>
         </View>
+        
+        <TouchableOpacity 
+          style={styles.shareActionButton}
+          onPress={() => setActiveTab('share')}
+        >
+          <MaterialCommunityIcons name="share-variant" size={16} color="#000" />
+        </TouchableOpacity>
+        </View>
+
+        {/* Gray Scrollable Content Container */}
+        <View style={styles.contentArea}>
           {activeTab === 'posts' && (
             <View style={styles.postsContainer}>
               {postsLoading ? (
@@ -713,6 +703,16 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
           
           {activeTab === 'settings' && !viewUser && (
             <View style={styles.settingsList}>
+              {/* Add Profile option at the top */}
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={handleEditProfile}
+              >
+                <MaterialCommunityIcons name="account-edit" size={20} color="#000" />
+                <Text style={styles.settingText}>Profile</Text>
+                <Text style={styles.settingArrow}>›</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity 
                 style={styles.settingItem}
                 onPress={() => navigation.navigate('FAQPage' as never)}
@@ -851,8 +851,11 @@ const styles = StyleSheet.create({
   },
   
   userProfileContainer: {
-    paddingVertical: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 17,
     backgroundColor: '#fff',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#D8D8D8',
   },
   
   backButtonContainer: {
@@ -864,11 +867,12 @@ const styles = StyleSheet.create({
   
   actionButtonsContainer: {
     flexDirection: 'row',
-    paddingLeft: 5,
-    paddingRight: 20,
-    marginBottom: 20,
-    gap: 12,
-    alignItems: 'center'
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 4,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F5F5F5', // Changed from '#fff' to grey
   },
   
   extraSpacing: {
@@ -877,21 +881,24 @@ const styles = StyleSheet.create({
   
   contentArea: {
     backgroundColor: '#F5F5F5',
-    flex: 1, // This makes it fill remaining space
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    // Remove paddingBottom from here - it's already in dealsGrid
+    flex: 1,
+    paddingTop: 0,
   },
   
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    alignItems: 'flex-start',
+    paddingTop: 16,
+    paddingBottom: 0,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 117,
   },
   leftSection: {
     flex: 1,
-    paddingRight: 20,
+    flexDirection: 'column',
+    gap: 24,
+    justifyContent: 'center',
+    alignSelf: 'stretch',
   },
   rightSection: {
     alignItems: 'center',
@@ -899,23 +906,33 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    gap: 8,
   },
   userName: {
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#000',
+    letterSpacing: 0.48,
+    lineHeight: 24,
+    marginTop: -1,
   },
   editButton: {
     padding: 4,
   },
   joinDate: {
     fontSize: 12,
+    fontWeight: '400',
     color: '#000',
-    marginBottom: 2,
+    letterSpacing: 0.36,
+    lineHeight: 20,
   },
   location: {
     fontSize: 12,
+    fontWeight: '400',
     color: '#000',
+    letterSpacing: 0.36,
+    lineHeight: 15,
   },
 
   profilePhotoContainer: {
@@ -923,10 +940,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profilePhoto: {
-    width: 100,
-    height: 100,
+    width: 75,
+    height: 75,
     borderRadius: 9999,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#FFA05C',
   },
 
@@ -952,45 +969,37 @@ const styles = StyleSheet.create({
   },
 
   actionButton: {
-    flex: 1,
     borderRadius: 20,
     backgroundColor: '#fff',
     borderWidth: 1,
+    borderColor: '#D8D8D8',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 35,
-    minWidth: 95,
-    borderColor: '#D8D8D8',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   shareActionButton: {
-    flex: 1,
-    borderRadius: 20,
+    borderRadius: 30,
     backgroundColor: '#fff',
     borderWidth: 1,
+    borderColor: '#D8D8D8',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 35,
-    minWidth: 95,
-    borderColor: '#000',
-    flexDirection: 'row',
-    gap: 4,
+    width: 40,
+    height: 40,
   },
   activeButton: {
-    backgroundColor: '#FFA05C',
-    borderColor: '#D8D8D8'
+    backgroundColor: '#FF8C4C',
+    borderColor: '#FF8C4C',
   },
   actionButtonText: {
     fontSize: 14,
-    fontWeight: 'bold',
     color: '#000',
   },
   activeButtonText: {
     color: '#000',
-    fontWeight: 'bold',
   },
-  shareButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  shareButtonIcon: {
     color: '#000',
   },
 
@@ -1016,7 +1025,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFA05C',
     overflow: 'hidden',
-    marginBottom: 100, // Add this so settings also has space for bottom nav
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 100,
   },
   settingItem: {
     flexDirection: 'row',
@@ -1104,11 +1115,10 @@ const styles = StyleSheet.create({
     height: 12,
   },
   skeletonProfilePhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 1,
-    borderColor: '#E1E9EE',
+    width: 75,
+    height: 75,
+    borderRadius: 37.5,
+    backgroundColor: '#E1E9EE',
   },
   skeletonButton: {
     flex: 1,
@@ -1150,24 +1160,28 @@ const styles = StyleSheet.create({
   postsContainer: {
     flex: 1,
     width: '100%',
-    marginHorizontal: -20, // Counteract contentArea's paddingHorizontal: 20
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Changed from 'center' to 'flex-start'
     alignItems: 'center',
   },
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingBottom: 100, // Keep this - only padding needed for bottom nav
+    justifyContent: 'flex-start',
+    gap: 4,
+    paddingTop: 8,
+    paddingBottom: 100,
+    paddingHorizontal: 8,
+    width: '100%', // Ensure full width
   },
   leftCard: {
-    width: '43%',
-    marginBottom: 8,
+    width: 185,
+    marginBottom: 4,
+    alignSelf: 'flex-start', // Force left alignment
   },
   rightCard: {
-    width: '43%', 
-    marginBottom: 8,
+    width: 185,
+    marginBottom: 4,
+    alignSelf: 'flex-start', // Force left alignment
   },
   emptyContainer: {
     flex: 1,
@@ -1176,8 +1190,6 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
     paddingHorizontal: 40,
     width: '100%',
-    marginLeft: 40,
-
   },
   emptyText: {
     fontSize: 18,

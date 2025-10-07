@@ -1,31 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   FlatList,
   StatusBar,
-  TouchableOpacity,
+  Image,
+  SafeAreaView,
   ActivityIndicator,
-  Dimensions,
+  RefreshControl,
+  TextInput,
+  Dimensions, // Add this import
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard, { RowCardData } from '../../components/RowCard';
+import SquareCard, { SquareCardData } from '../../components/SquareCard';
 import Header from '../../components/Header';
+import LocationModal from '../../components/LocationModal';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
+import { useLocation } from '../../context/LocationContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const DiscoverFeed: React.FC = () => {
   const navigation = useNavigation();
+  const { currentLocation, updateLocation, selectedCoordinates } = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<DiscoverRestaurant[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
 
-  // Load restaurants on mount
+  // Load restaurants on mount and when location changes
   useEffect(() => {
     const loadRestaurants = async () => {
       try {
@@ -33,12 +42,13 @@ const DiscoverFeed: React.FC = () => {
         setError(null);
         
         // Try the RPC function first, fallback to direct query
-        let result = await getRestaurantsWithDeals();
+        // Pass selectedCoordinates if available
+        let result = await getRestaurantsWithDeals(selectedCoordinates || undefined);
         
         // If RPC function fails, try direct query
         if (!result.success && result.error?.includes('function')) {
           console.log('RPC function not available, trying direct query...');
-          result = await getRestaurantsWithDealsDirect();
+          result = await getRestaurantsWithDealsDirect(selectedCoordinates || undefined);
         }
         
         if (result.success) {
@@ -55,7 +65,10 @@ const DiscoverFeed: React.FC = () => {
     };
 
     loadRestaurants();
-  }, []);
+  }, [selectedCoordinates]); // Re-load when selectedCoordinates changes
+
+  // Load current location on mount and when location changes
+  // This is now handled by LocationContext, so we can remove this effect
 
   // Filter restaurants based on search query
   const filteredRestaurants = restaurants.filter(restaurant => 
@@ -76,8 +89,32 @@ const DiscoverFeed: React.FC = () => {
     }
   };
 
+  const handleLocationPress = () => {
+    setLocationModalVisible(true);
+  };
+
+  const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
+    // Update the location in the global context
+    updateLocation(location);
+    
+    // Restaurants will automatically reload due to the useEffect dependency on selectedCoordinates
+    console.log('Location updated to:', location);
+  };
+
   // Convert DiscoverRestaurant to RowCardData
   const convertToRowCardData = (restaurant: DiscoverRestaurant): RowCardData => ({
+    id: restaurant.restaurant_id,
+    title: restaurant.name,
+    subtitle: restaurant.address,
+    image: restaurant.restaurant_image_metadata 
+      ? { uri: restaurant.restaurant_image_metadata } 
+      : require('../../../img/gallery.jpg'),
+    distance: `${restaurant.distance_miles}mi`,
+    dealCount: restaurant.deal_count,
+  });
+
+  // Convert DiscoverRestaurant to SquareCardData
+  const convertToSquareCardData = (restaurant: DiscoverRestaurant): SquareCardData => ({
     id: restaurant.restaurant_id,
     title: restaurant.name,
     subtitle: restaurant.address,
@@ -92,6 +129,13 @@ const DiscoverFeed: React.FC = () => {
     <RowCard
       data={convertToRowCardData(item)}
       variant="rest-deal"
+      onPress={handleRowCardPress}
+    />
+  );
+
+  const renderSquareCard = ({ item }: { item: DiscoverRestaurant }) => (
+    <SquareCard
+      data={convertToSquareCardData(item)}
       onPress={handleRowCardPress}
     />
   );
@@ -190,10 +234,16 @@ const DiscoverFeed: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      searchQuery.length > 0 && styles.containerWithSearch
+    ]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      <Header onLocationPress={() => console.log('Location pressed')} />
+      <Header 
+        onLocationPress={handleLocationPress} 
+        currentLocation={currentLocation}
+      />
 
       <View style={styles.searchContainer}>
         <View style={[
@@ -229,14 +279,22 @@ const DiscoverFeed: React.FC = () => {
       <View style={styles.content}>
         <FlatList
           data={filteredRestaurants}
-          renderItem={renderRestaurantCard}
+          renderItem={searchQuery.length > 0 ? renderSquareCard : renderRestaurantCard}
           keyExtractor={(item) => item.restaurant_id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyState}
+          numColumns={searchQuery.length > 0 ? 3 : 1}
+          key={searchQuery.length > 0 ? 'grid' : 'list'} // Force re-render when switching layouts
+          columnWrapperStyle={searchQuery.length > 0 ? styles.gridRow : undefined}
         />
       </View>
 
+      <LocationModal
+        visible={locationModalVisible}
+        onClose={() => setLocationModalVisible(false)}
+        onLocationUpdate={handleLocationUpdate}
+      />
     </View>
   );
 };
@@ -245,6 +303,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  containerWithSearch: {
+    backgroundColor: '#F5F5F5',
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -285,8 +346,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.41,
     lineHeight: 22,
     padding: 0,
-    background: 'transparent',
-    border: 'none',
   },
   clearButton: {
     padding: 4,
@@ -297,6 +356,11 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 0, // Remove extra padding
+  },
+  gridRow: {
+    justifyContent: 'flex-start', // Changed from 'space-between' to 'flex-start'
+    paddingHorizontal: 20,
+    gap: 10, // Add gap between items for consistent spacing
   },
   loadingContainer: {
     flex: 1,

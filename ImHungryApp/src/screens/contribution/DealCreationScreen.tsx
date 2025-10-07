@@ -9,6 +9,7 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -51,13 +52,18 @@ interface Restaurant {
   address?: string;
 }
 
-export default function DealCreationScreen() {
+interface DealCreationScreenProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export default function DealCreationScreen({ visible, onClose }: DealCreationScreenProps) {
   // Get data from the context (removed 'restaurants')
   const { categories, cuisines, loading: dataLoading, error } = useDataCache();
   
   const [userData, setUserData] = useState({
     username: '',
-    profilePicture: null,
+    profilePicture: null as string | null,
     city: '',
     state: ''
   });
@@ -97,13 +103,17 @@ export default function DealCreationScreen() {
   };
 
   useEffect(() => {
-    loadUserData();
-  }, []);
+    if (visible) {
+      loadUserData();
+    }
+  }, [visible]);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadUserData();
-    }, [])
+      if (visible) {
+        loadUserData();
+      }
+    }, [visible])
   );
 
   // NEW: Get device's current location (not from database)
@@ -357,16 +367,23 @@ export default function DealCreationScreen() {
             {
               text: "OK",
               onPress: () => {
-                // Clear the form
-                setDealTitle('');
-                setDealDetails('');
-                setImageUri(null);
-                setExpirationDate(null);
-                setSelectedCategory(null);
-                setSelectedCuisine(null);
-                setSelectedRestaurant(null);
-                setIsAnonymous(false);
+                // First close the preview screen
                 setIsPreviewVisible(false);
+                
+                // Clear the form after a brief delay
+                setTimeout(() => {
+                  setDealTitle('');
+                  setDealDetails('');
+                  setImageUri(null);
+                  setExpirationDate(null);
+                  setSelectedCategory(null);
+                  setSelectedCuisine(null);
+                  setSelectedRestaurant(null);
+                  setIsAnonymous(false);
+                  
+                  // Then close the main modal
+                  onClose();
+                }, 200);
               }
             }
           ]
@@ -419,19 +436,17 @@ export default function DealCreationScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      
-      <Header onLocationPress={() => console.log('Location pressed')} />
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        
+        {/* Show a loading indicator when data is being loaded */}
+        {dataLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#FFA05C" />
+          </View>
+        )}
 
-      {/* Show a loading indicator when data is being loaded */}
-      {dataLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#FFA05C" />
-        </View>
-      )}
-
-      <SafeAreaView style={styles.safeArea}>
         <KeyboardAwareScrollView
           ref={scrollViewRef}
           style={styles.mainFrame}
@@ -443,16 +458,24 @@ export default function DealCreationScreen() {
           keyboardOpeningTime={0}
           scrollToOverflowEnabled={true}
         >
-          <View style={styles.reviewButtonRow}>
+          {/* Back Button and Next Button Row */}
+          <View style={styles.topButtonRow}>
             <TouchableOpacity 
-              style={[styles.reviewButton, dataLoading ? styles.disabledButton : null]} 
+              style={styles.backButton} 
+              onPress={onClose}
+            >
+              <Ionicons name="arrow-back" size={20} color="#000000" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.nextButton, dataLoading ? styles.disabledButton : null]} 
               onPress={handlePreview}
               disabled={dataLoading}
             >
-              <Text style={styles.reviewButtonText}>PREVIEW</Text>
+              <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
           </View>
 
+          {/* Search bar */}
           {selectedRestaurant ? (
             <View style={styles.selectedRestaurantContainer}>
               <View style={styles.restaurantTextContainer}>
@@ -466,37 +489,50 @@ export default function DealCreationScreen() {
           ) : (
             <TouchableOpacity style={styles.searchContainer} onPress={handleSearchPress}>
               <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
-              <Text style={styles.searchPlaceholder}>Search Restaurant</Text>
+              <Text style={styles.searchPlaceholder}>Search for Restaurant *</Text>
             </TouchableOpacity>
           )}
 
-          <View style={styles.dealTitleBox}>
-            <TextInput
-              ref={titleInputRef}
-              style={styles.dealTitleText}
-              value={dealTitle}
-              onChangeText={setDealTitle}
-              placeholder='Deal Title - "$10 Sushi before 5pm on M-W"'
-              placeholderTextColor="#888889"
-              multiline
-              maxLength={100}
-              onFocus={handleTitleFocus}
-            />
-            <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
-          </View>
+          {/* Unified main container - with minimal gap from search */}
+          <View style={styles.dealContainerWrapper}>
+            <View style={styles.unifiedContainer}>
+            {/* Deal Title Section */}
+            <View style={styles.dealTitleSection}>
+              <Ionicons name="menu-outline" size={20} color="#606060" />
+              <Text style={styles.sectionLabel}>Deal Title *</Text>
+            </View>
+            <View style={styles.dealTitleInputContainer}>
+              <TextInput
+                ref={titleInputRef}
+                style={styles.dealTitleText}
+                value={dealTitle}
+                onChangeText={setDealTitle}
+                placeholder="$10 Sushi before 5pm on M-W"
+                placeholderTextColor="#C1C1C1"
+                multiline
+                maxLength={100}
+                onFocus={handleTitleFocus}
+              />
+              <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
+            </View>
+            
+            <View style={styles.separator} />
 
-          <View style={styles.extraDetailsContainer}>
+                        
+            {/* Options Section */}
             <TouchableOpacity style={styles.optionRow} onPress={handleAddPhoto}>
-              <Ionicons name="camera-outline" size={24} color="#404040" />
+              <Ionicons name="camera-outline" size={20} color="#404040" />
               <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Add Photo</Text>
+                <Text style={styles.optionText}>Add Photo *</Text>
                 {imageUri && <Text style={styles.optionSubText}>Photo Added</Text>}
               </View>
-              <Ionicons name="chevron-forward" size={20} color="black" />
+              <Ionicons name="chevron-forward" size={12} color="black" />
             </TouchableOpacity>
+            
             <View style={styles.separator} />
+            
             <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
-              <Ionicons name="time-outline" size={24} color="#4E4E4E" />
+              <Ionicons name="time-outline" size={20} color="#4E4E4E" />
               <View style={styles.optionTextContainer}>
                 <Text style={styles.optionText}>Expiration Date</Text>
                 {expirationDate && (
@@ -505,48 +541,65 @@ export default function DealCreationScreen() {
                   </Text>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={20} color="black" />
+              <Ionicons name="chevron-forward" size={12} color="black" />
             </TouchableOpacity>
+            
             <View style={styles.separator} />
+            
             <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
-              <Ionicons name="grid-outline" size={24} color="#606060" />
+              <Ionicons name="grid-outline" size={20} color="#606060" />
               <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Deal Category</Text>
+                <Text style={styles.optionText}>Deal Categories</Text>
                 {selectedCategory && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryName()}</Text>}
               </View>
-              <Ionicons name="chevron-forward" size={20} color="black" />
+              <Ionicons name="chevron-forward" size={12} color="black" />
             </TouchableOpacity>
+            
             <View style={styles.separator} />
+            
             <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
-              <Ionicons name="pricetag-outline" size={24} color="#606060" />
+              <Ionicons name="pricetag-outline" size={20} color="#606060" />
               <View style={styles.optionTextContainer}>
                 <Text style={styles.optionText}>Cuisine Tag</Text>
                 {selectedCuisine && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineName()}</Text>}
               </View>
-              <Ionicons name="chevron-forward" size={20} color="black" />
+              <Ionicons name="chevron-forward" size={12} color="black" />
             </TouchableOpacity>
+            
             <View style={styles.separator} />
+            
             <View style={styles.optionRow}>
-              <MaterialCommunityIcons name="incognito" size={24} color="#606060" />
+              <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
               <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
-              <Switch trackColor={{ false: "#D2D5DA", true: "#FFA05C" }} thumbColor={"#FFFFFF"} onValueChange={setIsAnonymous} value={isAnonymous} />
+              <Switch 
+                trackColor={{ false: "#D2D5DA", true: "#FFA05C" }} 
+                thumbColor={"#FFFFFF"} 
+                onValueChange={setIsAnonymous} 
+                value={isAnonymous} 
+              />
             </View>
+            
             <View style={styles.separator} />
+            
             <View style={styles.optionRow}>
-              <Ionicons name="menu-outline" size={24} color="#606060" />
+              <Ionicons name="menu-outline" size={20} color="#606060" />
               <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
             </View>
-            <TextInput
-              ref={detailsInputRef}
-              style={styles.extraDetailsInput}
-              value={dealDetails}
-              onChangeText={setDealDetails}
-              placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Does it apply to a specific menu section?&#10;• Are there any limitations or exclusions?"
-              placeholderTextColor="#888889"
-              multiline
-              onFocus={handleDetailsFocus}
-            />
+            
+            <View style={styles.extraDetailsInputContainer}>
+              <TextInput
+                ref={detailsInputRef}
+                style={styles.extraDetailsInput}
+                value={dealDetails}
+                onChangeText={setDealDetails}
+                placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Are there any limitations or exclusions?&#10;• Are there any codes or special instructions needed to redeem it?&#10;• Is this a mobile deal or in-person deal?"
+                placeholderTextColor="#C1C1C1"
+                multiline
+                onFocus={handleDetailsFocus}
+              />
+            </View>
           </View>
+        </View>
         </KeyboardAwareScrollView>
       </SafeAreaView>
 
@@ -562,7 +615,7 @@ export default function DealCreationScreen() {
         visible={isCategoriesModalVisible} 
         onClose={() => setIsCategoriesModalVisible(false)} 
         onDone={handleDoneCategories} 
-        initialSelected={selectedCategory ? [selectedCategory] : []} 
+        initialSelected={selectedCategory ? [selectedCategory] : []}
         data={categories}
         title="Select Deal Category" 
         singleSelect={true}
@@ -571,7 +624,7 @@ export default function DealCreationScreen() {
         visible={isFoodTagsModalVisible} 
         onClose={() => setIsFoodTagsModalVisible(false)} 
         onDone={handleDoneCuisines} 
-        initialSelected={selectedCuisine ? [selectedCuisine] : []} 
+        initialSelected={selectedCuisine ? [selectedCuisine] : []}
         data={cuisines}
         title="Select Cuisine Tag" 
         singleSelect={true}
@@ -589,7 +642,7 @@ export default function DealCreationScreen() {
           isSearching 
             ? [{ id: 'loading', name: 'Searching restaurants...', subtext: '' }]
             : searchError
-            ? [{ id: 'error', name: searchError, subtext: 'Try a different search' }]
+            ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
             : searchQuery.trim().length > 0
             ? (searchResults.length > 0 
                 ? searchResults 
@@ -615,8 +668,7 @@ export default function DealCreationScreen() {
         userData={userData}
         isPosting={isPosting}
       />
-
-    </View>
+    </Modal>
   );
 }
 
@@ -624,9 +676,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-  },
-  safeArea: {
-    flex: 1,
   },
   mainFrame: {
     flex: 1,
@@ -636,55 +685,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 14,
     paddingBottom: 20,
-    gap: 14,
   },
-  reviewButtonRow: {
+  topButtonRow: {
     width: '100%',
     paddingHorizontal: 16,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  reviewButton: {
+  backButton: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    width: 90,
-    height: 30,
-    backgroundColor: '#FFA05C',
-    borderRadius: 30,
+    borderRadius: 20,
   },
-  reviewButtonText: {
+  nextButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 140, 76, 0.8)',
+    borderRadius: 30,
+    minWidth: 90,
+  },
+  nextButtonText: {
     fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
+    fontWeight: '400',
+    fontSize: 14,
     color: '#000000',
+  },
+  dealContainerWrapper: {
+    marginTop: 6,
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    padding: 12,
     width: 369,
-    height: 44,
-    backgroundColor: '#FFFFFF',
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.93)',
     borderRadius: 10,
     gap: 8,
     paddingHorizontal: 16,
   },
   searchPlaceholder: {
     flex: 1,
-    fontFamily: 'SF Pro Text',
-    fontSize: 17,
-    color: 'rgba(60, 60, 67, 0.6)',
+    fontFamily: 'Inter',
+    fontSize: 12,
+    color: 'rgba(12, 12, 13, 1)',
+    letterSpacing: -0.408,
     marginLeft: 8,
   },
   selectedRestaurantContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     width: 369,
-    backgroundColor: '#FFFFFF',
+    height: 59,
+    backgroundColor: 'rgba(255, 255, 255, 0.93)',
     borderRadius: 10,
   },
   restaurantTextContainer: {
@@ -694,7 +758,7 @@ const styles = StyleSheet.create({
   selectedRestaurantName: {
     fontFamily: 'Inter',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 17,
     color: '#000000',
     marginBottom: 2,
@@ -702,50 +766,54 @@ const styles = StyleSheet.create({
   selectedRestaurantAddress: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 17,
     color: '#000000',
   },
-  dealTitleBox: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+  unifiedContainer: {
     width: 369,
-    minHeight: 100,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-  },
-  dealTitleTextInput: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '700',
+    paddingVertical: 12,
     flex: 1,
+    minHeight: 600,
   },
-  dealTitleTextPlaceholder: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: '#000000',
-    fontWeight: '400',
-    flex: 1,
+  dealTitleSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    height: 38,
+    gap: 17,
   },
-  characterCount: {
+  sectionLabel: {
     fontFamily: 'Inter',
     fontSize: 12,
-    color: '#888889',
-    alignSelf: 'flex-end',
-    marginTop: 4,
+    color: '#000000',
+    flex: 1,
   },
-  extraDetailsContainer: {
-    width: 369,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 8,
+  dealTitleInputContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 4,
+    minHeight: 70,
+  },
+  extraDetailsInputContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 4,
+    flex: 1,
+    minHeight: 200,
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#C1C1C1',
+    marginVertical: 4,
   },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    minHeight: 44,
+    minHeight: 38,
+    paddingVertical: 6,
     gap: 16,
   },
   optionTextContainer: {
@@ -763,20 +831,19 @@ const styles = StyleSheet.create({
     color: '#888889',
     marginTop: 2,
   },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
-    marginHorizontal: 16,
-  },
   extraDetailsInput: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
     fontFamily: 'Inter',
     fontSize: 14,
     color: '#000000',
-    minHeight: 130,
+    flex: 1,
+    minHeight: 180,
     textAlignVertical: 'top',
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingLeft: 2,
+    paddingBottom: 12,
+    lineHeight: 20,
+    includeFontPadding: false,
   },
   safeAreaContent: {
     flex: 1,
@@ -790,7 +857,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 14,
     color: '#000000',
-    flex: 1,
+    minHeight: 50,
+    textAlignVertical: 'top',
+    lineHeight: 20,
+    paddingTop: 0,
+    paddingLeft: 4,
+    includeFontPadding: false,
+  },
+  characterCount: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    color: '#888889',
+    alignSelf: 'flex-end',
+    marginTop: 4,
   },
   loadingOverlay: {
     position: 'absolute',

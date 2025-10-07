@@ -23,20 +23,20 @@ serve(async (req) => {
       apiSecret: apiSecret ? '✓' : '✗'
     });
 
-    // ✅ REMOVED userId from request body
-    const { tempPath, bucket, type } = await req.json();
+    const { tempPath, bucket, userId, type } = await req.json();
     
     console.log('Request body received:', { 
       tempPath, 
       bucket, 
+      userId, 
       type,
       hasTempPath: !!tempPath,
       hasBucket: !!bucket,
+      hasUserId: !!userId,
       hasType: !!type
     });
     
-    // ✅ REMOVED userId from validation
-    if (!tempPath || !bucket || !type) {
+    if (!tempPath || !bucket || !userId || !type) {
       console.error('Missing required fields');
       return new Response(JSON.stringify({
         success: false,
@@ -94,6 +94,19 @@ serve(async (req) => {
       console.error('File size is 0 bytes');
       console.error('This suggests the upload to temp folder failed or the file was corrupted');
       
+      // Let's try to list files in the temp folder to see what's there
+      console.log('=== Checking temp folder contents ===');
+      const { data: listData, error: listError } = await supabase.storage
+        .from(bucket)
+        .list('temp');
+      
+      console.log('Temp folder listing:', {
+        hasListData: !!listData,
+        listError: listError,
+        fileCount: listData?.length || 0,
+        files: listData?.map(f => ({ name: f.name, size: f.metadata?.size, updated: f.updated_at }))
+      });
+      
       return new Response(JSON.stringify({
         success: false,
         error: 'Downloaded image is empty - check upload process'
@@ -128,8 +141,7 @@ serve(async (req) => {
     console.log('=== Uploading to Cloudinary ===');
     const timestamp = Math.round(Date.now() / 1000);
     const folder = `imhungri/${type}`;
-    // ✅ Generate publicId without userId
-    const publicId = `${type}_${timestamp}_${Math.random().toString(36).substring(7)}`;
+    const publicId = `${type}_${userId}_${timestamp}`;
     const eager = 'c_fill,w_1200,h_1200,q_90|c_fill,w_800,h_800,q_85|c_fill,w_400,h_400,q_80|c_fill,w_200,h_200,q_75|c_fill,w_100,h_100,q_70';
     const format = 'webp';
     
@@ -217,17 +229,17 @@ serve(async (req) => {
       cloudinary_id: cloudinaryData.public_id // Store this for future transformations
     };
 
-    // ✅ Store metadata in database WITHOUT user_id
+    // Store metadata in database
     console.log('=== Storing Metadata ===');
     const { data: metadataResult, error: metadataError } = await supabase
       .from('image_metadata')
       .insert({
         image_type: type,
-        original_path: cloudinaryData.secure_url,
+        original_path: cloudinaryData.secure_url, // Add this - use Cloudinary URL as the original path
         variants: variants,
         cloudinary_public_id: cloudinaryData.public_id,
-        created_at: new Date().toISOString()
-        // ✅ REMOVED user_id - ownership is established by the table that references this
+        created_at: new Date().toISOString(),
+        user_id: userId
       })
       .select()
       .single();

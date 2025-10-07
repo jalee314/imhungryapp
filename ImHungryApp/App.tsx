@@ -40,6 +40,7 @@ import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
+import { LocationProvider } from './src/context/LocationContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
 import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
 import ImageCacheService from './src/services/imageCacheService';
@@ -190,7 +191,9 @@ export default function App() {
       <DataCacheProvider>
         <DealUpdateProvider>
           <FavoritesProvider>
-            <AppContent />
+            <LocationProvider>
+              <AppContent />
+            </LocationProvider>
           </FavoritesProvider>
         </DealUpdateProvider>
       </DataCacheProvider>
