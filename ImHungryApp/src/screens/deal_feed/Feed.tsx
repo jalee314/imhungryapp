@@ -21,6 +21,7 @@ import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
+import LocationModal from '../../components/LocationModal';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
@@ -28,6 +29,7 @@ import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
 import { useDataCache } from '../../context/DataCacheContext';
+import { useLocation } from '../../context/LocationContext';
 
 /**
  * Get the current authenticated user's ID
@@ -46,33 +48,36 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache(); // Get cuisines and loading state
+  const { currentLocation, updateLocation, selectedCoordinates } = useLocation();
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
   
-  // Load deals on mount
-  useEffect(() => {
-    const loadDeals = async () => {
-      try {
-        setLoading(true);
-        const cachedDeals = await dealCacheService.getDeals();
-        setTimeout(() => {
-          setDeals(cachedDeals);
-        }, 0);
-        setError(null);
-      } catch (err) {
-        console.error('Error loading deals:', err);
-        setError('Failed to load deals. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // ✅ Move loadDeals function here, outside the useEffect
+  const loadDeals = async () => {
+    try {
+      setLoading(true);
+      const cachedDeals = await dealCacheService.getDeals(false, selectedCoordinates || undefined);
+      setTimeout(() => {
+        setDeals(cachedDeals);
+      }, 0);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading deals:', err);
+      setError('Failed to load deals. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Load deals on mount and when location changes
+  useEffect(() => {
     loadDeals();
 
     // Initialize deal_instance realtime
@@ -90,7 +95,9 @@ const Feed: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [selectedCoordinates]); // Re-load when selectedCoordinates changes
+
+  // Load current location is now handled by LocationContext
 
   // Setup Realtime subscriptions for interactions and favorites
   useEffect(() => {
@@ -410,8 +417,15 @@ const Feed: React.FC = () => {
   };
 
   const handleLocationPress = () => {
-    // Add your location handling logic here
-    console.log('Location pressed');
+    setLocationModalVisible(true);
+  };
+
+  const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
+    // Update the location in the global context
+    updateLocation(location);
+    
+    // Deals will automatically reload due to the useEffect dependency on selectedCoordinates
+    console.log('Location updated to:', location);
   };
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
@@ -495,7 +509,10 @@ const Feed: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      <Header onLocationPress={handleLocationPress} />
+      <Header 
+        onLocationPress={handleLocationPress} 
+        currentLocation={currentLocation}
+      />
 
       <ScrollView 
         style={styles.content} 
@@ -599,6 +616,12 @@ const Feed: React.FC = () => {
       </ScrollView>
 
       <BottomNavigation activeTab="feed" />
+      
+      <LocationModal
+        visible={locationModalVisible}
+        onClose={() => setLocationModalVisible(false)}
+        onLocationUpdate={handleLocationUpdate}
+      />
     </View>
   );
 };
@@ -670,7 +693,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#AAAAAA',
     marginVertical: 8,
     marginHorizontal: -10,
-    width: '100%',
+    width: '110%',
   },
 
   dealsGrid: {

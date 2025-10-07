@@ -25,7 +25,6 @@ import ContactUsPage from './src/screens/profile/ContactUsPage';
 import FAQPage from './src/screens/profile/FAQPage';
 import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
 import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
-import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
 import Feed from './src/screens/deal_feed/Feed';
 import DiscoverFeed from './src/screens/discover_feed/DiscoverFeed';
 import CommunityUploadedScreen from './src/screens/deal_feed/CommunityUploadedScreen';
@@ -35,6 +34,7 @@ import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
+import { LocationProvider } from './src/context/LocationContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
 import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
 import FavoritesPage from './src/screens/favorites/FavoritesPage';
@@ -47,14 +47,20 @@ const OnboardingStack = () => (
   <Stack.Navigator 
     screenOptions={{ 
       headerShown: false,
-      animation: 'none',
+      animation: 'slide_from_right',
       gestureEnabled: false
     }}
-    initialRouteName="LogIn"
+    initialRouteName="Landing"
   >
-    <Stack.Screen name="Landing" component={LandingScreen} />
-    <Stack.Screen name="SignUp" component={SignUp} />
-    <Stack.Screen name="LogIn" component={LogIn} />
+    <Stack.Screen name="Landing" component={LandingScreen}  />
+    <Stack.Screen 
+      name="SignUp" 
+      component={SignUp} 
+      options={({ route }) => ({
+        animation: (route.params as any)?.fromLogin ? 'slide_from_left' : 'slide_from_right'
+      })}
+    />
+    <Stack.Screen name="LogIn" component={LogIn}  />
     <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
     <Stack.Screen name="ResetPassword" component={ResetPassword} />
     <Stack.Screen name="Username" component={UsernameScreen} />
@@ -69,7 +75,6 @@ const OnboardingStack = () => (
     <Stack.Screen name="FAQPage" component={FAQPage} />
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen name="DealCreationScreen" component={DealCreationScreen} />
     <Stack.Screen name="Feed" component={Feed} />
     <Stack.Screen name="DiscoverFeed" component={DiscoverFeed} />
     <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
@@ -108,11 +113,6 @@ const AppStack = () => (
     <Stack.Screen name="FAQPage" component={FAQPage} />
     <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
     <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen 
-      name="DealCreationScreen" 
-      component={DealCreationScreen} 
-      options={{ animation: 'none' }}
-    />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
     <Stack.Screen name="DealDetail" component={DealDetailScreen} />
     <Stack.Screen name="ReportContent" component={ReportContentScreen} />
@@ -228,12 +228,14 @@ export default function App() {
     <DataCacheProvider>
       <DealUpdateProvider>
         <FavoritesProvider>
-          <NavigationContainer 
-            linking={linking}
-            key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
-          >
-            {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-          </NavigationContainer>
+          <LocationProvider>
+            <NavigationContainer 
+              linking={linking}
+              key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
+            >
+              {isLoggedIn ? <AppStack /> : <OnboardingStack />}
+            </NavigationContainer>
+          </LocationProvider>
         </FavoritesProvider>
       </DealUpdateProvider>
     </DataCacheProvider>

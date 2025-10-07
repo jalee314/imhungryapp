@@ -67,7 +67,7 @@ export default function LogInScreen() {
   };
 
   const handleBack = () => {
-    (navigation as any).navigate('SignUp');
+    (navigation as any).navigate('SignUp', { fromLogin: true });
   };
 
   const handleForgotPassword = () => {
@@ -78,14 +78,7 @@ export default function LogInScreen() {
   const handlePrivacyPress = () => {};
 
   return (
-    <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={['rgba(255, 245, 171, 0.1)', 'rgba(255, 225, 0, 0.8)']}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        pointerEvents="none"
-      />
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -112,14 +105,14 @@ export default function LogInScreen() {
                     value={formData.email}
                     onChangeText={t => handleInputChange('email', t)}
                     placeholder=""
-                    outlineColor="#FFA05C"
-                    activeOutlineColor="#FFA05C"
+                    outlineColor="#FF8C4C"
+                    activeOutlineColor="#FF8C4C"
                     dense
-                    style={[styles.paperInput, { backgroundColor: '#FFF5AB' }]}
+                    style={[styles.paperInput, { backgroundColor: 'white' }]}
                     theme={{
                       roundness: 12,
                       colors: {
-                        background: '#FFF5AB',
+                        background: 'white',
                       },
                     }}
                     keyboardType="email-address"
@@ -137,14 +130,14 @@ export default function LogInScreen() {
                     value={formData.password}
                     onChangeText={t => handleInputChange('password', t)}
                     placeholder=""
-                    outlineColor="#FFA05C"
-                    activeOutlineColor="#FFA05C"
+                    outlineColor="#FF8C4C"
+                    activeOutlineColor="#FF8C4C"
                     dense
-                    style={[styles.paperInput, { backgroundColor: '#FFF5AB' }]}
+                    style={[styles.paperInput, { backgroundColor: 'white' }]}
                     theme={{
                       roundness: 12,
                       colors: {
-                        background: '#FFF5AB',
+                        background: 'white',
                       },
                     }}
                     keyboardType="default"
@@ -190,7 +183,7 @@ export default function LogInScreen() {
 
 const styles = StyleSheet.create({
   // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
-  container: { flex: 1, backgroundColor: 'rgba(255, 245, 171, 0.5)' },
+  container: { flex: 1, backgroundColor: 'white' },
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 }, // responsive padding applied at runtime
@@ -204,7 +197,7 @@ const styles = StyleSheet.create({
   welcomeSubtitle:{ fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
 
   formContainer: { width: '100%' },
-  paperInput:    { backgroundColor: 'rgba(255, 245, 171, 0.5)' }, // field bg; spacing added responsively
+  paperInput:    { backgroundColor: 'white' }, // field bg; spacing added responsively
 
   forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
   forgotPasswordText: { 
@@ -217,7 +210,7 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     height: 44,
-    backgroundColor: '#FFA05C',
+    backgroundColor: '#FF8C4C',
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',

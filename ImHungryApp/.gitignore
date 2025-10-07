@@ -3,6 +3,8 @@
 # dependencies
 node_modules/
 
+dev_data.sql
+
 # Expo
 .expo/
 dist/
@@ -38,3 +40,6 @@ yarn-error.*
 
 #Environment variables
 .env
+eas.json
+eas.json
+*.sql

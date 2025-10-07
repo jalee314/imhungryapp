@@ -102,7 +102,7 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       return [];
     }
 
-    // Get all template data in one batch query
+    // Get all template data in one batch query - NOW WITH IMAGE METADATA
     const templateIds = [...new Set(deals.map(d => d.template_id))];
     const { data: templatesData } = await supabase
       .from('deal_template')
@@ -110,15 +110,23 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         template_id,
         title, 
         description, 
-        image_url, 
+        image_url,
+        image_metadata_id,
         restaurant_id, 
         cuisine_id, 
         category_id,
         user_id,
         is_anonymous,
+        image_metadata:image_metadata_id (
+          variants
+        ),
         user:user_id (
           display_name,
-          profile_photo
+          profile_photo,
+          profile_photo_metadata_id,
+          image_metadata:profile_photo_metadata_id (
+            variants
+          )
         )
       `)
       .in('template_id', templateIds);
@@ -200,31 +208,24 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
           : `${distanceKm.toFixed(1)}mi`;
       }
 
-      // Process image URL
-      let imageUrl = '';
-      if (template.image_url) {
-        if (template.image_url.startsWith('http')) {
-          imageUrl = template.image_url;
-        } else {
-          const { data } = supabase.storage
-            .from('deal-images')
-            .getPublicUrl(template.image_url);
-          imageUrl = data.publicUrl;
-        }
+      // UPDATED: Handle image URL - use Cloudinary or use 'placeholder' string
+      let imageUrl = 'placeholder'; // Default to placeholder
+      if (template.image_metadata?.variants) {
+        // Use Cloudinary variants (new deals)
+        const variants = template.image_metadata.variants;
+        imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
       }
+      // OLD Supabase storage images will just use 'placeholder'
 
-      // Process user data
+      // Process user data with Cloudinary support
       const userData = Array.isArray(template.user) ? template.user[0] : template.user;
       let userProfilePhotoUrl = null;
-      if (userData?.profile_photo && !template.is_anonymous) {
-        if (userData.profile_photo.startsWith('http')) {
-          userProfilePhotoUrl = userData.profile_photo;
-        } else {
-          const { data } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(userData.profile_photo);
-          userProfilePhotoUrl = data.publicUrl;
+      if (userData && !template.is_anonymous) {
+        // Try Cloudinary first
+        if (userData.image_metadata?.variants) {
+          userProfilePhotoUrl = userData.image_metadata.variants.small || userData.image_metadata.variants.thumbnail || null;
         }
+        // If no Cloudinary, leave as null (don't use old Supabase storage)
       }
 
       const favoriteRecord = favoriteData.find(fav => fav.deal_id === deal.deal_id);
@@ -359,7 +360,7 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       // Get all restaurant details in one batch query
       supabase
         .from('restaurant')
-        .select('restaurant_id, name, address, logo_image')
+        .select('restaurant_id, name, address, restaurant_image_metadata') // Changed
         .in('restaurant_id', allRestaurantIds),
       
       // Get cuisine details for restaurants
@@ -466,14 +467,21 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
 
       // Process restaurant image URL - add Supabase storage prefix if needed
       let imageUrl = '';
-      if (restaurantData.logo_image) {
-        if (restaurantData.logo_image.startsWith('http')) {
-          imageUrl = restaurantData.logo_image;
+      if (restaurantData.restaurant_image_metadata) {
+        // This is a UUID reference to image_metadata table
+        // You'll need to fetch the variants from image_metadata table
+        // For now, if you want a quick fix, you can treat it as a URL
+        if (typeof restaurantData.restaurant_image_metadata === 'string' && 
+            restaurantData.restaurant_image_metadata.startsWith('http')) {
+          imageUrl = restaurantData.restaurant_image_metadata;
         } else {
-          const { data } = supabase.storage
-            .from('restaurant-images')
-            .getPublicUrl(restaurantData.logo_image);
-          imageUrl = data.publicUrl;
+          // TODO: Query image_metadata table to get variants
+          // const { data: metadata } = await supabase
+          //   .from('image_metadata')
+          //   .select('variants')
+          //   .eq('image_metadata_id', restaurantData.restaurant_image_metadata)
+          //   .single();
+          // Then use imageProcessingService to get optimal variant
         }
       }
 

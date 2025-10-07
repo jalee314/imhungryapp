@@ -54,65 +54,46 @@ const getCurrentUserId = async (): Promise<string | null> => {
  */
 export const fetchUserData = async (): Promise<UserDisplayData> => {
   try {
-    // First try to get from cache
-    const cachedUser = await AsyncStorage.getItem('userData');
-    if (cachedUser) {
-      const parsed = JSON.parse(cachedUser);
-      // Check if cache is recent (less than 5 minutes old)
-      const cacheTime = await AsyncStorage.getItem('userDataTimestamp');
-      if (cacheTime && Date.now() - parseInt(cacheTime) < 5 * 60 * 1000) {
-        return parsed;
-      }
-    }
+    const userId = await getCurrentUserId();
+    if (!userId) throw new Error('No authenticated user');
 
-    // Get current user ID
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('No authenticated user found');
-    }
-
-    // Fetch user data from Supabase
-    const { data: userData, error } = await supabase
+    const { data: user, error } = await supabase
       .from('user')
-      .select('*')
-      .eq('user_id', user.id)
+      .select(`
+        *,
+        image_metadata:profile_photo_metadata_id (
+          variants
+        )
+      `)
+      .eq('user_id', userId)
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
-      throw error;
-    }
+    if (error) throw error;
+    if (!user) throw new Error('User not found');
 
-    // Important: Process the profile photo URL
-    let profilePicture = null;
-      if (userData.profile_photo) {
-        if (userData.profile_photo.startsWith('http')) {
-          profilePicture = userData.profile_photo;
-        } else {
-          profilePicture = getPublicUrl(userData.profile_photo);
-        }
-      }
+    console.log('📸 User data fetched:', {
+      hasImageMetadata: !!user.image_metadata,
+      variants: user.image_metadata?.variants,
+      oldProfilePhoto: user.profile_photo
+    });
 
-      const displayData: UserDisplayData = {
-        username: userData.display_name,
-        profilePicture: profilePicture,
-        city: userData.location_city || 'Unknown',
-        state: 'CA',
-      };
+    // Use the medium variant for profile display
+    const profilePicture = user.image_metadata?.variants?.medium 
+      || user.image_metadata?.variants?.small
+      || user.image_metadata?.variants?.thumbnail
+      || user.profile_photo;  // Fallback to old path
 
-    // Cache the data
-    await AsyncStorage.setItem('userData', JSON.stringify(displayData));
-    await AsyncStorage.setItem('userDataTimestamp', Date.now().toString());
-    
-    return displayData;
+    console.log('📸 Final profilePicture URL:', profilePicture);
+
+    return {
+      username: user.display_name || 'User',
+      profilePicture,
+      city: user.location_city || 'City',
+      state: 'CA'
+    };
   } catch (error) {
     console.error('Error fetching user data:', error);
-    return {
-      username: 'Guest User',
-      profilePicture: null,
-      city: 'Unknown',
-      state: 'Location',
-    };
+    throw error;
   }
 };
 

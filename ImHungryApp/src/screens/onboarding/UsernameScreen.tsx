@@ -51,13 +51,10 @@ export default function UsernameScreen() {
     setError('');
 
     try {
-      const { data, error: queryError } = await supabase
-        .from('user')
-        .select('display_name')
-        .eq('display_name', name)
-        .single();
+      // Use database function that can be called by anonymous users
+      const { data, error: queryError } = await supabase.rpc('check_username_exists', { username_input: name });
 
-      if (queryError && queryError.code !== 'PGRST116') { 
+      if (queryError) { 
         throw queryError;
       }
 
@@ -97,13 +94,8 @@ export default function UsernameScreen() {
   };
 
   return (
-    <View style = {{flex:1}}>
-      <LinearGradient
-        colors={['rgba(255, 245, 171, 0.1)', 'rgba(255, 225, 0, 0.8)']}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-      >
-        <SafeAreaView style={styles.container}>
+    <View style = {{flex:1, backgroundColor: 'white'}}>
+      <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
           <View style={styles.pagePad}>
@@ -130,8 +122,8 @@ export default function UsernameScreen() {
                         colors: {
                         onSurface: '#333',          
                         onSurfaceVariant: '#636363',
-                        background: 'transparent',
-                        surface: 'transparent',
+                        background: 'white',
+                        surface: 'white',
                         },
                     }}
 
@@ -154,14 +146,12 @@ export default function UsernameScreen() {
           </View>
         </KeyboardAvoidingView>
     </SafeAreaView>
-</LinearGradient>
 </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 ,backgroundColor: 'rgba(255, 245, 171, 0.5)'},
-  gradient: { flex: 1 },
+  container: { flex: 1 ,backgroundColor: 'white'},
   flex1: { flex: 1 },
   pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
   mainContainer: { flex: 1, alignItems: 'center', width: '100%' },
@@ -193,7 +183,7 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   footer: { width: '100%', paddingBottom: 16 },
 
-  continueButton: { width: '100%', height: 44, backgroundColor: '#FFA05C', borderRadius: 22, alignItems: 'center', justifyContent: 'center',marginBottom: 50 },
+  continueButton: { width: '100%', height: 44, backgroundColor: '#FF8C4C', borderRadius: 22, alignItems: 'center', justifyContent: 'center',marginBottom: 50 },
   continueButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   errorText: {
     color: 'red',

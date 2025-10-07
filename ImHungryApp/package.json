@@ -23,6 +23,7 @@
     "expo-asset": "^12.0.8",
     "expo-file-system": "^18.1.11",
     "expo-font": "~13.3.2",
+    "expo-image-manipulator": "~13.1.7",
     "expo-image-picker": "^16.1.4",
     "expo-linear-gradient": "^14.1.5",
     "expo-linking": "~7.1.7",
@@ -43,13 +44,13 @@
     "react-native-screens": "~4.11.1",
     "react-native-svg": "^15.13.0",
     "react-native-url-polyfill": "^2.0.0",
-    "react-native-vector-icons": "^10.3.0"
+    "react-native-vector-icons": "^10.3.0",
+    "supabase": "^2.48.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
     "@types/react-native-vector-icons": "^6.4.18",
-    "supabase": "^2.45.5",
     "typescript": "~5.8.3"
   },
   "private": true

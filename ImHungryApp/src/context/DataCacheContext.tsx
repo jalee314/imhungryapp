@@ -19,7 +19,7 @@ export interface Restaurant {
   address: string;
   lat: number; // Extracted from PostGIS location
   lng: number; // Extracted from PostGIS location
-  logoImage?: string; // Corresponds to logo_image
+  imageMetadataId?: string; // Changed from logoImage
   brandId?: string; // Corresponds to brand_id
 }
 
@@ -95,10 +95,10 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
           // Fetch cuisines
           supabase.from('cuisine').select('cuisine_id, cuisine_name'),
           
-          // Fetch restaurants using the PostGIS view
+          // Fetch restaurants using your existing view
           supabase
             .from('restaurants_with_coords')
-            .select('restaurant_id, name, address, logo_image, brand_id, lat, lng')
+            .select('restaurant_id, name, address, restaurant_image_metadata, brand_id, lat, lng')
             .limit(100)
         ]);
           
@@ -126,7 +126,7 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
             address: item.address,
             lat: parseFloat(item.lat),
             lng: parseFloat(item.lng),
-            logoImage: item.logo_image,
+            imageMetadataId: item.restaurant_image_metadata, // Changed
             brandId: item.brand_id
           }));
         

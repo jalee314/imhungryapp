@@ -186,7 +186,11 @@ const FavoritesPage: React.FC = () => {
       // Prevent multiple subscriptions
       if (favoriteChannel.current) {
         console.log('🔄 Realtime subscription already exists, cleaning up first...');
-        supabase.removeChannel(favoriteChannel.current);
+        try {
+          await supabase.removeChannel(favoriteChannel.current);
+        } catch (error) {
+          console.error('Error removing existing channel:', error);
+        }
         favoriteChannel.current = null;
       }
 
@@ -207,7 +211,7 @@ const FavoritesPage: React.FC = () => {
 
       // Subscribe to favorite changes for the current user
       // Use a more specific channel name to avoid conflicts
-      favoriteChannel.current = supabase
+      const channel = supabase
         .channel(`favorites-realtime-${userId}`)
         .on(
           'postgres_changes',
@@ -287,8 +291,22 @@ const FavoritesPage: React.FC = () => {
             console.log('🔒 Favorites realtime channel closed');
           }
         });
+
+      // Store the channel reference AFTER subscription
+      favoriteChannel.current = channel;
     } catch (error) {
       console.error('Error setting up favorites realtime subscription:', error);
+      // Fallback to interval-based refresh on error
+      if (!refreshInterval.current) {
+        console.log('🔄 Setting up fallback refresh due to subscription error');
+        refreshInterval.current = setInterval(() => {
+          if (activeTab === 'deals') {
+            loadDeals();
+          } else {
+            loadRestaurants();
+          }
+        }, 30000);
+      }
     }
   };
 
@@ -430,7 +448,10 @@ const FavoritesPage: React.FC = () => {
         id: deal.id,
         title: deal.title,
         subtitle: `${deal.restaurantName} • ${deal.distance}`,
-        image: deal.imageUrl ? { uri: deal.imageUrl } : require('../../../img/Default_pfp.svg.png'),
+        // Use placeholder image for old deals, Cloudinary URL for new ones
+        image: deal.imageUrl === 'placeholder' || !deal.imageUrl
+          ? require('../../../img/albert.webp') 
+          : { uri: deal.imageUrl },
         userId: deal.userId,
         userProfilePhoto: deal.userProfilePhoto,
         userDisplayName: deal.userDisplayName,

@@ -6,7 +6,7 @@ export interface DiscoverRestaurant {
   restaurant_id: string;
   name: string;
   address: string;
-  logo_image?: string;
+  restaurant_image_metadata?: string; // Changed from logo_image
   deal_count: number;
   distance_miles: number;
   lat: number;
@@ -22,29 +22,38 @@ export interface DiscoverResult {
 
 /**
  * Get all unique restaurants that have deals, with deal counts and distances
+ * @param customCoordinates - Optional custom coordinates to use for distance calculation instead of user's location
  */
-export const getRestaurantsWithDeals = async (): Promise<DiscoverResult> => {
+export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
   try {
     console.log('🔍 Fetching restaurants with deals...');
 
-    // Get current user location for distance calculation
-    const userLocation = await getCurrentUserLocation();
-    if (!userLocation) {
-      return {
-        success: false,
-        restaurants: [],
-        count: 0,
-        error: 'User location not available'
-      };
+    // Get location for distance calculation
+    let locationToUse: { lat: number; lng: number } | null = null;
+    
+    if (customCoordinates) {
+      console.log('📍 Using custom coordinates:', customCoordinates);
+      locationToUse = customCoordinates;
+    } else {
+      // Get current user location for distance calculation
+      const userLocation = await getCurrentUserLocation();
+      if (!userLocation) {
+        return {
+          success: false,
+          restaurants: [],
+          count: 0,
+          error: 'User location not available'
+        };
+      }
+      console.log('📍 User location:', userLocation);
+      locationToUse = userLocation;
     }
-
-    console.log('📍 User location:', userLocation);
 
     // Query to get unique restaurants with deal counts
     // This uses a CTE to get restaurant counts and then joins with restaurant data
     const { data, error } = await supabase.rpc('get_restaurants_with_deal_counts', {
-      user_lat: userLocation.lat,
-      user_lng: userLocation.lng
+      user_lat: locationToUse.lat,
+      user_lng: locationToUse.lng
     });
 
     if (error) {
@@ -71,7 +80,7 @@ export const getRestaurantsWithDeals = async (): Promise<DiscoverResult> => {
       restaurant_id: restaurant.restaurant_id,
       name: restaurant.name,
       address: restaurant.address,
-      logo_image: restaurant.logo_image,
+      restaurant_image_metadata: restaurant.restaurant_image_metadata, // Changed
       deal_count: parseInt(restaurant.deal_count) || 0,
       distance_miles: parseFloat(restaurant.distance_miles) || 0,
       lat: parseFloat(restaurant.lat),
@@ -102,20 +111,30 @@ export const getRestaurantsWithDeals = async (): Promise<DiscoverResult> => {
 /**
  * Alternative implementation using direct SQL query (if RPC function doesn't exist)
  * This can be used as a fallback or if you prefer to implement the logic in the client
+ * @param customCoordinates - Optional custom coordinates to use for distance calculation instead of user's location
  */
-export const getRestaurantsWithDealsDirect = async (): Promise<DiscoverResult> => {
+export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
   try {
     console.log('🔍 Fetching restaurants with deals (direct query)...');
 
-    // Get current user location
-    const userLocation = await getCurrentUserLocation();
-    if (!userLocation) {
-      return {
-        success: false,
-        restaurants: [],
-        count: 0,
-        error: 'User location not available'
-      };
+    // Get location for distance calculation
+    let locationToUse: { lat: number; lng: number } | null = null;
+    
+    if (customCoordinates) {
+      console.log('📍 Using custom coordinates:', customCoordinates);
+      locationToUse = customCoordinates;
+    } else {
+      // Get current user location
+      const userLocation = await getCurrentUserLocation();
+      if (!userLocation) {
+        return {
+          success: false,
+          restaurants: [],
+          count: 0,
+          error: 'User location not available'
+        };
+      }
+      locationToUse = userLocation;
     }
 
     // First, get all unique restaurant IDs that have deals
@@ -154,7 +173,7 @@ export const getRestaurantsWithDealsDirect = async (): Promise<DiscoverResult> =
     // Get restaurant details with coordinates
     const { data: restaurants, error: restaurantsError } = await supabase
       .from('restaurants_with_coords')
-      .select('restaurant_id, name, address, logo_image, lat, lng')
+      .select('restaurant_id, name, address, restaurant_image_metadata, lat, lng') // Changed
       .in('restaurant_id', uniqueRestaurantIds);
 
     if (restaurantsError) {
@@ -188,8 +207,8 @@ export const getRestaurantsWithDealsDirect = async (): Promise<DiscoverResult> =
       .filter(restaurant => restaurant.lat && restaurant.lng)
       .map(restaurant => {
         const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
+          locationToUse!.lat,
+          locationToUse!.lng,
           restaurant.lat,
           restaurant.lng
         );
@@ -198,7 +217,7 @@ export const getRestaurantsWithDealsDirect = async (): Promise<DiscoverResult> =
           restaurant_id: restaurant.restaurant_id,
           name: restaurant.name,
           address: restaurant.address,
-          logo_image: restaurant.logo_image,
+          restaurant_image_metadata: restaurant.restaurant_image_metadata, // Changed
           deal_count: dealCounts[restaurant.restaurant_id] || 0,
           distance_miles: Math.round(distance * 10) / 10, // Round to 1 decimal place
           lat: restaurant.lat,

@@ -14,6 +14,7 @@ export interface UserPost {
   restaurant: string;
   details: string;
   image: { uri: string } | any;
+  imageVariants?: any; // ✅ Add this for OptimizedImage
   votes: number;
   isUpvoted: boolean;
   isDownvoted: boolean;
@@ -34,15 +35,20 @@ export interface UserPost {
  * Transform database post data to UI format
  */
 export const transformDealForUI = (post: any): UserPost => {
-  // Process image URL
-  let imageUri = null;
-  if (post.image_url) {
-    if (post.image_url.startsWith('http')) {
-      imageUri = post.image_url;
-    } else {
-      const { data } = supabase.storage.from('deal-images').getPublicUrl(post.image_url);
-      imageUri = data.publicUrl;
-    }
+  // Handle image source - ONLY use Cloudinary or placeholder
+  let imageSource;
+  let imageVariants = undefined;
+  
+  if (post.image_metadata?.variants) {
+    // Use Cloudinary variants (new deals)
+    console.log('✅ Using Cloudinary for user post:', post.title);
+    imageSource = require('../../img/albert.webp'); // Fallback for Image component
+    imageVariants = post.image_metadata.variants; // OptimizedImage will use this
+  } else {
+    // Old deal without Cloudinary → use placeholder instead of slow Supabase Storage
+    console.log('⚠️ Old post, using placeholder:', post.title);
+    imageSource = require('../../img/albert.webp');
+    imageVariants = undefined; // No variants = OptimizedImage won't be used
   }
   
   return {
@@ -52,7 +58,8 @@ export const transformDealForUI = (post: any): UserPost => {
       ? (post.restaurant[0]?.name || 'Unknown') 
       : (post.restaurant?.name || 'Unknown'),
     details: post.description,
-    image: imageUri ? { uri: imageUri } : null,
+    image: imageSource,
+    imageVariants: imageVariants, // ✅ Pass variants for OptimizedImage
     votes: 0,
     isUpvoted: false,
     isDownvoted: false,
@@ -97,11 +104,15 @@ export const fetchUserPosts = async (
         title,
         description,
         image_url,
+        image_metadata_id,
         created_at,
         restaurant_id,
         restaurant:restaurant_id (
           name,
           address
+        ),
+        image_metadata:image_metadata_id (
+          variants
         )
       `)
       .eq('user_id', targetUserId)
@@ -127,6 +138,7 @@ export const fetchUserPosts = async (
       title: post.title,
       description: post.description,
       image_url: post.image_url,
+      image_metadata: post.image_metadata, // ✅ Pass Cloudinary metadata
       created_at: post.created_at,
       restaurant: post.restaurant,
       user_display_name: '', // Will be set by caller
