@@ -43,3 +43,15 @@ yarn-error.*
 eas.json
 eas.json
 *.sql
+
+# Environment files
+.env.local
+.env.development
+.env.production
+.env
+
+# Environment files
+.env.local
+.env.development
+.env.production
+.env
