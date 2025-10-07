@@ -13,7 +13,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 import RowCard from '../../components/RowCard';
-import BottomNavigation from '../../components/BottomNavigation';
 import { fetchFavoriteDeals, fetchFavoriteRestaurants, clearFavoritesCache, toggleRestaurantFavorite, FavoriteDeal, FavoriteRestaurant } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
 import { useFavorites } from '../../context/FavoritesContext';
@@ -545,7 +544,6 @@ const FavoritesPage: React.FC = () => {
         )}
       </ScrollView>
 
-      <BottomNavigation activeTab="favorites" />
     </View>
   );
 };
@@ -554,7 +552,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    paddingBottom: 80, // Add padding for bottom navigation
+    paddingBottom: 0, // MainAppLayout handles bottom navigation spacing
   },
   loadingContainer: {
     flex: 1,

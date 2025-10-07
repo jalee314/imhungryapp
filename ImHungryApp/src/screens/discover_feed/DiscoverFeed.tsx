@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import BottomNavigation from '../../components/BottomNavigation';
 import RowCard, { RowCardData } from '../../components/RowCard';
 import Header from '../../components/Header';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
@@ -71,9 +70,9 @@ const DiscoverFeed: React.FC = () => {
   const handleRowCardPress = (id: string) => {
     const restaurant = restaurants.find(r => r.restaurant_id === id);
     if (restaurant) {
-      navigation.navigate('RestaurantDetail' as never, { 
+      (navigation as any).navigate('RestaurantDetail', { 
         restaurant 
-      } as never);
+      });
     }
   };
 
@@ -163,7 +162,6 @@ const DiscoverFeed: React.FC = () => {
           </View>
         </View>
         {renderLoadingState()}
-        <BottomNavigation activeTab="search" />
       </View>
     );
   }
@@ -187,7 +185,6 @@ const DiscoverFeed: React.FC = () => {
           </View>
         </View>
         {renderErrorState()}
-        <BottomNavigation activeTab="search" />
       </View>
     );
   }
@@ -240,7 +237,6 @@ const DiscoverFeed: React.FC = () => {
         />
       </View>
 
-      <BottomNavigation activeTab="search" />
     </View>
   );
 };
@@ -297,10 +293,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingBottom: 100,
+    paddingBottom: 0, // Remove extra padding since MainAppLayout handles this
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingBottom: 0, // Remove extra padding
   },
   loadingContainer: {
     flex: 1,

@@ -15,7 +15,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import BottomNavigation from '../../components/BottomNavigation';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
@@ -551,7 +550,7 @@ export default function DealCreationScreen() {
         </KeyboardAwareScrollView>
       </SafeAreaView>
 
-      {/* Modals and BottomNavigation outside the SafeAreaView */}
+      {/* Modals outside the SafeAreaView */}
       <PhotoActionModal
         visible={isCameraModalVisible}
         onClose={handleCloseCameraModal}
@@ -617,11 +616,6 @@ export default function DealCreationScreen() {
         isPosting={isPosting}
       />
 
-      <BottomNavigation
-          photoUrl={userData.profilePicture ? { uri: userData.profilePicture } : require('../../../img/Default_pfp.svg.png')}
-          activeTab="contribute"
-          onTabPress={(tab) => console.log('Tab pressed:', tab)}
-      />
     </View>
   );
 }

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
-import { isAuthenticated } from '../services/sessionService';
+import { useAuth } from '../context/AuthContext';
 
 interface BottomNavigationProps {
   photoUrl?: any;
@@ -17,13 +17,13 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   onTabPress 
 }) => {
   const navigation = useNavigation();
+  const { isAuthenticated } = useAuth();
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
 
   const loadUserData = async () => {
     try {
       // Check if user is authenticated before fetching data
-      const isAuth = await isAuthenticated();
-      if (!isAuth) {
+      if (!isAuthenticated) {
         setUserPhotoUrl(null);
         return;
       }
@@ -122,11 +122,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
-    paddingVertical: 3, // CHANGED: Reduced from 6 to 3 to move icons up slightly
+    paddingVertical: 6, // CHANGED: Reduced from 6 to 3 to move icons up slightly
     paddingHorizontal: 15,
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingBottom: 30, // CHANGED: Increased from 34 to 44 for more space from bottom
+    paddingBottom:16, // CHANGED: Increased from 34 to 44 for more space from bottom
   },
   navItem: {
     alignItems: 'center',

@@ -6,7 +6,6 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
-import BottomNavigation from '../../components/BottomNavigation';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';
@@ -782,16 +781,6 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
       </ScrollView>
       
-      {/* Bottom Navigation - Fixed at bottom */}
-      <BottomNavigation 
-        photoUrl={currentUserPhotoUrl} 
-        activeTab="profile"
-        onTabPress={(tab) => {
-          if (tab === 'profile') {
-            handleProfileTabPress();
-          }
-        }}
-      />
 
       {/* Logout Modal */}
       <Modal
