@@ -1,9 +1,10 @@
-import * as React from 'react';
+import React from 'react';
 import { View, ActivityIndicator, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthGuard from './src/components/AuthGuard';
 
@@ -122,7 +123,7 @@ const AppStack = () => (
   </AuthGuard>
 );
 
-const prefix = Linking.createURL('/');
+const prefix = Linking.createURL('/', { scheme: 'imhungri' });
 
 const linking = {
   prefixes: [prefix, 'com.imhungri://', 'imhungri://'],
