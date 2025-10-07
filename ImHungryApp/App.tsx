@@ -4,8 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
-import { supabase } from './lib/supabase';
-import { initializeAuthSession, setupAppStateListener } from './src/services/sessionService';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import AuthGuard from './src/components/AuthGuard';
 
 
 import LandingScreen from './src/screens/onboarding/LandingScreen';
@@ -25,8 +25,14 @@ import ContactUsPage from './src/screens/profile/ContactUsPage';
 import FAQPage from './src/screens/profile/FAQPage';
 import TermsConditionsPage from './src/screens/profile/TermsConditionsPage';
 import PrivacyPolicyPage from './src/screens/profile/PrivacyPolicyPage';
-import Feed from './src/screens/deal_feed/Feed';
-import DiscoverFeed from './src/screens/discover_feed/DiscoverFeed';
+import DealCreationScreen from './src/screens/contribution/DealCreationScreen';
+import { 
+  FeedWithNav, 
+  DiscoverFeedWithNav, 
+  DealCreationWithNav, 
+  FavoritesWithNav, 
+  ProfileWithNav 
+} from './src/components/ScreenWrappers';
 import CommunityUploadedScreen from './src/screens/deal_feed/CommunityUploadedScreen';
 import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
@@ -37,7 +43,6 @@ import { FavoritesProvider } from './src/context/FavoritesContext';
 import { LocationProvider } from './src/context/LocationContext';
 import CuisineEdit from './src/screens/profile/CuisineEdit';
 import RestaurantDetailScreen from './src/screens/discover_feed/RestaurantDetailScreen';
-import FavoritesPage from './src/screens/favorites/FavoritesPage';
 import ImageCacheService from './src/services/imageCacheService';
 
 
@@ -68,62 +73,53 @@ const OnboardingStack = () => (
     <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
     <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
-    <Stack.Screen name="ProfilePage" component={ProfilePage} />
-    <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
-    <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
-    <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
-    <Stack.Screen name="FAQPage" component={FAQPage} />
-    <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
-    <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen name="Feed" component={Feed} />
-    <Stack.Screen name="DiscoverFeed" component={DiscoverFeed} />
-    <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
-    <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
-    <Stack.Screen name="DealDetail" component={DealDetailScreen} />
-    <Stack.Screen name="ReportContent" component={ReportContentScreen} />
-    <Stack.Screen name="BlockUser" component={BlockUserScreen} />
-    <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
-    <Stack.Screen name="FavoritesPage" component={FavoritesPage} />
   </Stack.Navigator>
 );
 
 const AppStack = () => (
-  <Stack.Navigator screenOptions={{ 
-    headerShown: false
-  }}>
-    <Stack.Screen 
-      name="Feed" 
-      component={Feed} 
-      options={{ animation: 'none' }}
-    />
-    <Stack.Screen 
-      name="DiscoverFeed" 
-      component={DiscoverFeed} 
-      options={{ animation: 'none' }}
-    />
-    <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
-    <Stack.Screen 
-      name="ProfilePage" 
-      component={ProfilePage} 
-      options={{ animation: 'none' }}
-    />
-    <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
-    <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
-    <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
-    <Stack.Screen name="FAQPage" component={FAQPage} />
-    <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
-    <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
-    <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
-    <Stack.Screen name="DealDetail" component={DealDetailScreen} />
-    <Stack.Screen name="ReportContent" component={ReportContentScreen} />
-    <Stack.Screen name="BlockUser" component={BlockUserScreen} />
-    <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
-    <Stack.Screen 
-      name="FavoritesPage" 
-      component={FavoritesPage} 
-      options={{ animation: 'none' }}
-    />
-  </Stack.Navigator>
+  <AuthGuard>
+    <Stack.Navigator screenOptions={{ 
+      headerShown: false
+    }}>
+      <Stack.Screen 
+        name="Feed" 
+        component={FeedWithNav} 
+        options={{ animation: 'none' }}
+      />
+      <Stack.Screen 
+        name="DiscoverFeed" 
+        component={DiscoverFeedWithNav} 
+        options={{ animation: 'none' }}
+      />
+      <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
+      <Stack.Screen 
+        name="ProfilePage" 
+        component={ProfileWithNav} 
+        options={{ animation: 'none' }}
+      />
+      <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
+      <Stack.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
+      <Stack.Screen name="ContactUsPage" component={ContactUsPage} />
+      <Stack.Screen name="FAQPage" component={FAQPage} />
+      <Stack.Screen name="TermsConditionsPage" component={TermsConditionsPage} />
+      <Stack.Screen name="PrivacyPolicyPage" component={PrivacyPolicyPage} />
+      <Stack.Screen 
+        name="DealCreationScreen" 
+        component={DealCreationWithNav} 
+        options={{ animation: 'none' }}
+      />
+      <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
+      <Stack.Screen name="DealDetail" component={DealDetailScreen} />
+      <Stack.Screen name="ReportContent" component={ReportContentScreen} />
+      <Stack.Screen name="BlockUser" component={BlockUserScreen} />
+      <Stack.Screen name="CuisineEdit" component={CuisineEdit} />
+      <Stack.Screen 
+        name="FavoritesPage" 
+        component={FavoritesWithNav} 
+        options={{ animation: 'none' }}
+      />
+    </Stack.Navigator>
+  </AuthGuard>
 );
 
 const prefix = Linking.createURL('/');
@@ -139,6 +135,27 @@ const linking = {
   },
 };
 
+const AppContent = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
+        <ActivityIndicator size="large" color="#FFA05C" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer 
+      linking={linking}
+      key={isAuthenticated ? 'app' : 'onboarding'} // Force remount when switching stacks
+    >
+      {isAuthenticated ? <AppStack /> : <OnboardingStack />}
+    </NavigationContainer>
+  );
+};
+
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
@@ -148,8 +165,6 @@ export default function App() {
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -163,50 +178,6 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [fontsLoaded]);
 
-  // Initialize auth session and check login status
-  React.useEffect(() => {
-    const checkAndInitialize = async () => {
-      try {
-        const isAuth = await initializeAuthSession();
-        setIsLoggedIn(isAuth);
-      } catch (error) {
-        console.error('Error initializing:', error);
-        setIsLoggedIn(false);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAndInitialize();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const newLoginState = !!session;
-      
-      // Force state update with a small delay to ensure it takes effect
-      setTimeout(() => {
-        setIsLoggedIn(newLoginState);
-      }, 100);
-      
-      if (session && event === 'SIGNED_IN') {
-        await initializeAuthSession();
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // Setup app state listener for session management
-  React.useEffect(() => {
-    const cleanup = setupAppStateListener();
-    return cleanup;
-  }, []);
-
-  // Preload the logo image when app starts
-  // Image.prefetch(Image.resolveAssetSource(require('./img/hungri_logo.png')).uri);
-
   if (!fontsLoaded && !fontError && !timeoutReached) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
@@ -215,29 +186,17 @@ export default function App() {
     );
   }
 
-  if (isCheckingAuth) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
-        <ActivityIndicator size="large" color="#FFA05C" />
-      </View>
-    );
-  }
-
-
   return (
-    <DataCacheProvider>
-      <DealUpdateProvider>
-        <FavoritesProvider>
-          <LocationProvider>
-            <NavigationContainer 
-              linking={linking}
-              key={isLoggedIn ? 'app' : 'onboarding'} // Force remount when switching stacks
-            >
-              {isLoggedIn ? <AppStack /> : <OnboardingStack />}
-            </NavigationContainer>
-          </LocationProvider>
-        </FavoritesProvider>
-      </DealUpdateProvider>
-    </DataCacheProvider>
+    <AuthProvider>
+      <DataCacheProvider>
+        <DealUpdateProvider>
+          <FavoritesProvider>
+            <LocationProvider>
+              <AppContent />
+            </LocationProvider>
+          </FavoritesProvider>
+        </DealUpdateProvider>
+      </DataCacheProvider>
+    </AuthProvider>
   );
 }

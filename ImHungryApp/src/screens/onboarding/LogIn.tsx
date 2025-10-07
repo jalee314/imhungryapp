@@ -56,8 +56,9 @@ export default function LogInScreen() {
       if (error) {
         Alert.alert('Error', error.message);
       } else {
-        // Navigate to main app or home screen
-        (navigation as any).navigate('ProfilePage', { email: formData.email });
+        // Authentication state change will automatically trigger navigation
+        // No need to manually navigate - AuthContext handles this
+        console.log('Login successful, AuthContext will handle navigation');
       }
     } catch (err) {
       Alert.alert('Error', 'An unexpected error occurred');
