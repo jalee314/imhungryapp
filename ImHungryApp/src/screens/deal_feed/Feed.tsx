@@ -17,7 +17,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import Header from '../../components/Header';
-import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
@@ -222,15 +221,23 @@ const Feed: React.FC = () => {
       const timeoutId = setTimeout(() => {
         setDeals(prevDeals => {
           let hasChanges = false;
+          const dealIdsToClear: string[] = [];
           const updatedDeals = prevDeals.map(deal => {
             const updatedDeal = getUpdatedDeal(deal.id);
             if (updatedDeal) {
               hasChanges = true;
-              clearUpdatedDeal(deal.id); // Clear after applying
+              dealIdsToClear.push(deal.id); // Collect IDs to clear later
               return updatedDeal;
             }
             return deal;
           });
+          
+          // Clear updated deals after state update
+          if (hasChanges) {
+            setTimeout(() => {
+              dealIdsToClear.forEach(id => clearUpdatedDeal(id));
+            }, 0);
+          }
           
           return hasChanges ? updatedDeals : prevDeals;
         });
@@ -615,8 +622,6 @@ const Feed: React.FC = () => {
         )}
       </ScrollView>
 
-      <BottomNavigation activeTab="feed" />
-      
       <LocationModal
         visible={locationModalVisible}
         onClose={() => setLocationModalVisible(false)}
@@ -701,7 +706,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: 4,
-    paddingBottom: 100, // Space for bottom navigation
+    paddingBottom: 0, // MainAppLayout handles bottom navigation spacing
   },
   leftCard: {
     width: '48%',
@@ -713,7 +718,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    paddingBottom: 100, // Space for bottom navigation
+    paddingBottom: 0, // MainAppLayout handles bottom navigation spacing
   },
   loadingText: {
     marginTop: 16,

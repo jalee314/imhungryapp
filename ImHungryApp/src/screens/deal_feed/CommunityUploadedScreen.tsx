@@ -11,7 +11,6 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import BottomNavigation from '../../components/BottomNavigation';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
@@ -436,7 +435,6 @@ const CommunityUploadedScreen: React.FC = () => {
         )}
       </ScrollView>
 
-      <BottomNavigation activeTab="feed" />
     </View>
   );
 };
@@ -511,7 +509,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 10,
     paddingTop: 8,
-    paddingBottom: 100,
+    paddingBottom: 0, // MainAppLayout handles bottom navigation spacing
   },
   dealsGrid: {
     flexDirection: 'row',
