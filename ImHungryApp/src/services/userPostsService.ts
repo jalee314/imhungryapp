@@ -42,12 +42,12 @@ export const transformDealForUI = (post: any): UserPost => {
   if (post.image_metadata?.variants) {
     // Use Cloudinary variants (new deals)
     console.log('✅ Using Cloudinary for user post:', post.title);
-    imageSource = require('../../img/albert.webp'); // Fallback for Image component
+    imageSource = require('../../img/default-rest.png'); // Fallback for Image component
     imageVariants = post.image_metadata.variants; // OptimizedImage will use this
   } else {
     // Old deal without Cloudinary → use placeholder instead of slow Supabase Storage
     console.log('⚠️ Old post, using placeholder:', post.title);
-    imageSource = require('../../img/albert.webp');
+    imageSource = require('../../img/default-rest.png');
     imageVariants = undefined; // No variants = OptimizedImage won't be used
   }
   

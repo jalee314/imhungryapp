@@ -478,12 +478,12 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
   if (dbDeal.image_metadata?.variants) {
     // Use Cloudinary variants (new deals)
     console.log('✅ Using Cloudinary for deal:', dbDeal.title);
-    imageSource = require('../../img/albert.webp'); // Fallback for Image component
+    imageSource = require('../../img/default-rest.png'); // Fallback for Image component
     imageVariants = dbDeal.image_metadata.variants; // OptimizedImage will use this
   } else {
     // Old deal without Cloudinary → use placeholder instead of slow Supabase Storage
     console.log('⚠️ Old deal, using placeholder:', dbDeal.title);
-    imageSource = require('../../img/albert.webp');
+    imageSource = require('../../img/default-rest.png');
     imageVariants = undefined; // No variants = OptimizedImage won't be used
   }
 

@@ -147,12 +147,13 @@ const LocationModal: React.FC<LocationModalProps> = ({
     let locationToUpdate: LocationItem | null = null;
 
     if (selectedLocation === 'current') {
-      // Show loading state and get current location
-      setIsUpdatingLocation(true);
-      try {
-        locationToUpdate = await requestCurrentLocation();
-      } finally {
-        setIsUpdatingLocation(false);
+      // Close modal immediately for current location
+      onClose();
+      
+      // Get current location in the background
+      const currentLoc = await requestCurrentLocation();
+      if (currentLoc) {
+        onLocationUpdate(currentLoc);
       }
     } else {
       // Get the selected location from search results
@@ -173,11 +174,11 @@ const LocationModal: React.FC<LocationModalProps> = ({
           setIsUpdatingLocation(false);
         }
       }
-    }
 
-    if (locationToUpdate) {
-      onLocationUpdate(locationToUpdate);
-      onClose();
+      if (locationToUpdate) {
+        onLocationUpdate(locationToUpdate);
+        onClose();
+      }
     }
   };
 

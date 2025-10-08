@@ -32,7 +32,7 @@ export const feedService = {
         title: deal.deal_template.title,
         restaurant: deal.deal_template.restaurant.name,
         details: deal.deal_template.description || '',
-        image: deal.deal_template.image_url || require('../../img/albert.webp'),
+        image: deal.deal_template.image_url || require('../../img/default-rest.png'),
         votes: 0, // You'll need to fetch this separately
         isUpvoted: false,
         isDownvoted: false,
@@ -78,7 +78,7 @@ export const feedService = {
         title: data.deal_template.title,
         restaurant: data.deal_template.restaurant.name,
         details: data.deal_template.description || '',
-        image: data.deal_template.image_url || require('../../img/albert.webp'),
+        image: data.deal_template.image_url || require('../../img/default-rest.png'),
         votes: 0,
         isUpvoted: false,
         isDownvoted: false,

@@ -1,14 +1,36 @@
 
-[functions.rank_and_filter_posts]
+[functions.ranking_posts]
 enabled = true
 verify_jwt = true
-import_map = "./functions/rank_and_filter_posts/deno.json"
+import_map = "./functions/ranking_posts/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/rank_and_filter_posts/index.ts"
+entrypoint = "./functions/ranking_posts/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/rank_and_filter_posts/*.html" ]
+# static_files = [ "./functions/ranking_posts/*.html" ]
+
+[functions.catch-profanity]
+enabled = true
+verify_jwt = true
+import_map = "./functions/catch-profanity/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/catch-profanity/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/catch-profanity/*.html" ]
+
+[functions.search-restaurants]
+enabled = true
+verify_jwt = true
+import_map = "./functions/search-restaurants/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/search-restaurants/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/search-restaurants/*.html" ]
 
 [functions.process-images]
 enabled = true
