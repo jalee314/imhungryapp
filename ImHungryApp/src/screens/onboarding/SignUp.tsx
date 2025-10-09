@@ -220,7 +220,7 @@ export default function SignUpScreen() {
             {/* Legal */}
             <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
               <Text style={styles.legalText}>
-                By continuing, you agree to Hungri's{' '}
+                By continuing, you agree to ImHungri's{' '}
                 <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
                 and{' '}
                 <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>

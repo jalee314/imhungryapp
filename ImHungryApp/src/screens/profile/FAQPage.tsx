@@ -16,8 +16,8 @@ const FAQPage = () => {
       title: 'General',
       questions: [
         {
-          content: 'What is Hungri?',
-          contentData: 'Hungri is a community-powered app where you can discover and share the best food deals around you.'
+          content: 'What is ImHungri?',
+          contentData: 'ImHungri is a community-powered app where you can discover and share the best food deals around you.'
         },
         {
           content: 'Are the deals verified?',
@@ -105,7 +105,7 @@ const FAQPage = () => {
       questions: [
         {
           content: 'Can my restaurant be featured?',
-          contentData: 'Yes! Restaurants can soon partner with Hungri to highlight official deals. Contact us through the Profile → Settings → Contact Support option. We\'ll work together for a partnership.'
+          contentData: 'Yes! Restaurants can soon partner with ImHungri to highlight official deals. Contact us through the Profile → Settings → Contact Support option. We\'ll work together for a partnership.'
         },
         {
           content: 'Is there a cost to advertise deals?',

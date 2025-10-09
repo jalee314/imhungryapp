@@ -135,7 +135,7 @@ export default function ResetPasswordScreen() {
 
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to Hungri</Text>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to ImHungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
                   Create a New Password
                 </Text>
@@ -201,7 +201,7 @@ export default function ResetPasswordScreen() {
             {/* Legal */}
             <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
               <Text style={styles.legalText}>
-                By continuing, you agree to Hungri's{' '}
+                By continuing, you agree to ImHungri's{' '}
                 <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
                 and{' '}
                 <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
