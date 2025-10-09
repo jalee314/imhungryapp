@@ -169,7 +169,7 @@ export default function SignUpScreen() {
 
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome to Hungri</Text>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome to ImHungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
                   Create an account to get curated deals from local restaurants, food franchises and more!
                 </Text>
