@@ -33,6 +33,15 @@ export interface RestaurantDeal {
   title: string;
   description: string | null;
   image_url: string | null;
+  image_metadata?: {
+    variants?: {
+      original?: string;
+      large?: string;
+      medium?: string;
+      small?: string;
+      thumbnail?: string;
+    };
+  };
   created_at: string;
   end_date: string | null;
   views: number;
@@ -88,9 +97,13 @@ const RestaurantDetailScreen: React.FC = () => {
             title,
             description,
             image_url,
+            image_metadata_id,
             restaurant_id,
             user_id,
             is_anonymous,
+            image_metadata:image_metadata_id (
+              variants
+            ),
             user!inner(
               display_name,
               profile_photo
@@ -135,12 +148,21 @@ const RestaurantDetailScreen: React.FC = () => {
 
           const template = Array.isArray(deal.deal_template) ? deal.deal_template[0] : deal.deal_template;
           const user = Array.isArray(template.user) ? template.user[0] : template.user;
+          const imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
+          
+          console.log('🔍 Processing deal:', template.title, {
+            has_image_url: !!template.image_url,
+            has_image_metadata: !!imageMetadata,
+            image_metadata_variants: imageMetadata?.variants,
+            image_url: template.image_url
+          });
           
           return {
             deal_id: deal.deal_id,
             title: template.title,
             description: template.description,
             image_url: template.image_url,
+            image_metadata: imageMetadata,
             created_at: deal.created_at,
             end_date: deal.end_date,
             views: viewCount || 0,
@@ -255,11 +277,36 @@ const RestaurantDetailScreen: React.FC = () => {
         title: dealData.title,
         restaurant: restaurant.name,
         details: dealData.description || '',
-        image: dealData.image_url ? 
-          (dealData.image_url.startsWith('http') 
-            ? dealData.image_url 
-            : supabase.storage.from('deal-images').getPublicUrl(dealData.image_url).data.publicUrl
-          ) : require('../../../img/gallery.jpg'),
+        // Updated image handling to use Cloudinary or fallback
+        image: (() => {
+          let imageUrl;
+          // If we have Cloudinary variants, use the medium variant as the primary image
+          if (dealData.image_metadata?.variants?.medium) {
+            imageUrl = dealData.image_metadata.variants.medium;
+            console.log('🖼️ Using Cloudinary medium variant for deal:', dealData.title, imageUrl);
+          } else if (dealData.image_metadata?.variants?.small) {
+            imageUrl = dealData.image_metadata.variants.small;
+            console.log('🖼️ Using Cloudinary small variant for deal:', dealData.title, imageUrl);
+          } else if (dealData.image_metadata?.variants?.large) {
+            imageUrl = dealData.image_metadata.variants.large;
+            console.log('🖼️ Using Cloudinary large variant for deal:', dealData.title, imageUrl);
+          } else if (dealData.image_url) {
+            // Fallback to legacy image_url
+            if (dealData.image_url.startsWith('http')) {
+              imageUrl = dealData.image_url;
+              console.log('🖼️ Using legacy HTTP URL for deal:', dealData.title, imageUrl);
+            } else {
+              imageUrl = supabase.storage.from('deal-images').getPublicUrl(dealData.image_url).data.publicUrl;
+              console.log('🖼️ Using Supabase storage URL for deal:', dealData.title, imageUrl);
+            }
+          } else {
+            // Ultimate fallback
+            imageUrl = require('../../../img/gallery.jpg');
+            console.log('🖼️ Using gallery fallback for deal:', dealData.title);
+          }
+          return imageUrl;
+        })(),
+        imageVariants: dealData.image_metadata?.variants, // For OptimizedImage component
         votes: dealData.votes,
         isUpvoted: dealData.is_upvoted,
         isDownvoted: dealData.is_downvoted,
@@ -269,12 +316,12 @@ const RestaurantDetailScreen: React.FC = () => {
         author: dealData.user_display_name || 'Anonymous',
         milesAway: formatDistance(restaurant.distance_miles),
         userId: dealData.user_display_name ? dealData.user_display_name : undefined,
-        userDisplayName: dealData.user_display_name,
+        userDisplayName: dealData.user_display_name || undefined,
         userProfilePhoto: dealData.user_profile_photo ? 
           (dealData.user_profile_photo.startsWith('http') 
             ? dealData.user_profile_photo 
             : supabase.storage.from('avatars').getPublicUrl(dealData.user_profile_photo).data.publicUrl
-          ) : null,
+          ) : undefined,
         restaurantAddress: restaurant.address,
         isAnonymous: dealData.is_anonymous,
       };
@@ -330,28 +377,31 @@ const RestaurantDetailScreen: React.FC = () => {
       return `${diffDays} days`;
     };
 
-    // Convert relative image URL to full Supabase URL
+    // Convert relative image URL to full Supabase URL or use Cloudinary
     const getImageSource = () => {
-      if (!deal.image_url) {
-        return require('../../../img/gallery.jpg');
+      // If we have Cloudinary variants, use the small variant for the card
+      if (deal.image_metadata?.variants?.small) {
+        return { uri: deal.image_metadata.variants.small };
+      } else if (deal.image_metadata?.variants?.thumbnail) {
+        return { uri: deal.image_metadata.variants.thumbnail };
+      } else if (deal.image_metadata?.variants?.medium) {
+        return { uri: deal.image_metadata.variants.medium };
+      } else if (deal.image_url) {
+        // Fallback to legacy image_url
+        if (deal.image_url.startsWith('http')) {
+          return { uri: deal.image_url };
+        }
+        
+        // Use Supabase storage to get the public URL
+        const { data } = supabase.storage
+          .from('deal-images')
+          .getPublicUrl(deal.image_url);
+        
+        return { uri: data.publicUrl };
       }
       
-      // Check if it's already a full URL
-      if (deal.image_url.startsWith('http')) {
-        return { uri: deal.image_url };
-      }
-      
-      // Check if it's already a full URL
-      if (deal.image_url.startsWith('http')) {
-        return { uri: deal.image_url };
-      }
-      
-      // Use Supabase storage to get the public URL
-      const { data } = supabase.storage
-        .from('deal-images')
-        .getPublicUrl(deal.image_url);
-      
-      return { uri: data.publicUrl };
+      // Ultimate fallback
+      return require('../../../img/gallery.jpg');
     };
 
     return {
@@ -362,7 +412,7 @@ const RestaurantDetailScreen: React.FC = () => {
       postedDate: formatDate(deal.created_at),
       expiresIn: formatExpiration(deal.end_date),
       views: deal.views,
-      userId: deal.user_id, // Add userId for user profile navigation
+      userId: deal.user_id || undefined, // Add userId for user profile navigation
       userDisplayName: deal.user_display_name || undefined,
       userProfilePhoto: deal.user_profile_photo || undefined,
     };
