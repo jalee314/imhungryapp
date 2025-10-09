@@ -30,17 +30,7 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation }
     <View style={styles.header}>
       <View style={styles.headerBottomFrame}>
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../../img/hungri_logo.png')} 
-            style={styles.logoImage}
-            resizeMode="contain"
-            // Remove fadeDuration to prevent flickering
-            fadeDuration={0}
-            // Show image immediately without waiting for onLoad
-            onLoadStart={() => {}}
-            onLoad={() => {}}
-            onError={() => {}}
-          />
+          {/* Logo removed as requested */}
         </View>
         <TouchableOpacity onPress={onLocationPress} style={styles.locationContainer}>
           <View style={styles.locationInfo}>

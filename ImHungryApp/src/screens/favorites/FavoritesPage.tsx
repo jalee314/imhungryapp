@@ -339,7 +339,7 @@ const FavoritesPage: React.FC = () => {
         title: deal.title,
         restaurant: deal.restaurantName,
         details: deal.description,
-        image: deal.imageUrl ? { uri: deal.imageUrl } : require('../../../img/Default_pfp.svg.png'),
+        image: deal.imageUrl ? { uri: deal.imageUrl } : require('../../../img/default-rest.png'),
         votes: 0, // We don't have vote data in favorites
         isUpvoted: false,
         isDownvoted: false,
@@ -449,7 +449,7 @@ const FavoritesPage: React.FC = () => {
         subtitle: `${deal.restaurantName} • ${deal.distance}`,
         // Use placeholder image for old deals, Cloudinary URL for new ones
         image: deal.imageUrl === 'placeholder' || !deal.imageUrl
-          ? require('../../../img/albert.webp') 
+          ? require('../../../img/default-rest.png') 
           : { uri: deal.imageUrl },
         userId: deal.userId,
         userProfilePhoto: deal.userProfilePhoto,

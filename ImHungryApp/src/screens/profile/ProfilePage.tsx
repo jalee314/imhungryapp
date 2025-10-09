@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, Text, StyleSheet, Image, 
   TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator 
@@ -306,11 +306,25 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         console.log('Skipping loadUserPosts because viewing another user');
         return;
       }
+      
+      // 🔥 FIX: Prevent multiple simultaneous loads
+      if (postsLoading) {
+        console.log('Posts already loading, skipping...');
+        return;
+      }
+      
       setPostsLoading(true);
       setPostsError(null);
+      
       const posts = await fetchUserPosts();
       const transformedPosts = posts.map(transformDealForUI);
-      setUserPosts(transformedPosts);
+      
+      // 🔥 FIX: Use Set to remove duplicates by deal_id
+      const uniquePosts = Array.from(
+        new Map(transformedPosts.map(post => [post.id, post])).values()
+      );
+      
+      setUserPosts(uniquePosts);
     } catch (error) {
       console.error('Error loading user posts:', error);
       setPostsError('Failed to load your posts');
@@ -319,11 +333,26 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     }
   };
 
+  // 🔥 FIX: Add a ref to track if posts are loaded
+  const postsLoadedRef = useRef(false);
+
   useEffect(() => {
-    if (activeTab === 'posts' && hasData && !viewUser) {
+    // Only load if we haven't loaded yet AND conditions are met
+    if (activeTab === 'posts' && hasData && !viewUser && !postsLoadedRef.current) {
+      postsLoadedRef.current = true; // Mark as loaded
       loadUserPosts();
     }
   }, [activeTab, hasData, viewUser]);
+
+  // 🔥 FIX: Reset the ref when navigating away
+  useFocusEffect(
+    React.useCallback(() => {
+      // When screen loses focus, reset the loaded flag
+      return () => {
+        postsLoadedRef.current = false;
+      };
+    }, [])
+  );
 
   const handleUpvote = (dealId: string) => {
     let originalDeal: Deal | undefined;
@@ -498,20 +527,13 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             <View style={styles.header}>
               <View style={styles.leftSection}>
                 <View style={styles.userInfo}>
-                  {/* Username skeleton */}
-                  <View style={[styles.skeleton, styles.skeletonUsername]} />
-                  <View style={[styles.skeleton, styles.skeletonEditButton]} />
-                </View>
-                {/* Join date skeleton */}
-                <View style={[styles.skeleton, styles.skeletonJoinDate]} />
-                {/* Location skeleton */}
-                <View style={[styles.skeleton, styles.skeletonLocation]} />
-                
-                {/* Stats skeleton */}
-                <View style={styles.statsContainer}>
-                  <View style={styles.statItem}>
-                    <View style={[styles.skeleton, styles.skeletonStatNumber]} />
-                    <View style={[styles.skeleton, styles.skeletonStatLabel]} />
+                  <View>
+                    {/* Username skeleton */}
+                    <View style={[styles.skeleton, styles.skeletonUsername]} />
+                    {/* Join date skeleton */}
+                    <View style={[styles.skeleton, styles.skeletonJoinDate]} />
+                    {/* Location skeleton */}
+                    <View style={[styles.skeleton, styles.skeletonLocation]} />
                   </View>
                 </View>
               </View>
@@ -523,21 +545,26 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             </View>
           </View>
 
-          {/* Content area skeleton */}
-          <View style={styles.contentArea}>
-            <View style={styles.actionButtonsContainer}>
+          {/* Tabs Section Skeleton */}
+          <View style={styles.actionButtonsContainer}>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
               <View style={[styles.skeleton, styles.skeletonButton]} />
-              <View style={[styles.skeleton, styles.skeletonButton]} />
-              <View style={styles.extraSpacing} />
               <View style={[styles.skeleton, styles.skeletonButton]} />
             </View>
+            <View style={[styles.skeleton, styles.skeletonShareButton]} />
           </View>
-          
-          {/* Show skeleton bottom nav */}
-          <View style={styles.skeletonBottomNav}>
-            {[1, 2, 3, 4, 5].map((_, index) => (
-              <View key={index} style={[styles.skeleton, styles.skeletonNavItem]} />
-            ))}
+
+          {/* Content area skeleton - Grid of posts */}
+          <View style={styles.contentArea}>
+            <View style={styles.dealsGrid}>
+              {[1, 2, 3, 4, 5, 6].map((item, index) => (
+                <View key={item} style={[
+                  index % 2 === 0 ? styles.leftCard : styles.rightCard
+                ]}>
+                  <DealCardSkeleton variant="vertical" />
+                </View>
+              ))}
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -1085,9 +1112,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   skeletonUsername: {
-    width: 120,
-    height: 26,
-    marginBottom: 4,
+    width: 150,
+    height: 24,
+    marginBottom: 6,
   },
   skeletonEditButton: {
     width: 24,
@@ -1096,14 +1123,14 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   skeletonJoinDate: {
-    width: 150,
-    height: 12,
-    marginBottom: 2,
+    width: 120,
+    height: 14,
+    marginBottom: 4,
   },
   skeletonLocation: {
     width: 100,
-    height: 12,
-    marginBottom: 15,
+    height: 14,
+    marginBottom: 8,
   },
   skeletonStatNumber: {
     width: 30,
@@ -1121,10 +1148,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#E1E9EE',
   },
   skeletonButton: {
-    flex: 1,
     height: 35,
     borderRadius: 20,
-    minWidth: 95,
+    width: 80,
+  },
+  skeletonShareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   skeletonBottomNav: {
     position: 'absolute',
