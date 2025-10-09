@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidin
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
@@ -53,6 +54,8 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', phoneNumber: '' });
   const [isChecking, setIsChecking] = useState({ email: false, phoneNumber: false });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const checkUniqueness = async (field: 'email' | 'phoneNumber', value: string) => {
     if (!value) return;
@@ -199,8 +202,24 @@ export default function SignUpScreen() {
                       autoCapitalize={cfg.autoCapitalize}
                       autoComplete={cfg.autoComplete}
                       textContentType={cfg.textContentType}
-                      secureTextEntry={cfg.field === 'password'}
+                      secureTextEntry={cfg.field === 'password' ? !showPassword : false}
                       returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
+                      onFocus={cfg.field === 'password' ? () => setIsPasswordFocused(true) : undefined}
+                      onBlur={cfg.field === 'password' ? () => setIsPasswordFocused(false) : undefined}
+                      right={cfg.field === 'password' ? (
+                        <TextInput.Icon
+                          icon={() => (
+                            <Ionicons
+                              name={showPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color="#666"
+                              style={{ opacity: isPasswordFocused ? 1 : 0 }}
+                            />
+                          )}
+                          onPress={() => setShowPassword(!showPassword)}
+                          style={{ opacity: isPasswordFocused ? 1 : 0 }}
+                        />
+                      ) : undefined}
                     />
                     {errors[cfg.field as keyof typeof errors] ? <Text style={styles.errorText}>{errors[cfg.field as keyof typeof errors]}</Text> : null}
                   </View>

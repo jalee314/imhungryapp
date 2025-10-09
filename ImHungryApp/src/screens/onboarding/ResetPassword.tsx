@@ -37,6 +37,10 @@ export default function ResetPasswordScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
+  const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
 
   useEffect(() => {
     // React Navigation passes the URL query params to the route.
@@ -160,8 +164,24 @@ export default function ResetPasswordScreen() {
                         background: 'white',
                       },
                     }}
-                    secureTextEntry
+                    secureTextEntry={!showNewPassword}
                     returnKeyType="next"
+                    onFocus={() => setIsNewPasswordFocused(true)}
+                    onBlur={() => setIsNewPasswordFocused(false)}
+                    right={(
+                      <TextInput.Icon
+                        icon={() => (
+                          <Ionicons
+                            name={showNewPassword ? 'eye-off' : 'eye'}
+                            size={20}
+                            color="#666"
+                            style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                          />
+                        )}
+                        onPress={() => setShowNewPassword(!showNewPassword)}
+                        style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -182,8 +202,24 @@ export default function ResetPasswordScreen() {
                         background: 'white',
                       },
                     }}
-                    secureTextEntry
+                    secureTextEntry={!showConfirmPassword}
                     returnKeyType="done"
+                    onFocus={() => setIsConfirmPasswordFocused(true)}
+                    onBlur={() => setIsConfirmPasswordFocused(false)}
+                    right={(
+                      <TextInput.Icon
+                        icon={() => (
+                          <Ionicons
+                            name={showConfirmPassword ? 'eye-off' : 'eye'}
+                            size={20}
+                            color="#666"
+                            style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                          />
+                        )}
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                      />
+                    )}
                   />
                 </View>
               </View>
