@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
 
   titleSection: { 
-    alignItems: 'center',
+    alignItems: 'left',
     marginBottom: 40,
     maxWidth: 300
   },

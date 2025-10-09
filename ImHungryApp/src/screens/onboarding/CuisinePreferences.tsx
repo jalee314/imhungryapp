@@ -379,7 +379,7 @@ export default function CuisinePreferencesScreen() {
               <View style={styles.titleSection}>
                 <Text style={styles.title}>Cuisine Preferences</Text>
                 <Text style={styles.subtitle}>
-                  What's your favorite cuisines? Choose up to 3.
+                  What are your favorite cuisines? Choose up to 3.
                 </Text>
               </View>
 
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
   titleSection: { 
     marginBottom: 30,
     maxWidth: 343,
-    alignItems: 'center'
+    alignItems: 'flex-start'
   },
   title: { 
     fontSize: 24, 
@@ -479,14 +479,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     marginBottom: 16,
     fontFamily: 'Manrope-Bold',
-    textAlign: 'center'
+    textAlign: 'left'
   },
   subtitle: { 
     fontSize: 16, 
     color: '#000', 
     lineHeight: 24,
     fontFamily: 'Manrope-Regular',
-    textAlign: 'center'
+    textAlign: 'left'
   },
 
   cuisineGrid: {
