@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView, Platform, Alert
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 
@@ -94,14 +93,7 @@ export default function LocationPermissionsScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={['rgba(255, 245, 171, 0.1)', 'rgba(255, 225, 0, 0.8)']}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        pointerEvents="none"
-      />
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -154,7 +146,7 @@ export default function LocationPermissionsScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: 'rgba(255, 245, 171, 0.5)' 
+    backgroundColor: 'white' 
   },
 
   keyboardAvoidingView: { flex: 1 },
@@ -211,7 +203,7 @@ const styles = StyleSheet.create({
     width: '100%', 
     maxWidth: 343,
     height: 44, 
-    backgroundColor: '#FFA05C', 
+    backgroundColor: '#FF8C4C', 
     borderRadius: 22, 
     alignItems: 'center', 
     justifyContent: 'center',
