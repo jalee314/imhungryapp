@@ -22,6 +22,7 @@ import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/vot
 import { useDealUpdate } from '../../context/DealUpdateContext';
 import { getDealViewCount, logShare, logClickThrough } from '../../services/interactionService';
 import SkeletonLoader from '../../components/SkeletonLoader';
+import OptimizedImage from '../../components/OptimizedImage';
 import { supabase } from '../../../lib/supabase';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
@@ -40,6 +41,17 @@ const DealDetailScreen: React.FC = () => {
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+
+  // Debug the deal data
+  useEffect(() => {
+    console.log('🔍 DealDetailScreen received deal data:', {
+      id: dealData.id,
+      title: dealData.title,
+      image: dealData.image,
+      imageVariants: dealData.imageVariants,
+      hasImageVariants: !!dealData.imageVariants
+    });
+  }, [dealData]);
 
   // ✨ NEW: Update context whenever deal data changes
   useEffect(() => {
@@ -351,21 +363,41 @@ const DealDetailScreen: React.FC = () => {
               </View>
             )}
             
-            <Image 
-              source={typeof dealData.image === 'string' 
-                ? { uri: dealData.image } 
-                : dealData.image
-              } 
-              style={[
-                styles.dealImage,
-                imageLoading && styles.imageLoading,
-                imageError && styles.imageError
-              ]}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              resizeMode="cover"
-              fadeDuration={200}
-            />
+            {dealData.imageVariants ? (
+              <OptimizedImage 
+                variants={dealData.imageVariants}
+                componentType="deal"
+                displaySize={{ width: 300, height: 300 }}
+                fallbackSource={typeof dealData.image === 'string' 
+                  ? { uri: dealData.image } 
+                  : dealData.image
+                }
+                style={[
+                  styles.dealImage,
+                  imageLoading && styles.imageLoading,
+                  imageError && styles.imageError
+                ]}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                resizeMode="cover"
+              />
+            ) : (
+              <Image 
+                source={typeof dealData.image === 'string' 
+                  ? { uri: dealData.image } 
+                  : dealData.image
+                } 
+                style={[
+                  styles.dealImage,
+                  imageLoading && styles.imageLoading,
+                  imageError && styles.imageError
+                ]}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                resizeMode="cover"
+                fadeDuration={200}
+              />
+            )}
             
             {imageError && (
               <View style={styles.imageErrorContainer}>
