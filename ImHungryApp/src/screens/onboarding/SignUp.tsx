@@ -124,6 +124,13 @@ export default function SignUpScreen() {
     if (!formData.firstName || !formData.lastName || !formData.phoneNumber || !formData.email || !formData.password) {
       Alert.alert('Error', 'Please fill in all fields'); return;
     }
+
+    const emailRegex = /^[^@\s]+@(gmail\.com|yahoo\.com|outlook\.com)$/i;
+    if (!emailRegex.test(formData.email)) {
+      Alert.alert('Invalid Email', 'Please use a Gmail, Yahoo, or Outlook email address.');
+      return;
+    }
+
     if (errors.email || errors.phoneNumber) {
       Alert.alert('Error', 'Please fix the errors before continuing.'); return;
     }
