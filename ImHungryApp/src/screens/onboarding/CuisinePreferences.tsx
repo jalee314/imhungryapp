@@ -412,6 +412,8 @@ export default function CuisinePreferencesScreen() {
                 })}
               </View>
 
+              <View style={styles.spacer} />
+
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={[
@@ -477,7 +479,7 @@ const styles = StyleSheet.create({
   },
 
   titleSection: { 
-    marginBottom: 40,
+    marginBottom: 16,
     maxWidth: 343,
     alignItems: 'flex-start'
   },
@@ -508,27 +510,32 @@ const styles = StyleSheet.create({
   },
   cuisineButton: {
     width: '48%',
-    height: 48,
-    backgroundColor: '#333',
+    height: 40,
+    backgroundColor: '#eaeaea',
+    borderWidth: 1,
+    borderColor: '#ffffff',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
+    paddingHorizontal: 8,
   },
   cuisineButtonSelected: {
     backgroundColor: '#FF8C4C',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ffffff',
   },
   cuisineButtonText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
-    fontWeight: '500',
-    fontFamily: 'Manrope-Regular',
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
   },
   cuisineButtonTextSelected: {
     color: '#000',
   },
+  spacer: { flex: 1 },
 
   footer: { 
     width: '100%', 
