@@ -6,7 +6,7 @@ import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../../lib/supabase';
+import { sendPasswordResetEmail } from '../../services/authService';
 
 export default function ForgotPasswordScreen() {
   
@@ -42,19 +42,17 @@ export default function ForgotPasswordScreen() {
     }
     setSuccessMessage('');
     setLoading(true);
+    
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://imhungri.netlify.app/', // Updated to use your Netlify URL
-      });
-
-      if (error) {
-        Alert.alert('Error', error.message);
+      const result = await sendPasswordResetEmail(email);
+      
+      if (result.success) {
+        setSuccessMessage(result.message);
       } else {
-        setSuccessMessage(
-          'We\'ve sent you a password reset link. Please check your email and follow the instructions.'
-        );
+        Alert.alert('Error', result.message);
       }
     } catch (err) {
+      console.error('Password reset error:', err);
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setLoading(false);

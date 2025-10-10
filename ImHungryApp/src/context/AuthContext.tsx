@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../../lib/supabase';
 import { initializeAuthSession, setupAppStateListener } from '../services/sessionService';
+import { checkEmailExists } from '../services/userService';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any;
   signOut: () => Promise<void>;
+  validateEmail: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,11 +76,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const validateEmail = async (email: string): Promise<boolean> => {
+    try {
+      return await checkEmailExists(email);
+    } catch (error) {
+      console.error('Error validating email:', error);
+      return false;
+    }
+  };
+
   const value: AuthContextType = {
     isAuthenticated,
     isLoading,
     user,
     signOut,
+    validateEmail,
   };
 
   return (

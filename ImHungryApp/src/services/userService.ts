@@ -171,6 +171,35 @@ export const getFullUserProfile = async (): Promise<User | null> => {
 };
 
 /**
+ * Check if an email exists in the system
+ * 
+ * This function uses a database RPC call to securely check email existence
+ * without exposing sensitive user data. The database function is callable
+ * by anonymous users specifically for authentication purposes.
+ * 
+ * @param email - The email address to check
+ * @returns Promise<boolean> - true if email exists, false otherwise
+ * @throws Error if database connection fails or RPC call errors
+ */
+export const checkEmailExists = async (email: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('check_email_exists', { 
+      email_input: email.toLowerCase().trim() 
+    });
+
+    if (error) {
+      console.error('Error checking email existence:', error);
+      throw new Error('Unable to verify email address');
+    }
+
+    return data || false;
+  } catch (error) {
+    console.error('Error in checkEmailExists:', error);
+    throw error;
+  }
+};
+
+/**
  * Clear user data cache
  */
 export const clearUserCache = async (): Promise<void> => {
