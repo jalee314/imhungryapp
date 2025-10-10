@@ -305,7 +305,6 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   footer: { 
     width: '100%', 
-    paddingBottom: 16,
     alignItems: 'center',
     alignSelf: 'center'
   },
