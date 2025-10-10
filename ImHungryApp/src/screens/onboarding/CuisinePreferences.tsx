@@ -371,9 +371,15 @@ export default function CuisinePreferencesScreen() {
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
           <View style={styles.pagePad}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.skipLink} onPress={handleSkip}>
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.mainContainer}>
               <View style={styles.titleSection}>
@@ -409,24 +415,14 @@ export default function CuisinePreferencesScreen() {
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={[
-                    styles.finishButton, 
+                    styles.continueButton, 
                     loading && { opacity: 0.7 }
                   ]}
                   onPress={handleFinish}
                   disabled={loading}
                 >
-                  <Text style={styles.finishButtonText}>
-                    {loading ? 'Creating Account...' : 'Complete Setup'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.skipButton, loading && { opacity: 0.7 }]}
-                  onPress={handleSkip}
-                  disabled={loading}
-                >
-                  <Text style={styles.skipButtonText}>
-                    {loading ? 'Creating Account...' : 'Skip'}
+                  <Text style={styles.continueButtonText}>
+                    {loading ? 'Creating Account...' : 'Continue'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -451,25 +447,37 @@ const styles = StyleSheet.create({
     paddingVertical: 20 
   },
 
-  backButton: { 
-    alignSelf: 'flex-start', 
-    paddingVertical: 8, 
-    paddingHorizontal: 4 
+  headerContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 40,
+    height: 44
   },
+
+  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
   backButtonText: { 
-    fontSize: 16, 
+    fontSize: 20, 
     color: '#000', 
     fontWeight: '500' 
   },
 
+  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  skipText: { 
+    fontSize: 16, 
+    color: '#404040', 
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular'
+  },
+
   mainContainer: { 
     flex: 1, 
-    alignItems: 'center', 
-    width: '100%' 
+    alignItems: 'flex-start', 
+    width: '100%'
   },
 
   titleSection: { 
-    marginBottom: 30,
+    marginBottom: 40,
     maxWidth: 343,
     alignItems: 'flex-start'
   },
@@ -477,15 +485,15 @@ const styles = StyleSheet.create({
     fontSize: 24, 
     color: '#000', 
     fontWeight: 'bold', 
-    marginBottom: 16,
+    marginBottom: 25,
     fontFamily: 'Manrope-Bold',
     textAlign: 'left'
   },
   subtitle: { 
     fontSize: 16, 
-    color: '#000', 
+    color: '#404040', 
     lineHeight: 24,
-    fontFamily: 'Manrope-Regular',
+    fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
 
@@ -496,6 +504,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 343,
     marginBottom: 30,
+    alignSelf: 'center',
   },
   cuisineButton: {
     width: '48%',
@@ -524,32 +533,22 @@ const styles = StyleSheet.create({
   footer: { 
     width: '100%', 
     paddingBottom: 16,
-    alignItems: 'center'
+    alignItems: 'center',
+    alignSelf: 'center'
   },
 
-  finishButton: { 
+  continueButton: { 
     width: '100%', 
     maxWidth: 343,
     height: 44, 
     backgroundColor: '#FF8C4C', 
     borderRadius: 22, 
     alignItems: 'center', 
-    justifyContent: 'center',
-    marginBottom: 16
+    justifyContent: 'center'
   },
-  finishButtonText: { 
+  continueButtonText: { 
     color: '#fff', 
     fontSize: 16, 
     fontWeight: '600' 
-  },
-
-  skipButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16
-  },
-  skipButtonText: { 
-    color: '#000', 
-    fontSize: 16, 
-    fontWeight: '500' 
   },
 });

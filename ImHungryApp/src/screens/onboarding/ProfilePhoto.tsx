@@ -141,15 +141,21 @@ export default function ProfilePhotoScreen() {
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
           <View style={styles.pagePad}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.skipLink} onPress={handleSkip}>
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.mainContainer}>
               <View style={styles.titleSection}>
                 <Text style={styles.title}>Add a photo</Text>
                 <Text style={styles.subtitle}>
-                  Show off your style! Upload a photo so friends know it's you when you share deals.
+                  Show off your style! Upload a photo so the community know it’s you when you share deals.
                 </Text>
               </View>
 
@@ -159,11 +165,10 @@ export default function ProfilePhotoScreen() {
                     <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
                   ) : (
                     <View style={styles.cameraIconContainer}>
-                      <Image source={require('../../../img/gallery.jpg')} style={styles.cameraIcon} />
+                      <Image source={require('../../../img/onboarding/camera.png')} style={styles.cameraIcon} />
                     </View>
                   )}
                 </TouchableOpacity>
-                  <Text style={styles.photoInfo}>Tap Icon to add photo</Text>
               </View>
 
               <View style={styles.spacer} />
@@ -180,14 +185,6 @@ export default function ProfilePhotoScreen() {
                   <Text style={styles.continueButtonText}>
                     {loading ? 'Creating Account...' : 'Continue'}
                   </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.skipButton}
-                  onPress={handleSkip}
-                  disabled={loading}
-                >
-                  <Text style={styles.skipButtonText}>Skip</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -211,46 +208,60 @@ const styles = StyleSheet.create({
     paddingVertical: 20 
   },
 
-  backButton: { 
-    alignSelf: 'flex-start', 
-    marginBottom: 20, 
-    paddingVertical: 8, 
-    paddingHorizontal: 4 
+  headerContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 40,
+    height: 44
   },
+
+  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
   backButtonText: { 
-    fontSize: 16, 
+    fontSize: 20, 
     color: '#000', 
     fontWeight: '500' 
   },
 
+  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  skipText: { 
+    fontSize: 16, 
+    color: '#404040', 
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular'
+  },
+
   mainContainer: { 
     flex: 1, 
-    alignItems: 'center', 
-    width: '100%' 
+    alignItems: 'flex-start', 
+    width: '100%'
   },
 
   titleSection: { 
-    alignItems: 'left',
+    alignItems: 'flex-start',
     marginBottom: 40,
-    maxWidth: 300
+    maxWidth: 343
   },
   title: { 
     fontSize: 24, 
     color: '#000', 
     fontWeight: 'bold', 
-    marginBottom: 16,
-    fontFamily: 'Manrope-Bold'
+    marginBottom: 25,
+    fontFamily: 'Manrope-Bold',
+    textAlign: 'left'
   },
   subtitle: { 
     fontSize: 16, 
-    color: '#000', 
+    color: '#404040', 
     lineHeight: 24,
-    fontFamily: 'Manrope-Regular'
+    fontFamily: 'Inter-Regular',
+    textAlign: 'left'
   },
 
   photoSection: { 
     alignItems: 'center', 
-    marginBottom: 40 
+    marginBottom: 40,
+    alignSelf: 'center'
   },
   photoInfo: {
     marginTop: 12,
@@ -286,7 +297,8 @@ const styles = StyleSheet.create({
   footer: { 
     width: '100%', 
     paddingBottom: 16,
-    alignItems: 'center'
+    alignItems: 'center',
+    alignSelf: 'center'
   },
 
   continueButton: { 
@@ -296,22 +308,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF8C4C', 
     borderRadius: 22, 
     alignItems: 'center', 
-    justifyContent: 'center',
-    marginBottom: 16
+    justifyContent: 'center'
   },
   continueButtonText: { 
     color: '#fff', 
     fontSize: 16, 
     fontWeight: '600' 
-  },
-
-  skipButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16
-  },
-  skipButtonText: { 
-    color: '#000', 
-    fontSize: 16, 
-    fontWeight: '500'
   },
 });

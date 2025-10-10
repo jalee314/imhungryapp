@@ -99,13 +99,21 @@ export default function UsernameScreen() {
         <StatusBar style="dark" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
           <View style={styles.pagePad}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.skipLink} onPress={() => (navigation as any).navigate('ProfilePhoto', { userData })}>
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.mainContainer}>
-                <View style={styles.formBlock}>
+              <View style={styles.titleSection}>
                 <Text style={styles.usernameTitle}>Choose your username</Text>
+              </View>
+              <View style={styles.formBlock}>
                     <TextInput
                     mode="flat"
                     value={displayUsername}
@@ -154,13 +162,41 @@ const styles = StyleSheet.create({
   container: { flex: 1 ,backgroundColor: 'white'},
   flex1: { flex: 1 },
   pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
-  mainContainer: { flex: 1, alignItems: 'center', width: '100%' },
+  
+  headerContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 40,
+    height: 44
+  },
+  
+  mainContainer: { flex: 1, alignItems: 'flex-start', width: '100%' },
 
-  backButton: { alignSelf: 'flex-start', marginBottom: 20, paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { fontSize: 16, color: '#000', fontWeight: '500' },
+  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
+  backButtonText: { fontSize: 20, color: '#000', fontWeight: '500' },
 
-  usernameSection: { marginBottom: 40, alignSelf: 'stretch', alignItems: 'center' },
-  usernameTitle: { fontSize: 24, color: '#000', fontWeight: 'bold', textAlign: 'center' },
+  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  skipText: { 
+    fontSize: 16, 
+    color: '#404040', 
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular'
+  },
+
+  titleSection: { 
+    marginBottom: 40,
+    maxWidth: 343,
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
+  usernameTitle: { 
+    fontSize: 24, 
+    color: '#000', 
+    fontWeight: 'bold', 
+    textAlign: 'center',
+    fontFamily: 'Manrope-Bold'
+  },
 
   inputContainer: { width: '100%', alignItems: 'center', marginBottom: 30 },
   usernameInput: {
@@ -181,10 +217,27 @@ const styles = StyleSheet.create({
   },
 
   spacer: { flex: 1 },
-  footer: { width: '100%', paddingBottom: 16 },
+  footer: { 
+    width: '100%', 
+    paddingBottom: 16,
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
 
-  continueButton: { width: '100%', height: 44, backgroundColor: '#FF8C4C', borderRadius: 22, alignItems: 'center', justifyContent: 'center',marginBottom: 50 },
-  continueButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  continueButton: { 
+    width: '100%', 
+    maxWidth: 343,
+    height: 44, 
+    backgroundColor: '#FF8C4C', 
+    borderRadius: 22, 
+    alignItems: 'center', 
+    justifyContent: 'center'
+  },
+  continueButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
   errorText: {
     color: 'red',
     textAlign: 'center',
