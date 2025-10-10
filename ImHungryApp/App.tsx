@@ -69,7 +69,11 @@ const OnboardingStack = () => (
     <Stack.Screen name="LogIn" component={LogIn}  />
     <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
     <Stack.Screen name="ResetPassword" component={ResetPassword} />
-    <Stack.Screen name="Username" component={UsernameScreen} />
+    <Stack.Screen 
+      name="Username" 
+      component={UsernameScreen} 
+      options={{ gestureEnabled: false }}
+    />
     <Stack.Screen name="ProfilePhoto" component={ProfilePhoto} />
     <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
     <Stack.Screen name="InstantNotifications" component={InstantNotifications} />

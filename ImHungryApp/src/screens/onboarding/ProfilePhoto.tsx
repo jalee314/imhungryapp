@@ -13,8 +13,9 @@ export default function ProfilePhotoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const userData = (route.params as any)?.userData;
+  const existingProfilePhoto = (route.params as any)?.profilePhoto;
 
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(existingProfilePhoto || null);
   const [loading, setLoading] = useState(false);
 
   const handleCameraPress = () => {
@@ -134,6 +135,14 @@ export default function ProfilePhotoScreen() {
     });
   };
 
+  const handleGoBack = () => {
+    // Navigate back to Username screen with the current profile photo preserved
+    (navigation as any).navigate('Username', {
+      userData,
+      profilePhoto,
+    });
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
       <SafeAreaView style={styles.container}>
@@ -142,7 +151,7 @@ export default function ProfilePhotoScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
           <View style={styles.pagePad}>
             <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
 

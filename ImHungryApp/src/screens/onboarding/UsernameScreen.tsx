@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, BackHandler } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -20,9 +20,10 @@ export default function UsernameScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const userData = (route.params as any)?.userData;
+  const existingProfilePhoto = (route.params as any)?.profilePhoto;
 
-  const [username, setUsername] = useState(''); 
-  const [displayUsername, setDisplayUsername] = useState('');  
+  const [username, setUsername] = useState(userData?.username || ''); 
+  const [displayUsername, setDisplayUsername] = useState(userData?.username ? '@' + userData.username : '');  
   const [isFocused, setIsFocused] = useState(false);
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
@@ -34,6 +35,20 @@ export default function UsernameScreen() {
       ]);
     }
   }, [userData, navigation]);
+
+  // Prevent hardware back button (Android) from going back
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Return true to prevent default back action
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => subscription.remove();
+    }, [])
+  );
 
   const checkUsernameUniqueness = async (name: string) => {
     if (!name || name.length < 3) {
@@ -90,6 +105,7 @@ export default function UsernameScreen() {
     // Navigate to ProfilePhoto screen with user data including username
     (navigation as any).navigate('ProfilePhoto', {
       userData: { ...userData, username },
+      profilePhoto: existingProfilePhoto,
     });
   };
 
@@ -100,11 +116,9 @@ export default function UsernameScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
           <View style={styles.pagePad}>
             <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.backButtonText}>←</Text>
-              </TouchableOpacity>
+              <View style={styles.backButton} />
 
-              <TouchableOpacity style={styles.skipLink} onPress={() => (navigation as any).navigate('ProfilePhoto', { userData })}>
+              <TouchableOpacity style={styles.skipLink} onPress={() => (navigation as any).navigate('ProfilePhoto', { userData, profilePhoto: existingProfilePhoto })}>
                 <Text style={styles.skipText}>Skip</Text>
               </TouchableOpacity>
             </View>
@@ -173,8 +187,7 @@ const styles = StyleSheet.create({
   
   mainContainer: { flex: 1, alignItems: 'flex-start', width: '100%' },
 
-  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { fontSize: 20, color: '#000', fontWeight: '500' },
+  backButton: { paddingVertical: 8, paddingHorizontal: 4, width: 44 },
 
   skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
   skipText: { 
