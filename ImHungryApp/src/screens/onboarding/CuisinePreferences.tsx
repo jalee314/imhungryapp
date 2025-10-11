@@ -91,11 +91,6 @@ export default function CuisinePreferencesScreen() {
   };
 
   const handleFinish = async () => {
-    if (selectedCuisines.length === 0) {
-      Alert.alert('Selection Required', 'Please select at least one cuisine preference.');
-      return;
-    }
-
     if (!userData) {
       Alert.alert('Error', 'User data not found');
       return;
@@ -385,7 +380,7 @@ export default function CuisinePreferencesScreen() {
               <View style={styles.titleSection}>
                 <Text style={styles.title}>Cuisine Preferences</Text>
                 <Text style={styles.subtitle}>
-                  What are your favorite cuisines? Choose up to 3.
+                  What are your favorite cuisines? Choose up to 3, or skip to continue.
                 </Text>
               </View>
 
@@ -424,7 +419,7 @@ export default function CuisinePreferencesScreen() {
                   disabled={loading}
                 >
                   <Text style={styles.continueButtonText}>
-                    {loading ? 'Creating Account...' : 'Continue'}
+                    {loading ? 'Creating Account...' : selectedCuisines.length > 0 ? 'Continue' : 'Continue Without Preferences'}
                   </Text>
                 </TouchableOpacity>
               </View>
