@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidin
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
@@ -32,13 +33,13 @@ export default function SignUpScreen() {
 
   const responsive = {
     pagePad:        { paddingHorizontal: H, paddingVertical: V },
-    loginLink:      { marginBottom: Math.round(V * 1.5), marginTop: V  },
+    loginLink:      { marginBottom: Math.round(V * 0.2), marginTop: V  },
     welcomeSection: { marginBottom: Math.round(V * 1.5) },
     welcomeTitle:   { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.35) },
+    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.9) },
     formContainer:  { marginBottom: Math.round(V * 0.125) },
-    paperInput:     { marginBottom: Math.round(GAP * 1.5)},
-    continueButton: { marginTop: V, marginBottom: V },
+    paperInput:     { marginBottom: Math.round(GAP * 0.7)},
+    continueButton: { marginTop: Math.round(V * 0.6), marginBottom: V },
     legalContainer: { marginTop: V * 2 },
   };
   // ----------------------------
@@ -53,6 +54,8 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', phoneNumber: '' });
   const [isChecking, setIsChecking] = useState({ email: false, phoneNumber: false });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const checkUniqueness = async (field: 'email' | 'phoneNumber', value: string) => {
     if (!value) return;
@@ -121,6 +124,13 @@ export default function SignUpScreen() {
     if (!formData.firstName || !formData.lastName || !formData.phoneNumber || !formData.email || !formData.password) {
       Alert.alert('Error', 'Please fill in all fields'); return;
     }
+
+    const emailRegex = /^[^@\s]+@(gmail\.com|yahoo\.com|outlook\.com)$/i;
+    if (!emailRegex.test(formData.email)) {
+      Alert.alert('Invalid Email', 'Please use a Gmail, Yahoo, or Outlook email address.');
+      return;
+    }
+
     if (errors.email || errors.phoneNumber) {
       Alert.alert('Error', 'Please fix the errors before continuing.'); return;
     }
@@ -169,7 +179,7 @@ export default function SignUpScreen() {
 
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome to Hungri</Text>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome to ImHungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
                   Create an account to get curated deals from local restaurants, food franchises and more!
                 </Text>
@@ -185,22 +195,39 @@ export default function SignUpScreen() {
                       value={(formData as any)[cfg.field]}
                       onChangeText={t => handleInputChange(cfg.field, t)}
                       placeholder={cfg.placeholder}
-                      outlineColor="#FF8C4C"
-                      activeOutlineColor="#FF8C4C"
+                      outlineColor="#FFA05C"
+                      activeOutlineColor="#FFA05C"
                       dense
-                      style={[styles.paperInput, { backgroundColor: 'white' }]}
+                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                       theme={{
-                        roundness: 12,
+                        roundness: 8,
                         colors: {
                           background: 'white',   // Paper uses this to paint the notch
+                          outline: '#FFA05C',
                         },
                       }}
                       keyboardType={cfg.keyboardType}
                       autoCapitalize={cfg.autoCapitalize}
                       autoComplete={cfg.autoComplete}
                       textContentType={cfg.textContentType}
-                      secureTextEntry={cfg.field === 'password'}
+                      secureTextEntry={cfg.field === 'password' ? !showPassword : false}
                       returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
+                      onFocus={cfg.field === 'password' ? () => setIsPasswordFocused(true) : undefined}
+                      onBlur={cfg.field === 'password' ? () => setIsPasswordFocused(false) : undefined}
+                      right={cfg.field === 'password' ? (
+                        <TextInput.Icon
+                          icon={() => (
+                            <Ionicons
+                              name={showPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color="#666"
+                              style={{ opacity: isPasswordFocused ? 1 : 0 }}
+                            />
+                          )}
+                          onPress={() => setShowPassword(!showPassword)}
+                          style={{ opacity: isPasswordFocused ? 1 : 0 }}
+                        />
+                      ) : undefined}
                     />
                     {errors[cfg.field as keyof typeof errors] ? <Text style={styles.errorText}>{errors[cfg.field as keyof typeof errors]}</Text> : null}
                   </View>
@@ -220,7 +247,7 @@ export default function SignUpScreen() {
             {/* Legal */}
             <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
               <Text style={styles.legalText}>
-                By continuing, you agree to Hungri's{' '}
+                By continuing, you agree to ImHungri's{' '}
                 <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
                 and{' '}
                 <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
@@ -247,28 +274,70 @@ const styles = StyleSheet.create({
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
 
   loginLink: { alignSelf: 'flex-end' },
-  loginText: { fontSize: 16, color: '#000', fontWeight: '500' },
+  loginText: { 
+    fontSize: 16, 
+    color: '#404040', 
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold'
+  },
 
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle:   { fontSize: 20, color: '#000', fontFamily: 'Manrope-Bold' },
-  welcomeSubtitle:{ fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
+  welcomeTitle: { 
+    fontSize: 18, 
+    color: '#181619', 
+    fontFamily: 'Inter-Bold',
+    fontWeight: '700',
+    textAlign: 'left'
+  },
+  welcomeSubtitle: { 
+    fontSize: 16, 
+    color: '#181619', 
+    lineHeight: 24, 
+    fontFamily: 'Inter-Regular',
+    textAlign: 'left'
+  },
 
   formContainer: { width: '100%' },
-  paperInput:    { backgroundColor: 'white' }, // field bg; spacing added responsively
+  paperInput: { 
+    // Only spacing, no height
+  }, // field bg; spacing added responsively
+  
+  textInputStyle: {
+    backgroundColor: 'white',
+    height: 56,
+    fontSize: 16,
+  },
 
   continueButton: {
     width: '100%',
-    height: 44,
+    height: 50,
     backgroundColor: '#FF8C4C',
-    borderRadius: 22,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  continueButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular',
+    lineHeight: 24 
+  },
 
   legalContainer: { alignItems: 'center' },
-  legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
-  legalLink: { color: '#FF9800', fontWeight: '500' },
+  legalText: { 
+    fontSize: 12, 
+    color: '#181619', 
+    textAlign: 'left', 
+    lineHeight: 16,
+    fontFamily: 'Manrope-Medium',
+    fontWeight: '500'
+  },
+  legalLink: { 
+    color: '#FFA05C', 
+    fontWeight: '600',
+    fontFamily: 'Manrope-SemiBold'
+  },
   errorText: {
     color: 'red',
     alignSelf: 'flex-start',

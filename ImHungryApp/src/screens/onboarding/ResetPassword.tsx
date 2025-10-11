@@ -37,6 +37,10 @@ export default function ResetPasswordScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
+  const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
 
   useEffect(() => {
     // React Navigation passes the URL query params to the route.
@@ -135,7 +139,7 @@ export default function ResetPasswordScreen() {
 
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to Hungri</Text>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to ImHungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
                   Create a New Password
                 </Text>
@@ -160,8 +164,24 @@ export default function ResetPasswordScreen() {
                         background: 'white',
                       },
                     }}
-                    secureTextEntry
+                    secureTextEntry={!showNewPassword}
                     returnKeyType="next"
+                    onFocus={() => setIsNewPasswordFocused(true)}
+                    onBlur={() => setIsNewPasswordFocused(false)}
+                    right={(
+                      <TextInput.Icon
+                        icon={() => (
+                          <Ionicons
+                            name={showNewPassword ? 'eye-off' : 'eye'}
+                            size={20}
+                            color="#666"
+                            style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                          />
+                        )}
+                        onPress={() => setShowNewPassword(!showNewPassword)}
+                        style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -182,8 +202,24 @@ export default function ResetPasswordScreen() {
                         background: 'white',
                       },
                     }}
-                    secureTextEntry
+                    secureTextEntry={!showConfirmPassword}
                     returnKeyType="done"
+                    onFocus={() => setIsConfirmPasswordFocused(true)}
+                    onBlur={() => setIsConfirmPasswordFocused(false)}
+                    right={(
+                      <TextInput.Icon
+                        icon={() => (
+                          <Ionicons
+                            name={showConfirmPassword ? 'eye-off' : 'eye'}
+                            size={20}
+                            color="#666"
+                            style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                          />
+                        )}
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                      />
+                    )}
                   />
                 </View>
               </View>
@@ -201,7 +237,7 @@ export default function ResetPasswordScreen() {
             {/* Legal */}
             <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
               <Text style={styles.legalText}>
-                By continuing, you agree to Hungri's{' '}
+                By continuing, you agree to ImHungri's{' '}
                 <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
                 and{' '}
                 <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>

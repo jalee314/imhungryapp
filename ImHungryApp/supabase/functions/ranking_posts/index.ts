@@ -71,13 +71,30 @@ Deno.serve(async (req)=>{
  * @param {any} location - No longer needed for distance, but kept for consistency.
  * @param {any} supabase
  */ async function calculatePersonalRelevanceScore(deal, user_id, location, supabase) {
-  const mockUserCuisines = [
-    'cuisine-id-mexican',
-    'cuisine-id-italian'
-  ];
-  const cuisineId = deal?.deal_template?.cuisine_id;
-  const hasCuisineMatch = cuisineId ? mockUserCuisines.includes(cuisineId) : false;
-  const cuisineScore = hasCuisineMatch ? 1.0 : 0.2;
+  // Fetch user's actual cuisine preferences from database
+  const { data: userCuisines, error: cuisineError } = await supabase
+    .from('user_cuisine_preference')
+    .select('cuisine_id')
+    .eq('user_id', user_id);
+
+  let cuisineScore;
+  if (cuisineError) {
+    console.error('Error fetching user cuisine preferences:', cuisineError);
+    // Fallback to neutral scoring if there's an error
+    cuisineScore = 0.5;
+  } else {
+    const userCuisineIds = userCuisines?.map(pref => pref.cuisine_id) || [];
+    const cuisineId = deal?.deal_template?.cuisine_id;
+    
+    // If user has no cuisine preferences (skipped selection), remove cuisine influence entirely
+    if (userCuisineIds.length === 0) {
+      cuisineScore = 0; // No cuisine influence at all
+    } else {
+      // User has preferences - apply boost if match, penalty if no match
+      const hasCuisineMatch = cuisineId ? userCuisineIds.includes(cuisineId) : false;
+      cuisineScore = hasCuisineMatch ? 1.0 : 0.2;
+    }
+  }
   // --- MODIFICATION ---
   // Use the pre-calculated distance from the SQL function
   let distanceScore = 0;
@@ -86,6 +103,7 @@ Deno.serve(async (req)=>{
     distanceScore = Math.pow(0.5, deal.distance_miles / halfLifeMiles);
   }
   // Final weighted score for relevance
+  // Note: For users without cuisine preferences, only distance matters for relevance
   return cuisineScore * 0.2 + distanceScore * 0.1;
 }
 /**

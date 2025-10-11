@@ -1,7 +1,9 @@
 import React from 'react';
-import { StyleSheet, Pressable, View, Image } from 'react-native';
+import { StyleSheet, Pressable, View, Image, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 export default function LandingScreen() {
   const navigation = useNavigation();
 
@@ -16,7 +18,7 @@ export default function LandingScreen() {
         hitSlop={8}
       >
         <Image 
-          source={require('../../../img/testimg.png')} 
+          source={require('../../../img/hungri_logo.png')} 
           style={styles.logo}
           resizeMode="contain"
         />
@@ -39,8 +41,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   logo: {
-    width: 365,
-    height: 400,
-    maxWidth: '90%',
+    width: Math.min(screenWidth * 0.6, screenHeight * 0.3, 300),
+    height: Math.min(screenWidth * 0.6, screenHeight * 0.3, 300),
+    maxWidth: '80%',
+    maxHeight: '40%',
   },
 });

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  KeyboardAvoidingView, Platform, Alert
+  KeyboardAvoidingView, Platform, Alert, Image
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 
@@ -94,22 +93,21 @@ export default function LocationPermissionsScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={['rgba(255, 245, 171, 0.1)', 'rgba(255, 225, 0, 0.8)']}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        pointerEvents="none"
-      />
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
           <View style={styles.pagePad}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.skipLink} onPress={handleSkip}>
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.mainContainer}>
               <View style={styles.titleSection}>
@@ -119,28 +117,26 @@ export default function LocationPermissionsScreen() {
                 </Text>
               </View>
 
+              <View style={styles.imageSection}>
+                <View style={styles.imagePlaceholder}>
+                  <Image source={require('../../../img/onboarding/location.png')} style={styles.locationIcon} />
+                </View>
+              </View>
+
               <View style={styles.spacer} />
 
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={[
-                    styles.locationButton, 
+                    styles.continueButton, 
                     loading && { opacity: 0.7 }
                   ]}
                   onPress={handleLocationPermission}
                   disabled={loading}
                 >
-                  <Text style={styles.locationButtonText}>
-                    {loading ? 'Getting location...' : 'Allow Location Access'}
+                  <Text style={styles.continueButtonText}>
+                    {loading ? 'Getting location...' : 'Continue'}
                   </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.skipButton}
-                  onPress={handleSkip}
-                  disabled={loading}
-                >
-                  <Text style={styles.skipButtonText}>Skip</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -154,7 +150,7 @@ export default function LocationPermissionsScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: 'rgba(255, 245, 171, 0.5)' 
+    backgroundColor: 'white' 
   },
 
   keyboardAvoidingView: { flex: 1 },
@@ -164,72 +160,95 @@ const styles = StyleSheet.create({
     paddingVertical: 20 
   },
 
-  backButton: { 
-    alignSelf: 'flex-start', 
-    marginBottom: 20, 
-    paddingVertical: 8, 
-    paddingHorizontal: 4 
+  headerContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 40,
+    height: 44
   },
+
+  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
   backButtonText: { 
-    fontSize: 16, 
+    fontSize: 20, 
     color: '#000', 
     fontWeight: '500' 
   },
 
+  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  skipText: { 
+    fontSize: 16, 
+    color: '#404040', 
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular'
+  },
+
   mainContainer: { 
     flex: 1, 
-    alignItems: 'center', 
-    width: '100%' 
+    alignItems: 'flex-start', 
+    width: '100%'
   },
 
   titleSection: { 
     marginBottom: 40,
-    maxWidth: 300
+    maxWidth: 343,
+    alignItems: 'flex-start'
   },
   title: { 
     fontSize: 24, 
     color: '#000', 
     fontWeight: 'bold', 
     marginBottom: 25,
-    fontFamily: 'Manrope-Bold'
+    fontFamily: 'Manrope-Bold',
+    textAlign: 'left'
   },
   subtitle: { 
     fontSize: 16, 
-    color: '#000', 
+    color: '#404040', 
     lineHeight: 24,
-    fontFamily: 'Manrope-Regular'
+    fontFamily: 'Inter-Regular',
+    textAlign: 'left'
+  },
+
+  imageSection: { 
+    alignItems: 'center', 
+    marginBottom: 40,
+    alignSelf: 'center'
+  },
+  imagePlaceholder: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
+  },
+  locationIcon: {
+    width: 120,
+    height: 120,
+    resizeMode: 'contain'
   },
 
   spacer: { flex: 1 },
   footer: { 
     width: '100%', 
-    paddingBottom: 16,
-    alignItems: 'center'
+    alignItems: 'center',
+    alignSelf: 'center'
   },
 
-  locationButton: { 
+  continueButton: { 
     width: '100%', 
     maxWidth: 343,
     height: 44, 
-    backgroundColor: '#FFA05C', 
+    backgroundColor: '#FF8C4C', 
     borderRadius: 22, 
     alignItems: 'center', 
-    justifyContent: 'center',
-    marginBottom: 16
+    justifyContent: 'center'
   },
-  locationButtonText: { 
+  continueButtonText: { 
     color: '#fff', 
     fontSize: 16, 
     fontWeight: '600' 
-  },
-
-  skipButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16
-  },
-  skipButtonText: { 
-    color: '#000', 
-    fontSize: 16, 
-    fontWeight: '500' 
   },
 });

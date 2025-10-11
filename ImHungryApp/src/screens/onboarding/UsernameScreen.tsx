@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, BackHandler } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -20,9 +20,10 @@ export default function UsernameScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const userData = (route.params as any)?.userData;
+  const existingProfilePhoto = (route.params as any)?.profilePhoto;
 
-  const [username, setUsername] = useState(''); 
-  const [displayUsername, setDisplayUsername] = useState('');  
+  const [username, setUsername] = useState(userData?.username || ''); 
+  const [displayUsername, setDisplayUsername] = useState(userData?.username ? '@' + userData.username : '');  
   const [isFocused, setIsFocused] = useState(false);
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
@@ -34,6 +35,20 @@ export default function UsernameScreen() {
       ]);
     }
   }, [userData, navigation]);
+
+  // Prevent hardware back button (Android) from going back
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Return true to prevent default back action
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => subscription.remove();
+    }, [])
+  );
 
   const checkUsernameUniqueness = async (name: string) => {
     if (!name || name.length < 3) {
@@ -90,6 +105,7 @@ export default function UsernameScreen() {
     // Navigate to ProfilePhoto screen with user data including username
     (navigation as any).navigate('ProfilePhoto', {
       userData: { ...userData, username },
+      profilePhoto: existingProfilePhoto,
     });
   };
 
@@ -99,13 +115,19 @@ export default function UsernameScreen() {
         <StatusBar style="dark" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
           <View style={styles.pagePad}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
+            <View style={styles.headerContainer}>
+              <View style={styles.backButton} />
+
+              <TouchableOpacity style={styles.skipLink} onPress={() => (navigation as any).navigate('ProfilePhoto', { userData, profilePhoto: existingProfilePhoto })}>
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.mainContainer}>
-                <View style={styles.formBlock}>
+              <View style={styles.titleSection}>
                 <Text style={styles.usernameTitle}>Choose your username</Text>
+              </View>
+              <View style={styles.formBlock}>
                     <TextInput
                     mode="flat"
                     value={displayUsername}
@@ -154,13 +176,40 @@ const styles = StyleSheet.create({
   container: { flex: 1 ,backgroundColor: 'white'},
   flex1: { flex: 1 },
   pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
-  mainContainer: { flex: 1, alignItems: 'center', width: '100%' },
+  
+  headerContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 40,
+    height: 44
+  },
+  
+  mainContainer: { flex: 1, alignItems: 'flex-start', width: '100%' },
 
-  backButton: { alignSelf: 'flex-start', marginBottom: 20, paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { fontSize: 16, color: '#000', fontWeight: '500' },
+  backButton: { paddingVertical: 8, paddingHorizontal: 4, width: 44 },
 
-  usernameSection: { marginBottom: 40, alignSelf: 'stretch', alignItems: 'center' },
-  usernameTitle: { fontSize: 24, color: '#000', fontWeight: 'bold', textAlign: 'center' },
+  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  skipText: { 
+    fontSize: 16, 
+    color: '#404040', 
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular'
+  },
+
+  titleSection: { 
+    marginBottom: 40,
+    maxWidth: 343,
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
+  usernameTitle: { 
+    fontSize: 24, 
+    color: '#000', 
+    fontWeight: 'bold', 
+    textAlign: 'center',
+    fontFamily: 'Manrope-Bold'
+  },
 
   inputContainer: { width: '100%', alignItems: 'center', marginBottom: 30 },
   usernameInput: {
@@ -181,10 +230,26 @@ const styles = StyleSheet.create({
   },
 
   spacer: { flex: 1 },
-  footer: { width: '100%', paddingBottom: 16 },
+  footer: { 
+    width: '100%', 
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
 
-  continueButton: { width: '100%', height: 44, backgroundColor: '#FF8C4C', borderRadius: 22, alignItems: 'center', justifyContent: 'center',marginBottom: 50 },
-  continueButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  continueButton: { 
+    width: '100%', 
+    maxWidth: 343,
+    height: 44, 
+    backgroundColor: '#FF8C4C', 
+    borderRadius: 22, 
+    alignItems: 'center', 
+    justifyContent: 'center'
+  },
+  continueButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
   errorText: {
     color: 'red',
     textAlign: 'center',
