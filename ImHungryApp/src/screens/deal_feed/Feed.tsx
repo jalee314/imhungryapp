@@ -45,7 +45,7 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache(); // Get cuisines and loading state
-  const { currentLocation, updateLocation, selectedCoordinates } = useLocation();
+  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission } = useLocation();
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -490,12 +490,28 @@ const Feed: React.FC = () => {
     </View>
   );
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No deals available</Text>
-      <Text style={styles.emptySubtext}>Check back later for new deals!</Text>
-    </View>
-  );
+  const renderEmptyState = () => {
+    // Check if the user has no location set and no location permission
+    const needsLocationSetup = !hasLocationSet && !hasLocationPermission;
+    
+    if (needsLocationSetup) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="location-outline" size={48} color="#FF8C4C" style={styles.emptyIcon} />
+          <Text style={styles.emptyText}>Set your location to see deals</Text>
+          <Text style={styles.emptySubtext}>Click the location icon above to get personalized deals in your area!</Text>
+        </View>
+      );
+    }
+    
+    // Default empty state for other cases
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No deals available</Text>
+        <Text style={styles.emptySubtext}>Check back later for new deals!</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -730,6 +746,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 50,
+  },
+  emptyIcon: {
+    marginBottom: 16,
   },
   emptyText: {
     fontSize: 18,

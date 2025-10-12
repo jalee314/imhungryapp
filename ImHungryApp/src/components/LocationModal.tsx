@@ -9,10 +9,12 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  Alert,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity } from '../services/locationService';
+import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
 
 interface LocationItem {
   id: string;
@@ -99,6 +101,58 @@ const LocationModal: React.FC<LocationModalProps> = ({
     }
   };
 
+  const handleCurrentLocationRequest = async () => {
+    const hasPermission = await checkLocationPermission();
+    
+    if (!hasPermission) {
+      // Get detailed permission status
+      const permissionStatus = await getLocationPermissionStatus();
+      
+      if (permissionStatus.isDenied) {
+        // User has already denied permission before, go straight to settings guidance
+        Alert.alert(
+          'Location Access Required',
+          'To use your current location, please enable location permissions for this app in your device settings.',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Open Settings',
+              onPress: () => Linking.openSettings(),
+            },
+          ]
+        );
+        return;
+      }
+      
+      // First time asking (status is likely 'undetermined') - request permission
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        // User denied it for the first time, explain how to re-enable
+        Alert.alert(
+          'Location Access Required',
+          'To use your current location, please enable location permissions for this app in your device settings.',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Open Settings',
+              onPress: () => Linking.openSettings(),
+            },
+          ]
+        );
+        return;
+      }
+    }
+    
+    // Permission granted, proceed with location request
+    setSelectedLocation('current');
+  };
+
   const requestCurrentLocation = async (): Promise<LocationItem | null> => {
     try {
       // Request location permissions
@@ -167,6 +221,17 @@ const LocationModal: React.FC<LocationModalProps> = ({
             ...selectedLocationItem,
             coordinates: coordinates || undefined
           };
+          
+          // Save the selected location to the database
+          if (coordinates) {
+            console.log('💾 Saving manual location to database:', coordinates);
+            const success = await updateUserLocation(coordinates.lat, coordinates.lng, selectedLocationItem.city);
+            if (success) {
+              console.log('✅ Manual location saved to database successfully');
+            } else {
+              console.log('❌ Failed to save manual location to database');
+            }
+          }
         } catch (error) {
           console.error('Error getting coordinates for city:', error);
           locationToUpdate = selectedLocationItem;
@@ -192,7 +257,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
     return (
       <TouchableOpacity 
         style={styles.locationItem}
-        onPress={() => handleSelectLocation('current')}
+        onPress={handleCurrentLocationRequest}
       >
         <View style={styles.locationTextContainer}>
           <Text style={styles.locationText}>Current Location</Text>

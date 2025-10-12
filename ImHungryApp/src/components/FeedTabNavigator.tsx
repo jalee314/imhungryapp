@@ -15,12 +15,14 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
   currentTab = 'feed',
   onTabChange 
 }) => {
-  const { currentLocation, updateLocation } = useLocation();
+  const { currentLocation, updateLocation, refreshPermissionStatus } = useLocation();
   const [locationModalVisible, setLocationModalVisible] = useState(false);
 
-  const handleLocationPress = useCallback(() => {
+  const handleLocationPress = useCallback(async () => {
+    // Refresh permission status when modal is opened (in case user returned from settings)
+    await refreshPermissionStatus();
     setLocationModalVisible(true);
-  }, []);
+  }, [refreshPermissionStatus]);
 
   const handleLocationUpdate = useCallback((location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
     updateLocation(location);
