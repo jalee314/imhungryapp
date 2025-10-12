@@ -72,7 +72,7 @@ export default function InstantNotificationsScreen() {
                   disabled={loading}
                 >
                   <Text style={styles.continueButtonText}>
-                    {loading ? 'Setting up...' : 'Continue'}
+                    {loading ? 'Setting up...' : 'Get Notified'}
                   </Text>
                 </TouchableOpacity>
               </View>

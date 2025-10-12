@@ -99,7 +99,8 @@ export default function ProfilePhotoScreen() {
 
   const handleContinue = async () => {
     if (!profilePhoto) {
-      Alert.alert('Error', 'Please add a profile photo or skip');
+      // If no photo is selected, trigger photo selection
+      handleCameraPress();
       return;
     }
     await submitUserData();
@@ -186,13 +187,13 @@ export default function ProfilePhotoScreen() {
                 <TouchableOpacity
                   style={[
                     styles.continueButton, 
-                    (!profilePhoto || loading) && { opacity: 0.5 }
+                    loading && { opacity: 0.5 }
                   ]}
                   onPress={handleContinue}
-                  disabled={!profilePhoto || loading}
+                  disabled={loading}
                 >
                   <Text style={styles.continueButtonText}>
-                    {loading ? 'Creating Account...' : 'Continue'}
+                    {loading ? 'Creating Account...' : (profilePhoto ? 'Continue' : 'Choose Photo')}
                   </Text>
                 </TouchableOpacity>
               </View>

@@ -419,7 +419,7 @@ export default function CuisinePreferencesScreen() {
                   disabled={loading}
                 >
                   <Text style={styles.continueButtonText}>
-                    {loading ? 'Creating Account...' : selectedCuisines.length > 0 ? 'Continue' : 'Continue Without Preferences'}
+                    {loading ? 'Creating Account...' : 'Finish'}
                   </Text>
                 </TouchableOpacity>
               </View>
