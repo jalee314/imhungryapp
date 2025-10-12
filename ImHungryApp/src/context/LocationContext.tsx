@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { getCurrentUserLocation, getCityFromCoordinates } from '../services/locationService';
 import { useAuth } from './AuthContext';
 import * as Location from 'expo-location';
@@ -33,6 +33,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [currentLocation, setCurrentLocation] = useState<string>('Location');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const hasLoadedLocation = useRef(false);
 
   // Helper function to get full location display "City, State" format
   const getFullLocationDisplay = async (latitude: number, longitude: number): Promise<string> => {
@@ -80,6 +81,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         setCurrentLocation(displayName);
         // Also set the coordinates for filtering and search functionality
         setSelectedCoordinates({ lat: location.lat, lng: location.lng });
+        hasLoadedLocation.current = true;
         console.log('Loaded user location from database:', { 
           display: displayName,
           coordinates: { lat: location.lat, lng: location.lng }
@@ -113,13 +115,17 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   useEffect(() => {
     // Only try to load location if user is authenticated and auth loading is complete
     if (isAuthenticated && !authLoading) {
-      console.log('User authenticated, loading location from database...');
-      loadCurrentLocation();
+      console.log('User authenticated, checking if location needs to be loaded...');
+      // Only load if we haven't already loaded a location to prevent flashing
+      if (!hasLoadedLocation.current) {
+        loadCurrentLocation();
+      }
     } else if (!isAuthenticated && !authLoading) {
       // User is not authenticated, reset location state
       console.log('User not authenticated, resetting location state');
       setCurrentLocation('Location');
       setSelectedCoordinates(null);
+      hasLoadedLocation.current = false;
     }
   }, [isAuthenticated, authLoading]);
 

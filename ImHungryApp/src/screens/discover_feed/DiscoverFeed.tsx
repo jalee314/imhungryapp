@@ -89,17 +89,21 @@ const DiscoverFeed: React.FC = () => {
     }
   };
 
-  const handleLocationPress = () => {
+  const handleLocationPress = useCallback(() => {
     setLocationModalVisible(true);
-  };
+  }, []);
 
-  const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
+  const handleLocationUpdate = useCallback((location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
     // Update the location in the global context
     updateLocation(location);
     
     // Restaurants will automatically reload due to the useEffect dependency on selectedCoordinates
     console.log('Location updated to:', location);
-  };
+  }, [updateLocation]);
+
+  const handleLocationModalClose = useCallback(() => {
+    setLocationModalVisible(false);
+  }, []);
 
   // Convert DiscoverRestaurant to RowCardData
   const convertToRowCardData = (restaurant: DiscoverRestaurant): RowCardData => ({
@@ -292,7 +296,7 @@ const DiscoverFeed: React.FC = () => {
 
       <LocationModal
         visible={locationModalVisible}
-        onClose={() => setLocationModalVisible(false)}
+        onClose={handleLocationModalClose}
         onLocationUpdate={handleLocationUpdate}
       />
     </View>

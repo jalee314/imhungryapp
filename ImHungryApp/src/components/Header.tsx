@@ -8,29 +8,15 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation }) => {
-  // const [imageLoaded, setImageLoaded] = useState(false);
-
-  // Preload image immediately when component mounts
-  // useEffect(() => {
-  //   const preloadImage = async () => {
-  //     try {
-  //       // Use the same preload method as in App.tsx
-  //       await Image.prefetch(Image.resolveAssetSource(require('../../img/hungri_logo.png')).uri);
-  //       setImageLoaded(true);
-  //     } catch (error) {
-  //       console.error('Error preloading header image:', error);
-  //       setImageLoaded(true); // Still show image even if preload fails
-  //     }
-  //   };
-
-  //   preloadImage();
-  // }, []);
-
   return (
     <View style={styles.header}>
       <View style={styles.headerBottomFrame}>
         <View style={styles.logoContainer}>
-          {/* Logo removed as requested */}
+          <Image
+            source={require('../../img/hungri_logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
         <TouchableOpacity onPress={onLocationPress} style={styles.locationContainer}>
           <View style={styles.locationInfo}>
@@ -44,6 +30,11 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation }
       </View>
     </View>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison function to reduce unnecessary re-renders
+  // Only re-render if the currentLocation actually changed meaningfully
+  return prevProps.currentLocation === nextProps.currentLocation && 
+         prevProps.onLocationPress === nextProps.onLocationPress;
 });
 
 // Add display name for debugging

@@ -423,17 +423,17 @@ const Feed: React.FC = () => {
     });
   };
 
-  const handleLocationPress = () => {
+  const handleLocationPress = useCallback(() => {
     setLocationModalVisible(true);
-  };
+  }, []);
 
-  const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
+  const handleLocationUpdate = useCallback((location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
     // Update the location in the global context
     updateLocation(location);
     
     // Deals will automatically reload due to the useEffect dependency on selectedCoordinates
     console.log('Location updated to:', location);
-  };
+  }, [updateLocation]);
 
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
     <DealCard

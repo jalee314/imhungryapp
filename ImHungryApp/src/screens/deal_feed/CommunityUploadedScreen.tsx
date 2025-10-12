@@ -388,8 +388,8 @@ const CommunityUploadedScreen: React.FC = () => {
             
             <View style={styles.bestValueDeals}>
               <Text style={styles.titleText}>
-                <Text style={styles.titleEmoji}>👥 </Text>
-                <Text style={styles.titleBold}>Community Uploaded</Text>
+                <Text style={styles.titleEmoji}>✨ </Text>
+                <Text style={styles.titleBold}>Featured Deals</Text>
               </Text>
             </View>
           </View>
