@@ -446,7 +446,7 @@ const Feed: React.FC = () => {
     <View style={styles.loadingContainer}>
       {/* Community Uploaded Skeleton Section */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
+        <Text style={styles.sectionTitle}>✨ Featured Deals</Text>
         <TouchableOpacity style={styles.seeAllButton}>
           <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
         </TouchableOpacity>
@@ -548,7 +548,7 @@ const Feed: React.FC = () => {
             {communityDeals.length > 0 && (
               <>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>👥 Community Uploaded</Text>
+                  <Text style={styles.sectionTitle}>✨ Featured Deals</Text>
                   <TouchableOpacity 
                     style={styles.seeAllButton}
                     onPress={() => navigation.navigate('CommunityUploaded' as never)}

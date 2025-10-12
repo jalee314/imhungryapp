@@ -51,7 +51,6 @@ const Tab = createBottomTabNavigator();
 
 // Component functions to avoid inline function warnings
 const DiscoverMainScreen = () => <FeedTabNavigator currentTab="discover" />;
-const ContributeMainScreen = () => <FeedTabNavigator currentTab="feed" />;
 
 // Stack navigators for each tab - only containing tab-specific screens
 const FeedStack = () => (
@@ -75,7 +74,7 @@ const ContributeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen 
       name="ContributeMain" 
-      component={ContributeMainScreen} 
+      component={FeedTabNavigator} // Show feed as fallback when contribute tab is "active"
     />
   </Stack.Navigator>
 );
@@ -119,10 +118,24 @@ const MainTabNavigator = () => (
 // Custom tab bar component using existing BottomNavigation
 const CustomTabBar = ({ state, navigation }: any) => {
   const tabMapping = ['feed', 'search', 'contribute', 'favorites', 'profile'];
-  const activeTab = tabMapping[state.index];
+  // Don't change activeTab if user is on contribute tab (which is index 2)
+  const actualActiveTab = state.index === 2 ? 'feed' : tabMapping[state.index];
+  const [lastActiveTab, setLastActiveTab] = React.useState('feed');
+  
+  // Update last active tab when navigating to non-contribute tabs
+  React.useEffect(() => {
+    if (state.index !== 2) { // Not contribute tab
+      setLastActiveTab(tabMapping[state.index]);
+    }
+  }, [state.index]);
 
   const handleTabPress = (tab: string) => {
     const tabIndex = tabMapping.indexOf(tab);
+    if (tab === 'contribute') {
+      // For contribute, don't change navigation state, just show modal
+      // The BottomNavigation component will handle showing the modal
+      return;
+    }
     if (tabIndex !== -1 && tabIndex !== state.index) {
       navigation.navigate(state.routeNames[tabIndex]);
     }
@@ -130,7 +143,7 @@ const CustomTabBar = ({ state, navigation }: any) => {
 
   return (
     <BottomNavigation 
-      activeTab={activeTab}
+      activeTab={state.index === 2 ? lastActiveTab : actualActiveTab}
       onTabPress={handleTabPress}
     />
   );

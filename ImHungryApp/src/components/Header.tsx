@@ -13,7 +13,7 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation }
       <View style={styles.headerBottomFrame}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('../../img/hungri_logo.png')}
+            source={require('../../img/logo/hungri_logo.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
