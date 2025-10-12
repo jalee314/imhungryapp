@@ -45,7 +45,8 @@
     "plugins": [
       "expo-image-picker",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset"
     ],
     "extra": {
       "supabaseUrl": "${SUPABASE_URL}",

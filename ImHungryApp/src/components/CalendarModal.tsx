@@ -106,7 +106,7 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
           style={styles.noExpirationContainer}
           onPress={handleToggleNoExpiration}
         >
-          <Text style={styles.noExpirationText}>Mark if no expiration is known</Text>
+          <Text style={styles.noExpirationText}>Mark if expiration is unknown</Text>
           <View style={[
             styles.checkbox,
             noExpirationKnown ? styles.checkboxActive : {}
