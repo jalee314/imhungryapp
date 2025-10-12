@@ -385,38 +385,38 @@ const Feed: React.FC = () => {
   };
 
   const handleFavorite = (dealId: string) => {
-    let originalDeal: Deal | undefined;
+    // FIRST: Find and capture the original deal state
+    const originalDeal = deals.find(d => d.id === dealId);
+    if (!originalDeal) {
+      console.error('Deal not found:', dealId);
+      return;
+    }
+
+    const wasFavorited = originalDeal.isFavorited;
+    console.log('🔄 Toggling favorite for deal:', dealId, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
     
-    setTimeout(() => {
-      setDeals(prevDeals => {
-        return prevDeals.map(d => {
-          if (d.id === dealId) {
-            originalDeal = d;
-            
-            return {
-              ...d,
-              isFavorited: !d.isFavorited
-            };
-          }
-          return d;
-        });
+    // SECOND: Optimistically update the UI
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          return {
+            ...d,
+            isFavorited: !wasFavorited
+          };
+        }
+        return d;
       });
-    }, 0);
+    });
 
-    // ❌ REMOVED: Cache service update
-
-    // Use the wasFavorited from original deal
-    const wasFavorited = originalDeal?.isFavorited || false;
+    // THIRD: Save to database with the original state
+    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      if (originalDeal) {
-        setTimeout(() => {
-          setDeals(prevDeals => prevDeals.map(d => 
-            d.id === dealId ? originalDeal! : d
-          ));
-        }, 0);
-      }
+      // Revert to original state
+      setDeals(prevDeals => prevDeals.map(d => 
+        d.id === dealId ? originalDeal : d
+      ));
     });
   };
 

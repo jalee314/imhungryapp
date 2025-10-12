@@ -421,30 +421,38 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   };
 
   const handleFavorite = (dealId: string) => {
-    let originalDeal: Deal | undefined;
+    // FIRST: Find and capture the original deal state
+    const originalDeal = userPosts.find(d => d.id === dealId);
+    if (!originalDeal) {
+      console.error('Deal not found:', dealId);
+      return;
+    }
+
+    const wasFavorited = originalDeal.isFavorited;
+    console.log('🔄 Toggling favorite for deal:', dealId, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
     
+    // SECOND: Optimistically update the UI
     setUserPosts(prevPosts => {
       return prevPosts.map(d => {
         if (d.id === dealId) {
-          originalDeal = d;
           return {
             ...d,
-            isFavorited: !d.isFavorited
+            isFavorited: !wasFavorited
           };
         }
         return d;
       });
     });
 
-    const wasFavorited = originalDeal?.isFavorited || false;
+    // THIRD: Save to database with the original state
+    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      if (originalDeal) {
-        setUserPosts(prevPosts => prevPosts.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
-      }
+      // Revert to original state
+      setUserPosts(prevPosts => prevPosts.map(d => 
+        d.id === dealId ? originalDeal : d
+      ));
     });
   };
 

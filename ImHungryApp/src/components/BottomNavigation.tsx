@@ -63,12 +63,14 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         onTabPress('contribute');
       }
     } else {
-      navigation.navigate(screenName as never);
       if (onTabPress) {
         const tab = navItems.find(item => item.screen === screenName);
         if (tab) {
           onTabPress(tab.id);
         }
+      } else {
+        // Fallback to navigation if onTabPress is not provided (for backward compatibility)
+        navigation.navigate(screenName as never);
       }
     }
   };

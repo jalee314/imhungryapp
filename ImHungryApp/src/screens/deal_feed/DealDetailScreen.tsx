@@ -173,6 +173,8 @@ const DealDetailScreen: React.FC = () => {
     const previousState = { ...dealData };
     const wasFavorited = previousState.isFavorited;
     
+    console.log('🔄 Toggling favorite for deal:', previousState.id, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
+    
     // 1. INSTANT UI update
     setDealData({
       ...previousState,
@@ -180,6 +182,7 @@ const DealDetailScreen: React.FC = () => {
     });
 
     // 2. Background database save
+    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     toggleFavorite(previousState.id, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
       setDealData(previousState);
