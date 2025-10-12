@@ -16,11 +16,9 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import Header from '../../components/Header';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
-import LocationModal from '../../components/LocationModal';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
@@ -53,7 +51,6 @@ const Feed: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
@@ -423,18 +420,6 @@ const Feed: React.FC = () => {
     });
   };
 
-  const handleLocationPress = useCallback(() => {
-    setLocationModalVisible(true);
-  }, []);
-
-  const handleLocationUpdate = useCallback((location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
-    // Update the location in the global context
-    updateLocation(location);
-    
-    // Deals will automatically reload due to the useEffect dependency on selectedCoordinates
-    console.log('Location updated to:', location);
-  }, [updateLocation]);
-
   const renderCommunityDeal = ({ item }: { item: Deal }) => (
     <DealCard
       deal={item}
@@ -515,11 +500,6 @@ const Feed: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      <Header 
-        onLocationPress={handleLocationPress} 
-        currentLocation={currentLocation}
-      />
 
       <ScrollView 
         style={styles.content} 
@@ -621,12 +601,6 @@ const Feed: React.FC = () => {
           </>
         )}
       </ScrollView>
-
-      <LocationModal
-        visible={locationModalVisible}
-        onClose={() => setLocationModalVisible(false)}
-        onLocationUpdate={handleLocationUpdate}
-      />
     </View>
   );
 };

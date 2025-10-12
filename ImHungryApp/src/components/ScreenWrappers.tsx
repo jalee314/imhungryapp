@@ -1,7 +1,6 @@
 import React from 'react';
 import MainAppLayout from './MainAppLayout';
-import Feed from '../screens/deal_feed/Feed';
-import DiscoverFeed from '../screens/discover_feed/DiscoverFeed';
+import FeedTabNavigator from './FeedTabNavigator';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
 import FavoritesPage from '../screens/favorites/FavoritesPage';
 import ProfilePage from '../screens/profile/ProfilePage';
@@ -9,19 +8,19 @@ import ProfilePage from '../screens/profile/ProfilePage';
 // Wrapper components for main screens that need bottom navigation
 export const FeedWithNav = () => (
   <MainAppLayout>
-    <Feed />
+    <FeedTabNavigator currentTab="feed" />
   </MainAppLayout>
 );
 
 export const DiscoverFeedWithNav = () => (
   <MainAppLayout>
-    <DiscoverFeed />
+    <FeedTabNavigator currentTab="discover" />
   </MainAppLayout>
 );
 
 export const DealCreationWithNav = () => (
   <MainAppLayout>
-    <DealCreationScreen />
+    <DealCreationScreen visible={true} onClose={() => {}} />
   </MainAppLayout>
 );
 
