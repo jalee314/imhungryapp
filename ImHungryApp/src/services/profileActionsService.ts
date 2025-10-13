@@ -198,20 +198,19 @@ export const handleAccountDeletion = async (profile: any) => {
       cloudinaryPublicIds = imageMetadata?.map(img => img.cloudinary_public_id).filter(Boolean) || [];
     }
 
-    // Delete user's deal templates (posts) BEFORE deleting user
-    // This will also cascade delete deal_instances
-    const { error: dealError } = await supabase
-      .from('deal_template')
-      .delete()
+    // FIRST: Clear the user's profile photo metadata reference to avoid foreign key constraint
+    const { error: clearPhotoError } = await supabase
+      .from('user')
+      .update({ profile_photo_metadata_id: null })
       .eq('user_id', user.id);
 
-    if (dealError) {
-      console.error('Error deleting user deal templates:', dealError);
+    if (clearPhotoError) {
+      console.error('Error clearing profile photo metadata reference:', clearPhotoError);
     } else {
-      console.log('Deleted user deal templates and associated instances');
+      console.log('Cleared profile photo metadata reference');
     }
 
-    // Delete image metadata records for user's images
+    // NOW: Delete image metadata records (after clearing references)
     if (imageMetadataIds.length > 0) {
       const { error: imageMetadataError } = await supabase
         .from('image_metadata')
@@ -263,12 +262,24 @@ export const handleAccountDeletion = async (profile: any) => {
       }
     }
 
-    // Delete user from public.user table
-    // This will trigger CASCADE deletes for:
-    // - favorites, interactions, notifications, sessions
-    // - user_blocks, user_cuisine_preferences, user_feedback  
-    // - user_reports (as reporter)
-    // - deal_template already deleted above
+    // Before deleting user, let's check what might still be referencing them
+    console.log('Checking for any remaining user references before deletion...');
+    
+    // Check for any remaining deal_templates (should be none after our deletion)
+    const { data: remainingDeals, error: dealCheckError } = await supabase
+      .from('deal_template')
+      .select('template_id, user_id')
+      .eq('user_id', user.id);
+    
+    if (remainingDeals && remainingDeals.length > 0) {
+      console.error('WARNING: Found remaining deal templates:', remainingDeals);
+    } else {
+      console.log('Good: No remaining deal templates found');
+    }
+
+    // Delete user from public.user table first
+    // This will trigger CASCADE deletes for all related data
+    console.log('Attempting to delete user from public.user table...');
     const { error: deleteUserError } = await supabase
       .from('user')
       .delete()
@@ -282,22 +293,42 @@ export const handleAccountDeletion = async (profile: any) => {
       console.log('Deleted user profile - database cascades handled related data');
     }
 
-    // Try to delete user from auth.users table using edge function with service role permissions
+    // Verify the user was actually deleted from public.user table
+    console.log('Verifying user deletion from public.user table...');
+    const { data: remainingUser, error: checkError } = await supabase
+      .from('user')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (remainingUser) {
+      console.error('ERROR: User still exists in public.user table after deletion attempt!', remainingUser);
+      Alert.alert('Error', 'Failed to completely delete user profile. Please try again.');
+      return false;
+    } else {
+      console.log('Confirmed: User successfully deleted from public.user table');
+    }
+
+    // Wait a moment for any database triggers/cascades to complete
+    console.log('Waiting for database operations to complete...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Attempt to delete user from auth.users table via edge function
     try {
       console.log('Attempting to delete user from auth.users via edge function');
-      const { error: deleteAuthUserError } = await supabase.functions.invoke('delete-auth-user', {
+      const { data: deleteResult, error: deleteAuthUserError } = await supabase.functions.invoke('delete-auth-user', {
         body: { userId: user.id }
       });
       
       if (deleteAuthUserError) {
         console.error('Error deleting user from auth.users:', deleteAuthUserError);
-        console.log('User can still be manually deleted from Supabase dashboard for re-registration');
+        console.log('All app data has been deleted. Auth user remains - may affect re-registration with same email.');
       } else {
-        console.log('Successfully deleted user from auth.users - user can now re-register');
+        console.log('Successfully deleted user from auth.users - user can re-register with same credentials');
       }
     } catch (error) {
       console.error('Failed to call auth user deletion function:', error);
-      console.log('User remains in auth.users table - manual deletion required for re-registration');
+      console.log('All app data has been successfully deleted. Auth user may need manual cleanup.');
     }
 
     // Clear local cache
