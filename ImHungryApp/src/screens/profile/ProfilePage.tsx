@@ -1205,7 +1205,7 @@ const styles = StyleSheet.create({
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     gap: 4,
     paddingTop: 8,
     paddingBottom: 100,
