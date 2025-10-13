@@ -276,10 +276,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       async () => {
         setShowDeleteModal(false);
         const success = await handleAccountDeletion(profile);
-        if (success) {
-          // Navigate to login page
-          (navigation as any).navigate('LogIn');
-        }
+        // No manual navigation needed - AuthGuard will handle redirect after signOut
       },
       () => setShowDeleteModal(false)
     );
