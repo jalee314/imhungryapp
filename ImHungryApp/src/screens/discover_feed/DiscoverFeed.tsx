@@ -328,6 +328,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 0, // Remove extra padding
+    paddingHorizontal: 0, // Remove horizontal padding to let cards control their own spacing
   },
   gridRow: {
     justifyContent: 'flex-start', // Changed from 'space-between' to 'flex-start'
