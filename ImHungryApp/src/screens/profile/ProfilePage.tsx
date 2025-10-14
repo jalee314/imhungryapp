@@ -276,7 +276,10 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       async () => {
         setShowDeleteModal(false);
         const success = await handleAccountDeletion(profile);
-        // No manual navigation needed - AuthGuard will handle redirect after signOut
+        if (success) {
+          // Navigate to login page
+          (navigation as any).navigate('LogIn');
+        }
       },
       () => setShowDeleteModal(false)
     );
@@ -1196,28 +1199,26 @@ const styles = StyleSheet.create({
   postsContainer: {
     flex: 1,
     width: '100%',
-    justifyContent: 'flex-start', // Changed from 'center' to 'flex-start'
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 4,
     paddingTop: 8,
     paddingBottom: 100,
     paddingHorizontal: 8,
-    width: '100%', // Ensure full width
+    width: 390, // Width of two cards (185 + 185) + gap (4) + paddingHorizontal (8*2) = 390
   },
   leftCard: {
     width: 185,
     marginBottom: 4,
-    alignSelf: 'flex-start', // Force left alignment
   },
   rightCard: {
     width: 185,
     marginBottom: 4,
-    alignSelf: 'flex-start', // Force left alignment
   },
   emptyContainer: {
     flex: 1,
