@@ -137,8 +137,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
   },
   cuisineButtonSelected: {
     backgroundColor: '#FF8C4C',
