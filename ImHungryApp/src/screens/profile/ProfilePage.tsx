@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, Text, StyleSheet, Image, 
-  TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator 
+  TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -824,23 +825,22 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         animationType="fade"
         onRequestClose={cancelLogout}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={confirmLogout}
-            >
-              <Text style={styles.modalOptionText}>Log Out</Text>
-            </TouchableOpacity>
-            <View style={styles.modalSeparator} />
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={cancelLogout}
-            >
-              <Text style={styles.modalOptionText}>Cancel</Text>
-            </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={cancelLogout}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalViewContainer}>
+                <View style={styles.modalContent}>
+                  <TouchableOpacity style={styles.modalOption} onPress={confirmLogout}>
+                    <Text style={styles.modalOptionText}>Log Out</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.cancelButton} onPress={cancelLogout}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Delete Account Modal */}
@@ -850,23 +850,22 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         animationType="fade"
         onRequestClose={cancelDeleteAccount}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={confirmDeleteAccount}
-            >
-              <Text style={styles.modalOptionText}>Delete Account</Text>
-            </TouchableOpacity>
-            <View style={styles.modalSeparator} />
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={cancelDeleteAccount}
-            >
-              <Text style={styles.modalOptionText}>Cancel</Text>
-            </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={cancelDeleteAccount}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalViewContainer}>
+                <View style={styles.modalContent}>
+                  <TouchableOpacity style={styles.modalOption} onPress={confirmDeleteAccount}>
+                    <Text style={[styles.modalOptionText, styles.deleteText]}>Delete Account</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.cancelButton} onPress={cancelDeleteAccount}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
     </SafeAreaView>
@@ -1086,30 +1085,42 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'flex-end',
   },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+  modalViewContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 90,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    marginBottom: 8,
   },
   modalOption: {
-    paddingVertical: 20,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   modalOptionText: {
-    fontSize: 18,
-    color: '#000',
-    fontWeight: '400',
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
   },
-  modalSeparator: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 0,
+  deleteText: {
+    color: 'red',
+  },
+  cancelButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
   },
 
   // Skeleton styles
