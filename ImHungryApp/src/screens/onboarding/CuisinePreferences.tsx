@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
 import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
-
-const cuisines = [
-  'Italian', 'French', 'Spanish', 'Greek',
-  'Japanese', 'Chinese', 'Thai', 'Indian',
-  'Korean', 'Mexican', 'Brazilian', 'Peruvian',
-  'Ethiopian', 'Nigerian', 'American', 'Middle Eastern'
-];
+import { useDataCache } from '../../context/DataCacheContext';
 
 export default function CuisinePreferencesScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { cuisines, loading: cuisinesLoading } = useDataCache();
   const userData = (route.params as any)?.userData;
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -359,6 +353,8 @@ export default function CuisinePreferencesScreen() {
     }
   };
 
+  const availableCuisines = cuisines.map(c => c.name);
+
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
       <SafeAreaView style={styles.container}>
@@ -385,26 +381,33 @@ export default function CuisinePreferencesScreen() {
               </View>
 
               <View style={styles.cuisineGrid}>
-                {cuisines.map((cuisine) => {
-                  const isSelected = selectedCuisines.includes(cuisine);
-                  return (
-                    <TouchableOpacity
-                      key={cuisine}
-                      style={[
-                        styles.cuisineButton,
-                        isSelected && styles.cuisineButtonSelected
-                      ]}
-                      onPress={() => toggleCuisine(cuisine)}
-                    >
-                      <Text style={[
-                        styles.cuisineButtonText,
-                        isSelected && styles.cuisineButtonTextSelected
-                      ]}>
-                        {cuisine}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                {cuisinesLoading ? (
+                  // Skeleton loading state
+                  Array.from({ length: 16 }).map((_, index) => (
+                    <View key={index} style={styles.skeletonButton} />
+                  ))
+                ) : (
+                  availableCuisines.map((cuisine) => {
+                    const isSelected = selectedCuisines.includes(cuisine);
+                    return (
+                      <TouchableOpacity
+                        key={cuisine}
+                        style={[
+                          styles.cuisineButton,
+                          isSelected && styles.cuisineButtonSelected
+                        ]}
+                        onPress={() => toggleCuisine(cuisine)}
+                      >
+                        <Text style={[
+                          styles.cuisineButtonText,
+                          isSelected && styles.cuisineButtonTextSelected
+                        ]}>
+                          {cuisine}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
               </View>
 
               <View style={styles.spacer} />
@@ -551,5 +554,12 @@ const styles = StyleSheet.create({
     color: '#fff', 
     fontSize: 16, 
     fontWeight: '600' 
+  },
+  skeletonButton: {
+    width: '48%',
+    height: 40,
+    backgroundColor: '#E1E9EE',
+    borderRadius: 12,
+    marginBottom: 8,
   },
 });
