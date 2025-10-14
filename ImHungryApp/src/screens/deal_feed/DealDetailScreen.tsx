@@ -260,20 +260,22 @@ const DealDetailScreen: React.FC = () => {
   };
 
   const handleUserPress = () => {
-    if (dealData.userId && dealData.userDisplayName) {
-      (navigation as any).navigate('ProfilePage', { 
-        viewUser: true, 
-        username: dealData.userDisplayName,
-        userId: dealData.userId 
-      });
+    // Do not navigate if the post is anonymous
+    if (dealData.isAnonymous || !dealData.userId || !dealData.userDisplayName) {
+      return;
     }
+    (navigation as any).navigate('ProfilePage', {
+      viewUser: true,
+      username: dealData.userDisplayName,
+      userId: dealData.userId,
+    });
   };
 
 
-  // Get profile picture - use actual data or fallback to default
-  const profilePicture = dealData.userProfilePhoto 
-    ? { uri: dealData.userProfilePhoto }
-    : require('../../../img/Default_pfp.svg.png');
+  // Get profile picture - handle anonymous posts
+  const profilePicture = (dealData.isAnonymous || !dealData.userProfilePhoto)
+    ? require('../../../img/Default_pfp.svg.png')
+    : { uri: dealData.userProfilePhoto };
 
   // Get display name - handle anonymous posts
   const displayName = dealData.isAnonymous 
@@ -477,7 +479,8 @@ const DealDetailScreen: React.FC = () => {
         <TouchableOpacity 
           style={styles.sharedByContainer}
           onPress={handleUserPress}
-          activeOpacity={0.7}
+          activeOpacity={dealData.isAnonymous ? 1 : 0.7} // No feedback for anonymous
+          disabled={dealData.isAnonymous} // Disable press for anonymous
         >
           <Image 
             source={profilePicture} 
