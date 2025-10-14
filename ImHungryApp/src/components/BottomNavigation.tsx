@@ -92,9 +92,9 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onPress={() => handleTabPress(item.screen)}
         >
           {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
-            <Image source={{ uri: displayPhotoUrl }} style={styles.navProfilePhoto} />
+            <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
           ) : displayPhotoUrl ? (
-            <Image source={displayPhotoUrl} style={styles.navProfilePhoto} />
+            <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
           ) : (
             <View style={styles.navProfilePlaceholder}>
               <Text style={styles.navPlaceholderText}>👤</Text>
@@ -168,12 +168,16 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   activeNavIcon: {
-    color: '#FFA05C',
+    color: '#FF8C4C',
   },
   navProfilePhoto: {
     width: 28,
     height: 28,
     borderRadius: 14,
+  },
+  activeNavProfilePhoto: {
+    borderWidth: 2,
+    borderColor: '#FF8C4C',
   },
   navProfilePlaceholder: {
     width: 28,
