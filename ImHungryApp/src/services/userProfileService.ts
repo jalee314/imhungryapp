@@ -51,7 +51,12 @@ export const fetchUserProfile = async (targetUserId: string): Promise<UserProfil
     const [userProfileResult, dealCountResult] = await Promise.all([
       supabase
         .from('user')
-        .select('*')
+        .select(`
+          *,
+          image_metadata!profile_photo_metadata_id(
+            variants
+          )
+        `)
         .eq('user_id', targetUserId)
         .single(),
       
@@ -73,18 +78,8 @@ export const fetchUserProfile = async (targetUserId: string): Promise<UserProfil
     }
 
     // Process profile photo URL
-    let photoUrl = null;
-    if (userProfile.profile_photo && userProfile.profile_photo !== 'default_avatar.png') {
-      const photoPath = userProfile.profile_photo.startsWith('public/') 
-        ? userProfile.profile_photo 
-        : `public/${userProfile.profile_photo}`;
-      
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(photoPath);
-      
-      photoUrl = urlData.publicUrl;
-    }
+    const variants = (userProfile as any)?.image_metadata?.variants as any;
+    const photoUrl = variants?.medium || null;
 
     const result = {
       profile: userProfile,
@@ -121,20 +116,18 @@ export const fetchCurrentUserPhoto = async (): Promise<string | null> => {
 
     const { data: currentUserData } = await supabase
       .from('user')
-      .select('profile_photo')
+      .select(`
+        profile_photo_metadata_id,
+        image_metadata!profile_photo_metadata_id(
+          variants
+        )
+      `)
       .eq('user_id', user.id)
       .single();
     
-    if (currentUserData?.profile_photo && currentUserData.profile_photo !== 'default_avatar.png') {
-      const photoPath = currentUserData.profile_photo.startsWith('public/') 
-        ? currentUserData.profile_photo 
-        : `public/${currentUserData.profile_photo}`;
-      
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(photoPath);
-      
-      return urlData.publicUrl;
+    if (currentUserData) {
+      const variants = (currentUserData as any)?.image_metadata?.variants as any;
+      return variants?.thumbnail || null;
     }
     
     return null;

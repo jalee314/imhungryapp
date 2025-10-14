@@ -111,7 +111,7 @@ export default function CuisinePreferencesScreen() {
             phone_number: e164Phone,
             username: userData.username,
             full_name: `${userData.firstName} ${userData.lastName}`,
-            profile_photo_metadata_id: null, // Will be updated after photo processing
+            metadata_idprofile_photo_: null, // Will be updated after photo processing
             cuisine_preferences: selectedCuisines,
             // Include location data in auth metadata
             location_data: userData.locationData,

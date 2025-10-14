@@ -264,10 +264,16 @@ const DealDetailScreen: React.FC = () => {
     if (dealData.isAnonymous || !dealData.userId || !dealData.userDisplayName) {
       return;
     }
-    (navigation as any).navigate('ProfilePage', {
-      viewUser: true,
-      username: dealData.userDisplayName,
-      userId: dealData.userId,
+    (navigation as any).navigate('MainTabs', {
+      screen: 'ProfilePage',
+      params: {
+        screen: 'ProfileMain',
+        params: {
+          viewUser: true,
+          username: dealData.userDisplayName,
+          userId: dealData.userId,
+        },
+      },
     });
   };
 

@@ -16,6 +16,13 @@ export const feedService = {
             user_id,
             restaurant!inner(
               name
+            ),
+            user!inner(
+              display_name,
+              profile_photo_metadata_id,
+              image_metadata!profile_photo_metadata_id(
+                variants
+              )
             )
           )
         `)
@@ -23,28 +30,38 @@ export const feedService = {
         .limit(20);
 
       if (error) {
+        console.error('Error fetching deals with users:', error);
         return [];
       }
 
       // Transform the data to match your Deal interface
-      const deals: Deal[] = data.map((deal: any) => ({
-        id: deal.deal_id.toString(),
-        title: deal.deal_template.title,
-        restaurant: deal.deal_template.restaurant.name,
-        details: deal.deal_template.description || '',
-        image: deal.deal_template.image_url || require('../../img/default-rest.png'),
-        votes: 0, // You'll need to fetch this separately
-        isUpvoted: false,
-        isDownvoted: false,
-        isFavorited: false,
-        timeAgo: '1h ago', // You'll need to calculate this
-        author: 'User', // You'll need to fetch the user's display name
-        milesAway: '2mi', // You'll need to calculate this
-        uploaderUserId: deal.deal_template.user_id, // This is the key field!
-      }));
+      const deals: Deal[] = data.map((deal: any) => {
+        const user = deal.deal_template.user;
+        const variants = user?.image_metadata?.variants as any;
+        const photoUrl = variants?.thumbnail || null;
+
+        return {
+          id: deal.deal_id.toString(),
+          title: deal.deal_template.title,
+          restaurant: deal.deal_template.restaurant.name,
+          details: deal.deal_template.description || '',
+          image: deal.deal_template.image_url || require('../../img/default-rest.png'),
+          votes: 0, // You'll need to fetch this separately
+          isUpvoted: false,
+          isDownvoted: false,
+          isFavorited: false,
+          timeAgo: '1h ago', // You'll need to calculate this
+          author: user?.display_name || 'Anonymous',
+          milesAway: '2mi', // You'll need to calculate this
+          uploaderUserId: deal.deal_template.user_id, // This is the key field!
+          userProfilePhoto: photoUrl,
+          userDisplayName: user?.display_name || 'Anonymous',
+        };
+      });
 
       return deals;
     } catch (error) {
+      console.error('Error in getDealsWithUsers:', error);
       return [];
     }
   },
@@ -63,6 +80,13 @@ export const feedService = {
             user_id,
             restaurant!inner(
               name
+            ),
+            user!inner(
+              display_name,
+              profile_photo_metadata_id,
+              image_metadata!profile_photo_metadata_id(
+                variants
+              )
             )
           )
         `)
@@ -70,8 +94,13 @@ export const feedService = {
         .single();
 
       if (error) {
+        console.error('Error fetching deal with user:', error);
         return null;
       }
+
+      const user = data.deal_template.user;
+      const variants = user?.image_metadata?.variants as any;
+      const photoUrl = variants?.thumbnail || null;
 
       return {
         id: data.deal_id.toString(),
@@ -84,11 +113,14 @@ export const feedService = {
         isDownvoted: false,
         isFavorited: false,
         timeAgo: '1h ago',
-        author: 'User',
+        author: user?.display_name || 'Anonymous',
         milesAway: '2mi',
         uploaderUserId: data.deal_template.user_id,
+        userProfilePhoto: photoUrl,
+        userDisplayName: user?.display_name || 'Anonymous',
       };
     } catch (error) {
+      console.error('Error in getDealWithUser:', error);
       return null;
     }
   }
