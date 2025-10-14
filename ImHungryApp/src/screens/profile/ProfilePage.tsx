@@ -1067,8 +1067,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    // borderBottomWidth: 1, // This was creating the separator
   },
   settingText: {
     flex: 1,
