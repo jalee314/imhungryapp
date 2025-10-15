@@ -13,6 +13,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -37,6 +38,9 @@ const DealDetailScreen: React.FC = () => {
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [viewCount, setViewCount] = useState<number>(0);
+  const [isImageViewVisible, setImageViewVisible] = useState(false);
+  const [modalImageLoading, setModalImageLoading] = useState(false);
+  const [modalImageError, setModalImageError] = useState(false);
   
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
@@ -173,6 +177,8 @@ const DealDetailScreen: React.FC = () => {
     const previousState = { ...dealData };
     const wasFavorited = previousState.isFavorited;
     
+    console.log('🔄 Toggling favorite for deal:', previousState.id, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
+    
     // 1. INSTANT UI update
     setDealData({
       ...previousState,
@@ -180,6 +186,7 @@ const DealDetailScreen: React.FC = () => {
     });
 
     // 2. Background database save
+    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     toggleFavorite(previousState.id, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
       setDealData(previousState);
@@ -257,25 +264,41 @@ const DealDetailScreen: React.FC = () => {
   };
 
   const handleUserPress = () => {
-    if (dealData.userId && dealData.userDisplayName) {
-      (navigation as any).navigate('ProfilePage', { 
-        viewUser: true, 
-        username: dealData.userDisplayName,
-        userId: dealData.userId 
-      });
+    // Do not navigate if the post is anonymous
+    if (dealData.isAnonymous || !dealData.userId || !dealData.userDisplayName) {
+      return;
     }
+    (navigation as any).navigate('MainTabs', {
+      screen: 'ProfilePage',
+      params: {
+        screen: 'ProfileMain',
+        params: {
+          viewUser: true,
+          username: dealData.userDisplayName,
+          userId: dealData.userId,
+        },
+      },
+    });
   };
 
 
-  // Get profile picture - use actual data or fallback to default
-  const profilePicture = dealData.userProfilePhoto 
-    ? { uri: dealData.userProfilePhoto }
-    : require('../../../img/Default_pfp.svg.png');
+  // Get profile picture - handle anonymous posts
+  const profilePicture = (dealData.isAnonymous || !dealData.userProfilePhoto)
+    ? require('../../../img/Default_pfp.svg.png')
+    : { uri: dealData.userProfilePhoto };
 
   // Get display name - handle anonymous posts
   const displayName = dealData.isAnonymous 
     ? 'Anonymous' 
     : (dealData.userDisplayName || 'Unknown User');
+
+  const openImageViewer = () => {
+    setModalImageLoading(true);
+    setModalImageError(false);
+    setImageViewVisible(true);
+  };
+
+  const fullScreenImageSource = dealData.imageVariants?.original || dealData.imageVariants?.large || dealData.image;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -355,58 +378,60 @@ const DealDetailScreen: React.FC = () => {
         <Text style={styles.dealTitle}>{dealData.title}</Text>
 
         {/* Deal Image */}
-        <View style={styles.imageContainer}>
-          <View style={styles.imageWrapper}>
-            {imageLoading && (
-              <View style={styles.imageLoadingContainer}>
-                <SkeletonLoader width="100%" height={300} borderRadius={10} />
-              </View>
-            )}
-            
-            {dealData.imageVariants ? (
-              <OptimizedImage 
-                variants={dealData.imageVariants}
-                componentType="deal"
-                displaySize={{ width: 300, height: 300 }}
-                fallbackSource={typeof dealData.image === 'string' 
-                  ? { uri: dealData.image } 
-                  : dealData.image
-                }
-                style={[
-                  styles.dealImage,
-                  imageLoading && styles.imageLoading,
-                  imageError && styles.imageError
-                ]}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                resizeMode="cover"
-              />
-            ) : (
-              <Image 
-                source={typeof dealData.image === 'string' 
-                  ? { uri: dealData.image } 
-                  : dealData.image
-                } 
-                style={[
-                  styles.dealImage,
-                  imageLoading && styles.imageLoading,
-                  imageError && styles.imageError
-                ]}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                resizeMode="cover"
-                fadeDuration={200}
-              />
-            )}
-            
-            {imageError && (
-              <View style={styles.imageErrorContainer}>
-                <MaterialCommunityIcons name="image-off" size={48} color="#ccc" />
-                <Text style={styles.imageErrorText}>Failed to load image</Text>
-              </View>
-            )}
+        <TouchableOpacity onPress={openImageViewer}>
+          <View style={styles.imageContainer}>
+            <View style={styles.imageWrapper}>
+              {imageLoading && (
+                <View style={styles.imageLoadingContainer}>
+                  <SkeletonLoader width="100%" height={300} borderRadius={10} />
+                </View>
+              )}
+              
+              {dealData.imageVariants ? (
+                <OptimizedImage 
+                  variants={dealData.imageVariants}
+                  componentType="deal"
+                  displaySize={{ width: 300, height: 300 }}
+                  fallbackSource={typeof dealData.image === 'string' 
+                    ? { uri: dealData.image } 
+                    : dealData.image
+                  }
+                  style={[
+                    styles.dealImage,
+                    imageLoading && styles.imageLoading,
+                    imageError && styles.imageError
+                  ]}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Image 
+                  source={typeof dealData.image === 'string' 
+                    ? { uri: dealData.image } 
+                    : dealData.image
+                  } 
+                  style={[
+                    styles.dealImage,
+                    imageLoading && styles.imageLoading,
+                    imageError && styles.imageError
+                  ]}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                  resizeMode="cover"
+                  fadeDuration={200}
+                />
+              )}
+              
+              {imageError && (
+                <View style={styles.imageErrorContainer}>
+                  <MaterialCommunityIcons name="image-off" size={48} color="#ccc" />
+                  <Text style={styles.imageErrorText}>Failed to load image</Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
@@ -474,7 +499,8 @@ const DealDetailScreen: React.FC = () => {
         <TouchableOpacity 
           style={styles.sharedByContainer}
           onPress={handleUserPress}
-          activeOpacity={0.7}
+          activeOpacity={dealData.isAnonymous ? 1 : 0.7} // No feedback for anonymous
+          disabled={dealData.isAnonymous} // Disable press for anonymous
         >
           <Image 
             source={profilePicture} 
@@ -496,6 +522,41 @@ const DealDetailScreen: React.FC = () => {
         dealId={dealData.id}
         uploaderUserId={dealData.userId || "00000000-0000-0000-0000-000000000000"}
       />
+
+      {fullScreenImageSource && (
+          <Modal
+              visible={isImageViewVisible}
+              transparent={true}
+              onRequestClose={() => setImageViewVisible(false)}
+          >
+              <View style={styles.imageViewerContainer}>
+                  <TouchableOpacity 
+                      style={styles.imageViewerCloseButton} 
+                      onPress={() => setImageViewVisible(false)}
+                  >
+                      <Ionicons name="close" size={30} color="white" />
+                  </TouchableOpacity>
+                  {modalImageLoading && (
+                      <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
+                  )}
+                  <Image 
+                      source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource} 
+                      style={styles.fullScreenImage} 
+                      resizeMode="contain" 
+                      onLoad={() => setModalImageLoading(false)}
+                      onError={() => {
+                          setModalImageLoading(false);
+                          setModalImageError(true);
+                      }}
+                  />
+                  {modalImageError && (
+                      <View style={styles.modalErrorContainer}>
+                          <Text style={styles.modalErrorText}>Could not load image</Text>
+                      </View>
+                  )}
+              </View>
+          </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -825,6 +886,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     letterSpacing: 0.2,
+  },
+  imageViewerContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageViewerCloseButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 1,
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalImageLoader: {
+    position: 'absolute',
+  },
+  modalErrorContainer: {
+      position: 'absolute',
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  modalErrorText: {
+      color: 'white',
+      fontSize: 16,
   },
 });
 

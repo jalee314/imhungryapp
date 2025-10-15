@@ -190,18 +190,19 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
   },
   userList: {
-    width: 373,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    borderRadius: 14,
   },
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 20,
     paddingHorizontal: 16,
-    gap: 16,
-    width: 373,
   },
   userName: {
     fontFamily: 'Inter',
@@ -209,6 +210,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
     flex: 1,
+    marginRight: 16,
   },
   checkbox: {
     width: 20,
@@ -258,9 +260,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
   },
   separator: {
-    width: 373,
+    width: '100%',
     height: 0.5,
     backgroundColor: '#C1C1C1',
+    alignSelf: 'center',
   },
 });
 

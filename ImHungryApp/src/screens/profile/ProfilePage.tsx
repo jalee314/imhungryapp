@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, Text, StyleSheet, Image, 
-  TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator 
+  TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import { UserProfileCache } from '../../services/userProfileService';
 import { fetchUserPosts, deleteDeal, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { logClick } from '../../services/interactionService';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 import { 
   uploadProfilePhoto, 
   handleTakePhoto, 
@@ -81,6 +83,8 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   const [postsError, setPostsError] = useState<string | null>(null);
 
   
+
+  const { postAdded, setPostAdded } = useDealUpdate();
 
   // Instagram-style loading: Show cache immediately, update in background
   const loadProfileData = async () => {
@@ -221,11 +225,15 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   // Add the new useFocusEffect here:
   useFocusEffect(
     React.useCallback(() => {
+      if (postAdded) {
+        loadUserPosts();
+        setPostAdded(false);
+      }
       // Only refresh profile data for current user, not when viewing other users
       if (!viewUser) {
         refreshProfile();
       }
-    }, [viewUser])
+    }, [viewUser, postAdded])
   );
 
   // Use utility functions from service
@@ -421,30 +429,38 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   };
 
   const handleFavorite = (dealId: string) => {
-    let originalDeal: Deal | undefined;
+    // FIRST: Find and capture the original deal state
+    const originalDeal = userPosts.find(d => d.id === dealId);
+    if (!originalDeal) {
+      console.error('Deal not found:', dealId);
+      return;
+    }
+
+    const wasFavorited = originalDeal.isFavorited;
+    console.log('🔄 Toggling favorite for deal:', dealId, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
     
+    // SECOND: Optimistically update the UI
     setUserPosts(prevPosts => {
       return prevPosts.map(d => {
         if (d.id === dealId) {
-          originalDeal = d;
           return {
             ...d,
-            isFavorited: !d.isFavorited
+            isFavorited: !wasFavorited
           };
         }
         return d;
       });
     });
 
-    const wasFavorited = originalDeal?.isFavorited || false;
+    // THIRD: Save to database with the original state
+    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      if (originalDeal) {
-        setUserPosts(prevPosts => prevPosts.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
-      }
+      // Revert to original state
+      setUserPosts(prevPosts => prevPosts.map(d => 
+        d.id === dealId ? originalDeal : d
+      ));
     });
   };
 
@@ -816,23 +832,22 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         animationType="fade"
         onRequestClose={cancelLogout}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={confirmLogout}
-            >
-              <Text style={styles.modalOptionText}>Log Out</Text>
-            </TouchableOpacity>
-            <View style={styles.modalSeparator} />
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={cancelLogout}
-            >
-              <Text style={styles.modalOptionText}>Cancel</Text>
-            </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={cancelLogout}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalViewContainer}>
+                <View style={styles.modalContent}>
+                  <TouchableOpacity style={styles.modalOption} onPress={confirmLogout}>
+                    <Text style={styles.modalOptionText}>Log Out</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.cancelButton} onPress={cancelLogout}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Delete Account Modal */}
@@ -842,23 +857,22 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         animationType="fade"
         onRequestClose={cancelDeleteAccount}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={confirmDeleteAccount}
-            >
-              <Text style={styles.modalOptionText}>Delete Account</Text>
-            </TouchableOpacity>
-            <View style={styles.modalSeparator} />
-            <TouchableOpacity 
-              style={styles.modalOption}
-              onPress={cancelDeleteAccount}
-            >
-              <Text style={styles.modalOptionText}>Cancel</Text>
-            </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={cancelDeleteAccount}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalViewContainer}>
+                <View style={styles.modalContent}>
+                  <TouchableOpacity style={styles.modalOption} onPress={confirmDeleteAccount}>
+                    <Text style={[styles.modalOptionText, styles.deleteText]}>Delete Account</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.cancelButton} onPress={cancelDeleteAccount}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
     </SafeAreaView>
@@ -999,21 +1013,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   shareActionButton: {
-    borderRadius: 30,
+    borderRadius: 12,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderRadius: 30,
+    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     width: 40,
-    height: 40,
+    height: 32,
   },
   activeButton: {
     backgroundColor: '#FF8C4C',
@@ -1048,9 +1063,7 @@ const styles = StyleSheet.create({
   
   settingsList: {
     backgroundColor: '#fff',
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: '#FFA05C',
+    borderRadius: 10,
     overflow: 'hidden',
     marginHorizontal: 16,
     marginTop: 16,
@@ -1061,8 +1074,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    // borderBottomWidth: 1, // This was creating the separator
   },
   settingText: {
     flex: 1,
@@ -1080,30 +1092,42 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'flex-end',
   },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+  modalViewContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 90,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    marginBottom: 8,
   },
   modalOption: {
-    paddingVertical: 20,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   modalOptionText: {
-    fontSize: 18,
-    color: '#000',
-    fontWeight: '400',
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
   },
-  modalSeparator: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 0,
+  deleteText: {
+    color: 'red',
+  },
+  cancelButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
   },
 
   // Skeleton styles
@@ -1191,7 +1215,7 @@ const styles = StyleSheet.create({
   postsContainer: {
     flex: 1,
     width: '100%',
-    justifyContent: 'flex-start', // Changed from 'center' to 'flex-start'
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   dealsGrid: {
@@ -1202,17 +1226,15 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 100,
     paddingHorizontal: 8,
-    width: '100%', // Ensure full width
+    width: 390, // Width of two cards (185 + 185) + gap (4) + paddingHorizontal (8*2) = 390
   },
   leftCard: {
     width: 185,
     marginBottom: 4,
-    alignSelf: 'flex-start', // Force left alignment
   },
   rightCard: {
     width: 185,
     marginBottom: 4,
-    alignSelf: 'flex-start', // Force left alignment
   },
   emptyContainer: {
     flex: 1,

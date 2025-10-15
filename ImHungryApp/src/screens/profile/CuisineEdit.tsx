@@ -27,12 +27,9 @@ export default function CuisineEdit() {
   };
 
   const handleBack = () => {
-    // Get the callback function from route params
-    const onUpdate = (route.params as any)?.onUpdate;
-    if (onUpdate) {
-      onUpdate(selectedCuisines);
-    }
-    navigation.goBack();
+    // Pass the updated cuisines back to the previous screen (ProfileEdit)
+    // This avoids passing a non-serializable function in navigation params.
+    navigation.navigate({ name: 'ProfileEdit', params: { updatedCuisines: selectedCuisines }, merge: true });
   };
 
   const availableCuisines = cachedCuisines.map(c => c.name);
@@ -137,8 +134,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
   },
   cuisineButtonSelected: {
     backgroundColor: '#FF8C4C',

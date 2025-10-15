@@ -381,7 +381,9 @@ export const addDistancesToDeals = async (deals: DatabaseDeal[], customCoordinat
 // Update fetchRankedDeals to use the correct tables from your current schema
 export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
   try {
+    console.log('🔍 fetchRankedDeals: Starting to fetch deals...');
     const rankedIds = await getRankedDealIds();
+    console.log('🔍 fetchRankedDeals: Ranked IDs:', rankedIds.length);
 
     // Query the actual tables directly - NO VIEWS
     const { data: deals, error } = await supabase

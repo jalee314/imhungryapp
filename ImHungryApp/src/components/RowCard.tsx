@@ -166,14 +166,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 8,
-    marginHorizontal: 0, // Remove horizontal margin
+    marginHorizontal: 12, // Further reduced to better match Figma design
     marginVertical: 4,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    paddingHorizontal: 16, // Match restaurant info section exactly
+    paddingHorizontal: 0, // Remove padding to let content span full width
+    width: '100%',
   },
   frame: {
     alignItems: 'center',
@@ -190,6 +191,7 @@ const styles = StyleSheet.create({
     gap: 4,
     height: 66,
     justifyContent: 'center',
+    paddingRight: 8, // Add padding to prevent text from touching arrow
   },
   dealTitle: {
     alignSelf: 'stretch',
@@ -245,6 +247,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 6,
+    paddingLeft: 5, // Match Anima CSS padding
+    alignSelf: 'stretch',
+    minWidth: 20, // Ensure arrow has consistent width
   },
   
   // Variant-specific styles

@@ -59,7 +59,7 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
           </TouchableOpacity>
           <Text style={styles.calendarHeaderTitle}>Expiration Date</Text>
           <TouchableOpacity onPress={handleConfirm}>
-            <Text style={[styles.calendarHeaderText, { color: '#FFA05C', fontWeight: 'bold' }]}>Done</Text>
+            <Text style={[styles.calendarHeaderText, { color: '#FF8C4C', fontWeight: 'bold' }]}>Done</Text>
           </TouchableOpacity>
         </View>
         {selectedDate && !noExpirationKnown && (
@@ -90,10 +90,10 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
             }
           }}
           markedDates={{
-            [selectedDate || '']: { selected: true, selectedColor: '#FFA05C' },
+            [selectedDate || '']: { selected: true, selectedColor: '#FF8C4C' },
           }}
           theme={{
-            todayTextColor: '#FFA05C',
+            todayTextColor: '#FF8C4C',
             arrowColor: '#000',
           }}
         />
@@ -106,7 +106,7 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
           style={styles.noExpirationContainer}
           onPress={handleToggleNoExpiration}
         >
-          <Text style={styles.noExpirationText}>Mark if no expiration is known</Text>
+          <Text style={styles.noExpirationText}>Mark if expiration is unknown</Text>
           <View style={[
             styles.checkbox,
             noExpirationKnown ? styles.checkboxActive : {}
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   selectedDatePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFA05C30',
+    backgroundColor: '#FF8C4C30',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 12,

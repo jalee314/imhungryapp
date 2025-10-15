@@ -296,30 +296,38 @@ const CommunityUploadedScreen: React.FC = () => {
   };
 
   const handleFavorite = (dealId: string) => {
-    let originalDeal: Deal | undefined;
+    // FIRST: Find and capture the original deal state
+    const originalDeal = deals.find(d => d.id === dealId);
+    if (!originalDeal) {
+      console.error('Deal not found:', dealId);
+      return;
+    }
+
+    const wasFavorited = originalDeal.isFavorited;
+    console.log('🔄 Toggling favorite for deal:', dealId, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
     
+    // SECOND: Optimistically update the UI
     setDeals(prevDeals => {
       return prevDeals.map(d => {
         if (d.id === dealId) {
-          originalDeal = d;
           return {
             ...d,
-            isFavorited: !d.isFavorited
+            isFavorited: !wasFavorited
           };
         }
         return d;
       });
     });
 
-    const wasFavorited = originalDeal?.isFavorited || false;
+    // THIRD: Save to database with the original state
+    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
-      }
+      // Revert to original state
+      setDeals(prevDeals => prevDeals.map(d => 
+        d.id === dealId ? originalDeal : d
+      ));
     });
   };
 
@@ -388,8 +396,8 @@ const CommunityUploadedScreen: React.FC = () => {
             
             <View style={styles.bestValueDeals}>
               <Text style={styles.titleText}>
-                <Text style={styles.titleEmoji}>👥 </Text>
-                <Text style={styles.titleBold}>Community Uploaded</Text>
+                <Text style={styles.titleEmoji}>✨ </Text>
+                <Text style={styles.titleBold}>Featured Deals</Text>
               </Text>
             </View>
           </View>

@@ -5,6 +5,8 @@ interface DealUpdateContextType {
   updateDeal: (deal: Deal) => void;
   getUpdatedDeal: (dealId: string) => Deal | undefined;
   clearUpdatedDeal: (dealId: string) => void;
+  postAdded: boolean;
+  setPostAdded: (added: boolean) => void;
 }
 
 const DealUpdateContext = createContext<DealUpdateContextType | undefined>(undefined);
@@ -12,6 +14,7 @@ const DealUpdateContext = createContext<DealUpdateContextType | undefined>(undef
 export const DealUpdateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Store updated deals by ID
   const [updatedDeals, setUpdatedDeals] = useState<Map<string, Deal>>(new Map());
+  const [postAdded, setPostAdded] = useState(false);
   
   // Use ref to access latest state without triggering re-renders
   const updatedDealsRef = useRef<Map<string, Deal>>(new Map());
@@ -41,7 +44,7 @@ export const DealUpdateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   return (
-    <DealUpdateContext.Provider value={{ updateDeal, getUpdatedDeal, clearUpdatedDeal }}>
+    <DealUpdateContext.Provider value={{ updateDeal, getUpdatedDeal, clearUpdatedDeal, postAdded, setPostAdded }}>
       {children}
     </DealUpdateContext.Provider>
   );

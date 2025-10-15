@@ -111,10 +111,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    width: 393,
-    height: 852,
   },
   header: {
     flexDirection: 'row',
@@ -140,21 +136,17 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingBottom: 20,
-    gap: 18,
   },
   scrollContainer: {
     flex: 1,
   },
-  textContainer: {
-    width: 345,
-  },
+  textContainer: {},
   mainTitle: {
     fontFamily: 'Inter',
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 19,
     color: '#000000',
-    width: 345,
     marginBottom: 12,
   },
   effectiveDate: {
@@ -163,7 +155,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 19,
     color: '#000000',
-    width: 345,
     marginBottom: 12,
   },
   heading: {
@@ -172,7 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 19,
     color: '#000000',
-    width: 345,
     marginTop: 16,
     marginBottom: 8,
   },
@@ -182,7 +172,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 19,
     color: '#000000',
-    width: 345,
     marginTop: 12,
     marginBottom: 4,
   },
@@ -192,7 +181,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 19,
     color: '#000000',
-    width: 345,
     marginBottom: 8,
   },
   listItem: {
@@ -201,7 +189,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 19,
     color: '#000000',
-    width: 345,
     marginLeft: 16,
     marginBottom: 4,
   },

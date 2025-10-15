@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -20,12 +20,12 @@ export default function LogInScreen() {
 
   const responsive = {
     pagePad:        { paddingHorizontal: H, paddingVertical: V },
-    backButton:     { marginBottom: Math.round(V * 1.5), marginTop: V  },
+    backButton:     { marginBottom: Math.round(V * 0.2), marginTop: V  },
     welcomeSection: { marginBottom: Math.round(V * 1.5) },
-    welcomeTitle:   { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.35) },
+    welcomeTitle:   { marginBottom: Math.round(V * 1.0) },
+    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.9) },
     formContainer:  { marginBottom: Math.round(V * 0.125) },
-    paperInput:     { marginBottom: Math.round(GAP * 1.5)},
+    paperInput:     { marginBottom: Math.round(GAP * 0.7) },
     continueButton: { marginTop: V, marginBottom: V },
     legalContainer: { marginTop: V * 2 },
   };
@@ -84,19 +84,24 @@ export default function LogInScreen() {
         <StatusBar style="dark" />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-          <View style={[styles.pagePad, responsive.pagePad]}>
+          <ScrollView
+            style={[styles.pagePad, responsive.pagePad]}
+            contentContainerStyle={styles.scrollContentContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-
+  
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
                 <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome back to ImHungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                  Sign in with your email address
+                  Sign in with your email address.
                 </Text>
               </View>
-
+  
               {/* Form Fields */}
               <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
                 <View style={responsive.paperInput}>
@@ -109,9 +114,9 @@ export default function LogInScreen() {
                     outlineColor="#FF8C4C"
                     activeOutlineColor="#FF8C4C"
                     dense
-                    style={[styles.paperInput, { backgroundColor: 'white' }]}
+                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                     theme={{
-                      roundness: 12,
+                      roundness: 8,
                       colors: {
                         background: 'white',
                       },
@@ -134,9 +139,9 @@ export default function LogInScreen() {
                     outlineColor="#FF8C4C"
                     activeOutlineColor="#FF8C4C"
                     dense
-                    style={[styles.paperInput, { backgroundColor: 'white' }]}
+                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                     theme={{
-                      roundness: 12,
+                      roundness: 8,
                       colors: {
                         background: 'white',
                       },
@@ -168,14 +173,14 @@ export default function LogInScreen() {
 
             {/* Legal */}
             <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
-              <Text style={styles.legalText}>
+              <Text style={styles.legalText} numberOfLines={2}>
                 By continuing, you agree to ImHungri's{' '}
                 <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
                 and{' '}
                 <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
               </Text>
             </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -188,24 +193,38 @@ const styles = StyleSheet.create({
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 }, // responsive padding applied at runtime
+  scrollContentContainer: {
+    flexGrow: 1,
+  },
+  mainContainer: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 50,
+  }, 
 
-  mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
-
-  backButton: { alignSelf: 'flex-start' },
+  backButton: { 
+    alignSelf: 'flex-start' 
+  },
 
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle:   { fontSize: 20, color: '#000', fontFamily: 'Manrope-Bold' },
-  welcomeSubtitle:{ fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
+  welcomeTitle: {
+    fontSize: 18,
+    color: '#181619',
+    fontFamily: 'Inter-Bold',
+    fontWeight: '700',
+    textAlign: 'left'
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#181619',
+    lineHeight: 24,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'left'
+  },
 
   formContainer: { width: '100%' },
-  paperInput:    { backgroundColor: 'white' }, // field bg; spacing added responsively
-
-  forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
-  forgotPasswordText: { 
-    fontSize: 14, 
-    color: '#000', 
-    fontWeight: '500',
-    textDecorationLine: 'underline'
+  paperInput: {
+    // Only spacing, no height
   },
 
   continueButton: {
@@ -216,9 +235,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular',
+    lineHeight: 24
+  },
+
+  forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '500',
+    textDecorationLine: 'underline'
+  },
 
   legalContainer: { alignItems: 'center' },
-  legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
-  legalLink: { color: '#FF9800', fontWeight: '500' },
+  legalText: {
+    fontSize: 12,
+    color: '#181619',
+    textAlign: 'left',
+    lineHeight: 16,
+    fontFamily: 'Manrope-Medium',
+    fontWeight: '500'
+  },
+  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Manrope-SemiBold' },
+  textInputStyle: {
+    backgroundColor: 'white',
+    height: 56,
+    fontSize: 16,
+  },
 });

@@ -18,7 +18,7 @@ export default function LandingScreen() {
         hitSlop={8}
       >
         <Image 
-          source={require('../../../img/hungri_logo.png')} 
+          source={require('../../../img/logo/hungri_logo.png')} 
           style={styles.logo}
           resizeMode="contain"
         />

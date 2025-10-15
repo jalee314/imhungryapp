@@ -22,6 +22,7 @@ import PhotoActionModal from '../../components/PhotoActionModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../context/DataCacheContext';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 import { fetchUserData, clearUserCache } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -58,6 +59,7 @@ interface DealCreationScreenProps {
 }
 
 export default function DealCreationScreen({ visible, onClose }: DealCreationScreenProps) {
+  const { setPostAdded } = useDealUpdate();
   // Get data from the context (removed 'restaurants')
   const { categories, cuisines, loading: dataLoading, error } = useDataCache();
   
@@ -119,13 +121,17 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   // NEW: Get device's current location (not from database)
   const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
     try {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      
+      let { status } = await Location.getForegroundPermissionsAsync();
+
+      // If permissions are not granted, request them
       if (status !== 'granted') {
         const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-        if (newStatus !== 'granted') {
-          return null;
-        }
+        status = newStatus;
+      }
+
+      // If permissions are still not granted, return null
+      if (status !== 'granted') {
+        return null;
       }
 
       const location = await Location.getCurrentPositionAsync({
@@ -359,6 +365,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       
       if (result.success) {
         await ProfileCacheService.forceRefresh();
+        setPostAdded(true);
         
         Alert.alert(
           "Success!", 
@@ -617,7 +624,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onDone={handleDoneCategories} 
         initialSelected={selectedCategory ? [selectedCategory] : []}
         data={categories}
-        title="Select Deal Category" 
+        title="Add Deal Category" 
         singleSelect={true}
       />
       <ListSelectionModal 
@@ -626,7 +633,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onDone={handleDoneCuisines} 
         initialSelected={selectedCuisine ? [selectedCuisine] : []}
         data={cuisines}
-        title="Select Cuisine Tag" 
+        title="Cuisine Tag" 
         singleSelect={true}
       />
       <ListSelectionModal 
@@ -682,13 +689,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   mainFrameContentContainer: {
-    alignItems: 'center',
-    paddingTop: 14,
     paddingBottom: 20,
+    paddingHorizontal: 12,
   },
   topButtonRow: {
     width: '100%',
-    paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -713,23 +718,21 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
   },
   dealContainerWrapper: {
     marginTop: 6,
     flex: 1,
     width: '100%',
-    alignItems: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    width: 369,
     height: 48,
     backgroundColor: 'rgba(255, 255, 255, 0.93)',
-    borderRadius: 10,
+    borderRadius: 30,
     gap: 8,
     paddingHorizontal: 16,
   },
@@ -738,7 +741,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 12,
     color: 'rgba(12, 12, 13, 1)',
-    letterSpacing: -0.408,
     marginLeft: 8,
   },
   selectedRestaurantContainer: {
@@ -746,7 +748,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    width: 369,
     height: 59,
     backgroundColor: 'rgba(255, 255, 255, 0.93)',
     borderRadius: 10,
@@ -771,7 +772,6 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   unifiedContainer: {
-    width: 369,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingVertical: 12,
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     height: 38,
-    gap: 17,
+    gap: 16,
   },
   sectionLabel: {
     fontFamily: 'Inter',
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
   },
   extraDetailsInput: {
     fontFamily: 'Inter',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
     flex: 1,
     minHeight: 180,
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
   },
   dealTitleText: {
     fontFamily: 'Inter',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
     minHeight: 50,
     textAlignVertical: 'top',

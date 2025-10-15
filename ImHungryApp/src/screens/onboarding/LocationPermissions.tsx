@@ -135,7 +135,7 @@ export default function LocationPermissionsScreen() {
                   disabled={loading}
                 >
                   <Text style={styles.continueButtonText}>
-                    {loading ? 'Getting location...' : 'Continue'}
+                    {loading ? 'Getting location...' : 'Location Permissions'}
                   </Text>
                 </TouchableOpacity>
               </View>

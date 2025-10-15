@@ -21,6 +21,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const { isAuthenticated } = useAuth();
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
   const [showContributeModal, setShowContributeModal] = useState(false);
+  const [contributePressed, setContributePressed] = useState(false);
 
   const loadUserData = async () => {
     try {
@@ -58,23 +59,28 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   const handleTabPress = (screenName: string) => {
     if (screenName === 'DealCreationScreen') {
+      setContributePressed(true);
       setShowContributeModal(true);
-      if (onTabPress) {
-        onTabPress('contribute');
-      }
+      // Reset opacity after a short delay
+      setTimeout(() => setContributePressed(false), 150);
+      // Don't call onTabPress for contribute to avoid tab state change
     } else {
-      navigation.navigate(screenName as never);
       if (onTabPress) {
         const tab = navItems.find(item => item.screen === screenName);
         if (tab) {
           onTabPress(tab.id);
         }
+      } else {
+        // Fallback to navigation if onTabPress is not provided (for backward compatibility)
+        navigation.navigate(screenName as never);
       }
     }
   };
 
   const renderNavItem = (item: { id: string; icon: any; label: string, screen: string }) => {
-    const isActive = activeTab === item.id;
+    // Contribute button should never be considered active
+    const isActive = item.id !== 'contribute' && activeTab === item.id;
+    const isContributePressed = item.id === 'contribute' && contributePressed;
     
     if (item.id === 'profile') {
       const displayPhotoUrl = propPhotoUrl || userPhotoUrl;
@@ -86,9 +92,9 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onPress={() => handleTabPress(item.screen)}
         >
           {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
-            <Image source={{ uri: displayPhotoUrl }} style={styles.navProfilePhoto} />
+            <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
           ) : displayPhotoUrl ? (
-            <Image source={displayPhotoUrl} style={styles.navProfilePhoto} />
+            <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
           ) : (
             <View style={styles.navProfilePlaceholder}>
               <Text style={styles.navPlaceholderText}>👤</Text>
@@ -101,7 +107,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     return (
       <TouchableOpacity
         key={item.id}
-        style={[styles.navItem, isActive && styles.activeNavItem]}
+        style={[
+          styles.navItem, 
+          isActive && styles.activeNavItem,
+          isContributePressed && { opacity: 0.5 }
+        ]}
         onPress={() => handleTabPress(item.screen)}
       >
         <MaterialCommunityIcons  // CHANGED: Back to original
@@ -121,7 +131,10 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       
       <DealCreationScreen
         visible={showContributeModal}
-        onClose={() => setShowContributeModal(false)}
+        onClose={() => {
+          setShowContributeModal(false);
+          setContributePressed(false); // Reset pressed state when modal closes
+        }}
       />
     </>
   );
@@ -155,12 +168,16 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   activeNavIcon: {
-    color: '#FFA05C',
+    color: '#FF8C4C',
   },
   navProfilePhoto: {
     width: 28,
     height: 28,
     borderRadius: 14,
+  },
+  activeNavProfilePhoto: {
+    borderWidth: 2,
+    borderColor: '#FF8C4C',
   },
   navProfilePlaceholder: {
     width: 28,

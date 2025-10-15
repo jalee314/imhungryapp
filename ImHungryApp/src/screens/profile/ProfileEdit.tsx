@@ -20,7 +20,7 @@ interface ProfileEditProps {
 }
 
 const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const profile = route?.params?.profile;
   
   const [formData, setFormData] = useState({
@@ -38,6 +38,14 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   // Fetch cuisines when screen first loads
   useEffect(() => {
     fetchUserCuisines();
+  }, []);
+
+  // Listen for updated cuisines from CuisineEdit screen
+  useEffect(() => {
+    if (route?.params?.updatedCuisines) {
+      setUserCuisines(route.params.updatedCuisines);
+      navigation.setParams({ updatedCuisines: undefined }); // Clear the param
+    }
   }, []);
 
   const fetchUserCuisines = async () => {
@@ -197,10 +205,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   const handleCuisinePress = () => {
     navigation.navigate('CuisineEdit' as never, { 
       selectedCuisines: userCuisines,
-      profile: profile,
-      onUpdate: (updatedCuisines: string[]) => {
-        setUserCuisines(updatedCuisines);
-      }
+      profile: profile
     } as never);
   };
 
@@ -296,7 +301,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
             >
               <View style={styles.cuisineRow}>
                 <View style={styles.cuisineContent}>
-                  <Text style={styles.fieldLabel}>Favorite Cuisines</Text>
+                  <Text style={[styles.fieldLabel, { width: 'auto' }]}>Favorite Cuisines</Text>
                   <Text style={styles.cuisineText}>
                     {userCuisines.length > 0 
                       ? userCuisines.join(', ') 

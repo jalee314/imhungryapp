@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontFamily: 'Inter',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '400',
     color: '#000000',
   },
   divider: {
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   cancelText: {
     fontFamily: 'Inter',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '400',
     color: '#000000',
   },
 });

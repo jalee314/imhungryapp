@@ -18,8 +18,6 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard, { RowCardData } from '../../components/RowCard';
 import SquareCard, { SquareCardData } from '../../components/SquareCard';
-import Header from '../../components/Header';
-import LocationModal from '../../components/LocationModal';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
 import { useLocation } from '../../context/LocationContext';
 
@@ -32,7 +30,6 @@ const DiscoverFeed: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<DiscoverRestaurant[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
 
   // Load restaurants on mount and when location changes
   useEffect(() => {
@@ -87,18 +84,6 @@ const DiscoverFeed: React.FC = () => {
         restaurant 
       });
     }
-  };
-
-  const handleLocationPress = () => {
-    setLocationModalVisible(true);
-  };
-
-  const handleLocationUpdate = (location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
-    // Update the location in the global context
-    updateLocation(location);
-    
-    // Restaurants will automatically reload due to the useEffect dependency on selectedCoordinates
-    console.log('Location updated to:', location);
   };
 
   // Convert DiscoverRestaurant to RowCardData
@@ -191,7 +176,6 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <Header onLocationPress={() => console.log('Location pressed')} />
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Ionicons name="search" size={20} color="#666" />
@@ -214,7 +198,6 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <Header onLocationPress={() => console.log('Location pressed')} />
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Ionicons name="search" size={20} color="#666" />
@@ -239,11 +222,6 @@ const DiscoverFeed: React.FC = () => {
       searchQuery.length > 0 && styles.containerWithSearch
     ]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      <Header 
-        onLocationPress={handleLocationPress} 
-        currentLocation={currentLocation}
-      />
 
       <View style={styles.searchContainer}>
         <View style={[
@@ -289,12 +267,6 @@ const DiscoverFeed: React.FC = () => {
           columnWrapperStyle={searchQuery.length > 0 ? styles.gridRow : undefined}
         />
       </View>
-
-      <LocationModal
-        visible={locationModalVisible}
-        onClose={() => setLocationModalVisible(false)}
-        onLocationUpdate={handleLocationUpdate}
-      />
     </View>
   );
 };
@@ -355,7 +327,8 @@ const styles = StyleSheet.create({
     paddingBottom: 0, // Remove extra padding since MainAppLayout handles this
   },
   listContainer: {
-    paddingBottom: 0, // Remove extra padding
+    paddingBottom: 100, // Remove extra padding
+    paddingHorizontal: 0, // Remove horizontal padding to let cards control their own spacing
   },
   gridRow: {
     justifyContent: 'flex-start', // Changed from 'space-between' to 'flex-start'

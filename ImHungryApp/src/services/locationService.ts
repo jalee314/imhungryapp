@@ -117,6 +117,47 @@ export const getRestaurantLocationsBatch = async (
 };
 
 /**
+ * Check if location permission is granted without requesting it
+ */
+export const checkLocationPermission = async (): Promise<boolean> => {
+  try {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    return status === 'granted';
+  } catch (error) {
+    console.error('Error checking location permission:', error);
+    return false;
+  }
+};
+
+/**
+ * Get detailed location permission status
+ */
+export const getLocationPermissionStatus = async (): Promise<{
+  isGranted: boolean;
+  isDenied: boolean;
+  canAskAgain: boolean;
+  status: string;
+}> => {
+  try {
+    const permissionResult = await Location.getForegroundPermissionsAsync();
+    return {
+      isGranted: permissionResult.status === 'granted',
+      isDenied: permissionResult.status === 'denied',
+      canAskAgain: permissionResult.canAskAgain !== false,
+      status: permissionResult.status
+    };
+  } catch (error) {
+    console.error('Error getting location permission status:', error);
+    return {
+      isGranted: false,
+      isDenied: false,
+      canAskAgain: true,
+      status: 'undetermined'
+    };
+  }
+};
+
+/**
  * Request device location permission
  */
 export const requestLocationPermission = async (): Promise<boolean> => {

@@ -235,10 +235,16 @@ export const toggleDownvote = async (dealId: string): Promise<boolean> => {
 export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean): Promise<boolean> => {
   try {
     const userId = await getCurrentUserId();
-    if (!userId) return false;
+    if (!userId) {
+      console.error('❌ No user ID found for favorite toggle');
+      return false;
+    }
+
+    console.log('🎯 toggleFavorite called:', { dealId, currentlyFavorited, userId });
 
     if (currentlyFavorited) {
       // REMOVE from favorites table
+      console.log('🗑️ Removing favorite from database...');
       const { error } = await supabase
         .from('favorite')
         .delete()
@@ -246,16 +252,17 @@ export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean
         .eq('deal_id', dealId);
 
       if (error) {
-        console.error('Error removing favorite:', error);
+        console.error('❌ Error removing favorite:', error);
         return false;
       }
       
       // Also remove favorite interactions from interaction table
       await removeFavoriteInteractions(dealId);
       
-      console.log('🗑️ Favorite removed');
+      console.log('✅ Favorite removed successfully');
     } else {
       // ADD to favorites table
+      console.log('➕ Adding favorite to database...');
       const { error } = await supabase
         .from('favorite')
         .insert({
@@ -264,18 +271,18 @@ export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean
         });
 
       if (error) {
-        console.error('Error adding favorite:', error);
+        console.error('❌ Error adding favorite:', error);
         return false;
       }
 
       // Log the favorite interaction
       await logInteraction(dealId, 'favorite');
-      console.log('✅ Favorite added');
+      console.log('✅ Favorite added successfully');
     }
 
     return true;
   } catch (error) {
-    console.error('Error toggling favorite:', error);
+    console.error('❌ Error toggling favorite:', error);
     return false;
   }
 };
