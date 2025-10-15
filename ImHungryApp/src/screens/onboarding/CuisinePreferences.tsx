@@ -5,6 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { supabase } from '../../../lib/supabase';
 import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
 import { useDataCache } from '../../context/DataCacheContext';
+import { clearUserCache } from '../../services/userService';
 
 export default function CuisinePreferencesScreen() {
   const navigation = useNavigation();
@@ -334,6 +335,11 @@ export default function CuisinePreferencesScreen() {
               console.error('Update error details:', JSON.stringify(updateError, null, 2));
             } else {
               console.log('Profile photo metadata updated successfully:', updateData);
+              // Small delay to ensure database consistency, then clear user cache
+              // so BottomNavigation gets fresh data with new profile picture
+              setTimeout(async () => {
+                await clearUserCache();
+              }, 1000);
             }
           } else {
             console.error('Profile photo processing failed:', result.error);

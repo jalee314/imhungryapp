@@ -23,25 +23,58 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const [showContributeModal, setShowContributeModal] = useState(false);
   const [contributePressed, setContributePressed] = useState(false);
 
-  const loadUserData = async () => {
+  const loadUserData = async (): Promise<boolean> => {
     try {
       // Check if user is authenticated before fetching data
       if (!isAuthenticated) {
         setUserPhotoUrl(null);
-        return;
+        return false;
       }
       
       const userData = await fetchUserData();
+      const hasProfilePicture = !!userData.profilePicture;
       setUserPhotoUrl(userData.profilePicture);
+      return hasProfilePicture;
     } catch (error) {
       // Handle error silently
       setUserPhotoUrl(null);
+      return false;
     }
   };
 
   useEffect(() => {
-    loadUserData();
-  }, []);
+    let isMounted = true;
+    
+    const attemptLoadWithRetry = async () => {
+      if (!isAuthenticated || !isMounted) return;
+      
+      // Initial load
+      const hasPicture = await loadUserData();
+      
+      // If we already have a profile picture, no need to retry
+      if (hasPicture) return;
+      
+      // Retry with increasing delays until we get a profile picture or timeout
+      const refreshAttempts = [2000, 5000, 10000, 15000]; // Retry at 2s, 5s, 10s, 15s
+      
+      for (const delay of refreshAttempts) {
+        if (!isMounted) return;
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        if (!isAuthenticated || !isMounted) return;
+        
+        const hasPictureNow = await loadUserData();
+        if (hasPictureNow) break; // Stop retrying once we have a profile picture
+      }
+    };
+    
+    attemptLoadWithRetry();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
 
   useFocusEffect(
     React.useCallback(() => {
