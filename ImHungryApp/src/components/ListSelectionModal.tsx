@@ -220,20 +220,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
-    paddingLeft: 5,
+    paddingLeft: 2,
   },
   itemTextBold: {
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
     fontWeight: '700',
-    paddingLeft: 5,
+    paddingLeft: 2,
   },
   itemSubtext: {
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
-    paddingLeft: 5,
+    paddingLeft: 2,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
