@@ -119,13 +119,17 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   // NEW: Get device's current location (not from database)
   const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
     try {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      
+      let { status } = await Location.getForegroundPermissionsAsync();
+
+      // If permissions are not granted, request them
       if (status !== 'granted') {
         const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-        if (newStatus !== 'granted') {
-          return null;
-        }
+        status = newStatus;
+      }
+
+      // If permissions are still not granted, return null
+      if (status !== 'granted') {
+        return null;
       }
 
       const location = await Location.getCurrentPositionAsync({
