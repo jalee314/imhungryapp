@@ -688,7 +688,8 @@ const styles = StyleSheet.create({
   },
   topButtonRow: {
     width: '100%',
-    paddingHorizontal: 16,
+    paddingLeft: 8,
+    paddingRight: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -729,7 +730,7 @@ const styles = StyleSheet.create({
     width: 369,
     height: 48,
     backgroundColor: 'rgba(255, 255, 255, 0.93)',
-    borderRadius: 10,
+    borderRadius: 30,
     gap: 8,
     paddingHorizontal: 16,
   },
@@ -783,7 +784,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     height: 38,
-    gap: 17,
+    gap: 16,
   },
   sectionLabel: {
     fontFamily: 'Inter',
