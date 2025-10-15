@@ -61,6 +61,9 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
 }) => {
     const [distance, setDistance] = useState<string>('?mi away');
     const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+    const [isImageViewVisible, setImageViewVisible] = useState(false);
+    const [modalImageLoading, setModalImageLoading] = useState(false);
+    const [modalImageError, setModalImageError] = useState(false);
     const slideAnim = useRef(new Animated.Value(400)).current; // Start off-screen to the right
 
     useEffect(() => {
@@ -133,6 +136,12 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
         });
     };
 
+    const openImageViewer = () => {
+        setModalImageLoading(true);
+        setModalImageError(false);
+        setImageViewVisible(true);
+    };
+
     return (
         <Modal visible={visible} animationType="none" onRequestClose={onClose}>
             <Animated.View 
@@ -193,7 +202,11 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         <Text style={styles.dealTitle}>{dealTitle}</Text>
 
                         {/* Deal Image */}
-                        {imageUri && <Image source={{ uri: imageUri }} style={styles.dealImage} />}
+                        {imageUri && (
+                            <TouchableOpacity onPress={openImageViewer}>
+                                <Image source={{ uri: imageUri }} style={styles.dealImage} />
+                            </TouchableOpacity>
+                        )}
 
                         {/* Interactions */}
                         <View style={styles.interactionsContainer}>
@@ -246,6 +259,41 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                 </ScrollView>
             </SafeAreaView>
             </Animated.View>
+
+            {imageUri && (
+                <Modal
+                    visible={isImageViewVisible}
+                    transparent={true}
+                    onRequestClose={() => setImageViewVisible(false)}
+                >
+                    <View style={styles.imageViewerContainer}>
+                        <TouchableOpacity 
+                            style={styles.imageViewerCloseButton} 
+                            onPress={() => setImageViewVisible(false)}
+                        >
+                            <Ionicons name="close" size={30} color="white" />
+                        </TouchableOpacity>
+                        {modalImageLoading && (
+                            <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
+                        )}
+                        <Image 
+                            source={{ uri: imageUri }} 
+                            style={styles.fullScreenImage} 
+                            resizeMode="contain" 
+                            onLoad={() => setModalImageLoading(false)}
+                            onError={() => {
+                                setModalImageLoading(false);
+                                setModalImageError(true);
+                            }}
+                        />
+                        {modalImageError && (
+                            <View style={styles.modalErrorContainer}>
+                                <Text style={styles.modalErrorText}>Could not load image</Text>
+                            </View>
+                        )}
+                    </View>
+                </Modal>
+            )}
         </Modal>
     );
 };
@@ -476,6 +524,34 @@ const styles = StyleSheet.create({
   },
   userLocation: {
     letterSpacing: 0.02,
+  },
+  imageViewerContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageViewerCloseButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalImageLoader: {
+    position: 'absolute',
+  },
+  modalErrorContainer: {
+      position: 'absolute',
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  modalErrorText: {
+      color: 'white',
+      fontSize: 16,
   },
 });
 
