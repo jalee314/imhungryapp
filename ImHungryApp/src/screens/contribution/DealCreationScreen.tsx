@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
   },
   dealContainerWrapper: {
@@ -738,7 +738,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 12,
     color: 'rgba(12, 12, 13, 1)',
-    letterSpacing: -0.408,
     marginLeft: 8,
   },
   selectedRestaurantContainer: {
@@ -833,7 +832,7 @@ const styles = StyleSheet.create({
   },
   extraDetailsInput: {
     fontFamily: 'Inter',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
     flex: 1,
     minHeight: 180,
@@ -855,7 +854,7 @@ const styles = StyleSheet.create({
   },
   dealTitleText: {
     fontFamily: 'Inter',
-    fontSize: 14,
+    fontSize: 12,
     color: '#000000',
     minHeight: 50,
     textAlignVertical: 'top',
