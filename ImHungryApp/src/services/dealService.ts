@@ -581,10 +581,9 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
       throw new Error('User not authenticated');
     }
 
+    // Get user location if available, but don't fail if it's not
+    // Distance will just be null for posts when location is unavailable
     const userLocation = await getUserLocation();
-    if (!userLocation) {
-      throw new Error('Unable to get user location');
-    }
 
     // Fetch user's deals from database - NOW WITH IMAGE METADATA
     const { data: deals, error } = await supabase
