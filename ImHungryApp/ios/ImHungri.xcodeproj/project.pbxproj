@@ -8,26 +8,26 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		1B3557BF4F8C13F75ECC0914 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B8990DA39BF90F3E48176B6A /* PrivacyInfo.xcprivacy */; };
+		179D282A64F3BCBBEBFCC2E8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 269864D189480694D7F9B219 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		58779537CFAF9F380EE9EFD8 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0A1BB95335B581487C27ED /* ExpoModulesProvider.swift */; };
+		552D6AED978C29E2657CDE63 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2B1C5EB3A6EA3A989CB360 /* ExpoModulesProvider.swift */; };
+		7D1862BC0150269F90CA6C67 /* libPods-ImHungri.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 03737B95779F92A406033FDA /* libPods-ImHungri.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		DF9454E730C35B4E60F51302 /* libPods-ImHungri.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D03D384EDFCBFAADC82E5C2 /* libPods-ImHungri.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0F6CCF77333296DD845135D5 /* Pods-ImHungri.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ImHungri.debug.xcconfig"; path = "Target Support Files/Pods-ImHungri/Pods-ImHungri.debug.xcconfig"; sourceTree = "<group>"; };
+		03737B95779F92A406033FDA /* libPods-ImHungri.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ImHungri.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0832480FE52D15A99F67211E /* Pods-ImHungri.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ImHungri.release.xcconfig"; path = "Target Support Files/Pods-ImHungri/Pods-ImHungri.release.xcconfig"; sourceTree = "<group>"; };
+		0CE3C3AA7BE11B207C16AF96 /* Pods-ImHungri.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ImHungri.debug.xcconfig"; path = "Target Support Files/Pods-ImHungri/Pods-ImHungri.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* ImHungri.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImHungri.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ImHungri/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ImHungri/Info.plist; sourceTree = "<group>"; };
-		1D03D384EDFCBFAADC82E5C2 /* libPods-ImHungri.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ImHungri.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		4A0A1BB95335B581487C27ED /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ImHungri/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		4F84FAFFBC3D70259BCFAC13 /* Pods-ImHungri.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ImHungri.release.xcconfig"; path = "Target Support Files/Pods-ImHungri/Pods-ImHungri.release.xcconfig"; sourceTree = "<group>"; };
+		269864D189480694D7F9B219 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = ImHungri/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = ImHungri/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B8990DA39BF90F3E48176B6A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = ImHungri/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		EE2B1C5EB3A6EA3A989CB360 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ImHungri/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ImHungri/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* ImHungri-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "ImHungri-Bridging-Header.h"; path = "ImHungri/ImHungri-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -37,23 +37,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DF9454E730C35B4E60F51302 /* libPods-ImHungri.a in Frameworks */,
+				7D1862BC0150269F90CA6C67 /* libPods-ImHungri.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		053ED1C0BABD64D67864D493 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				0F6CCF77333296DD845135D5 /* Pods-ImHungri.debug.xcconfig */,
-				4F84FAFFBC3D70259BCFAC13 /* Pods-ImHungri.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* ImHungri */ = {
 			isa = PBXGroup;
 			children = (
@@ -63,7 +53,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				B8990DA39BF90F3E48176B6A /* PrivacyInfo.xcprivacy */,
+				269864D189480694D7F9B219 /* PrivacyInfo.xcprivacy */,
 			);
 			name = ImHungri;
 			sourceTree = "<group>";
@@ -72,9 +62,25 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				1D03D384EDFCBFAADC82E5C2 /* libPods-ImHungri.a */,
+				03737B95779F92A406033FDA /* libPods-ImHungri.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5F1DA7AD4F2E72E8786E2677 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				77061D303B9F8CF391C71C27 /* ImHungri */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		77061D303B9F8CF391C71C27 /* ImHungri */ = {
+			isa = PBXGroup;
+			children = (
+				EE2B1C5EB3A6EA3A989CB360 /* ExpoModulesProvider.swift */,
+			);
+			name = ImHungri;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -91,8 +97,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				053ED1C0BABD64D67864D493 /* Pods */,
-				A33910735DF750CD9FC42A4C /* ExpoModulesProviders */,
+				F788C8A09AFB3CF4B477AFFD /* Pods */,
+				5F1DA7AD4F2E72E8786E2677 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -107,14 +113,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A33910735DF750CD9FC42A4C /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				C30F693B7B1AD3176D4C3795 /* ImHungri */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -124,12 +122,14 @@
 			path = ImHungri/Supporting;
 			sourceTree = "<group>";
 		};
-		C30F693B7B1AD3176D4C3795 /* ImHungri */ = {
+		F788C8A09AFB3CF4B477AFFD /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				4A0A1BB95335B581487C27ED /* ExpoModulesProvider.swift */,
+				0CE3C3AA7BE11B207C16AF96 /* Pods-ImHungri.debug.xcconfig */,
+				0832480FE52D15A99F67211E /* Pods-ImHungri.release.xcconfig */,
 			);
-			name = ImHungri;
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "ImHungri" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				3E8BDADECEBD8A3EDAFF066A /* [Expo] Configure project */,
+				17B026D5E94D9BAA224B36EC /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				5E50DD62559A91B69622AE84 /* [CP] Embed Pods Frameworks */,
+				238AC66A457852F460A877C0 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -167,6 +167,8 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
+						DevelopmentTeam = "A46BPAW87N";
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -196,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				1B3557BF4F8C13F75ECC0914 /* PrivacyInfo.xcprivacy in Resources */,
+				179D282A64F3BCBBEBFCC2E8 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,7 +242,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		3E8BDADECEBD8A3EDAFF066A /* [Expo] Configure project */ = {
+		17B026D5E94D9BAA224B36EC /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -259,7 +261,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-ImHungri/expo-configure-project.sh\"\n";
 		};
-		5E50DD62559A91B69622AE84 /* [CP] Embed Pods Frameworks */ = {
+		238AC66A457852F460A877C0 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -371,7 +373,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				58779537CFAF9F380EE9EFD8 /* ExpoModulesProvider.swift in Sources */,
+				552D6AED978C29E2657CDE63 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -380,7 +382,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0F6CCF77333296DD845135D5 /* Pods-ImHungri.debug.xcconfig */;
+			baseConfigurationReference = 0CE3C3AA7BE11B207C16AF96 /* Pods-ImHungri.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -411,12 +413,15 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "A46BPAW87N";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4F84FAFFBC3D70259BCFAC13 /* Pods-ImHungri.release.xcconfig */;
+			baseConfigurationReference = 0832480FE52D15A99F67211E /* Pods-ImHungri.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -441,6 +446,9 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "A46BPAW87N";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Release;
 		};

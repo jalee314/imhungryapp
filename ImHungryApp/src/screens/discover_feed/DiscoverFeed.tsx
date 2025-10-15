@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     paddingBottom: 0, // Remove extra padding since MainAppLayout handles this
   },
   listContainer: {
-    paddingBottom: 0, // Remove extra padding
+    paddingBottom: 100, // Remove extra padding
     paddingHorizontal: 0, // Remove horizontal padding to let cards control their own spacing
   },
   gridRow: {
