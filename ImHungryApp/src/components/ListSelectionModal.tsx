@@ -84,27 +84,40 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
     (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
   );
 
-  const renderItem = ({ item }: { item: ListItem }) => (
-    <TouchableOpacity style={styles.itemContainer} onPress={() => handleSelectItem(item.id)}>
-      <View style={styles.textContainer}>
-        {isSearchModal ? (
-          <>
-            <Text style={styles.itemTextBold}>{item.name}</Text>
-            {item.subtext && <Text style={styles.itemSubtext}>{item.subtext}</Text>}
-          </>
-        ) : (
-          <Text style={styles.itemText}>{item.name}</Text>
-        )}
-      </View>
-      {selectedItems.includes(item.id) ? (
-        <View style={styles.checkmark}>
-          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+  const renderItem = ({ item }: { item: ListItem }) => {
+    const isInfoItem = ['prompt', 'loading', 'error', 'empty'].includes(item.id);
+
+    return (
+      <TouchableOpacity
+        style={styles.itemContainer}
+        onPress={() => handleSelectItem(item.id)}
+        disabled={isInfoItem}
+      >
+        <View style={styles.textContainer}>
+          {isSearchModal ? (
+            <>
+              <Text style={(isInfoItem && item.id !== 'prompt') ? styles.itemText : styles.itemTextBold}>{item.name}</Text>
+              {item.subtext && <Text style={styles.itemSubtext}>{item.subtext}</Text>}
+            </>
+          ) : (
+            <Text style={styles.itemText}>{item.name}</Text>
+          )}
         </View>
-      ) : (
-        <View style={styles.checkmarkPlaceholder} />
-      )}
-    </TouchableOpacity>
-  );
+        {selectedItems.includes(item.id) && !isInfoItem ? (
+          <View style={styles.checkmark}>
+            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+          </View>
+        ) : (
+          <View style={styles.checkmarkPlaceholder} />
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const cleanTitle = title.replace('Select ', '').replace('Search ', '');
+  const placeholderText = `Search for ${cleanTitle}`;
+
+  const isSingleInfoItem = filteredData.length === 1 && ['prompt', 'loading', 'error', 'empty'].includes(filteredData[0].id);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -123,7 +136,8 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
           <Ionicons name="search" size={20} color="#8E8E93" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search"
+            placeholder={placeholderText}
+            placeholderTextColor="#3c3c4399"
             value={searchText}
             onChangeText={handleSearchChange}
           />
@@ -134,6 +148,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
           renderItem={renderItem}
           keyExtractor={item => item.id}
           ItemSeparatorComponent={ItemSeparator}
+          ListFooterComponent={isSingleInfoItem ? null : ItemSeparator}
           contentContainerStyle={styles.listContentContainer}
         />
       </SafeAreaView>
@@ -150,9 +165,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingVertical: 12,
-    marginTop: 10,
+    marginBottom: 10,
   },
   headerButtonText: {
     fontSize: 16,
@@ -170,19 +185,22 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(250, 250, 250, 0.93)',
-    borderRadius: 10,
-    marginHorizontal: 20,
+    backgroundColor: 'white',
+    borderRadius: 30,
+    marginHorizontal: 10,
     marginBottom: 8,
     paddingHorizontal: 10,
     height: 36,
-    marginTop: 24,
+    borderColor: '#D8D8D8',
+    borderWidth: 1,
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    fontSize: 17,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
     color: '#000000',
+    fontWeight: '400',
   },
   listContentContainer: {
     paddingBottom: 16,
@@ -191,8 +209,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     backgroundColor: '#FFFFFF',
   },
   textContainer: {
@@ -202,22 +220,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
+    paddingLeft: 5,
   },
   itemTextBold: {
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
     fontWeight: '700',
+    paddingLeft: 5,
   },
   itemSubtext: {
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
+    paddingLeft: 5,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#C1C1C1',
-    marginHorizontal: 16,
+    marginHorizontal: 10,
   },
   checkmark: {
     width: 24,

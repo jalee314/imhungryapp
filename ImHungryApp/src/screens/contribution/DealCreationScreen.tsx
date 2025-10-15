@@ -617,7 +617,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onDone={handleDoneCategories} 
         initialSelected={selectedCategory ? [selectedCategory] : []}
         data={categories}
-        title="Select Deal Category" 
+        title="Add Deal Category" 
         singleSelect={true}
       />
       <ListSelectionModal 
@@ -626,7 +626,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onDone={handleDoneCuisines} 
         initialSelected={selectedCuisine ? [selectedCuisine] : []}
         data={cuisines}
-        title="Select Cuisine Tag" 
+        title="Cuisine Tag" 
         singleSelect={true}
       />
       <ListSelectionModal 
