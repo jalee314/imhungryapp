@@ -182,10 +182,10 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         {/* Restaurant Info */}
                         <View style={styles.restaurantWrapper}>
                             <Text style={styles.restaurantText}>
-                                <Text style={styles.restaurantName}>{selectedRestaurant?.name}{'\n'}</Text>
+                                <Text style={styles.restaurantName}>{selectedRestaurant?.name}{"\n"}</Text>
                                 <Text style={styles.infoText}>📍 {isCalculatingDistance ? 'Calculating...' : distance} </Text>
                                 <Text style={styles.bulletText}>•</Text>
-                                <Text style={styles.infoText} numberOfLines={1}> {selectedRestaurant?.subtext}{'\n'}⏳ Valid Until: {formatDate(expirationDate)}{'\n'}🍽 {selectedCuisine || 'Cuisine'} </Text>
+                                <Text style={styles.infoText} numberOfLines={1}> {selectedRestaurant?.subtext}{"\n"}⏳ Valid Until: {formatDate(expirationDate)}{"\n"}🍽 {selectedCuisine || 'Cuisine'} </Text>
                                 {selectedCategory && (
                                     <>
                                         <Text style={styles.bulletText}>•</Text>
@@ -250,8 +250,8 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                                 <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.pfp} />
                             )}
                             <Text style={styles.sharedByText}>
-                                <Text style={styles.sharedByLabel}>Shared By{'\n'}</Text>
-                                <Text style={styles.userName}>{userData.username}{'\n'}</Text>
+                                <Text style={styles.sharedByLabel}>Shared By{"\n"}</Text>
+                                <Text style={styles.userName}>{userData.username}{"\n"}</Text>
                                 <Text style={styles.userLocation}>{userData.city}, {userData.state}</Text>
                             </Text>
                         </View>
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   },
   imageViewerCloseButton: {
     position: 'absolute',
-    top: 40,
+    top: 60,
     right: 20,
     zIndex: 1,
   },

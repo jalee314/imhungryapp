@@ -895,7 +895,7 @@ const styles = StyleSheet.create({
   },
   imageViewerCloseButton: {
     position: 'absolute',
-    top: 40,
+    top: 60,
     right: 20,
     zIndex: 1,
   },

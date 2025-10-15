@@ -3,6 +3,7 @@
     "name": "ImHungri",
     "slug": "ImHungryApp",
     "version": "1.0.0",
+    "icon": "./assets/images/icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -31,6 +32,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFF5AB"
       },
       "edgeToEdgeEnabled": true,
