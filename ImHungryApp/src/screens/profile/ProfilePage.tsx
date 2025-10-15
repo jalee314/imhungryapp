@@ -22,6 +22,7 @@ import { UserProfileCache } from '../../services/userProfileService';
 import { fetchUserPosts, deleteDeal, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { logClick } from '../../services/interactionService';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 import { 
   uploadProfilePhoto, 
   handleTakePhoto, 
@@ -82,6 +83,8 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   const [postsError, setPostsError] = useState<string | null>(null);
 
   
+
+  const { postAdded, setPostAdded } = useDealUpdate();
 
   // Instagram-style loading: Show cache immediately, update in background
   const loadProfileData = async () => {
@@ -222,11 +225,15 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   // Add the new useFocusEffect here:
   useFocusEffect(
     React.useCallback(() => {
+      if (postAdded) {
+        loadUserPosts();
+        setPostAdded(false);
+      }
       // Only refresh profile data for current user, not when viewing other users
       if (!viewUser) {
         refreshProfile();
       }
-    }, [viewUser])
+    }, [viewUser, postAdded])
   );
 
   // Use utility functions from service

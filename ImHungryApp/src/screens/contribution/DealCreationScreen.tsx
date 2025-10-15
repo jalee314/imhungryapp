@@ -22,6 +22,7 @@ import PhotoActionModal from '../../components/PhotoActionModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../context/DataCacheContext';
+import { useDealUpdate } from '../../context/DealUpdateContext';
 import { fetchUserData, clearUserCache } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -58,6 +59,7 @@ interface DealCreationScreenProps {
 }
 
 export default function DealCreationScreen({ visible, onClose }: DealCreationScreenProps) {
+  const { setPostAdded } = useDealUpdate();
   // Get data from the context (removed 'restaurants')
   const { categories, cuisines, loading: dataLoading, error } = useDataCache();
   
@@ -363,6 +365,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       
       if (result.success) {
         await ProfileCacheService.forceRefresh();
+        setPostAdded(true);
         
         Alert.alert(
           "Success!", 
