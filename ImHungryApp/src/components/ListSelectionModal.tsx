@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
     paddingLeft: 2,
   },
   itemTextBold: {
+    paddingTop: 5,
     fontFamily: 'Inter',
     fontSize: 12,
     color: '#000000',
@@ -234,6 +235,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000000',
     paddingLeft: 2,
+    paddingBottom: 5,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
