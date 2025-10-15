@@ -195,11 +195,11 @@ const styles = StyleSheet.create({
   pagePad: { flex: 1 }, // responsive padding applied at runtime
   scrollContentContainer: {
     flexGrow: 1,
-    justifyContent: 'space-between',
   },
   mainContainer: {
     alignItems: 'center',
-    justifyContent: 'flex-start'
+    justifyContent: 'flex-start',
+    paddingTop: 50,
   }, 
 
   backButton: { 
