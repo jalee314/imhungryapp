@@ -197,7 +197,6 @@ export default function SignUpScreen() {
                       placeholder={cfg.placeholder}
                       outlineColor="#FFA05C"
                       activeOutlineColor="#FFA05C"
-                      dense
                       style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                       theme={{
                         roundness: 8,
@@ -304,8 +303,10 @@ const styles = StyleSheet.create({
   
   textInputStyle: {
     backgroundColor: 'white',
-    height: 56,
+    minHeight: 56,
     fontSize: 16,
+    lineHeight: 22,
+    paddingVertical: 0,
   },
 
   continueButton: {

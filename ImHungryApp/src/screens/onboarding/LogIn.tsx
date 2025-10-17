@@ -113,7 +113,6 @@ export default function LogInScreen() {
                     placeholder=""
                     outlineColor="#FF8C4C"
                     activeOutlineColor="#FF8C4C"
-                    dense
                     style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                     theme={{
                       roundness: 8,
@@ -138,7 +137,6 @@ export default function LogInScreen() {
                     placeholder=""
                     outlineColor="#FF8C4C"
                     activeOutlineColor="#FF8C4C"
-                    dense
                     style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                     theme={{
                       roundness: 8,
@@ -263,7 +261,9 @@ const styles = StyleSheet.create({
   legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Manrope-SemiBold' },
   textInputStyle: {
     backgroundColor: 'white',
-    height: 56,
+    minHeight: 56,
     fontSize: 16,
+    lineHeight: 22,
+    paddingVertical: 0,
   },
-});
+}); 

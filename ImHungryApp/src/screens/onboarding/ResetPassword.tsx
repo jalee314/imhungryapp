@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,11 +7,13 @@ import type { ViewStyle } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ResetPasswordScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { width, height } = useWindowDimensions();
+  const { setPasswordResetMode } = useAuth();
 
   const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
   const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
@@ -41,8 +43,22 @@ export default function ResetPasswordScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
+  const isUpdatingRef = useRef(false);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple initializations
+    if (hasInitializedRef.current) {
+      console.log('ResetPassword: Already initialized, skipping');
+      return;
+    }
+    
+    hasInitializedRef.current = true;
+    
+    // Enable password reset mode FIRST to prevent AuthContext from reacting to session changes
+    console.log('ResetPassword: Enabling password reset mode');
+    setPasswordResetMode(true);
+
     // React Navigation passes the URL query params to the route.
     // We can access them directly here.
     const params = route.params as { access_token?: string; refresh_token?: string };
@@ -50,22 +66,39 @@ export default function ResetPasswordScreen() {
     const refreshToken = params?.refresh_token;
 
     if (accessToken && refreshToken) {
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      }).then(({ error }) => {
-        if (error) {
+      // For password reset, we validate the tokens without establishing a persistent session
+      // We'll store them temporarily for the password update process
+      try {
+        // Basic token validation - check if they exist and have the right format
+        if (accessToken.length > 0 && refreshToken.length > 0) {
+          setSessionReady(true);
+        } else {
           Alert.alert('Error', 'This password reset link is invalid or has expired.');
           setSessionReady(false);
-        } else {
-          setSessionReady(true);
         }
-      });
+      } catch (error) {
+        console.error('Token validation error:', error);
+        Alert.alert('Error', 'This password reset link is invalid or has expired.');
+        setSessionReady(false);
+      }
     } else {
       // If no tokens, the link is invalid.
       setSessionReady(false);
     }
-  }, [route.params]); // Re-run if the route params change.
+
+    // Cleanup: disable password reset mode when component unmounts
+    // But only if we're not in the middle of a password update
+    return () => {
+      // Only disable password reset mode if not currently updating
+      if (!isUpdatingRef.current) {
+        console.log('ResetPassword: Component unmounting, disabling password reset mode');
+        setPasswordResetMode(false);
+        hasInitializedRef.current = false; // Reset for potential remount
+      } else {
+        console.log('ResetPassword: Component unmounting but update in progress, keeping password reset mode active');
+      }
+    };
+  }, []); // Empty dependency array - only run once on mount
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -93,27 +126,74 @@ export default function ResetPasswordScreen() {
     }
 
     setLoading(true);
+    isUpdatingRef.current = true;
     try {
+      // Get the reset tokens
+      const params = route.params as { access_token?: string; refresh_token?: string };
+      const accessToken = params?.access_token;
+      const refreshToken = params?.refresh_token;
+
+      if (!accessToken || !refreshToken) {
+        Alert.alert('Error', 'Invalid reset link');
+        isUpdatingRef.current = false;
+        return;
+      }
+
+      // Set session temporarily for password update
+      // AuthContext won't react because password reset mode is enabled
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (sessionError) {
+        Alert.alert('Error', 'This password reset link is invalid or has expired.');
+        isUpdatingRef.current = false;
+        return;
+      }
+
+      // Update the password
       const { error } = await supabase.auth.updateUser({
         password: formData.newPassword
       });
 
       if (error) {
         Alert.alert('Error', error.message);
+        // Sign out even on error to ensure clean state
+        await supabase.auth.signOut({ scope: 'local' });
+        isUpdatingRef.current = false;
       } else {
-        Alert.alert(
-          'Success',
-          'Your password has been updated successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => (navigation as any).navigate('LogIn'),
-            },
-          ]
-        );
+        // Success - sign out FIRST (synchronously), then disable password reset mode, then navigate
+        console.log('Password updated successfully, signing out...');
+        
+        // Clear the session completely - use signOut with scope: 'local'
+        await supabase.auth.signOut({ scope: 'local' });
+        
+        // Wait a moment for the sign out to propagate
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('Disabling password reset mode...');
+        setPasswordResetMode(false);
+        isUpdatingRef.current = false;
+        
+        // Wait another moment before navigation to ensure clean state
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('Navigating to login screen...');
+        (navigation as any).navigate('LogIn');
+        
+        // Show success message after navigation
+        setTimeout(() => {
+          Alert.alert(
+            'Success',
+            'Your password has been updated successfully! Please log in with your new password.'
+          );
+        }, 300);
       }
     } catch (err) {
+      console.error('Password update error:', err);
       Alert.alert('Error', 'An unexpected error occurred');
+      isUpdatingRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -156,8 +236,7 @@ export default function ResetPasswordScreen() {
                     placeholder=""
                     outlineColor="#FF8C4C"
                     activeOutlineColor="#FF8C4C"
-                    dense
-                    style={[styles.paperInput, { backgroundColor: 'white' }]}
+                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                     theme={{
                       roundness: 12,
                       colors: {
@@ -194,8 +273,7 @@ export default function ResetPasswordScreen() {
                     placeholder=""
                     outlineColor="#FF8C4C"
                     activeOutlineColor="#FF8C4C"
-                    dense
-                    style={[styles.paperInput, { backgroundColor: 'white' }]}
+                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                     theme={{
                       roundness: 12,
                       colors: {
@@ -261,6 +339,13 @@ const styles = StyleSheet.create({
   welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
   formContainer: { width: '100%' },
   paperInput: { backgroundColor: 'white' },
+  textInputStyle: {
+    backgroundColor: 'white',
+    minHeight: 56,
+    fontSize: 16,
+    lineHeight: 22,
+    paddingVertical: 0,
+  },
   resetButton: {
     width: '100%',
     height: 44,

@@ -99,8 +99,7 @@ export default function ForgotPasswordScreen() {
                     placeholder=""
                     outlineColor="#FF8C4C"
                     activeOutlineColor="#FF8C4C"
-                    dense
-                    style={[styles.paperInput, { backgroundColor: 'white' }]}
+                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
                     theme={{
                       roundness: 12,
                       colors: {
@@ -156,6 +155,13 @@ const styles = StyleSheet.create({
   welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
   formContainer: { width: '100%' },
   paperInput: { backgroundColor: 'white' },
+  textInputStyle: {
+    backgroundColor: 'white',
+    minHeight: 56,
+    fontSize: 16,
+    lineHeight: 22,
+    paddingVertical: 0,
+  },
   resetButton: {
     width: '100%',
     height: 44,

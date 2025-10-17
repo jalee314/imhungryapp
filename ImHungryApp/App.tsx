@@ -210,7 +210,7 @@ const linking = {
 };
 
 const AppContent = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isPasswordResetMode } = useAuth();
 
   if (isLoading) {
     return (
@@ -220,12 +220,21 @@ const AppContent = () => {
     );
   }
 
+  // Always show onboarding stack during password reset mode, even if authenticated
+  const shouldShowAppStack = isAuthenticated && !isPasswordResetMode;
+  
+  // Debug logging
+  console.log('App navigation decision:', {
+    isAuthenticated,
+    isPasswordResetMode,
+    shouldShowAppStack
+  });
+
   return (
     <NavigationContainer 
       linking={linking}
-      key={isAuthenticated ? 'app' : 'onboarding'} // Force remount when switching stacks
     >
-      {isAuthenticated ? <AppStack /> : <OnboardingStack />}
+      {shouldShowAppStack ? <AppStack /> : <OnboardingStack />}
     </NavigationContainer>
   );
 };
