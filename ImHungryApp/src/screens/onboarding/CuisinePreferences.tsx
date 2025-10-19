@@ -457,7 +457,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: 40,
     height: 44
   },
 
@@ -483,7 +482,7 @@ const styles = StyleSheet.create({
   },
 
   titleSection: { 
-    marginBottom: 16,
+    marginBottom: 10,
     maxWidth: 343,
     alignItems: 'flex-start'
   },
@@ -491,16 +490,19 @@ const styles = StyleSheet.create({
     fontSize: 24, 
     color: '#000', 
     fontWeight: 'bold', 
-    marginBottom: 25,
+    marginBottom: 15,
     fontFamily: 'Manrope-Bold',
-    textAlign: 'left'
+    textAlign: 'left',
+    marginLeft: 20  ,
   },
   subtitle: { 
     fontSize: 16, 
     color: '#404040', 
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
-    textAlign: 'left'
+    textAlign: 'left',
+    marginBottom: 12,
+    marginLeft: 20,
   },
 
   cuisineGrid: {
@@ -508,20 +510,20 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     width: '100%',
-    maxWidth: 343,
-    marginBottom: 30,
+    maxWidth: 350,
+    marginBottom: 20, 
     alignSelf: 'center',
   },
   cuisineButton: {
-    width: '48%',
-    height: 40,
+    width: '49%',
+    height: 45,
     backgroundColor: '#eaeaea',
     borderWidth: 1,
     borderColor: '#ffffff',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
     paddingHorizontal: 8,
   },
   cuisineButtonSelected: {
