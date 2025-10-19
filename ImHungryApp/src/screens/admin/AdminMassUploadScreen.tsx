@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,17 +14,39 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useDataCache } from '../../context/DataCacheContext';
-import { getOrCreateRestaurant } from '../../services/restaurantService';
+import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../../services/restaurantService';
 import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
 import { supabase } from '../../../lib/supabase';
+import ListSelectionModal from '../../components/ListSelectionModal';
+
+// --- Debounce Helper Function ---
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
+
+interface Restaurant {
+  id: string;
+  name: string;
+  address: string;
+  google_place_id?: string;
+  lat?: number;
+  lng?: number;
+}
 
 interface DealForm {
   id: string;
   title: string;
   description: string;
-  restaurantName: string;
-  restaurantAddress: string;
+  restaurant: Restaurant | null;
   category: string;
   cuisine: string;
   expirationDate: string;
@@ -39,8 +61,7 @@ const AdminMassUploadScreen: React.FC = () => {
       id: '1',
       title: '',
       description: '',
-      restaurantName: '',
-      restaurantAddress: '',
+      restaurant: null,
       category: '',
       cuisine: '',
       expirationDate: '',
@@ -48,20 +69,175 @@ const AdminMassUploadScreen: React.FC = () => {
     },
   ]);
   const [uploading, setUploading] = useState(false);
+  
+  // Restaurant search state
+  const [activeFormId, setActiveFormId] = useState<string | null>(null);
+  const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const addNewForm = () => {
     const newForm: DealForm = {
       id: Date.now().toString(),
       title: '',
       description: '',
-      restaurantName: '',
-      restaurantAddress: '',
+      restaurant: null,
       category: '',
       cuisine: '',
       expirationDate: '',
       imageUri: null,
     };
     setDealForms([...dealForms, newForm]);
+  };
+
+  // Get device's current location for restaurant search
+  const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      let { status } = await Location.getForegroundPermissionsAsync();
+
+      if (status !== 'granted') {
+        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+        status = newStatus;
+      }
+
+      if (status !== 'granted') {
+        return null;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      return {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      };
+    } catch (error) {
+      console.error('Error getting device location:', error);
+      return null;
+    }
+  };
+
+  // Debounced Google Places search
+  const debouncedSearch = useCallback(
+    debounce(async (query: string) => {
+      if (!query || query.trim().length < 2) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      setSearchError(null);
+
+      try {
+        const deviceLocation = await getDeviceLocation();
+        
+        if (!deviceLocation) {
+          setSearchError('Location not available. Please enable location services.');
+          setSearchResults([]);
+          setIsSearching(false);
+          return;
+        }
+
+        const result = await searchRestaurants(
+          query,
+          deviceLocation.lat,
+          deviceLocation.lng
+        );
+
+        if (!result.success) {
+          setSearchError(result.error || 'Failed to search restaurants');
+          setSearchResults([]);
+        } else if (result.count === 0) {
+          setSearchError('No restaurants found');
+          setSearchResults([]);
+        } else {
+          const transformed = result.restaurants.map((place: GooglePlaceResult) => ({
+            id: place.google_place_id,
+            name: place.name,
+            address: place.address.replace(/, USA$/, ''),
+            google_place_id: place.google_place_id,
+            lat: place.lat,
+            lng: place.lng,
+          }));
+          
+          setSearchResults(transformed);
+          setSearchError(null);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchError('An error occurred while searching');
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500),
+    []
+  );
+
+  // Handle search query change
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    debouncedSearch(text);
+  };
+
+  // Handle restaurant selection
+  const handleDoneSearch = async (selectedIds: string[]) => {
+    if (selectedIds.length > 0 && activeFormId) {
+      const selectedPlace = searchResults.find(r => r.id === selectedIds[0]);
+      
+      if (selectedPlace && selectedPlace.google_place_id) {
+        setIsSearchModalVisible(false);
+        
+        try {
+          const result = await getOrCreateRestaurant({
+            google_place_id: selectedPlace.google_place_id,
+            name: selectedPlace.name,
+            address: selectedPlace.address,
+            lat: selectedPlace.lat!,
+            lng: selectedPlace.lng!,
+            distance_miles: 0,
+          });
+
+          if (result.success && result.restaurant_id) {
+            updateForm(activeFormId, 'restaurant', {
+              id: result.restaurant_id,
+              name: selectedPlace.name,
+              address: selectedPlace.address,
+              google_place_id: selectedPlace.google_place_id,
+              lat: selectedPlace.lat,
+              lng: selectedPlace.lng,
+            });
+          } else {
+            Alert.alert('Error', 'Failed to save restaurant. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error saving restaurant:', error);
+          Alert.alert('Error', 'An unexpected error occurred.');
+        }
+      }
+    }
+    
+    // Clear search state
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+    setActiveFormId(null);
+  };
+
+  const handleSearchPress = (formId: string) => {
+    setActiveFormId(formId);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+    setIsSearchModalVisible(true);
+  };
+
+  const handleClearRestaurant = (formId: string) => {
+    updateForm(formId, 'restaurant', null);
   };
 
   const pickImage = async (formId: string) => {
@@ -100,7 +276,7 @@ const AdminMassUploadScreen: React.FC = () => {
     setDealForms(dealForms.filter((form) => form.id !== id));
   };
 
-  const updateForm = (id: string, field: keyof DealForm, value: string | null) => {
+  const updateForm = (id: string, field: keyof DealForm, value: any) => {
     setDealForms(
       dealForms.map((form) =>
         form.id === id ? { ...form, [field]: value } : form
@@ -110,8 +286,7 @@ const AdminMassUploadScreen: React.FC = () => {
 
   const validateForm = (form: DealForm): boolean => {
     if (!form.title.trim()) return false;
-    if (!form.restaurantName.trim()) return false;
-    if (!form.restaurantAddress.trim()) return false;
+    if (!form.restaurant) return false;
     if (!form.category) return false;
     if (!form.cuisine) return false;
     return true;
@@ -123,7 +298,7 @@ const AdminMassUploadScreen: React.FC = () => {
     if (invalidForms.length > 0) {
       Alert.alert(
         'Validation Error',
-        'Please fill in all required fields (title, restaurant name, address, category, and cuisine) for all deals.'
+        'Please fill in all required fields (title, restaurant, category, and cuisine) for all deals.'
       );
       return;
     }
@@ -146,17 +321,8 @@ const AdminMassUploadScreen: React.FC = () => {
 
               for (const form of dealForms) {
                 try {
-                  // Get or create restaurant
-                  const result = await getOrCreateRestaurant({
-                    name: form.restaurantName,
-                    address: form.restaurantAddress,
-                    google_place_id: '',
-                    lat: 0,
-                    lng: 0,
-                    distance_miles: 0,
-                  });
-
-                  if (!result.success || !result.restaurant_id) {
+                  // Restaurant is already created and stored during selection
+                  if (!form.restaurant || !form.restaurant.id) {
                     errorCount++;
                     continue;
                   }
@@ -185,7 +351,7 @@ const AdminMassUploadScreen: React.FC = () => {
 
                   // Create deal template
                   const { error } = await supabase.from('deal_template').insert({
-                    restaurant_id: result.restaurant_id,
+                    restaurant_id: form.restaurant.id,
                     user_id: user.id,
                     title: form.title,
                     description: form.description || null,
@@ -221,8 +387,7 @@ const AdminMassUploadScreen: React.FC = () => {
                             id: '1',
                             title: '',
                             description: '',
-                            restaurantName: '',
-                            restaurantAddress: '',
+                            restaurant: null,
                             category: '',
                             cuisine: '',
                             expirationDate: '',
@@ -298,24 +463,28 @@ const AdminMassUploadScreen: React.FC = () => {
       />
 
       <Text style={styles.label}>
-        Restaurant Name <Text style={styles.required}>*</Text>
+        Restaurant <Text style={styles.required}>*</Text>
       </Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., Joe's Pizza"
-        value={form.restaurantName}
-        onChangeText={(text) => updateForm(form.id, 'restaurantName', text)}
-      />
-
-      <Text style={styles.label}>
-        Restaurant Address <Text style={styles.required}>*</Text>
-      </Text>
-      <TextInput
-        style={styles.input}
-        placeholder="123 Main St, City, State"
-        value={form.restaurantAddress}
-        onChangeText={(text) => updateForm(form.id, 'restaurantAddress', text)}
-      />
+      {form.restaurant ? (
+        <View style={styles.selectedRestaurantContainer}>
+          <View style={styles.restaurantInfo}>
+            <Text style={styles.restaurantName}>{form.restaurant.name}</Text>
+            <Text style={styles.restaurantAddress}>{form.restaurant.address}</Text>
+          </View>
+          <TouchableOpacity onPress={() => handleClearRestaurant(form.id)}>
+            <Ionicons name="close-circle" size={24} color="#FF3B30" />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={() => handleSearchPress(form.id)}
+        >
+          <Ionicons name="search" size={20} color="#666" />
+          <Text style={styles.searchButtonText}>Search for Restaurant</Text>
+          <Ionicons name="chevron-forward" size={20} color="#666" />
+        </TouchableOpacity>
+      )}
 
       <Text style={styles.label}>
         Category <Text style={styles.required}>*</Text>
@@ -420,6 +589,32 @@ const AdminMassUploadScreen: React.FC = () => {
           )}
         </TouchableOpacity>
       </View>
+
+      <ListSelectionModal 
+        visible={isSearchModalVisible} 
+        onClose={() => {
+          setIsSearchModalVisible(false);
+          setSearchQuery('');
+          setSearchResults([]);
+          setSearchError(null);
+          setActiveFormId(null);
+        }} 
+        onDone={handleDoneSearch} 
+        data={
+          isSearching 
+            ? [{ id: 'loading', name: 'Searching restaurants...', subtext: '' }]
+            : searchError
+            ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
+            : searchQuery.trim().length > 0
+            ? (searchResults.length > 0 
+                ? searchResults.map(r => ({ id: r.id, name: r.name, subtext: r.address }))
+                : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
+            : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
+        } 
+        title="Search Restaurant"
+        onSearchChange={handleSearchChange}
+        searchQuery={searchQuery}
+      />
     </SafeAreaView>
   );
 };
@@ -620,6 +815,46 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     color: '#666',
+  },
+  selectedRestaurantContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  restaurantInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  restaurantName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  restaurantAddress: {
+    fontSize: 12,
+    color: '#666',
+  },
+  searchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  searchButtonText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
   },
 });
 
