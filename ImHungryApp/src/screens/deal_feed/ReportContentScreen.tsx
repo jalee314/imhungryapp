@@ -102,7 +102,11 @@ const ReportContentScreen: React.FC = () => {
         Alert.alert(
           'Report Submitted',
           'Thank you for your report. We will review it and take appropriate action.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Feed' as never) }]
+          [{ text: 'OK', onPress: () => {
+            // Navigate back to the main feed, not the deal detail screen
+            // Since the reported deal should no longer be visible
+            navigation.navigate('MainTabs' as never, { screen: 'Feed' } as never);
+          }}]
         );
       } else {
         Alert.alert('Error', result.error || 'Failed to submit report. Please try again.');

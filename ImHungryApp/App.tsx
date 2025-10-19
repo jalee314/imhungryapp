@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { useAdmin } from './src/context/AdminContext';
 import AuthGuard from './src/components/AuthGuard';
 
 
@@ -40,10 +41,19 @@ import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
 
+// Admin screens
+import AdminLoginScreen from './src/screens/admin/AdminLoginScreen';
+import AdminDashboardScreen from './src/screens/admin/AdminDashboardScreen';
+import AdminReportsScreen from './src/screens/admin/AdminReportsScreen';
+import AdminDealsScreen from './src/screens/admin/AdminDealsScreen';
+import AdminUsersScreen from './src/screens/admin/AdminUsersScreen';
+import AdminMassUploadScreen from './src/screens/admin/AdminMassUploadScreen';
+
 import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
 import { LocationProvider } from './src/context/LocationContext';
+import { AdminProvider } from './src/context/AdminContext';
 
 
 const Stack = createNativeStackNavigator();
@@ -178,6 +188,19 @@ const OnboardingStack = () => (
     <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
     <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
+    
+    {/* Admin login accessible from login screen */}
+    <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
+  </Stack.Navigator>
+);
+
+const AdminStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
+    <Stack.Screen name="AdminReports" component={AdminReportsScreen} />
+    <Stack.Screen name="AdminDeals" component={AdminDealsScreen} />
+    <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
+    <Stack.Screen name="AdminMassUpload" component={AdminMassUploadScreen} />
   </Stack.Navigator>
 );
 
@@ -211,6 +234,7 @@ const linking = {
 
 const AppContent = () => {
   const { isAuthenticated, isLoading, isPasswordResetMode } = useAuth();
+  const { isAdminMode } = useAdmin();
 
   if (isLoading) {
     return (
@@ -220,21 +244,33 @@ const AppContent = () => {
     );
   }
 
-  // Always show onboarding stack during password reset mode, even if authenticated
-  const shouldShowAppStack = isAuthenticated && !isPasswordResetMode;
+  // Determine which stack to show
+  let currentStack;
+  
+  if (isAdminMode) {
+    // Admin mode - show admin stack regardless of auth status
+    currentStack = <AdminStack />;
+  } else if (isAuthenticated && !isPasswordResetMode) {
+    // Regular authenticated user - show app stack
+    currentStack = <AppStack />;
+  } else {
+    // Not authenticated or in password reset - show onboarding
+    currentStack = <OnboardingStack />;
+  }
   
   // Debug logging
   console.log('App navigation decision:', {
     isAuthenticated,
     isPasswordResetMode,
-    shouldShowAppStack
+    isAdminMode,
+    showing: isAdminMode ? 'AdminStack' : (isAuthenticated && !isPasswordResetMode ? 'AppStack' : 'OnboardingStack')
   });
 
   return (
     <NavigationContainer 
       linking={linking}
     >
-      {shouldShowAppStack ? <AppStack /> : <OnboardingStack />}
+      {currentStack}
     </NavigationContainer>
   );
 };
@@ -271,15 +307,17 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <DataCacheProvider>
-        <DealUpdateProvider>
-          <FavoritesProvider>
-            <LocationProvider>
-              <AppContent />
-            </LocationProvider>
-          </FavoritesProvider>
-        </DealUpdateProvider>
-      </DataCacheProvider>
+      <AdminProvider>
+        <DataCacheProvider>
+          <DealUpdateProvider>
+            <FavoritesProvider>
+              <LocationProvider>
+                <AppContent />
+              </LocationProvider>
+            </FavoritesProvider>
+          </DealUpdateProvider>
+        </DataCacheProvider>
+      </AdminProvider>
     </AuthProvider>
   );
 }
