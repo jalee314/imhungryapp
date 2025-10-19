@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { TextInput } from 'react-native-paper';
@@ -35,6 +35,8 @@ export default function LogInScreen() {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -78,6 +80,31 @@ export default function LogInScreen() {
   const handleTermsPress = () => {};
   const handlePrivacyPress = () => {};
 
+  const handleImTap = () => {
+    // Increment tap count
+    const newTapCount = tapCount + 1;
+    setTapCount(newTapCount);
+
+    // Clear existing timer
+    if (tapTimerRef.current) {
+      clearTimeout(tapTimerRef.current);
+    }
+
+    // Check if 7 taps achieved
+    if (newTapCount >= 7) {
+      // Navigate to admin login
+      (navigation as any).navigate('AdminLogin');
+      // Reset counter
+      setTapCount(0);
+      return;
+    }
+
+    // Set new timer to reset counter after 5 seconds
+    tapTimerRef.current = setTimeout(() => {
+      setTapCount(0);
+    }, 5000);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
       <SafeAreaView style={styles.container}>
@@ -96,7 +123,9 @@ export default function LogInScreen() {
   
             <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome back to ImHungri</Text>
+                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>
+                  Welcome back to <TouchableWithoutFeedback onPress={handleImTap}><Text suppressHighlighting={true}>Im</Text></TouchableWithoutFeedback>Hungri
+                </Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
                   Sign in with your email address.
                 </Text>
