@@ -1,16 +1,20 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface HeaderProps {
   onLocationPress?: () => void;
   currentLocation?: string;
+  paddingHorizontal?: number;
 }
 
-const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation }) => {
+const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, paddingHorizontal }) => {
+  // Calculate dynamic padding based on screen width
+  const screenWidth = Dimensions.get('window').width;
+  const dynamicPadding = paddingHorizontal || Math.max(10, screenWidth * 0.025); // 5% of screen width, minimum 10
   return (
     <View style={styles.header}>
-      <View style={styles.headerBottomFrame}>
+      <View style={[styles.headerBottomFrame, { paddingHorizontal: dynamicPadding }]}>
         <View style={styles.logoContainer}>
           <Image
             source={require('../../img/logo/hungri_logo.png')}
@@ -55,7 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    paddingHorizontal: 19,
   },
   logoContainer: {
     height: 40,
