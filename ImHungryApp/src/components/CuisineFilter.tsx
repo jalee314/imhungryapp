@@ -117,8 +117,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   selectedFilterCell: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
+    backgroundColor: '#000000',
+    borderColor: '#000000',
   },
   filterCellText: {
     fontFamily: 'Inter',
