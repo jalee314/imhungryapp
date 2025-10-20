@@ -28,8 +28,13 @@ export default function CuisineEdit() {
 
   const handleBack = () => {
     // Pass the updated cuisines back to the previous screen (ProfileEdit)
-    // This avoids passing a non-serializable function in navigation params.
-    navigation.navigate({ name: 'ProfileEdit', params: { updatedCuisines: selectedCuisines }, merge: true });
+    console.log('CuisineEdit: Navigating back with cuisines:', selectedCuisines);
+    console.log('CuisineEdit: Profile param:', (route.params as any)?.profile);
+    
+    navigation.navigate('ProfileEdit' as never, { 
+      updatedCuisines: selectedCuisines,
+      profile: (route.params as any)?.profile
+    } as never);
   };
 
   const availableCuisines = cachedCuisines.map(c => c.name);
