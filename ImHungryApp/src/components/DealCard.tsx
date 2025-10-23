@@ -1,7 +1,18 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import OptimizedImage from './OptimizedImage';
+
+const { width: screenWidth } = Dimensions.get('window');
+// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (8px), then divide by 2
+const HORIZONTAL_PADDING = 20; // 10px on each side
+const CARD_GAP = 8; // 4px padding on each card
+const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
+
+// Calculate horizontal card width to show ~1.5 cards (first card fully visible, half of second card visible)
+// This creates the "peek" effect that hints at horizontal scrolling
+const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.5;
 
 export interface Deal {
   id: string;
@@ -77,8 +88,8 @@ const DealCard: React.FC<DealCardProps> = ({
     if (deal.imageVariants) {
       // Use OptimizedImage for database images with variants
       const displaySize = variant === 'horizontal' 
-        ? { width: 220, height: 144 }
-        : { width: 185, height: 144 };
+        ? { width: HORIZONTAL_CARD_WIDTH, height: 144 }
+        : { width: VERTICAL_CARD_WIDTH, height: 144 };
       
       return (
         <OptimizedImage
@@ -251,7 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
-    width: 220,
+    width: HORIZONTAL_CARD_WIDTH,
     height: 273,
     justifyContent: 'center',
     overflow: 'visible',
@@ -348,7 +359,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 8,
     alignItems: 'center',
-    width: 185,
+    width: VERTICAL_CARD_WIDTH,
     height: 266,
     justifyContent: 'space-between',
   },
@@ -365,7 +376,7 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     color: '#000000',
     textAlign: 'left',
-    width: 161,
+    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
     height: 30,
     marginBottom: 8,
   },
@@ -376,7 +387,7 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     color: '#757575',
     textAlign: 'left',
-    width: 161,
+    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
     marginBottom: 8,
   },
   verticalInteractions: {

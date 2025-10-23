@@ -323,6 +323,8 @@ const Feed: React.FC = () => {
     <DealCard deal={item} variant="horizontal" onUpvote={handleUpvote} onDownvote={handleDownvote} onFavorite={handleFavorite} onPress={handleDealPress} />
   );
 
+  const renderItemSeparator = () => <View style={{ width: 8 }} />;
+
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
       <View style={styles.sectionHeader}>
@@ -331,7 +333,7 @@ const Feed: React.FC = () => {
           <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
         </TouchableOpacity>
       </View>
-      <FlatList data={[1, 2, 3]} renderItem={() => <DealCardSkeleton variant="horizontal" />} keyExtractor={(item) => item.toString()} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} />
+      <FlatList data={[1, 2, 3]} renderItem={() => <DealCardSkeleton variant="horizontal" />} keyExtractor={(item) => item.toString()} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
       <View style={styles.sectionSeparator} />
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
@@ -411,7 +413,7 @@ const Feed: React.FC = () => {
                 <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
               </TouchableOpacity>
             </View>
-            <FlatList data={communityDeals} renderItem={renderCommunityDeal} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} />
+            <FlatList data={communityDeals} renderItem={renderCommunityDeal} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
           </>
         )}
         {communityDeals.length > 0 && dealsForYou.length > 0 && <View style={styles.sectionSeparator} />}
@@ -511,19 +513,17 @@ const styles = StyleSheet.create({
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: 10,
     paddingBottom: 100,
   },
   leftCard: {
-    width: '50%',
     marginBottom: 8,
-    paddingRight: 4,
+    marginRight: 4,
   },
   rightCard: {
-    width: '50%',
     marginBottom: 8,
-    paddingLeft: 4,
+    marginLeft: 4,
   },
   loadingContainer: {
     flex: 1,

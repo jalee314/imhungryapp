@@ -1226,15 +1226,15 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 100,
     paddingHorizontal: 8,
-    width: 390, // Width of two cards (185 + 185) + gap (4) + paddingHorizontal (8*2) = 390
+    width: '100%',
   },
   leftCard: {
-    width: 185,
     marginBottom: 4,
+    marginRight: 4,
   },
   rightCard: {
-    width: 185,
     marginBottom: 4,
+    marginLeft: 4,
   },
   emptyContainer: {
     flex: 1,

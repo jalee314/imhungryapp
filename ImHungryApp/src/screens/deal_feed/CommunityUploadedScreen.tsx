@@ -522,16 +522,16 @@ const styles = StyleSheet.create({
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     gap: 4,
   },
   leftCard: {
-    width: '48%',
     marginBottom: 4,
+    marginRight: 4,
   },
   rightCard: {
-    width: '48%',
     marginBottom: 4,
+    marginLeft: 4,
   },
   loadingContainer: {
     flex: 1,
