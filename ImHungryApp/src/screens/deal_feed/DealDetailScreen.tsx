@@ -360,18 +360,20 @@ const DealDetailScreen: React.FC = () => {
               <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={styles.clockIcon} />
               <Text style={styles.validUntilText}>Valid Until: September 20th, 2025</Text>
             </View>
-            {/* Only show category row if cuisine or deal type exists */}
-            {(dealData.cuisine || dealData.dealType) && (
+            {/* Only show category row if cuisine or deal type exists and has meaningful content */}
+            {((dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine') || 
+              (dealData.dealType && dealData.dealType.trim() !== '')) && (
               <View style={styles.categoryRow}>
                 <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
                 <Text style={styles.categoryText}>
-                  {dealData.cuisine && (
+                  {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && (
                     <Text style={styles.infoRegular}>{dealData.cuisine}</Text>
                   )}
-                  {dealData.cuisine && dealData.dealType && (
+                  {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && 
+                   dealData.dealType && dealData.dealType.trim() !== '' && (
                     <Text style={styles.infoBullet}> • </Text>
                   )}
-                  {dealData.dealType && (
+                  {dealData.dealType && dealData.dealType.trim() !== '' && (
                     <Text style={styles.infoRegular}>{dealData.dealType}</Text>
                   )}
                 </Text>
