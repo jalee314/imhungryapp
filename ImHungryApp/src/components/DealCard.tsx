@@ -27,6 +27,7 @@ export interface Deal {
   isFavorited: boolean;
   cuisine?: string;
   cuisineId?: string;
+  dealType?: string; // e.g., "BOGO", "50% Off", "Happy Hour", etc.
   timeAgo: string;
   author?: string;
   milesAway?: string;

@@ -323,8 +323,8 @@ const DealDetailScreen: React.FC = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Restaurant Header */}
         <View style={styles.restaurantSection}>
-          {/* Top row with restaurant name and view count side by side */}
-          <View style={styles.restaurantTopRow}>
+          {/* Restaurant name with view count positioned absolutely */}
+          <View style={styles.restaurantHeaderContainer}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
             <View style={styles.viewCountContainer}>
               <Text style={styles.viewCount}>{viewCount} viewed</Text>
@@ -353,21 +353,30 @@ const DealDetailScreen: React.FC = () => {
               <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
                 <Text style={styles.infoRegular}>{dealData.milesAway} away </Text>
                 <Text style={styles.infoBullet}>• </Text>
-                <Text style={styles.infoRegular}>{(dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA 90638').replace(/,?\s*\d{5}(-\d{4})?$/, '')}</Text>
+                <Text style={styles.infoRegular}>{dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA 90638'}</Text>
               </Text>
             </View>
             <View style={styles.validUntilRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={styles.clockIcon} />
               <Text style={styles.validUntilText}>Valid Until: September 20th, 2025</Text>
             </View>
-            <View style={styles.categoryRow}>
-              <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
-              <Text style={styles.categoryText}>
-                <Text style={styles.infoRegular}>{dealData.cuisine || 'Asian'} </Text>
-                <Text style={styles.infoBullet}>• </Text>
-                <Text style={styles.infoRegular}>BOGO</Text>
-              </Text>
-            </View>
+            {/* Only show category row if cuisine or deal type exists */}
+            {(dealData.cuisine || dealData.dealType) && (
+              <View style={styles.categoryRow}>
+                <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
+                <Text style={styles.categoryText}>
+                  {dealData.cuisine && (
+                    <Text style={styles.infoRegular}>{dealData.cuisine}</Text>
+                  )}
+                  {dealData.cuisine && dealData.dealType && (
+                    <Text style={styles.infoBullet}> • </Text>
+                  )}
+                  {dealData.dealType && (
+                    <Text style={styles.infoRegular}>{dealData.dealType}</Text>
+                  )}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -607,13 +616,12 @@ const styles = StyleSheet.create({
   restaurantSection: {
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 16,
+    paddingBottom: 8, // Reduced from 16 to bring separator closer
   },
-  restaurantTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 0,
+  restaurantHeaderContainer: {
+    position: 'relative',
+    marginBottom: 2, // Small space between restaurant name and details
+    minHeight: 20, // Ensures space for the restaurant name
   },
   restaurantName: {
     fontSize: 18,
@@ -621,11 +629,12 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontFamily: 'Inter',
     lineHeight: 20,
-    flex: 1,
+    paddingRight: 80, // Leave space for view count on the right
     marginBottom: 0,
   },
   restaurantInfo: {
     width: '100%',
+    marginTop: 0, // No extra space - starts right after restaurant name
   },
   locationRow: {
     flexDirection: 'row',
@@ -679,8 +688,10 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   viewCountContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
     alignItems: 'flex-end',
-    marginLeft: 12,
   },
   viewCount: {
     fontSize: 12,
@@ -703,7 +714,7 @@ const styles = StyleSheet.create({
     height: 0.5,
     backgroundColor: '#DEDEDE',
     marginHorizontal: 24,
-    marginVertical: 12,
+    marginVertical: 8, // Reduced from 12 for tighter spacing
   },
   dealTitle: {
     fontSize: 18,
@@ -779,7 +790,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#D7D7D7', // Match feed border color
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
@@ -791,6 +802,7 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 4, // Match feed styling
   },
   upvoted: {
     // No background change - only icon color changes
@@ -810,8 +822,8 @@ const styles = StyleSheet.create({
   voteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D8D8D8',
-    marginHorizontal: 4,
+    backgroundColor: '#D7D7D7', // Match feed separator color
+    marginHorizontal: 6, // Match feed margin (was 4, now 6)
   },
   rightActions: {
     flexDirection: 'row',
@@ -820,7 +832,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#D7D7D7', // Match feed border color
     borderRadius: 30,
     width: 40,
     height: 28,
