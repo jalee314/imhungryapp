@@ -523,14 +523,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    gap: 4,
+    paddingBottom: 100,
   },
   leftCard: {
-    marginBottom: 4,
+    marginBottom: 8,
     marginRight: 4,
   },
   rightCard: {
-    marginBottom: 4,
+    marginBottom: 8,
     marginLeft: 4,
   },
   loadingContainer: {

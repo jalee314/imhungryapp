@@ -271,6 +271,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 144,
     borderRadius: 8,
+    borderColor: '#757575',
+    borderWidth: 0.5,
     marginBottom: 8,
   },
   horizontalTitleContainer: {
@@ -367,6 +369,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 144,
     borderRadius: 8,
+    borderColor: '#757575',
+    borderWidth: 0.5,
     marginBottom: 8,
   },
   verticalTitle: {

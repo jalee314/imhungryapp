@@ -491,8 +491,6 @@ const styles = StyleSheet.create({
   },
   seeAllButton: {
     backgroundColor: '#F1F1F1',
-    borderWidth: 0.5,
-    borderColor: '#AAAAAA',
     borderRadius: 50,
     width: 30,
     height: 30,
