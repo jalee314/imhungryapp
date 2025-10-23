@@ -350,10 +350,10 @@ const DealDetailScreen: React.FC = () => {
           <View style={styles.restaurantInfo}>
             <View style={styles.locationRow}>
               <MaterialCommunityIcons name="map-marker" size={12} color="#FF8C4C" style={styles.locationIcon} />
-              <Text style={styles.locationText}>
+              <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
                 <Text style={styles.infoRegular}>{dealData.milesAway} away </Text>
                 <Text style={styles.infoBullet}>• </Text>
-                <Text style={styles.infoRegular}>{dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA 90638'}</Text>
+                <Text style={styles.infoRegular}>{(dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA 90638').replace(/,?\s*\d{5}(-\d{4})?$/, '')}</Text>
               </Text>
             </View>
             <View style={styles.validUntilRow}>
