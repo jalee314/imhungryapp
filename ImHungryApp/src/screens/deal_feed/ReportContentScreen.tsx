@@ -105,7 +105,7 @@ const ReportContentScreen: React.FC = () => {
           [{ text: 'OK', onPress: () => {
             // Navigate back to the main feed, not the deal detail screen
             // Since the reported deal should no longer be visible
-            navigation.navigate('MainTabs' as never, { screen: 'Feed' } as never);
+            navigation.goBack();
           }}]
         );
       } else {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 0,
-    height: 19,
+    height: 48,
   },
   headerButton: {
     padding: 0,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#000000',
     fontFamily: 'Inter-Regular',
     fontWeight: '400',
