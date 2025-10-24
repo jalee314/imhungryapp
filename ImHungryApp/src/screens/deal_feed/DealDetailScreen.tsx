@@ -14,6 +14,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,8 @@ const DealDetailScreen: React.FC = () => {
   const [isImageViewVisible, setImageViewVisible] = useState(false);
   const [modalImageLoading, setModalImageLoading] = useState(false);
   const [modalImageError, setModalImageError] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
+  const [imageViewerKey, setImageViewerKey] = useState(0);
   
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
@@ -63,9 +66,13 @@ const DealDetailScreen: React.FC = () => {
   }, [dealData, updateDeal]);
 
   // Image loading handlers
-  const handleImageLoad = () => {
+  const handleImageLoad = (event?: any) => {
     setImageLoading(false);
     setImageError(false);
+    if (event?.nativeEvent?.source) {
+      const { width, height } = event.nativeEvent.source;
+      setImageDimensions({ width, height });
+    }
   };
 
   const handleImageError = () => {
@@ -292,10 +299,14 @@ const DealDetailScreen: React.FC = () => {
     ? 'Anonymous' 
     : (dealData.userDisplayName || 'Unknown User');
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
   const openImageViewer = () => {
     setModalImageLoading(true);
     setModalImageError(false);
     setImageViewVisible(true);
+    // Force ScrollView to re-render with fresh state
+    setImageViewerKey(prev => prev + 1);
   };
 
   const fullScreenImageSource = dealData.imageVariants?.original || dealData.imageVariants?.large || dealData.image;
@@ -409,6 +420,9 @@ const DealDetailScreen: React.FC = () => {
                   }
                   style={[
                     styles.dealImage,
+                    imageDimensions && {
+                      height: (imageDimensions.height / imageDimensions.width) * 350
+                    },
                     imageLoading && styles.imageLoading,
                     imageError && styles.imageError
                   ]}
@@ -424,6 +438,9 @@ const DealDetailScreen: React.FC = () => {
                   } 
                   style={[
                     styles.dealImage,
+                    imageDimensions && {
+                      height: (imageDimensions.height / imageDimensions.width) * 350
+                    },
                     imageLoading && styles.imageLoading,
                     imageError && styles.imageError
                   ]}
@@ -550,16 +567,30 @@ const DealDetailScreen: React.FC = () => {
                   {modalImageLoading && (
                       <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
                   )}
-                  <Image 
-                      source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource} 
-                      style={styles.fullScreenImage} 
-                      resizeMode="contain" 
-                      onLoad={() => setModalImageLoading(false)}
-                      onError={() => {
-                          setModalImageLoading(false);
-                          setModalImageError(true);
-                      }}
-                  />
+                  <ScrollView
+                      key={imageViewerKey}
+                      ref={scrollViewRef}
+                      style={styles.scrollView}
+                      contentContainerStyle={styles.scrollViewContent}
+                      maximumZoomScale={3}
+                      minimumZoomScale={1}
+                      showsHorizontalScrollIndicator={false}
+                      showsVerticalScrollIndicator={false}
+                      bounces={false}
+                      bouncesZoom={true}
+                      centerContent={true}
+                  >
+                      <Image 
+                          source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource} 
+                          style={styles.fullScreenImage} 
+                          resizeMode="contain" 
+                          onLoad={() => setModalImageLoading(false)}
+                          onError={() => {
+                              setModalImageLoading(false);
+                              setModalImageError(true);
+                          }}
+                      />
+                  </ScrollView>
                   {modalImageError && (
                       <View style={styles.modalErrorContainer}>
                           <Text style={styles.modalErrorText}>Could not load image</Text>
@@ -734,7 +765,6 @@ const styles = StyleSheet.create({
   imageWrapper: {
     position: 'relative',
     width: '100%',
-    height: 300,
     borderRadius: 10,
     backgroundColor: '#F0F0F0',
     overflow: 'hidden',
@@ -743,8 +773,8 @@ const styles = StyleSheet.create({
   },
   dealImage: {
     width: '100%',
-    height: '100%',
     borderRadius: 10,
+    alignSelf: 'center',
   },
   imageLoading: {
     opacity: 0,
@@ -913,9 +943,19 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 1,
   },
-  fullScreenImage: {
+  scrollView: {
+    flex: 1,
     width: '100%',
-    height: '100%',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+    resizeMode: 'contain',
   },
   modalImageLoader: {
     position: 'absolute',

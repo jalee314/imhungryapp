@@ -93,7 +93,7 @@ const DealCard: React.FC<DealCardProps> = ({
         : { width: VERTICAL_CARD_WIDTH, height: 144 };
       
       return (
-        <OptimizedImage
+        <OptimizedImage 
           variants={deal.imageVariants}
           componentType="deal"
           displaySize={displaySize}

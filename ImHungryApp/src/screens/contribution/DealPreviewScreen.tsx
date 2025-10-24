@@ -10,6 +10,7 @@ import {
     ScrollView,
     ActivityIndicator,
     Animated,
+    Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -64,6 +65,8 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     const [isImageViewVisible, setImageViewVisible] = useState(false);
     const [modalImageLoading, setModalImageLoading] = useState(false);
     const [modalImageError, setModalImageError] = useState(false);
+    const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
+    const [imageViewerKey, setImageViewerKey] = useState(0);
     const slideAnim = useRef(new Animated.Value(400)).current; // Start off-screen to the right
 
     useEffect(() => {
@@ -136,11 +139,21 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
         });
     };
 
+    const scrollViewRef = useRef<ScrollView>(null);
+
     const openImageViewer = () => {
         setModalImageLoading(true);
         setModalImageError(false);
         setImageViewVisible(true);
+        // Force ScrollView to re-render with fresh state
+        setImageViewerKey(prev => prev + 1);
     };
+
+    const handleImageLoad = (event: any) => {
+        const { width, height } = event.nativeEvent.source;
+        setImageDimensions({ width, height });
+    };
+
 
     return (
         <Modal visible={visible} animationType="none" onRequestClose={onClose}>
@@ -155,44 +168,64 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                 <SafeAreaView style={styles.container}>
                     <StatusBar style="dark" />
                 
-                {/* Header with background and content */}
-                <View style={styles.headerBackground}>
-                    <View style={styles.headerContent}>
-                        <TouchableOpacity onPress={onClose} disabled={isPosting}>
-                            <Ionicons name="arrow-back" size={20} color={isPosting ? "#ccc" : "#000000"} />
-                        </TouchableOpacity>
-                        <View style={styles.shareButtonWrapper}>
-                            <TouchableOpacity 
-                                style={[styles.shareButton, isPosting && styles.disabledButton]} 
-                                onPress={onPost}
-                                disabled={isPosting}
-                            >
-                                {isPosting ? (
-                                    <ActivityIndicator size="small" color="#000000" />
-                                ) : (
-                                    <Text style={styles.shareButtonText}>Share</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                {/* Back Button and Next Button Row */}
+                <View style={styles.topButtonRow}>
+                    <TouchableOpacity 
+                        style={styles.backButton} 
+                        onPress={onClose}
+                        disabled={isPosting}
+                    >
+                        <Ionicons name="arrow-back" size={20} color={isPosting ? "#ccc" : "#000000"} />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.nextButton, isPosting ? styles.disabledButton : null]} 
+                        onPress={onPost}
+                        disabled={isPosting}
+                    >
+                        {isPosting ? (
+                            <ActivityIndicator size="small" color="#000000" />
+                        ) : (
+                            <Text style={styles.nextButtonText}>Share</Text>
+                        )}
+                    </TouchableOpacity>
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContainer}>
                     <View style={styles.card}>
                         {/* Restaurant Info */}
                         <View style={styles.restaurantWrapper}>
-                            <Text style={styles.restaurantText}>
-                                <Text style={styles.restaurantName}>{selectedRestaurant?.name}{"\n"}</Text>
+                            <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
+                            
+                            {/* Location row */}
+                            <View style={styles.locationRow}>
                                 <Text style={styles.infoText}>📍 {isCalculatingDistance ? 'Calculating...' : distance} </Text>
                                 <Text style={styles.bulletText}>•</Text>
-                                <Text style={styles.infoText} numberOfLines={1}> {selectedRestaurant?.subtext}{"\n"}⏳ Valid Until: {formatDate(expirationDate)}{"\n"}🍽 {selectedCuisine || 'Cuisine'} </Text>
-                                {selectedCategory && (
-                                    <>
-                                        <Text style={styles.bulletText}>•</Text>
-                                        <Text style={styles.infoText}> {selectedCategory}</Text>
-                                    </>
-                                )}
-                            </Text>
+                                <Text style={styles.infoText} numberOfLines={1}> {selectedRestaurant?.subtext}</Text>
+                            </View>
+                            
+                            {/* Valid until row */}
+                            <View style={styles.validUntilRow}>
+                                <Text style={styles.infoText}>⏳ Valid Until: {formatDate(expirationDate)}</Text>
+                            </View>
+                            
+                            {/* Only show category row if cuisine or deal type exists and has meaningful content */}
+                            {((selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine') || 
+                              (selectedCategory && selectedCategory.trim() !== '')) && (
+                                <View style={styles.categoryRow}>
+                                    <Text style={styles.infoText}>
+                                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' && (
+                                            <Text style={styles.infoRegular}>🍽 {selectedCuisine}</Text>
+                                        )}
+                                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' && 
+                                         selectedCategory && selectedCategory.trim() !== '' && (
+                                            <Text style={styles.bulletText}> • </Text>
+                                        )}
+                                        {selectedCategory && selectedCategory.trim() !== '' && (
+                                            <Text style={styles.infoRegular}> {selectedCategory}</Text>
+                                        )}
+                                    </Text>
+                                </View>
+                            )}
                         </View>
 
                         {/* Separator */}
@@ -204,7 +237,17 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         {/* Deal Image */}
                         {imageUri && (
                             <TouchableOpacity onPress={openImageViewer}>
-                                <Image source={{ uri: imageUri }} style={styles.dealImage} />
+                                <Image 
+                                    source={{ uri: imageUri }} 
+                                    style={[
+                                        styles.dealImage,
+                                        imageDimensions && {
+                                            height: (imageDimensions.height / imageDimensions.width) * 350
+                                        }
+                                    ]}
+                                    resizeMode="cover"
+                                    onLoad={handleImageLoad}
+                                />
                             </TouchableOpacity>
                         )}
 
@@ -276,16 +319,30 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         {modalImageLoading && (
                             <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
                         )}
-                        <Image 
-                            source={{ uri: imageUri }} 
-                            style={styles.fullScreenImage} 
-                            resizeMode="contain" 
-                            onLoad={() => setModalImageLoading(false)}
-                            onError={() => {
-                                setModalImageLoading(false);
-                                setModalImageError(true);
-                            }}
-                        />
+                        <ScrollView
+                            key={imageViewerKey}
+                            ref={scrollViewRef}
+                            style={styles.scrollView}
+                            contentContainerStyle={styles.scrollViewContent}
+                            maximumZoomScale={3}
+                            minimumZoomScale={1}
+                            showsHorizontalScrollIndicator={false}
+                            showsVerticalScrollIndicator={false}
+                            bounces={false}
+                            bouncesZoom={true}
+                            centerContent={true}
+                        >
+                            <Image 
+                                source={{ uri: imageUri }} 
+                                style={styles.fullScreenImage} 
+                                resizeMode="contain" 
+                                onLoad={() => setModalImageLoading(false)}
+                                onError={() => {
+                                    setModalImageLoading(false);
+                                    setModalImageError(true);
+                                }}
+                            />
+                        </ScrollView>
                         {modalImageError && (
                             <View style={styles.modalErrorContainer}>
                                 <Text style={styles.modalErrorText}>Could not load image</Text>
@@ -306,47 +363,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  headerBackground: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  headerContent: {
+  topButtonRow: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 12,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  nextButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    height: 28,
-  },
-  shareButtonWrapper: {
-    width: 90,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shareButton: {
-    backgroundColor: '#FF8C4CCC',
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'stretch',
-    width: '100%',
-    height: '100%',
+    backgroundColor: 'rgba(255, 140, 76, 0.8)',
+    borderRadius: 30,
+    minWidth: 90,
   },
   disabledButton: {
     opacity: 0.6,
   },
-  shareButtonText: {
-    color: '#000000',
+  nextButtonText: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 14,
-    lineHeight: 16,
-    textAlign: 'center',
+    fontSize: 12,
+    color: '#000000',
   },
   scrollContainer: {
     paddingHorizontal: 24,
@@ -363,28 +411,44 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-around',
   },
-  restaurantText: {
-    width: 329,
-    alignSelf: 'stretch',
+  restaurantName: {
+    fontSize: 18,
+    fontWeight: '700',
     color: '#000000',
     fontFamily: 'Inter',
-    fontSize: 18,
-    fontWeight: '400',
-    letterSpacing: 0,
     lineHeight: 20,
-    marginTop: -10,
+    marginBottom: 8,
   },
-  restaurantName: {
-    fontWeight: '700',
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  validUntilRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   infoText: {
     fontFamily: 'Inter',
     fontSize: 12,
+    lineHeight: 20,
+  },
+  infoRegular: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000000',
   },
   bulletText: {
     fontFamily: 'Inter',
     fontSize: 12,
     fontWeight: '300',
+    color: '#000000',
   },
   separator: {
     alignSelf: 'stretch',
@@ -403,11 +467,10 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   dealImage: {
-    alignSelf: 'stretch',
-    aspectRatio: 0.75,
     width: '100%',
     backgroundColor: '#EFEFEF',
     borderRadius: 8,
+    alignSelf: 'center',
   },
   interactionsContainer: {
     alignItems: 'center',
@@ -537,9 +600,19 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 1,
   },
-  fullScreenImage: {
+  scrollView: {
+    flex: 1,
     width: '100%',
-    height: '100%',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+    resizeMode: 'contain',
   },
   modalImageLoader: {
     position: 'absolute',
