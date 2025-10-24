@@ -17,7 +17,6 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard, { RowCardData } from '../../components/RowCard';
-import SquareCard, { SquareCardData } from '../../components/SquareCard';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
 import { useLocation } from '../../context/LocationContext';
 
@@ -67,10 +66,9 @@ const DiscoverFeed: React.FC = () => {
   // Load current location on mount and when location changes
   // This is now handled by LocationContext, so we can remove this effect
 
-  // Filter restaurants based on search query
+  // Filter restaurants based on search query (name only)
   const filteredRestaurants = restaurants.filter(restaurant => 
-    restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    restaurant.address.toLowerCase().includes(searchQuery.toLowerCase())
+    restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleSearchChange = (text: string) => {
@@ -98,17 +96,6 @@ const DiscoverFeed: React.FC = () => {
     dealCount: restaurant.deal_count,
   });
 
-  // Convert DiscoverRestaurant to SquareCardData
-  const convertToSquareCardData = (restaurant: DiscoverRestaurant): SquareCardData => ({
-    id: restaurant.restaurant_id,
-    title: restaurant.name,
-    subtitle: restaurant.address,
-    image: restaurant.restaurant_image_metadata 
-      ? { uri: restaurant.restaurant_image_metadata } 
-      : require('../../../img/gallery.jpg'),
-    distance: `${restaurant.distance_miles}mi`,
-    dealCount: restaurant.deal_count,
-  });
 
   const renderRestaurantCard = ({ item }: { item: DiscoverRestaurant }) => (
     <RowCard
@@ -118,12 +105,6 @@ const DiscoverFeed: React.FC = () => {
     />
   );
 
-  const renderSquareCard = ({ item }: { item: DiscoverRestaurant }) => (
-    <SquareCard
-      data={convertToSquareCardData(item)}
-      onPress={handleRowCardPress}
-    />
-  );
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
@@ -217,10 +198,7 @@ const DiscoverFeed: React.FC = () => {
   }
 
   return (
-    <View style={[
-      styles.container,
-      searchQuery.length > 0 && styles.containerWithSearch
-    ]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <View style={styles.searchContainer}>
@@ -231,7 +209,7 @@ const DiscoverFeed: React.FC = () => {
           <Ionicons 
             name="search" 
             size={16} 
-            color={searchQuery.length > 0 ? "#FFA05C" : "#666"} 
+            color="#666"
           />
           <TextInput
             style={styles.searchInput}
@@ -257,14 +235,12 @@ const DiscoverFeed: React.FC = () => {
       <View style={styles.content}>
         <FlatList
           data={filteredRestaurants}
-          renderItem={searchQuery.length > 0 ? renderSquareCard : renderRestaurantCard}
+          renderItem={renderRestaurantCard}
           keyExtractor={(item) => item.restaurant_id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyState}
-          numColumns={searchQuery.length > 0 ? 3 : 1}
-          key={searchQuery.length > 0 ? 'grid' : 'list'} // Force re-render when switching layouts
-          columnWrapperStyle={searchQuery.length > 0 ? styles.gridRow : undefined}
+          numColumns={1}
         />
       </View>
     </View>
@@ -275,9 +251,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  containerWithSearch: {
-    backgroundColor: '#F5F5F5',
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -305,7 +278,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   searchInputContainerFocused: {
-    borderColor: '#FFA05C',
+    borderColor: '#757575',
     shadowOpacity: 0.2,
     elevation: 4,
   },
@@ -329,11 +302,6 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 100, // Remove extra padding
     paddingHorizontal: 0, // Remove horizontal padding to let cards control their own spacing
-  },
-  gridRow: {
-    justifyContent: 'flex-start', // Changed from 'space-between' to 'flex-start'
-    paddingHorizontal: 20,
-    gap: 10, // Add gap between items for consistent spacing
   },
   loadingContainer: {
     flex: 1,
