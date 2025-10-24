@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 import RowCard, { RowCardData } from '../../components/RowCard';
 import { DiscoverRestaurant } from '../../services/discoverService';
@@ -475,11 +476,16 @@ const RestaurantDetailScreen: React.FC = () => {
       <View style={styles.restaurantInfoSection}>
         <View style={styles.restaurantHeader}>
           <Text style={styles.restaurantName}>{restaurant.name}</Text>
-          <TouchableOpacity style={styles.heartButton} onPress={handleRestaurantFavorite} disabled={favoriteLoading}>
-            <Ionicons 
-              name={isRestaurantFavorited ? "heart" : "heart-outline"} 
-              size={22} 
-              color={isRestaurantFavorited ? "#FF1E00" : "#000000"} 
+          <TouchableOpacity 
+            style={[styles.heartButton, isRestaurantFavorited && styles.favorited]} 
+            onPress={handleRestaurantFavorite} 
+            disabled={favoriteLoading}
+            activeOpacity={0.6}
+          >
+            <MaterialCommunityIcons
+              name={isRestaurantFavorited ? "heart" : "heart-outline"}
+              size={19} 
+              color={isRestaurantFavorited ? "#FF1E00" : "#000"} 
             />
           </TouchableOpacity>
         </View>
@@ -577,10 +583,15 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   heartButton: {
-    width: 22,
-    height: 22,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    width: 40,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  favorited: {
+    // Don't change background - only the heart icon color changes
   },
   restaurantDetailsContainer: {
     flexDirection: 'column',
