@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   calendarHeaderText: {
     fontSize: 17,
-    color: '#007AFF',
+    color: '#000000',
   },
   calendarHeaderTitle: {
     fontSize: 17,

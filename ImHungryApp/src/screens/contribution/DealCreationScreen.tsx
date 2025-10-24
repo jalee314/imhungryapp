@@ -318,6 +318,11 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       return;
     }
 
+    if (!imageUri) {
+      Alert.alert("Missing Photo", "Please add a photo to continue.");
+      return;
+    }
+
     // Check for profanity before showing preview
     try {
       const profanityCheck = await checkDealContentForProfanity(dealTitle, dealDetails);
@@ -336,6 +341,11 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const handlePost = async () => {
     if (!selectedRestaurant || !dealTitle) {
       Alert.alert("Missing Information", "Please select a restaurant and add a deal title to continue.");
+      return;
+    }
+
+    if (!imageUri) {
+      Alert.alert("Missing Photo", "Please add a photo to continue.");
       return;
     }
 
