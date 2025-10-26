@@ -89,8 +89,8 @@ const DiscoverFeed: React.FC = () => {
     id: restaurant.restaurant_id,
     title: restaurant.name,
     subtitle: restaurant.address,
-    image: restaurant.restaurant_image_metadata 
-      ? { uri: restaurant.restaurant_image_metadata } 
+    image: restaurant.logo_image 
+      ? { uri: restaurant.logo_image } 
       : require('../../../img/gallery.jpg'),
     distance: `${restaurant.distance_miles}mi`,
     dealCount: restaurant.deal_count,

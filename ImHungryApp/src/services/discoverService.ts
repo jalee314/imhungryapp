@@ -6,7 +6,7 @@ export interface DiscoverRestaurant {
   restaurant_id: string;
   name: string;
   address: string;
-  restaurant_image_metadata?: string; // Changed from logo_image
+  logo_image?: string; // Image URL from most liked deal
   deal_count: number;
   distance_miles: number;
   lat: number;
@@ -80,12 +80,24 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       restaurant_id: restaurant.restaurant_id,
       name: restaurant.name,
       address: restaurant.address,
-      restaurant_image_metadata: restaurant.restaurant_image_metadata, // Changed
+      logo_image: '', // Will be populated below
       deal_count: parseInt(restaurant.deal_count) || 0,
       distance_miles: parseFloat(restaurant.distance_miles) || 0,
       lat: parseFloat(restaurant.lat),
       lng: parseFloat(restaurant.lng)
     }));
+
+    // Fetch the most liked deal's image for each restaurant
+    const restaurantIds = restaurants.map(r => r.restaurant_id);
+    const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIds);
+    
+    // Map the images to restaurants
+    restaurants.forEach(restaurant => {
+      const dealImage = mostLikedDeals.get(restaurant.restaurant_id);
+      if (dealImage) {
+        restaurant.logo_image = dealImage;
+      }
+    });
 
     // Sort by distance (closest first)
     restaurants.sort((a, b) => a.distance_miles - b.distance_miles);
@@ -217,15 +229,29 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
           restaurant_id: restaurant.restaurant_id,
           name: restaurant.name,
           address: restaurant.address,
-          restaurant_image_metadata: restaurant.restaurant_image_metadata, // Changed
+          logo_image: '', // Will be populated below
           deal_count: dealCounts[restaurant.restaurant_id] || 0,
           distance_miles: Math.round(distance * 10) / 10, // Round to 1 decimal place
           lat: restaurant.lat,
           lng: restaurant.lng
         };
       })
-      .filter(restaurant => restaurant.deal_count > 0) // Only include restaurants with deals
-      .sort((a, b) => a.distance_miles - b.distance_miles); // Sort by distance
+      .filter(restaurant => restaurant.deal_count > 0); // Only include restaurants with deals
+    
+    // Fetch the most liked deal's image for each restaurant
+    const restaurantIdsForImages = result.map(r => r.restaurant_id);
+    const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIdsForImages);
+    
+    // Map the images to restaurants
+    result.forEach(restaurant => {
+      const dealImage = mostLikedDeals.get(restaurant.restaurant_id);
+      if (dealImage) {
+        restaurant.logo_image = dealImage;
+      }
+    });
+    
+    // Sort by distance
+    result.sort((a, b) => a.distance_miles - b.distance_miles);
 
     console.log(`✅ Found ${result.length} restaurants with deals`);
     return {
@@ -244,3 +270,118 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
     };
   }
 };
+
+/**
+ * Helper function to fetch the most liked deal's image for each restaurant
+ * Returns a Map of restaurant_id -> image_url
+ */
+async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promise<Map<string, string>> {
+  try {
+    if (restaurantIds.length === 0) {
+      return new Map();
+    }
+
+    // Step 1: Get all deal templates for these restaurants
+    const { data: dealTemplates, error: templateError } = await supabase
+      .from('deal_template')
+      .select(`
+        template_id,
+        restaurant_id,
+        image_url,
+        image_metadata_id,
+        image_metadata:image_metadata_id (
+          variants
+        )
+      `)
+      .in('restaurant_id', restaurantIds);
+
+    if (templateError || !dealTemplates || dealTemplates.length === 0) {
+      return new Map();
+    }
+
+    // Step 2: Get deal instances for these templates
+    const templateIds = dealTemplates.map(t => t.template_id);
+    const { data: dealInstances, error: instanceError } = await supabase
+      .from('deal_instance')
+      .select('deal_id, template_id')
+      .in('template_id', templateIds);
+
+    if (instanceError || !dealInstances) {
+      return new Map();
+    }
+
+    // Create a map of template_id -> deal_id
+    const templateToDealMap: Record<string, string> = {};
+    dealInstances.forEach(instance => {
+      if (!templateToDealMap[instance.template_id]) {
+        templateToDealMap[instance.template_id] = instance.deal_id;
+      }
+    });
+
+    // Step 3: Count upvotes for all deal_ids
+    const dealIds = Object.values(templateToDealMap);
+    
+    if (dealIds.length === 0) {
+      return new Map();
+    }
+
+    const { data: upvotes } = await supabase
+      .from('interaction')
+      .select('deal_id')
+      .in('deal_id', dealIds)
+      .eq('interaction_type', 'upvote');
+
+    // Count upvotes per deal_id
+    const upvoteCounts: Record<string, number> = {};
+    upvotes?.forEach(vote => {
+      upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
+    });
+
+    // Step 4: For each restaurant, find the deal with most upvotes
+    const mostLikedByRestaurant: Record<string, any> = {};
+    
+    dealTemplates.forEach(template => {
+      const restaurantId = template.restaurant_id;
+      const dealId = templateToDealMap[template.template_id];
+      const upvoteCount = dealId ? (upvoteCounts[dealId] || 0) : 0;
+      
+      if (!mostLikedByRestaurant[restaurantId] || 
+          upvoteCount > mostLikedByRestaurant[restaurantId].upvote_count) {
+        mostLikedByRestaurant[restaurantId] = {
+          template,
+          upvote_count: upvoteCount
+        };
+      }
+    });
+
+    // Step 5: Extract image URLs
+    const result = new Map<string, string>();
+    
+    Object.entries(mostLikedByRestaurant).forEach(([restaurantId, data]) => {
+      const template = data.template;
+      
+      // Handle image_metadata - might be an array or object
+      const imageMetadata = Array.isArray(template.image_metadata) 
+        ? template.image_metadata[0] 
+        : template.image_metadata;
+      
+      // Try to get image from Cloudinary variants first
+      if (imageMetadata?.variants) {
+        const variants = imageMetadata.variants;
+        const imageUrl = variants.medium || variants.small || variants.large || '';
+        if (imageUrl) {
+          result.set(restaurantId, imageUrl);
+        }
+      }
+      // Fallback to image_url
+      else if (template.image_url) {
+        result.set(restaurantId, template.image_url);
+      }
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Error fetching most liked deals:', error);
+    return new Map();
+  }
+}
