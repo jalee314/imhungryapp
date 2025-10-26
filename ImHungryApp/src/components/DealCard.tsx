@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import OptimizedImage from './OptimizedImage';
+import OptimizedImage, { preloadImage } from './OptimizedImage';
 
 const { width: screenWidth } = Dimensions.get('window');
 // Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (8px), then divide by 2
@@ -77,6 +77,19 @@ const DealCard: React.FC<DealCardProps> = ({
   };
 
   const handlePress = () => {
+    // Start preloading in background without blocking navigation
+    if (deal.imageVariants) {
+      // Preload the large version for detail view (full screen width)
+      preloadImage(deal.image, deal.imageVariants, { width: screenWidth, height: 400 }).catch(err => {
+        console.error('Failed to preload image:', err);
+      });
+    } else if (deal.image) {
+      preloadImage(deal.image).catch(err => {
+        console.error('Failed to preload image:', err);
+      });
+    }
+    
+    // Navigate immediately - no await, no delay
     onPress?.(deal.id);
   };
 

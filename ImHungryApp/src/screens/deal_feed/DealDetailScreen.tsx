@@ -48,6 +48,9 @@ const DealDetailScreen: React.FC = () => {
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  
+  // State to hold image dimensions for skeleton
+  const [skeletonHeight, setSkeletonHeight] = useState(300);
 
   // Debug the deal data
   useEffect(() => {
@@ -59,6 +62,41 @@ const DealDetailScreen: React.FC = () => {
       hasImageVariants: !!dealData.imageVariants
     });
   }, [dealData]);
+
+  // Preload image dimensions to get proper skeleton height
+  useEffect(() => {
+    const getImageSize = async () => {
+      try {
+        let uriToLoad = '';
+        
+        if (dealData.imageVariants) {
+          // Try to get the large variant for sizing
+          uriToLoad = dealData.imageVariants.large || dealData.imageVariants.original || '';
+        } else if (typeof dealData.image === 'string') {
+          uriToLoad = dealData.image;
+        }
+        
+        if (uriToLoad) {
+          Image.getSize(
+            uriToLoad,
+            (width, height) => {
+              const aspectRatio = height / width;
+              const calculatedHeight = aspectRatio * Dimensions.get('window').width;
+              setSkeletonHeight(calculatedHeight);
+              console.log('✅ Preloaded image dimensions, skeleton height:', calculatedHeight);
+            },
+            (error) => {
+              console.error('Failed to get image size:', error);
+            }
+          );
+        }
+      } catch (error) {
+        console.error('Error preloading image dimensions:', error);
+      }
+    };
+    
+    getImageSize();
+  }, [dealData.id]);
 
   // ✨ NEW: Update context whenever deal data changes
   useEffect(() => {
@@ -72,6 +110,12 @@ const DealDetailScreen: React.FC = () => {
     if (event?.nativeEvent?.source) {
       const { width, height } = event.nativeEvent.source;
       setImageDimensions({ width, height });
+      // Update skeleton height when actual image loads
+      if (width && height) {
+        const aspectRatio = height / width;
+        const calculatedHeight = aspectRatio * Dimensions.get('window').width;
+        setSkeletonHeight(calculatedHeight);
+      }
     }
   };
 
@@ -400,16 +444,16 @@ const DealDetailScreen: React.FC = () => {
         <Text style={styles.dealTitle}>{dealData.title}</Text>
 
         {/* Deal Image */}
-        <TouchableOpacity onPress={openImageViewer}>
+        <TouchableOpacity onPress={openImageViewer} disabled={imageLoading}>
           <View style={styles.imageContainer}>
             <View style={styles.imageWrapper}>
               {imageLoading && (
                 <View style={styles.imageLoadingContainer}>
-                  <SkeletonLoader width="100%" height={300} borderRadius={10} />
+                  <SkeletonLoader width="100%" height={skeletonHeight} borderRadius={10} />
                 </View>
               )}
               
-              {dealData.imageVariants ? (
+              {!imageError && (dealData.imageVariants ? (
                 <OptimizedImage 
                   variants={dealData.imageVariants}
                   componentType="deal"
@@ -423,8 +467,7 @@ const DealDetailScreen: React.FC = () => {
                     imageDimensions && {
                       height: (imageDimensions.height / imageDimensions.width) * 350
                     },
-                    imageLoading && styles.imageLoading,
-                    imageError && styles.imageError
+                    imageLoading && { opacity: 0 }
                   ]}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
@@ -441,15 +484,13 @@ const DealDetailScreen: React.FC = () => {
                     imageDimensions && {
                       height: (imageDimensions.height / imageDimensions.width) * 350
                     },
-                    imageLoading && styles.imageLoading,
-                    imageError && styles.imageError
+                    imageLoading && { opacity: 0 }
                   ]}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                   resizeMode="cover"
-                  fadeDuration={200}
                 />
-              )}
+              ))}
               
               {imageError && (
                 <View style={styles.imageErrorContainer}>
@@ -570,7 +611,7 @@ const DealDetailScreen: React.FC = () => {
                   <ScrollView
                       key={imageViewerKey}
                       ref={scrollViewRef}
-                      style={styles.scrollView}
+                      style={styles.imageViewerScrollView}
                       contentContainerStyle={styles.scrollViewContent}
                       maximumZoomScale={3}
                       minimumZoomScale={1}
@@ -943,7 +984,7 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 1,
   },
-  scrollView: {
+  imageViewerScrollView: {
     flex: 1,
     width: '100%',
   },

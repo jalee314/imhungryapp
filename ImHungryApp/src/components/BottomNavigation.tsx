@@ -150,7 +150,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         <MaterialCommunityIcons  // CHANGED: Back to original
           name={item.icon} 
           size={28} 
-          color={isActive ? '#FFA05C' : '#666'} 
+          color={isActive ? '#000000' : '#666'} 
         />
       </TouchableOpacity>
     );
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   activeNavIcon: {
-    color: '#FF8C4C',
+    color: '#000000',
   },
   navProfilePhoto: {
     width: 28,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   activeNavProfilePhoto: {
     borderWidth: 2,
-    borderColor: '#FF8C4C',
+    borderColor: '#000000',
   },
   navProfilePlaceholder: {
     width: 28,
