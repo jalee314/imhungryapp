@@ -180,6 +180,11 @@ const DealDetailScreen: React.FC = () => {
     });
   };
 
+  const removeZipCode = (address: string) => {
+    // Remove zip code (5 digits or 5+4 digits) from the end of the address
+    return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
+  };
+
   const handleUpvote = () => {
     const previousState = { ...dealData };
     const wasUpvoted = previousState.isUpvoted;
@@ -408,7 +413,7 @@ const DealDetailScreen: React.FC = () => {
               <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
                 <Text style={styles.infoRegular}>{dealData.milesAway} away </Text>
                 <Text style={styles.infoBullet}>• </Text>
-                <Text style={styles.infoRegular}>{dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA 90638'}</Text>
+                <Text style={styles.infoRegular}>{removeZipCode(dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA')}</Text>
               </Text>
             </View>
             <View style={styles.validUntilRow}>

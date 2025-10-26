@@ -130,8 +130,6 @@ const DealCard: React.FC<DealCardProps> = ({
   };
 
   if (variant === 'horizontal') {
-    const locationAuthorText = `${deal.restaurant}\n${deal.milesAway || '?mi'} away • ${deal.timeAgo} • By ${deal.author || 'Unknown'}`;
-    
     return (
       <TouchableOpacity
         style={styles.horizontalCard}
@@ -144,7 +142,14 @@ const DealCard: React.FC<DealCardProps> = ({
             {deal.title}
           </Text>
         </View>
-        <Text style={styles.horizontalDetails} numberOfLines={2}>{locationAuthorText}</Text>
+        <View style={styles.horizontalDetailsContainer}>
+          <Text style={styles.horizontalDetails} numberOfLines={1} ellipsizeMode="tail">
+            {deal.restaurant}
+          </Text>
+          <Text style={styles.horizontalDetails} numberOfLines={1}>
+            {deal.milesAway || '?mi'} away • {deal.timeAgo} • By {deal.author || 'Unknown'}
+          </Text>
+        </View>
         
         <View style={styles.horizontalInteractions}>
           <TouchableWithoutFeedback onPress={handleUpvote}>
@@ -194,9 +199,10 @@ const DealCard: React.FC<DealCardProps> = ({
   }
 
   // Vertical variant - for the 2-column grid
-  const locationAuthorText = hideAuthor 
-  ? `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
-  : `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
+  // Build the details line, omitting cuisine if it's not specified or is 'Cuisine'
+  const detailsLine = deal.cuisine && deal.cuisine !== 'Cuisine'
+    ? `${deal.cuisine} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
+    : `${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
   
   return (
     <TouchableOpacity
@@ -206,7 +212,14 @@ const DealCard: React.FC<DealCardProps> = ({
     >
       {getImageSource()}
       <Text style={styles.verticalTitle} numberOfLines={2}>{deal.title}</Text>
-      <Text style={styles.verticalDetails} numberOfLines={2}>{locationAuthorText}</Text>
+      <View style={styles.verticalDetailsContainer}>
+        <Text style={styles.verticalDetails} numberOfLines={1} ellipsizeMode="tail">
+          {deal.restaurant}
+        </Text>
+        <Text style={styles.verticalDetails} numberOfLines={1}>
+          {detailsLine}
+        </Text>
+      </View>
       
       <View style={styles.verticalInteractions}>
         <TouchableWithoutFeedback onPress={handleUpvote}>
@@ -304,6 +317,10 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     height: 30,
   },
+  horizontalDetailsContainer: {
+    width: '100%',
+    marginBottom: 8,
+  },
   horizontalDetails: {
     fontFamily: 'Inter',
     fontWeight: '400',
@@ -312,7 +329,6 @@ const styles = StyleSheet.create({
     color: '#757575',
     textAlign: 'left',
     width: '100%',
-    marginBottom: 8,
   },
   horizontalInteractions: {
     flexDirection: 'row',
@@ -398,6 +414,10 @@ const styles = StyleSheet.create({
     height: 30,
     marginBottom: 8,
   },
+  verticalDetailsContainer: {
+    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
+    marginBottom: 8,
+  },
   verticalDetails: {
     fontFamily: 'Inter',
     fontWeight: '400',
@@ -405,8 +425,7 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     color: '#757575',
     textAlign: 'left',
-    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
-    marginBottom: 8,
+    width: '100%',
   },
   verticalInteractions: {
     flexDirection: 'row',
