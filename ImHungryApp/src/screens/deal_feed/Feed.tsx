@@ -45,16 +45,13 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
-  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission } = useLocation();
+  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad } = useLocation();
   
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // ✅ FIX: State to manage the initial race condition between component mount and location context readiness.
-  const [isInitializing, setIsInitializing] = useState(true);
 
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
@@ -74,21 +71,9 @@ const Feed: React.FC = () => {
     }
   };
 
-  // ✅ FIX: This effect now solely manages the initialization phase.
   useEffect(() => {
-    // Give the LocationContext a moment to initialize.
-    // This prevents the flash of "needs location" on cold starts for returning users.
-    const initTimer = setTimeout(() => {
-      setIsInitializing(false);
-    }, 500); // 500ms should be enough for the context to load from storage.
-
-    return () => clearTimeout(initTimer);
-  }, []);
-
-  // ✅ FIX: This effect now depends on the initialization being complete.
-  useEffect(() => {
-    // Don't do anything until the initialization timer is done.
-    if (isInitializing) {
+    // Don't do anything until the initial location load is complete.
+    if (isInitialLoad) {
       return;
     }
 
@@ -106,11 +91,8 @@ const Feed: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, [selectedCoordinates, hasLocationSet, isInitializing]); // ✅ ADD isInitializing dependency
+  }, [selectedCoordinates, hasLocationSet, isInitialLoad]);
 
-
-  // (The rest of your hooks: setupRealtimeSubscription, useFocusEffect, etc. remain the same)
-  
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -375,10 +357,9 @@ const Feed: React.FC = () => {
     );
   };
 
-  // ✅ FIX: The main render logic is now controlled by the isInitializing state.
   const renderContent = () => {
-    // Priority 1: While initializing, ALWAYS show the skeleton loader.
-    if (isInitializing) {
+    // Priority 1: While location context is doing its initial load, ALWAYS show the skeleton loader.
+    if (isInitialLoad) {
       return renderLoadingState();
     }
     
@@ -387,7 +368,7 @@ const Feed: React.FC = () => {
       return renderErrorState();
     }
 
-    // Priority 3: After initializing, if location is not set, show the prompt.
+    // Priority 3: After initial load is complete, if location is not set, show the prompt.
     if (!hasLocationSet) {
       return renderEmptyState('needs_location');
     }

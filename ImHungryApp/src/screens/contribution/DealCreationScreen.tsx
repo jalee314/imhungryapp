@@ -51,6 +51,7 @@ interface Restaurant {
   lat?: number;
   lng?: number;
   address?: string;
+  distance_miles?: number;
 }
 
 interface DealCreationScreenProps {
@@ -194,6 +195,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
             lat: place.lat,
             lng: place.lng,
             address: place.address.replace(/, USA$/, ''), // Also clean the address field
+            distance_miles: place.distance_miles,
           }));
           
           setSearchResults(transformed);
@@ -276,7 +278,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
             address: selectedPlace.address || selectedPlace.subtext.split(' • ')[0],
             lat: selectedPlace.lat!,
             lng: selectedPlace.lng!,
-            distance_miles: 0,
+            distance_miles: selectedPlace.distance_miles || 0,
           });
 
           if (result.success && result.restaurant_id) {

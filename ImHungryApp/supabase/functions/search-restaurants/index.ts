@@ -1,295 +1,268 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
 
-serve(async (req) => {
-  console.log('=== Edge Function Started ===');
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
+
+// Calculate distance in miles using Haversine formula
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.8; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Check if a place is actually a restaurant/food establishment
+function isFoodRelated(types: string[]): boolean {
+  const foodTypes = [
+    'restaurant',
+    'food',
+    'cafe',
+    'bar',
+    'bakery',
+    'meal_takeaway',
+    'meal_delivery',
+    'fast_food_restaurant',
+    'pizza_restaurant',
+    'sandwich_shop',
+    'coffee_shop',
+    'ice_cream_shop',
+    'brunch_restaurant',
+    'breakfast_restaurant',
+    'american_restaurant',
+    'chinese_restaurant',
+    'italian_restaurant',
+    'japanese_restaurant',
+    'korean_restaurant',
+    'mexican_restaurant',
+    'thai_restaurant',
+    'vietnamese_restaurant',
+    'seafood_restaurant',
+    'steak_house',
+    'sushi_restaurant',
+    'indian_restaurant',
+    'mediterranean_restaurant',
+    'middle_eastern_restaurant',
+    'french_restaurant',
+    'greek_restaurant',
+    'spanish_restaurant',
+    'vegetarian_restaurant',
+    'vegan_restaurant',
+    'hamburger_restaurant',
+    'ramen_restaurant',
+    'noodle_house'
+  ];
   
+  // Check if any of the place's types match our food-related types
+  return types.some(type => foodTypes.includes(type.toLowerCase()));
+}
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: corsHeaders
+    });
+  }
+
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { query, userLat, userLng, radius = 10 } = await req.json();
 
-    // Get Cloudinary credentials
-    const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')!;
-    const apiKey = Deno.env.get('CLOUDINARY_API_KEY')!;
-    const apiSecret = Deno.env.get('CLOUDINARY_API_SECRET')!;
-
-    console.log('Environment variables loaded:', {
-      supabaseUrl: supabaseUrl ? '✓' : '✗',
-      supabaseKey: supabaseKey ? '✓' : '✗',
-      cloudName: cloudName ? '✓' : '✗',
-      apiKey: apiKey ? '✓' : '✗',
-      apiSecret: apiSecret ? '✓' : '✗'
-    });
-
-    const { tempPath, bucket, userId, type } = await req.json();
-    
-    console.log('Request body received:', { 
-      tempPath, 
-      bucket, 
-      userId, 
-      type,
-      hasTempPath: !!tempPath,
-      hasBucket: !!bucket,
-      hasUserId: !!userId,
-      hasType: !!type
-    });
-    
-    if (!tempPath || !bucket || !userId || !type) {
-      console.error('Missing required fields');
+    // Validate inputs
+    if (!query || !userLat || !userLng) {
       return new Response(JSON.stringify({
-        success: false,
-        error: 'Missing required fields'
-      }), { 
+        error: 'Missing required parameters: query, userLat, userLng'
+      }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       });
     }
 
-    // Download the image from Supabase Storage
-    console.log('=== Starting Download ===');
-    console.log('Attempting to download from bucket:', bucket);
-    console.log('Attempting to download path:', tempPath);
-    
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from(bucket)
-      .download(tempPath);
-    
-    console.log('Download result:', {
-      hasData: !!fileData,
-      hasError: !!downloadError,
-      errorMessage: downloadError?.message,
-      errorCode: downloadError?.statusCode,
-      errorDetails: downloadError
-    });
-    
-    if (downloadError || !fileData) {
-      console.error('Download failed:', {
-        error: downloadError,
-        errorMessage: downloadError?.message,
-        errorCode: downloadError?.statusCode,
-        hasFileData: !!fileData
-      });
+    if (!GOOGLE_PLACES_API_KEY) {
+      console.error('GOOGLE_PLACES_API_KEY not set');
       return new Response(JSON.stringify({
-        success: false,
-        error: `Failed to download image: ${downloadError?.message || 'Unknown error'}`
-      }), { 
+        error: 'API configuration error'
+      }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    console.log('=== File Downloaded Successfully ===');
-    console.log('File data details:', {
-      size: fileData.size,
-      type: fileData.type,
-      hasSize: fileData.size > 0,
-      sizeInKB: Math.round(fileData.size / 1024),
-      sizeInMB: Math.round(fileData.size / (1024 * 1024) * 100) / 100
-    });
-    
-    if (fileData.size === 0) {
-      console.error('=== EMPTY FILE DETECTED ===');
-      console.error('File size is 0 bytes');
-      console.error('This suggests the upload to temp folder failed or the file was corrupted');
-      
-      // Let's try to list files in the temp folder to see what's there
-      console.log('=== Checking temp folder contents ===');
-      const { data: listData, error: listError } = await supabase.storage
-        .from(bucket)
-        .list('temp');
-      
-      console.log('Temp folder listing:', {
-        hasListData: !!listData,
-        listError: listError,
-        fileCount: listData?.length || 0,
-        files: listData?.map(f => ({ name: f.name, size: f.metadata?.size, updated: f.updated_at }))
-      });
-      
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Downloaded image is empty - check upload process'
-      }), { 
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       });
     }
 
-    // Convert blob to base64 for Cloudinary upload
-    console.log('=== Converting to Base64 ===');
-    const arrayBuffer = await fileData.arrayBuffer();
-    console.log('ArrayBuffer details:', {
-      byteLength: arrayBuffer.byteLength,
-      hasData: arrayBuffer.byteLength > 0
-    });
-    
-    const base64 = btoa(
-      new Uint8Array(arrayBuffer)
-        .reduce((data, byte) => data + String.fromCharCode(byte), '')
-    );
-    const dataURI = `data:${fileData.type};base64,${base64}`;
-    
-    console.log('Base64 conversion complete:', {
-      base64Length: base64.length,
-      dataURILength: dataURI.length,
-      hasBase64: base64.length > 0,
-      mimeType: fileData.type
-    });
+    // Convert radius from miles to meters for Google API
+    const radiusMeters = radius * 1609.34;
+    const googleUrl = 'https://places.googleapis.com/v1/places:searchText';
 
-    // Upload to Cloudinary
-    console.log('=== Uploading to Cloudinary ===');
-    const timestamp = Math.round(Date.now() / 1000);
-    const folder = `imhungri/${type}`;
-    const publicId = `${type}_${userId}_${timestamp}`;
-    const eager = 'c_fill,w_1200,h_1200,q_90|c_fill,w_800,h_800,q_85|c_fill,w_400,h_400,q_80|c_fill,w_200,h_200,q_75|c_fill,w_100,h_100,q_70';
-    const format = 'webp';
+    // Preprocess query for common restaurant name patterns
+    let preprocessedQuery = query.trim();
     
-    console.log('Cloudinary upload params:', {
-      cloudName,
-      folder,
-      publicId,
-      timestamp,
-      hasApiKey: !!apiKey,
-      hasApiSecret: !!apiSecret
-    });
+    // Handle common restaurant name variations
+    const nameVariations: { [key: string]: string } = {
+      'in n out': 'in-n-out burger',
+      'in-n-out': 'in-n-out burger',
+      'innout': 'in-n-out burger',
+      'chick fil a': 'chick-fil-a',
+      'chick-fil-a': 'chick-fil-a',
+      'chickfila': 'chick-fil-a',
+      'mcdonalds': 'mcdonald\'s',
+      'mc donalds': 'mcdonald\'s',
+      'wendys': 'wendy\'s',
+      'arbys': 'arby\'s',
+      'dennys': 'denny\'s'
+    };
     
-    // Create signature for authenticated upload
-    // IMPORTANT: Include ALL parameters (except file, api_key, resource_type, cloud_name)
-    // and sort them alphabetically
-    const stringToSign = `eager=${eager}&folder=${folder}&format=${format}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
-    
-    console.log('String to sign:', stringToSign.replace(apiSecret, '[SECRET]'));
-    
-    const signature = await crypto.subtle.digest(
-      'SHA-1',
-      new TextEncoder().encode(stringToSign)
-    );
-    const signatureHex = Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-
-    const formData = new FormData();
-    formData.append('file', dataURI);
-    formData.append('api_key', apiKey);
-    formData.append('timestamp', timestamp.toString());
-    formData.append('signature', signatureHex);
-    formData.append('folder', folder);
-    formData.append('public_id', publicId);
-    
-    // Optional: Add eager transformations to generate variants immediately
-    formData.append('eager', eager);
-    formData.append('format', format); // Convert to WebP
-
-    console.log('Sending request to Cloudinary...');
-    const cloudinaryResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
+    // Check if query matches any known variations (case insensitive)
+    const lowerQuery = preprocessedQuery.toLowerCase();
+    for (const [variation, canonical] of Object.entries(nameVariations)) {
+      if (lowerQuery === variation || lowerQuery.startsWith(variation + ' ')) {
+        preprocessedQuery = canonical;
+        break;
       }
-    );
-
-    console.log('Cloudinary response:', {
-      status: cloudinaryResponse.status,
-      statusText: cloudinaryResponse.statusText,
-      ok: cloudinaryResponse.ok,
-      headers: Object.fromEntries(cloudinaryResponse.headers.entries())
-    });
-
-    if (!cloudinaryResponse.ok) {
-      const errorText = await cloudinaryResponse.text();
-      console.error('Cloudinary upload failed:', {
-        status: cloudinaryResponse.status,
-        statusText: cloudinaryResponse.statusText,
-        errorText
-      });
-      throw new Error(`Cloudinary upload failed: ${cloudinaryResponse.status} - ${errorText}`);
     }
 
-    const cloudinaryData = await cloudinaryResponse.json();
-    console.log('=== Cloudinary Upload Successful ===');
-    console.log('Cloudinary response data:', {
-      public_id: cloudinaryData.public_id,
-      secure_url: cloudinaryData.secure_url,
-      format: cloudinaryData.format,
-      width: cloudinaryData.width,
-      height: cloudinaryData.height,
-      bytes: cloudinaryData.bytes
-    });
+    // Format query to be more precise
+    // Add "restaurant" to the end to help Google understand context
+    const formattedQuery = preprocessedQuery + ' restaurant';
 
-    // Build variant URLs (Cloudinary transformations)
-    const variants = {
-      original: `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_1200,h_1200,q_90,f_webp/${cloudinaryData.public_id}`,
-      large: `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_800,h_800,q_85,f_webp/${cloudinaryData.public_id}`,
-      medium: `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_400,h_400,q_80,f_webp/${cloudinaryData.public_id}`,
-      small: `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_200,h_200,q_75,f_webp/${cloudinaryData.public_id}`,
-      thumbnail: `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_100,h_100,q_70,f_webp/${cloudinaryData.public_id}`,
-      public: cloudinaryData.secure_url, // Original uploaded URL
-      cloudinary_id: cloudinaryData.public_id // Store this for future transformations
+    const requestBody = {
+      textQuery: formattedQuery,
+      locationBias: {
+        circle: {
+          center: {
+            latitude: userLat,
+            longitude: userLng
+          },
+          radius: radiusMeters
+        }
+      },
+      // Request only food-related establishments
+      includedType: 'restaurant',
+      maxResultCount: 20,
+      // Add ranking preference for relevance
+      rankPreference: 'RELEVANCE'
     };
 
-    // Store metadata in database
-    console.log('=== Storing Metadata ===');
-    const { data: metadataResult, error: metadataError } = await supabase
-      .from('image_metadata')
-      .insert({
-        image_type: type,
-        original_path: cloudinaryData.secure_url, // Add this - use Cloudinary URL as the original path
-        variants: variants,
-        cloudinary_public_id: cloudinaryData.public_id,
-        created_at: new Date().toISOString(),
-        user_id: userId
-      })
-      .select()
-      .single();
+    // Call Google Places API (New)
+    const googleResponse = await fetch(googleUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types'
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-    if (metadataError) {
-      console.error('Metadata storage error:', metadataError);
-    } else {
-      console.log('Metadata stored successfully:', {
-        metadataId: metadataResult?.image_metadata_id
+    const googleData = await googleResponse.json();
+
+    console.log('--- Google Places API Response ---');
+    console.log(`Original Query: "${query}"`);
+    console.log(`Preprocessed Query: "${preprocessedQuery}"`);
+    console.log(`Final Query Sent: "${formattedQuery}"`);
+    console.log(`Found ${googleData.places?.length || 0} places`);
+    
+    // Log first few results for debugging
+    if (googleData.places && googleData.places.length > 0) {
+      console.log('Top results:');
+      googleData.places.slice(0, 5).forEach((place: any, idx: number) => {
+        console.log(`  ${idx + 1}. ${place.displayName?.text || 'Unknown'} - Types: ${(place.types || []).join(', ')}`);
+      });
+    }
+    console.log('------------------------------------');
+
+    // Check for errors
+    if (!googleResponse.ok) {
+      console.error('Google API error:', googleData);
+      return new Response(JSON.stringify({
+        error: 'Failed to search restaurants',
+        details: googleData.error?.message || 'Unknown error'
+      }), {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       });
     }
 
-    // Clean up temp file from Supabase Storage
-    console.log('=== Cleaning Up Temp File ===');
-    const { error: deleteError } = await supabase.storage
-      .from(bucket)
-      .remove([tempPath]);
-    
-    if (deleteError) {
-      console.warn('Failed to delete temp file:', deleteError);
-    } else {
-      console.log('Temp file deleted successfully');
-    }
+    // Transform and filter results
+    const restaurants = (googleData.places || [])
+      .map((place: any) => {
+        const distance = calculateDistance(
+          userLat,
+          userLng,
+          place.location.latitude,
+          place.location.longitude
+        );
 
-    console.log('=== Function Completed Successfully ===');
+        return {
+          google_place_id: place.id,
+          name: place.displayName?.text || place.displayName || 'Unknown Restaurant',
+          address: place.formattedAddress,
+          lat: place.location.latitude,
+          lng: place.location.longitude,
+          distance_miles: Math.round(distance * 10) / 10,
+          types: place.types || [],
+          _rawPlace: place // Keep for debugging
+        };
+      })
+      .filter((restaurant: any) => {
+        // First filter by distance
+        if (restaurant.distance_miles > radius) {
+          return false;
+        }
+        
+        // Then filter to only include food-related places
+        const types = restaurant.types;
+        const isFoodPlace = isFoodRelated(types);
+        
+        if (!isFoodPlace) {
+          console.log(`Filtered out non-food place: ${restaurant.name} (types: ${types.join(', ')})`);
+        }
+        
+        return isFoodPlace;
+      })
+      .map((restaurant: any) => {
+        // Remove the raw place object before returning
+        const { _rawPlace, ...cleanRestaurant } = restaurant;
+        return cleanRestaurant;
+      })
+      .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
+      .slice(0, 20);
+
+    console.log(`Filtered to ${restaurants.length} food-related restaurants within ${radius} miles`);
+
     return new Response(JSON.stringify({
       success: true,
-      metadataId: metadataResult?.image_metadata_id,
-      variants: variants,
-      cloudinaryId: cloudinaryData.public_id
+      restaurants,
+      count: restaurants.length
     }), {
       status: 200,
       headers: {
+        ...corsHeaders,
         'Content-Type': 'application/json'
       }
     });
-
   } catch (error) {
-    console.error('=== Function Failed ===');
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    console.error('Error in search-restaurants function:', error);
     return new Response(JSON.stringify({
-      success: false,
-      error: error.message || String(error)
-    }), { 
+      error: 'Internal server error',
+      details: error.message
+    }), {
       status: 500,
       headers: {
+        ...corsHeaders,
         'Content-Type': 'application/json'
       }
     });
