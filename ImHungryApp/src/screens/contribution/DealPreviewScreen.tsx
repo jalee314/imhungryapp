@@ -87,6 +87,11 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
         }
     }, [visible]);
 
+    const removeZipCode = (address: string) => {
+        // Remove zip code (5 digits or 5+4 digits) from the end of the address
+        return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
+    };
+
     useEffect(() => {
         const calculateRestaurantDistance = async () => {
             if (!selectedRestaurant?.lat || !selectedRestaurant?.lng) {
@@ -200,7 +205,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             <View style={styles.locationRow}>
                                 <Text style={styles.infoText}>📍 {isCalculatingDistance ? 'Calculating...' : distance} </Text>
                                 <Text style={styles.bulletText}>•</Text>
-                                <Text style={styles.infoText} numberOfLines={1}> {selectedRestaurant?.subtext}</Text>
+                                <Text style={styles.infoText} numberOfLines={1}> {removeZipCode(selectedRestaurant?.subtext || '')}</Text>
                             </View>
                             
                             {/* Valid until row */}

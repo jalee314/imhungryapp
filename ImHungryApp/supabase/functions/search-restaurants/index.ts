@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
         return isFoodPlace;
       })
       .map((restaurant: any) => {
-        // Remove the raw place object before returning
+        // Remove the raw place object before returning but keep types for cuisine matching
         const { _rawPlace, ...cleanRestaurant } = restaurant;
         return cleanRestaurant;
       })

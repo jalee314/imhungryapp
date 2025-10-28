@@ -26,7 +26,7 @@ import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
 import { useDataCache } from '../../context/DataCacheContext';
-import { useLocation } from '../../context/LocationContext';
+import { useLocation } from '../../context/LocationContext';  
 
 /**
  * Get the current authenticated user's ID

@@ -10,6 +10,7 @@ import {
   Dimensions,
   Alert,
   Linking,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -455,12 +456,11 @@ const RestaurantDetailScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header with Title and Navigation */}
       <View style={styles.header}>
-        
         <View style={styles.headerButtons}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20} color="#000000" />
@@ -517,7 +517,7 @@ const RestaurantDetailScreen: React.FC = () => {
           />
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -532,7 +532,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 0.5,
     borderBottomColor: '#D7D7D7',
-    paddingTop: 50, // Account for status bar
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -545,24 +544,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 16,
   },
   directionsButton: {
-    backgroundColor: '#FF8C4C',
+    backgroundColor: 'rgba(255, 140, 76, 0.8)',
     borderRadius: 30,
     paddingHorizontal: 24,
     paddingVertical: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   directionsButtonText: {
-    fontSize: 14,
-    fontWeight: '400',
     color: '#000000',
-    fontFamily: 'Inter',
+    fontWeight: '400',
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 15,
+    textAlign: 'center',
   },
   restaurantInfoSection: {
     paddingHorizontal: 16,
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   restaurantName: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#000000',
     fontFamily: 'Inter',
     lineHeight: 24,
