@@ -50,7 +50,7 @@ const DealDetailScreen: React.FC = () => {
   const [imageError, setImageError] = useState(false);
   
   // State to hold image dimensions for skeleton
-  const [skeletonHeight, setSkeletonHeight] = useState(300);
+  const [skeletonHeight, setSkeletonHeight] = useState(250); // Better default height
 
   // Debug the deal data
   useEffect(() => {
@@ -77,21 +77,37 @@ const DealDetailScreen: React.FC = () => {
         }
         
         if (uriToLoad) {
+          // Set a timeout to ensure skeleton shows even if Image.getSize is slow
+          const timeoutId = setTimeout(() => {
+            console.log('⚠️ Image.getSize took too long, using default skeleton height');
+            setSkeletonHeight(250); // Use reasonable default if getSize is slow
+          }, 1000); // 1 second timeout
+          
           Image.getSize(
             uriToLoad,
             (width, height) => {
+              clearTimeout(timeoutId); // Cancel timeout if getSize succeeds
               const aspectRatio = height / width;
-              const calculatedHeight = aspectRatio * Dimensions.get('window').width;
+              const calculatedHeight = Math.min(
+                aspectRatio * Dimensions.get('window').width,
+                400 // Cap max height
+              );
               setSkeletonHeight(calculatedHeight);
               console.log('✅ Preloaded image dimensions, skeleton height:', calculatedHeight);
             },
             (error) => {
+              clearTimeout(timeoutId); // Cancel timeout
               console.error('Failed to get image size:', error);
+              setSkeletonHeight(250); // Use fallback height on error
             }
           );
+        } else {
+          // If no URI to load, use default skeleton height
+          setSkeletonHeight(250);
         }
       } catch (error) {
         console.error('Error preloading image dimensions:', error);
+        setSkeletonHeight(250); // Use fallback height on error
       }
     };
     
@@ -126,8 +142,11 @@ const DealDetailScreen: React.FC = () => {
 
   // Reset image loading state when deal changes
   useEffect(() => {
+    console.log('🔄 Resetting image loading state for deal:', dealData.id);
     setImageLoading(true);
     setImageError(false);
+    // Reset dimensions so skeleton shows properly
+    setImageDimensions(null);
   }, [dealData.id]);
 
   // Fetch initial view count and subscribe to realtime updates
@@ -454,7 +473,11 @@ const DealDetailScreen: React.FC = () => {
             <View style={styles.imageWrapper}>
               {imageLoading && (
                 <View style={styles.imageLoadingContainer}>
-                  <SkeletonLoader width="100%" height={skeletonHeight} borderRadius={10} />
+                  <SkeletonLoader 
+                    width="100%" 
+                    height={Math.max(skeletonHeight, 200)} // Ensure minimum height of 200
+                    borderRadius={10} 
+                  />
                 </View>
               )}
               

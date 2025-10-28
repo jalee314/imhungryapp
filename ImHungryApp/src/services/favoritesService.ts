@@ -14,6 +14,7 @@ export interface FavoriteDeal {
   title: string;
   description: string;
   imageUrl: string;
+  imageVariants?: any; // Cloudinary variants for proper skeleton loading
   restaurantName: string;
   restaurantAddress: string;
   distance: string;
@@ -210,11 +211,13 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
       // UPDATED: Handle image URL - use Cloudinary or use 'placeholder' string
       let imageUrl = 'placeholder'; // Default to placeholder
+      let imageVariants = undefined; // Store variants for skeleton loading
       const imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
       if (imageMetadata?.variants) {
         // Use Cloudinary variants (new deals)
         const variants = imageMetadata.variants;
         imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
+        imageVariants = variants; // Preserve variants for skeleton loading
       }
       // OLD Supabase storage images will just use 'placeholder'
 
@@ -237,6 +240,7 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         title: template.title,
         description: template.description || '',
         imageUrl,
+        imageVariants, // Include variants for skeleton loading
         restaurantName: restaurant.name,
         restaurantAddress: restaurant.address,
         distance,
