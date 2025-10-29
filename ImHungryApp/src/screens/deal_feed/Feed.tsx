@@ -79,36 +79,47 @@ const Feed: React.FC = () => {
 
     if (hasLocationSet) {
       loadDeals();
+      
+      // Initialize realtime subscriptions for deal cache updates
+      dealCacheService.initializeRealtime();
+      const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
+        setTimeout(() => setDeals(updatedDeals), 0);
+      });
+
+      return () => unsubscribe();
     } else {
-      // If location is definitively not set after initialization, stop loading.
+      // If no location is set after initial load, just stop the loading indicator
+      // Don't clear existing deals - they can still be viewed
       setLoading(false);
-      setDeals([]);
     }
-
-    dealCacheService.initializeRealtime();
-    const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
-      setTimeout(() => setDeals(updatedDeals), 0);
-    });
-
-    return () => unsubscribe();
   }, [selectedCoordinates, hasLocationSet, isInitialLoad]);
 
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || deals.length === 0) return;
+      if (!user) return;
 
       const userId = user.id;
-      const dealIds = deals.map(d => d.id);
+
+      // Clean up existing subscriptions first
+      if (interactionChannel.current) {
+        supabase.removeChannel(interactionChannel.current);
+        interactionChannel.current = null;
+      }
+      if (favoriteChannel.current) {
+        supabase.removeChannel(favoriteChannel.current);
+        favoriteChannel.current = null;
+      }
 
       interactionChannel.current = supabase
         .channel('all-interactions')
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'interaction' },
-          async (payload) => {
+          async (payload: any) => {
             const interaction = payload.new || payload.old;
-            if (!dealIds.includes(interaction.deal_id) || interaction.interaction_type === 'click') return;
+            // Skip clicks - we don't need realtime updates for those
+            if (interaction.interaction_type === 'click') return;
             
             const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
             if (recentActions.current.has(actionKey)) return;
@@ -144,7 +155,7 @@ const Feed: React.FC = () => {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'favorite', filter: `user_id=eq.${userId}` },
-          (payload) => {
+          (payload: any) => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
             const isFavorited = payload.eventType === 'INSERT';
             setTimeout(() => {
@@ -157,16 +168,14 @@ const Feed: React.FC = () => {
         .subscribe();
     };
 
-    if (deals.length > 0) {
-      setupRealtimeSubscription();
-    }
+    setupRealtimeSubscription();
 
     return () => {
       if (interactionChannel.current) supabase.removeChannel(interactionChannel.current);
       if (favoriteChannel.current) supabase.removeChannel(favoriteChannel.current);
       recentActions.current.clear();
     };
-  }, [deals.length]);
+  }, []); // 🔥 CRITICAL FIX: Empty dependency array - only setup once on mount
 
   useFocusEffect(
     React.useCallback(() => {
@@ -368,8 +377,8 @@ const Feed: React.FC = () => {
       return renderErrorState();
     }
 
-    // Priority 3: After initial load is complete, if location is not set, show the prompt.
-    if (!hasLocationSet) {
+    // Priority 3: After initial load is complete, if location is not set AND no deals loaded, show the prompt.
+    if (!hasLocationSet && deals.length === 0) {
       return renderEmptyState('needs_location');
     }
 

@@ -180,46 +180,22 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
 
     initialize();
     
-    // Set up Supabase real-time subscriptions
-    const categoriesChannel = supabase.channel('categories-changes')
-      .on('postgres_changes', {
-        event: '*', // Listen for all events (insert, update, delete)
-        schema: 'public',
-        table: 'category'
-      }, () => {
-        console.log('Categories table changed, refreshing data...');
-        fetchAndCacheData();
-      })
-      .subscribe();
-      
-    const cuisinesChannel = supabase.channel('cuisines-changes')
-      .on('postgres_changes', {
-        event: '*', // Listen for all events (insert, update, delete)
-        schema: 'public',
-        table: 'cuisine'
-      }, () => {
-        console.log('Cuisines table changed, refreshing data...');
-        fetchAndCacheData();
-      })
-      .subscribe();
-      
-    // Add restaurant channel subscription - FIXED: Listen to the actual 'restaurant' table
-    const restaurantsChannel = supabase.channel('restaurants-changes')
-      .on('postgres_changes', {
-        event: '*', // Listen for all events (insert, update, delete)
-        schema: 'public',
-        table: 'restaurant' // This should match your actual table name
-      }, () => {
-        console.log('Restaurants table changed, refreshing data...');
-        fetchAndCacheData();
-      })
-      .subscribe();
-
+    // 🚀 OPTIMIZATION: Removed realtime subscriptions for static data
+    // Categories, cuisines, and restaurants rarely change, so we poll on app foreground instead
+    // This reduces unnecessary realtime connections and database load
+    
     // Set up AppState listener to refresh data when app comes to foreground
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
-        console.log('App has come to the foreground, refreshing data...');
-        fetchAndCacheData();
+        const lastFetchTime = await AsyncStorage.getItem('last_data_fetch_time');
+        const timeSinceLastFetch = lastFetchTime ? Date.now() - parseInt(lastFetchTime) : Infinity;
+        
+        // Only fetch if it's been more than 5 minutes since last fetch
+        if (timeSinceLastFetch > 300000) { // 5 minutes
+          console.log('App has come to the foreground, refreshing data...');
+          await fetchAndCacheData();
+          await AsyncStorage.setItem('last_data_fetch_time', Date.now().toString());
+        }
       }
     };
 
@@ -227,11 +203,6 @@ export const DataCacheProvider: React.FC<{children: React.ReactNode}> = ({ child
 
     // Cleanup function
     return () => {
-      // Unsubscribe from Supabase channels
-      supabase.removeChannel(categoriesChannel);
-      supabase.removeChannel(cuisinesChannel);
-      supabase.removeChannel(restaurantsChannel);
-      
       // Remove AppState listener
       if (appStateSubscription.current) {
         appStateSubscription.current.remove();

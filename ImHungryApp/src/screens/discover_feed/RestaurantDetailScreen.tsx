@@ -491,9 +491,11 @@ const RestaurantDetailScreen: React.FC = () => {
         </View>
         
         <View style={styles.restaurantDetailsContainer}>
-          <Text style={styles.restaurantDetails}>
-            <Text style={styles.cuisineText}>🍽 {cuisineName || 'Cuisine'}</Text>
-          </Text>
+          {cuisineName && (
+            <Text style={styles.restaurantDetails}>
+              <Text style={styles.cuisineText}>🍽 {cuisineName}</Text>
+            </Text>
+          )}
           <Text style={styles.restaurantDetails}>
             <Text style={styles.distanceText}>📍 {formatDistance(restaurant.distance_miles)}mi away </Text>
             <Text style={styles.separator}>• </Text>

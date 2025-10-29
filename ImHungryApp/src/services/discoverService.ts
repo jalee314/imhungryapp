@@ -171,7 +171,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
 
     // Extract unique restaurant IDs
     const uniqueRestaurantIds = Array.from(
-      new Set(restaurantIds.map(item => item.deal_template.restaurant_id))
+      new Set(restaurantIds.map((item: any) => item.deal_template.restaurant_id))
     );
 
     if (uniqueRestaurantIds.length === 0) {
@@ -185,7 +185,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
     // Get restaurant details with coordinates
     const { data: restaurants, error: restaurantsError } = await supabase
       .from('restaurants_with_coords')
-      .select('restaurant_id, name, address, restaurant_image_metadata, lat, lng') // Changed
+      .select('restaurant_id, name, address, restaurant_image_metadata, lat, lng')
       .in('restaurant_id', uniqueRestaurantIds);
 
     if (restaurantsError) {
