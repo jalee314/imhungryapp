@@ -51,6 +51,7 @@ interface Restaurant {
   lat?: number;
   lng?: number;
   address?: string;
+  distance_miles?: number;
 }
 
 interface DealCreationScreenProps {
@@ -194,6 +195,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
             lat: place.lat,
             lng: place.lng,
             address: place.address.replace(/, USA$/, ''), // Also clean the address field
+            distance_miles: place.distance_miles,
           }));
           
           setSearchResults(transformed);
@@ -221,26 +223,84 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const handleCloseCameraModal = () => setIsCameraModalVisible(false);
 
   const handleTakePhoto = async () => {
-    let result = await ImagePicker.launchCameraAsync({ 
-      allowsEditing: true, 
-      aspect: [4, 3], 
-      quality: 0.7  // Add this - compresses to 70% quality
-    });
-    handleCloseCameraModal();
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+    try {
+      console.log('🎥 Starting camera photo process...');
+      
+      // Request camera permissions
+      console.log('📱 Requesting camera permissions...');
+      const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('🔐 Camera permission status:', cameraStatus);
+      
+      if (cameraStatus.status !== 'granted') {
+        console.log('❌ Camera permission denied');
+        handleCloseCameraModal();
+        Alert.alert(
+          'Camera Permission Required',
+          'Please allow camera access in your device settings to take photos.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => ImagePicker.requestCameraPermissionsAsync() }
+          ]
+        );
+        return;
+      }
+
+      console.log('✅ Camera permission granted, launching camera...');
+      let result = await ImagePicker.launchCameraAsync({ 
+        allowsEditing: true, 
+        aspect: [4, 3], 
+        quality: 0.7
+      });
+      
+      console.log('📸 Camera result:', result);
+      handleCloseCameraModal();
+      
+      if (!result.canceled) {
+        console.log('✅ Photo taken successfully:', result.assets[0].uri);
+        setImageUri(result.assets[0].uri);
+      } else {
+        console.log('📱 User canceled camera');
+      }
+    } catch (error) {
+      handleCloseCameraModal();
+      console.error('❌ Camera error:', error);
+      Alert.alert('Camera Error', `Unable to open camera: ${error.message}. Please try again.`);
     }
   };
 
   const handleChooseFromAlbum = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({ 
-      allowsEditing: true, 
-      aspect: [4, 3], 
-      quality: 0.7  // Add this - compresses to 70% quality
-    });
-    handleCloseCameraModal();
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+    try {
+      // Request media library permissions
+      const mediaStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (mediaStatus.status !== 'granted') {
+        handleCloseCameraModal();
+        Alert.alert(
+          'Photo Library Permission Required',
+          'Please allow photo library access in your device settings to choose photos.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => ImagePicker.requestMediaLibraryPermissionsAsync() }
+          ]
+        );
+        return;
+      }
+
+      let result = await ImagePicker.launchImageLibraryAsync({ 
+        allowsEditing: true, 
+        aspect: [4, 3], 
+        quality: 0.7
+      });
+      
+      handleCloseCameraModal();
+      
+      if (!result.canceled) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      handleCloseCameraModal();
+      console.error('Photo library error:', error);
+      Alert.alert('Photo Library Error', 'Unable to open photo library. Please try again.');
     }
   };
 
@@ -276,7 +336,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
             address: selectedPlace.address || selectedPlace.subtext.split(' • ')[0],
             lat: selectedPlace.lat!,
             lng: selectedPlace.lng!,
-            distance_miles: 0,
+            distance_miles: selectedPlace.distance_miles || 0,
           });
 
           if (result.success && result.restaurant_id) {
@@ -318,6 +378,11 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       return;
     }
 
+    if (!imageUri) {
+      Alert.alert("Missing Photo", "Please add a photo to continue.");
+      return;
+    }
+
     // Check for profanity before showing preview
     try {
       const profanityCheck = await checkDealContentForProfanity(dealTitle, dealDetails);
@@ -336,6 +401,11 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const handlePost = async () => {
     if (!selectedRestaurant || !dealTitle) {
       Alert.alert("Missing Information", "Please select a restaurant and add a deal title to continue.");
+      return;
+    }
+
+    if (!imageUri) {
+      Alert.alert("Missing Photo", "Please add a photo to continue.");
       return;
     }
 

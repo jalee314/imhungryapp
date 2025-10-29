@@ -117,10 +117,6 @@ export default function UsernameScreen() {
           <View style={styles.pagePad}>
             <View style={styles.headerContainer}>
               <View style={styles.backButton} />
-
-              <TouchableOpacity style={styles.skipLink} onPress={() => (navigation as any).navigate('ProfilePhoto', { userData, profilePhoto: existingProfilePhoto })}>
-                <Text style={styles.skipText}>Skip</Text>
-              </TouchableOpacity>
             </View>
 
             <View style={styles.mainContainer}>
@@ -188,14 +184,6 @@ const styles = StyleSheet.create({
   mainContainer: { flex: 1, alignItems: 'flex-start', width: '100%' },
 
   backButton: { paddingVertical: 8, paddingHorizontal: 4, width: 44 },
-
-  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
-  skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular'
-  },
 
   titleSection: { 
     marginBottom: 40,

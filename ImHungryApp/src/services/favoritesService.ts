@@ -14,6 +14,7 @@ export interface FavoriteDeal {
   title: string;
   description: string;
   imageUrl: string;
+  imageVariants?: any; // Cloudinary variants for proper skeleton loading
   restaurantName: string;
   restaurantAddress: string;
   distance: string;
@@ -210,10 +211,13 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
       // UPDATED: Handle image URL - use Cloudinary or use 'placeholder' string
       let imageUrl = 'placeholder'; // Default to placeholder
-      if (template.image_metadata?.variants) {
+      let imageVariants = undefined; // Store variants for skeleton loading
+      const imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
+      if (imageMetadata?.variants) {
         // Use Cloudinary variants (new deals)
-        const variants = template.image_metadata.variants;
+        const variants = imageMetadata.variants;
         imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
+        imageVariants = variants; // Preserve variants for skeleton loading
       }
       // OLD Supabase storage images will just use 'placeholder'
 
@@ -222,8 +226,9 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       let userProfilePhotoUrl = null;
       if (userData && !template.is_anonymous) {
         // Try Cloudinary first
-        if (userData.image_metadata?.variants) {
-          userProfilePhotoUrl = userData.image_metadata.variants.small || userData.image_metadata.variants.thumbnail || null;
+        const userImageMetadata = Array.isArray(userData.image_metadata) ? userData.image_metadata[0] : userData.image_metadata;
+        if (userImageMetadata?.variants) {
+          userProfilePhotoUrl = userImageMetadata.variants.small || userImageMetadata.variants.thumbnail || null;
         }
         // If no Cloudinary, leave as null (don't use old Supabase storage)
       }
@@ -235,6 +240,7 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         title: template.title,
         description: template.description || '',
         imageUrl,
+        imageVariants, // Include variants for skeleton loading
         restaurantName: restaurant.name,
         restaurantAddress: restaurant.address,
         distance,
@@ -274,22 +280,9 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     const now = Date.now();
     const lastFetch = cache.lastFetch.get(cacheKey) || 0;
     
-    console.log('🔍 Cache check:', {
-      cacheKey,
-      now,
-      lastFetch,
-      cacheAge: now - lastFetch,
-      cacheDuration: cache.CACHE_DURATION,
-      hasCachedData: cache.restaurants.has(cacheKey)
-    });
-    
     if (now - lastFetch < cache.CACHE_DURATION && cache.restaurants.has(cacheKey)) {
-      const cachedData = cache.restaurants.get(cacheKey)!;
-      console.log('📦 Returning cached data:', cachedData);
-      return cachedData;
+      return cache.restaurants.get(cacheKey)!;
     }
-    
-    console.log('🔄 Cache miss or expired, fetching fresh data');
     
     // Clear cache to force fresh fetch
     cache.restaurants.delete(cacheKey);
@@ -309,45 +302,28 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       return [];
     }
 
-    console.log('🔍 Raw favorite data:', favoriteData);
-    console.log('🔍 Favorite data length:', favoriteData?.length || 0);
-
     if (!favoriteData || favoriteData.length === 0) {
-      console.log('❌ No favorite data found');
       return [];
     }
-
-    // Log each favorite entry to see the structure
-    favoriteData.forEach((fav, index) => {
-      console.log(`📝 Favorite ${index + 1}:`, {
-        restaurant_id: fav.restaurant_id,
-        created_at: fav.created_at
-      });
-    });
 
     // Get ONLY directly favorited restaurants
     const directRestaurantIds = favoriteData
       .map(fav => fav.restaurant_id)
       .filter((id): id is string => id !== null);
 
-    console.log('🏪 Direct restaurant IDs:', directRestaurantIds);
-
     if (directRestaurantIds.length === 0) {
-      console.log('❌ No directly favorited restaurants found');
       return [];
     }
 
     const allRestaurantIds = directRestaurantIds;
-    console.log('🍽️ Restaurant IDs to fetch:', allRestaurantIds);
-
-    console.log('🔍 About to fetch restaurant details for IDs:', allRestaurantIds);
 
     // Execute all queries in parallel for much better performance
     const [
       restaurantCoordsResult,
       restaurantsResult,
       cuisinesResult,
-      dealCountsResult
+      dealCountsResult,
+      mostLikedDealsResult
     ] = await Promise.all([
       // Get restaurant coordinates for distance calculation
       userLocation && allRestaurantIds.length > 0 
@@ -395,13 +371,108 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
               });
               return { data: counts, error: null };
             })
+        : Promise.resolve({ data: [] }),
+      
+      // Get the most liked deal with an image for each restaurant to use as thumbnail
+      allRestaurantIds.length > 0
+        ? (async () => {
+            try {
+              // Step 1: Get all deal templates for these restaurants (with or without image_metadata_id)
+              const { data: dealTemplates, error: templateError } = await supabase
+                .from('deal_template')
+                .select(`
+                  template_id,
+                  restaurant_id,
+                  image_url,
+                  image_metadata_id,
+                  image_metadata:image_metadata_id (
+                    variants
+                  )
+                `)
+                .in('restaurant_id', allRestaurantIds);
+
+              if (templateError) {
+                console.error('❌ Error fetching deal templates:', templateError);
+                return { data: [], error: templateError };
+              }
+
+              if (!dealTemplates || dealTemplates.length === 0) {
+                return { data: [], error: null };
+              }
+
+              // Step 2: Get deal instances for these templates
+              const templateIds = dealTemplates.map(t => t.template_id);
+              const { data: dealInstances, error: instanceError } = await supabase
+                .from('deal_instance')
+                .select('deal_id, template_id')
+                .in('template_id', templateIds);
+
+              if (instanceError) {
+                console.error('❌ Error fetching deal instances:', instanceError);
+                return { data: [], error: instanceError };
+              }
+
+              // Create a map of template_id -> deal_id
+              const templateToDealMap: Record<string, string> = {};
+              dealInstances?.forEach(instance => {
+                if (!templateToDealMap[instance.template_id]) {
+                  templateToDealMap[instance.template_id] = instance.deal_id;
+                }
+              });
+
+              // Step 3: Count upvotes for all deal_ids
+              const dealIds = Object.values(templateToDealMap);
+              
+              if (dealIds.length === 0) {
+                return { data: [], error: null };
+              }
+
+              const { data: upvotes, error: voteError } = await supabase
+                .from('interaction')
+                .select('deal_id')
+                .in('deal_id', dealIds)
+                .eq('interaction_type', 'upvote');
+
+              if (voteError) {
+                console.error('❌ Error fetching upvotes:', voteError);
+              }
+
+              // Count upvotes per deal_id
+              const upvoteCounts: Record<string, number> = {};
+              upvotes?.forEach(vote => {
+                upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
+              });
+
+              // Step 4: For each restaurant, find the deal with most upvotes
+              const mostLikedByRestaurant: Record<string, any> = {};
+              
+              dealTemplates.forEach(template => {
+                const restaurantId = template.restaurant_id;
+                const dealId = templateToDealMap[template.template_id];
+                const upvoteCount = dealId ? (upvoteCounts[dealId] || 0) : 0;
+                
+                if (!mostLikedByRestaurant[restaurantId] || 
+                    upvoteCount > mostLikedByRestaurant[restaurantId].upvote_count) {
+                  mostLikedByRestaurant[restaurantId] = {
+                    restaurant_id: restaurantId,
+                    template_id: template.template_id,
+                    image_url: template.image_url,
+                    image_metadata_id: template.image_metadata_id,
+                    image_metadata: template.image_metadata,
+                    upvote_count: upvoteCount
+                  };
+                }
+              });
+
+              return { data: Object.values(mostLikedByRestaurant), error: null };
+            } catch (error) {
+              console.error('❌ Error in most liked deals query:', error);
+              return { data: [], error: error };
+            }
+          })()
         : Promise.resolve({ data: [] })
     ]);
 
-    console.log('🔍 Restaurant coords result:', restaurantCoordsResult);
-    console.log('🔍 Restaurants result:', restaurantsResult);
-    console.log('🔍 Cuisines result:', cuisinesResult);
-    console.log('🔍 Deal counts result:', dealCountsResult);
 
     // Process restaurant coordinates
     const restaurantLocations: Record<string, { lat: number; lng: number }> = {};
@@ -426,20 +497,18 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     
     const dealCountsMap = new Map(dealCountsResult.data?.map((dc: any) => [dc.restaurant_id, dc.deal_count]) || []);
     
-    console.log('🔍 Restaurants map size:', restaurantsMap.size);
-    console.log('🔍 Restaurants map keys:', Array.from(restaurantsMap.keys()));
-    console.log('🔍 Cuisines map size:', cuisinesMap.size);
-    console.log('🔍 Deal counts map size:', dealCountsMap.size);
+    // Create a map of most liked deals for each restaurant
+    const mostLikedDealsMap = new Map();
+    mostLikedDealsResult.data?.forEach((deal: any) => {
+      mostLikedDealsMap.set(deal.restaurant_id, deal);
+    });
 
     // Create favorite restaurants from all restaurant IDs
     const restaurants: FavoriteRestaurant[] = [];
 
     for (const restaurantId of allRestaurantIds) {
-      console.log(`🔍 Processing restaurant ID: ${restaurantId}`);
       const restaurantData = restaurantsMap.get(restaurantId);
-      console.log(`🔍 Restaurant data for ${restaurantId}:`, restaurantData);
       if (!restaurantData) {
-        console.log(`❌ No restaurant data found for ${restaurantId}`);
         continue;
       }
 
@@ -465,23 +534,24 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
           : `${distanceKm.toFixed(1)}mi`;
       }
 
-      // Process restaurant image URL - add Supabase storage prefix if needed
+      // Use the image from the most liked deal at this restaurant as the thumbnail
       let imageUrl = '';
-      if (restaurantData.restaurant_image_metadata) {
-        // This is a UUID reference to image_metadata table
-        // You'll need to fetch the variants from image_metadata table
-        // For now, if you want a quick fix, you can treat it as a URL
-        if (typeof restaurantData.restaurant_image_metadata === 'string' && 
-            restaurantData.restaurant_image_metadata.startsWith('http')) {
-          imageUrl = restaurantData.restaurant_image_metadata;
-        } else {
-          // TODO: Query image_metadata table to get variants
-          // const { data: metadata } = await supabase
-          //   .from('image_metadata')
-          //   .select('variants')
-          //   .eq('image_metadata_id', restaurantData.restaurant_image_metadata)
-          //   .single();
-          // Then use imageProcessingService to get optimal variant
+      const mostLikedDeal = mostLikedDealsMap.get(restaurantId);
+      
+      if (mostLikedDeal) {
+        // Handle image_metadata - might be an array or object
+        const imageMetadata = Array.isArray(mostLikedDeal.image_metadata) 
+          ? mostLikedDeal.image_metadata[0] 
+          : mostLikedDeal.image_metadata;
+        
+        // Try to get image from Cloudinary variants first (for new deals)
+        if (imageMetadata?.variants) {
+          const variants = imageMetadata.variants;
+          imageUrl = variants.medium || variants.small || variants.large || '';
+        }
+        // Fallback to image_url if no variants (older deals might still use this)
+        else if (mostLikedDeal.image_url) {
+          imageUrl = mostLikedDeal.image_url;
         }
       }
 
@@ -496,8 +566,6 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
         isFavorited: true,
       });
     }
-    
-    console.log('✅ Final restaurants:', restaurants);
 
     // Cache the results
     cache.restaurants.set(cacheKey, restaurants);

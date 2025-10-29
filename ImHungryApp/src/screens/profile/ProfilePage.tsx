@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, Text, StyleSheet, Image, 
   TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal, ActivityIndicator,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback, Share
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -66,7 +66,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [currentUserPhotoUrl, setCurrentUserPhotoUrl] = useState<string | null>(null);
   const [dealCount, setDealCount] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'posts' | 'settings' | 'share' >('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'settings'>('posts');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -531,6 +531,37 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      const displayName = getDisplayNameValue();
+      const message = viewUser 
+        ? `Check out ${displayName}'s profile on ImHungri!`
+        : `Check out my profile on ImHungri!`;
+      
+      const result = await Share.share({
+        message: message,
+        // You can add a URL here if you have deep linking set up:
+        // url: `imhungri://profile/${userId || profile?.user_id}`
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+          console.log('Shared with activity type:', result.activityType);
+        } else {
+          // shared
+          console.log('Profile shared successfully');
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // dismissed
+        console.log('Share dismissed');
+      }
+    } catch (error) {
+      console.error('Error sharing profile:', error);
+      Alert.alert('Error', 'Could not share profile');
+    }
+  };
+
   // Show skeleton only if we have NO data at all
   if (!hasData) {
     return (
@@ -683,7 +714,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         
         <TouchableOpacity 
           style={styles.shareActionButton}
-          onPress={() => setActiveTab('share')}
+          onPress={handleShare}
         >
           <MaterialCommunityIcons name="share-variant" size={16} color="#000" />
         </TouchableOpacity>
@@ -1226,15 +1257,15 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 100,
     paddingHorizontal: 8,
-    width: 390, // Width of two cards (185 + 185) + gap (4) + paddingHorizontal (8*2) = 390
+    width: '100%',
   },
   leftCard: {
-    width: 185,
     marginBottom: 4,
+    marginRight: 4,
   },
   rightCard: {
-    width: 185,
     marginBottom: 4,
+    marginLeft: 4,
   },
   emptyContainer: {
     flex: 1,

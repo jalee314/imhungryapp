@@ -14,6 +14,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -41,10 +42,15 @@ const DealDetailScreen: React.FC = () => {
   const [isImageViewVisible, setImageViewVisible] = useState(false);
   const [modalImageLoading, setModalImageLoading] = useState(false);
   const [modalImageError, setModalImageError] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
+  const [imageViewerKey, setImageViewerKey] = useState(0);
   
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  
+  // State to hold image dimensions for skeleton
+  const [skeletonHeight, setSkeletonHeight] = useState(250); // Better default height
 
   // Debug the deal data
   useEffect(() => {
@@ -57,15 +63,76 @@ const DealDetailScreen: React.FC = () => {
     });
   }, [dealData]);
 
+  // Preload image dimensions to get proper skeleton height
+  useEffect(() => {
+    const getImageSize = async () => {
+      try {
+        let uriToLoad = '';
+        
+        if (dealData.imageVariants) {
+          // Try to get the large variant for sizing
+          uriToLoad = dealData.imageVariants.large || dealData.imageVariants.original || '';
+        } else if (typeof dealData.image === 'string') {
+          uriToLoad = dealData.image;
+        }
+        
+        if (uriToLoad) {
+          // Set a timeout to ensure skeleton shows even if Image.getSize is slow
+          const timeoutId = setTimeout(() => {
+            console.log('⚠️ Image.getSize took too long, using default skeleton height');
+            setSkeletonHeight(250); // Use reasonable default if getSize is slow
+          }, 1000); // 1 second timeout
+          
+          Image.getSize(
+            uriToLoad,
+            (width, height) => {
+              clearTimeout(timeoutId); // Cancel timeout if getSize succeeds
+              const aspectRatio = height / width;
+              const calculatedHeight = Math.min(
+                aspectRatio * Dimensions.get('window').width,
+                400 // Cap max height
+              );
+              setSkeletonHeight(calculatedHeight);
+              console.log('✅ Preloaded image dimensions, skeleton height:', calculatedHeight);
+            },
+            (error) => {
+              clearTimeout(timeoutId); // Cancel timeout
+              console.error('Failed to get image size:', error);
+              setSkeletonHeight(250); // Use fallback height on error
+            }
+          );
+        } else {
+          // If no URI to load, use default skeleton height
+          setSkeletonHeight(250);
+        }
+      } catch (error) {
+        console.error('Error preloading image dimensions:', error);
+        setSkeletonHeight(250); // Use fallback height on error
+      }
+    };
+    
+    getImageSize();
+  }, [dealData.id]);
+
   // ✨ NEW: Update context whenever deal data changes
   useEffect(() => {
     updateDeal(dealData);
   }, [dealData, updateDeal]);
 
   // Image loading handlers
-  const handleImageLoad = () => {
+  const handleImageLoad = (event?: any) => {
     setImageLoading(false);
     setImageError(false);
+    if (event?.nativeEvent?.source) {
+      const { width, height } = event.nativeEvent.source;
+      setImageDimensions({ width, height });
+      // Update skeleton height when actual image loads
+      if (width && height) {
+        const aspectRatio = height / width;
+        const calculatedHeight = aspectRatio * Dimensions.get('window').width;
+        setSkeletonHeight(calculatedHeight);
+      }
+    }
   };
 
   const handleImageError = () => {
@@ -75,8 +142,11 @@ const DealDetailScreen: React.FC = () => {
 
   // Reset image loading state when deal changes
   useEffect(() => {
+    console.log('🔄 Resetting image loading state for deal:', dealData.id);
     setImageLoading(true);
     setImageError(false);
+    // Reset dimensions so skeleton shows properly
+    setImageDimensions(null);
   }, [dealData.id]);
 
   // Fetch initial view count and subscribe to realtime updates
@@ -127,6 +197,11 @@ const DealDetailScreen: React.FC = () => {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const removeZipCode = (address: string) => {
+    // Remove zip code (5 digits or 5+4 digits) from the end of the address
+    return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
   };
 
   const handleUpvote = () => {
@@ -292,10 +367,14 @@ const DealDetailScreen: React.FC = () => {
     ? 'Anonymous' 
     : (dealData.userDisplayName || 'Unknown User');
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
   const openImageViewer = () => {
     setModalImageLoading(true);
     setModalImageError(false);
     setImageViewVisible(true);
+    // Force ScrollView to re-render with fresh state
+    setImageViewerKey(prev => prev + 1);
   };
 
   const fullScreenImageSource = dealData.imageVariants?.original || dealData.imageVariants?.large || dealData.image;
@@ -323,8 +402,8 @@ const DealDetailScreen: React.FC = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Restaurant Header */}
         <View style={styles.restaurantSection}>
-          {/* Top row with restaurant name and view count side by side */}
-          <View style={styles.restaurantTopRow}>
+          {/* Restaurant name with view count positioned absolutely */}
+          <View style={styles.restaurantHeaderContainer}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
             <View style={styles.viewCountContainer}>
               <Text style={styles.viewCount}>{viewCount} viewed</Text>
@@ -350,24 +429,35 @@ const DealDetailScreen: React.FC = () => {
           <View style={styles.restaurantInfo}>
             <View style={styles.locationRow}>
               <MaterialCommunityIcons name="map-marker" size={12} color="#FF8C4C" style={styles.locationIcon} />
-              <Text style={styles.locationText}>
+              <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
                 <Text style={styles.infoRegular}>{dealData.milesAway} away </Text>
                 <Text style={styles.infoBullet}>• </Text>
-                <Text style={styles.infoRegular}>{dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA 90638'}</Text>
+                <Text style={styles.infoRegular}>{removeZipCode(dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA')}</Text>
               </Text>
             </View>
             <View style={styles.validUntilRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={styles.clockIcon} />
               <Text style={styles.validUntilText}>Valid Until: September 20th, 2025</Text>
             </View>
-            <View style={styles.categoryRow}>
-              <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
-              <Text style={styles.categoryText}>
-                <Text style={styles.infoRegular}>{dealData.cuisine || 'Asian'} </Text>
-                <Text style={styles.infoBullet}>• </Text>
-                <Text style={styles.infoRegular}>BOGO</Text>
-              </Text>
-            </View>
+            {/* Only show category row if cuisine or deal type exists and has meaningful content */}
+            {((dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine') || 
+              (dealData.dealType && dealData.dealType.trim() !== '')) && (
+              <View style={styles.categoryRow}>
+                <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
+                <Text style={styles.categoryText}>
+                  {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && (
+                    <Text style={styles.infoRegular}>{dealData.cuisine}</Text>
+                  )}
+                  {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && 
+                   dealData.dealType && dealData.dealType.trim() !== '' && (
+                    <Text style={styles.infoBullet}> • </Text>
+                  )}
+                  {dealData.dealType && dealData.dealType.trim() !== '' && (
+                    <Text style={styles.infoRegular}>{dealData.dealType}</Text>
+                  )}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -378,16 +468,20 @@ const DealDetailScreen: React.FC = () => {
         <Text style={styles.dealTitle}>{dealData.title}</Text>
 
         {/* Deal Image */}
-        <TouchableOpacity onPress={openImageViewer}>
+        <TouchableOpacity onPress={openImageViewer} disabled={imageLoading}>
           <View style={styles.imageContainer}>
             <View style={styles.imageWrapper}>
               {imageLoading && (
                 <View style={styles.imageLoadingContainer}>
-                  <SkeletonLoader width="100%" height={300} borderRadius={10} />
+                  <SkeletonLoader 
+                    width="100%" 
+                    height={Math.max(skeletonHeight, 200)} // Ensure minimum height of 200
+                    borderRadius={10} 
+                  />
                 </View>
               )}
               
-              {dealData.imageVariants ? (
+              {!imageError && (dealData.imageVariants ? (
                 <OptimizedImage 
                   variants={dealData.imageVariants}
                   componentType="deal"
@@ -398,8 +492,10 @@ const DealDetailScreen: React.FC = () => {
                   }
                   style={[
                     styles.dealImage,
-                    imageLoading && styles.imageLoading,
-                    imageError && styles.imageError
+                    imageDimensions && {
+                      height: (imageDimensions.height / imageDimensions.width) * 350
+                    },
+                    imageLoading && { opacity: 0 }
                   ]}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
@@ -413,15 +509,16 @@ const DealDetailScreen: React.FC = () => {
                   } 
                   style={[
                     styles.dealImage,
-                    imageLoading && styles.imageLoading,
-                    imageError && styles.imageError
+                    imageDimensions && {
+                      height: (imageDimensions.height / imageDimensions.width) * 350
+                    },
+                    imageLoading && { opacity: 0 }
                   ]}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                   resizeMode="cover"
-                  fadeDuration={200}
                 />
-              )}
+              ))}
               
               {imageError && (
                 <View style={styles.imageErrorContainer}>
@@ -539,16 +636,30 @@ const DealDetailScreen: React.FC = () => {
                   {modalImageLoading && (
                       <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
                   )}
-                  <Image 
-                      source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource} 
-                      style={styles.fullScreenImage} 
-                      resizeMode="contain" 
-                      onLoad={() => setModalImageLoading(false)}
-                      onError={() => {
-                          setModalImageLoading(false);
-                          setModalImageError(true);
-                      }}
-                  />
+                  <ScrollView
+                      key={imageViewerKey}
+                      ref={scrollViewRef}
+                      style={styles.imageViewerScrollView}
+                      contentContainerStyle={styles.scrollViewContent}
+                      maximumZoomScale={3}
+                      minimumZoomScale={1}
+                      showsHorizontalScrollIndicator={false}
+                      showsVerticalScrollIndicator={false}
+                      bounces={false}
+                      bouncesZoom={true}
+                      centerContent={true}
+                  >
+                      <Image 
+                          source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource} 
+                          style={styles.fullScreenImage} 
+                          resizeMode="contain" 
+                          onLoad={() => setModalImageLoading(false)}
+                          onError={() => {
+                              setModalImageLoading(false);
+                              setModalImageError(true);
+                          }}
+                      />
+                  </ScrollView>
                   {modalImageError && (
                       <View style={styles.modalErrorContainer}>
                           <Text style={styles.modalErrorText}>Could not load image</Text>
@@ -607,13 +718,12 @@ const styles = StyleSheet.create({
   restaurantSection: {
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 16,
+    paddingBottom: 8, // Reduced from 16 to bring separator closer
   },
-  restaurantTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 0,
+  restaurantHeaderContainer: {
+    position: 'relative',
+    marginBottom: 2, // Small space between restaurant name and details
+    minHeight: 20, // Ensures space for the restaurant name
   },
   restaurantName: {
     fontSize: 18,
@@ -621,11 +731,12 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontFamily: 'Inter',
     lineHeight: 20,
-    flex: 1,
+    paddingRight: 80, // Leave space for view count on the right
     marginBottom: 0,
   },
   restaurantInfo: {
     width: '100%',
+    marginTop: 0, // No extra space - starts right after restaurant name
   },
   locationRow: {
     flexDirection: 'row',
@@ -679,8 +790,10 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   viewCountContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
     alignItems: 'flex-end',
-    marginLeft: 12,
   },
   viewCount: {
     fontSize: 12,
@@ -703,7 +816,7 @@ const styles = StyleSheet.create({
     height: 0.5,
     backgroundColor: '#DEDEDE',
     marginHorizontal: 24,
-    marginVertical: 12,
+    marginVertical: 8, // Reduced from 12 for tighter spacing
   },
   dealTitle: {
     fontSize: 18,
@@ -721,7 +834,6 @@ const styles = StyleSheet.create({
   imageWrapper: {
     position: 'relative',
     width: '100%',
-    height: 300,
     borderRadius: 10,
     backgroundColor: '#F0F0F0',
     overflow: 'hidden',
@@ -730,8 +842,8 @@ const styles = StyleSheet.create({
   },
   dealImage: {
     width: '100%',
-    height: '100%',
     borderRadius: 10,
+    alignSelf: 'center',
   },
   imageLoading: {
     opacity: 0,
@@ -779,7 +891,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#D7D7D7', // Match feed border color
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
@@ -791,6 +903,7 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 4, // Match feed styling
   },
   upvoted: {
     // No background change - only icon color changes
@@ -810,8 +923,8 @@ const styles = StyleSheet.create({
   voteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D8D8D8',
-    marginHorizontal: 4,
+    backgroundColor: '#D7D7D7', // Match feed separator color
+    marginHorizontal: 6, // Match feed margin (was 4, now 6)
   },
   rightActions: {
     flexDirection: 'row',
@@ -820,7 +933,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#D7D7D7', // Match feed border color
     borderRadius: 30,
     width: 40,
     height: 28,
@@ -899,9 +1012,19 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 1,
   },
-  fullScreenImage: {
+  imageViewerScrollView: {
+    flex: 1,
     width: '100%',
-    height: '100%',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+    resizeMode: 'contain',
   },
   modalImageLoader: {
     position: 'absolute',

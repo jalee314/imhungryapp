@@ -26,7 +26,7 @@ import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
 import { useDataCache } from '../../context/DataCacheContext';
-import { useLocation } from '../../context/LocationContext';
+import { useLocation } from '../../context/LocationContext';  
 
 /**
  * Get the current authenticated user's ID
@@ -45,16 +45,13 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
-  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission } = useLocation();
+  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad } = useLocation();
   
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // ✅ FIX: State to manage the initial race condition between component mount and location context readiness.
-  const [isInitializing, setIsInitializing] = useState(true);
 
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
@@ -74,59 +71,55 @@ const Feed: React.FC = () => {
     }
   };
 
-  // ✅ FIX: This effect now solely manages the initialization phase.
   useEffect(() => {
-    // Give the LocationContext a moment to initialize.
-    // This prevents the flash of "needs location" on cold starts for returning users.
-    const initTimer = setTimeout(() => {
-      setIsInitializing(false);
-    }, 500); // 500ms should be enough for the context to load from storage.
-
-    return () => clearTimeout(initTimer);
-  }, []);
-
-  // ✅ FIX: This effect now depends on the initialization being complete.
-  useEffect(() => {
-    // Don't do anything until the initialization timer is done.
-    if (isInitializing) {
+    // Don't do anything until the initial location load is complete.
+    if (isInitialLoad) {
       return;
     }
 
     if (hasLocationSet) {
       loadDeals();
+      
+      // Initialize realtime subscriptions for deal cache updates
+      dealCacheService.initializeRealtime();
+      const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
+        setTimeout(() => setDeals(updatedDeals), 0);
+      });
+
+      return () => unsubscribe();
     } else {
-      // If location is definitively not set after initialization, stop loading.
+      // If no location is set after initial load, just stop the loading indicator
+      // Don't clear existing deals - they can still be viewed
       setLoading(false);
-      setDeals([]);
     }
+  }, [selectedCoordinates, hasLocationSet, isInitialLoad]);
 
-    dealCacheService.initializeRealtime();
-    const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
-      setTimeout(() => setDeals(updatedDeals), 0);
-    });
-
-    return () => unsubscribe();
-  }, [selectedCoordinates, hasLocationSet, isInitializing]); // ✅ ADD isInitializing dependency
-
-
-  // (The rest of your hooks: setupRealtimeSubscription, useFocusEffect, etc. remain the same)
-  
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || deals.length === 0) return;
+      if (!user) return;
 
       const userId = user.id;
-      const dealIds = deals.map(d => d.id);
+
+      // Clean up existing subscriptions first
+      if (interactionChannel.current) {
+        supabase.removeChannel(interactionChannel.current);
+        interactionChannel.current = null;
+      }
+      if (favoriteChannel.current) {
+        supabase.removeChannel(favoriteChannel.current);
+        favoriteChannel.current = null;
+      }
 
       interactionChannel.current = supabase
         .channel('all-interactions')
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'interaction' },
-          async (payload) => {
+          async (payload: any) => {
             const interaction = payload.new || payload.old;
-            if (!dealIds.includes(interaction.deal_id) || interaction.interaction_type === 'click') return;
+            // Skip clicks - we don't need realtime updates for those
+            if (interaction.interaction_type === 'click') return;
             
             const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
             if (recentActions.current.has(actionKey)) return;
@@ -162,7 +155,7 @@ const Feed: React.FC = () => {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'favorite', filter: `user_id=eq.${userId}` },
-          (payload) => {
+          (payload: any) => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
             const isFavorited = payload.eventType === 'INSERT';
             setTimeout(() => {
@@ -175,16 +168,14 @@ const Feed: React.FC = () => {
         .subscribe();
     };
 
-    if (deals.length > 0) {
-      setupRealtimeSubscription();
-    }
+    setupRealtimeSubscription();
 
     return () => {
       if (interactionChannel.current) supabase.removeChannel(interactionChannel.current);
       if (favoriteChannel.current) supabase.removeChannel(favoriteChannel.current);
       recentActions.current.clear();
     };
-  }, [deals.length]);
+  }, []); // 🔥 CRITICAL FIX: Empty dependency array - only setup once on mount
 
   useFocusEffect(
     React.useCallback(() => {
@@ -323,6 +314,8 @@ const Feed: React.FC = () => {
     <DealCard deal={item} variant="horizontal" onUpvote={handleUpvote} onDownvote={handleDownvote} onFavorite={handleFavorite} onPress={handleDealPress} />
   );
 
+  const renderItemSeparator = () => <View style={{ width: 8 }} />;
+
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
       <View style={styles.sectionHeader}>
@@ -331,7 +324,7 @@ const Feed: React.FC = () => {
           <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
         </TouchableOpacity>
       </View>
-      <FlatList data={[1, 2, 3]} renderItem={() => <DealCardSkeleton variant="horizontal" />} keyExtractor={(item) => item.toString()} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} />
+      <FlatList data={[1, 2, 3]} renderItem={() => <DealCardSkeleton variant="horizontal" />} keyExtractor={(item) => item.toString()} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
       <View style={styles.sectionSeparator} />
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
@@ -373,10 +366,9 @@ const Feed: React.FC = () => {
     );
   };
 
-  // ✅ FIX: The main render logic is now controlled by the isInitializing state.
   const renderContent = () => {
-    // Priority 1: While initializing, ALWAYS show the skeleton loader.
-    if (isInitializing) {
+    // Priority 1: While location context is doing its initial load, ALWAYS show the skeleton loader.
+    if (isInitialLoad) {
       return renderLoadingState();
     }
     
@@ -385,8 +377,8 @@ const Feed: React.FC = () => {
       return renderErrorState();
     }
 
-    // Priority 3: After initializing, if location is not set, show the prompt.
-    if (!hasLocationSet) {
+    // Priority 3: After initial load is complete, if location is not set AND no deals loaded, show the prompt.
+    if (!hasLocationSet && deals.length === 0) {
       return renderEmptyState('needs_location');
     }
 
@@ -411,7 +403,7 @@ const Feed: React.FC = () => {
                 <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
               </TouchableOpacity>
             </View>
-            <FlatList data={communityDeals} renderItem={renderCommunityDeal} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} />
+            <FlatList data={communityDeals} renderItem={renderCommunityDeal} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
           </>
         )}
         {communityDeals.length > 0 && dealsForYou.length > 0 && <View style={styles.sectionSeparator} />}
@@ -489,8 +481,6 @@ const styles = StyleSheet.create({
   },
   seeAllButton: {
     backgroundColor: '#F1F1F1',
-    borderWidth: 0.5,
-    borderColor: '#AAAAAA',
     borderRadius: 50,
     width: 30,
     height: 30,
@@ -511,19 +501,17 @@ const styles = StyleSheet.create({
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: 10,
     paddingBottom: 100,
   },
   leftCard: {
-    width: '50%',
     marginBottom: 8,
-    paddingRight: 4,
+    marginRight: 4,
   },
   rightCard: {
-    width: '50%',
     marginBottom: 8,
-    paddingLeft: 4,
+    marginLeft: 4,
   },
   loadingContainer: {
     flex: 1,

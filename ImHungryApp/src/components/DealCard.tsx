@@ -1,7 +1,18 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import OptimizedImage from './OptimizedImage';
+import OptimizedImage, { preloadImage } from './OptimizedImage';
+
+const { width: screenWidth } = Dimensions.get('window');
+// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (8px), then divide by 2
+const HORIZONTAL_PADDING = 20; // 10px on each side
+const CARD_GAP = 8; // 4px padding on each card
+const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
+
+// Calculate horizontal card width to show ~1.5 cards (first card fully visible, half of second card visible)
+// This creates the "peek" effect that hints at horizontal scrolling
+const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.5;
 
 export interface Deal {
   id: string;
@@ -16,6 +27,7 @@ export interface Deal {
   isFavorited: boolean;
   cuisine?: string;
   cuisineId?: string;
+  dealType?: string; // e.g., "BOGO", "50% Off", "Happy Hour", etc.
   timeAgo: string;
   author?: string;
   milesAway?: string;
@@ -65,6 +77,19 @@ const DealCard: React.FC<DealCardProps> = ({
   };
 
   const handlePress = () => {
+    // Start preloading in background without blocking navigation
+    if (deal.imageVariants) {
+      // Preload the large version for detail view (full screen width)
+      preloadImage(deal.image, deal.imageVariants, { width: screenWidth, height: 400 }).catch(err => {
+        console.error('Failed to preload image:', err);
+      });
+    } else if (deal.image) {
+      preloadImage(deal.image).catch(err => {
+        console.error('Failed to preload image:', err);
+      });
+    }
+    
+    // Navigate immediately - no await, no delay
     onPress?.(deal.id);
   };
 
@@ -77,11 +102,11 @@ const DealCard: React.FC<DealCardProps> = ({
     if (deal.imageVariants) {
       // Use OptimizedImage for database images with variants
       const displaySize = variant === 'horizontal' 
-        ? { width: 220, height: 144 }
-        : { width: 185, height: 144 };
+        ? { width: HORIZONTAL_CARD_WIDTH, height: 144 }
+        : { width: VERTICAL_CARD_WIDTH, height: 144 };
       
       return (
-        <OptimizedImage
+        <OptimizedImage 
           variants={deal.imageVariants}
           componentType="deal"
           displaySize={displaySize}
@@ -105,8 +130,6 @@ const DealCard: React.FC<DealCardProps> = ({
   };
 
   if (variant === 'horizontal') {
-    const locationAuthorText = `${deal.restaurant}\n${deal.milesAway || '?mi'} away • ${deal.timeAgo} • By ${deal.author || 'Unknown'}`;
-    
     return (
       <TouchableOpacity
         style={styles.horizontalCard}
@@ -119,7 +142,14 @@ const DealCard: React.FC<DealCardProps> = ({
             {deal.title}
           </Text>
         </View>
-        <Text style={styles.horizontalDetails} numberOfLines={2}>{locationAuthorText}</Text>
+        <View style={styles.horizontalDetailsContainer}>
+          <Text style={styles.horizontalDetails} numberOfLines={1} ellipsizeMode="tail">
+            {deal.restaurant}
+          </Text>
+          <Text style={styles.horizontalDetails} numberOfLines={1}>
+            {deal.milesAway || '?mi'} away • {deal.timeAgo} • By {deal.author || 'Unknown'}
+          </Text>
+        </View>
         
         <View style={styles.horizontalInteractions}>
           <TouchableWithoutFeedback onPress={handleUpvote}>
@@ -169,9 +199,10 @@ const DealCard: React.FC<DealCardProps> = ({
   }
 
   // Vertical variant - for the 2-column grid
-  const locationAuthorText = hideAuthor 
-  ? `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
-  : `${deal.restaurant}\n${deal.cuisine || 'Cuisine'} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
+  // Build the details line, omitting cuisine if it's not specified or is 'Cuisine'
+  const detailsLine = deal.cuisine && deal.cuisine !== 'Cuisine'
+    ? `${deal.cuisine} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
+    : `${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
   
   return (
     <TouchableOpacity
@@ -181,7 +212,14 @@ const DealCard: React.FC<DealCardProps> = ({
     >
       {getImageSource()}
       <Text style={styles.verticalTitle} numberOfLines={2}>{deal.title}</Text>
-      <Text style={styles.verticalDetails} numberOfLines={2}>{locationAuthorText}</Text>
+      <View style={styles.verticalDetailsContainer}>
+        <Text style={styles.verticalDetails} numberOfLines={1} ellipsizeMode="tail">
+          {deal.restaurant}
+        </Text>
+        <Text style={styles.verticalDetails} numberOfLines={1}>
+          {detailsLine}
+        </Text>
+      </View>
       
       <View style={styles.verticalInteractions}>
         <TouchableWithoutFeedback onPress={handleUpvote}>
@@ -251,7 +289,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
-    width: 220,
+    width: HORIZONTAL_CARD_WIDTH,
     height: 273,
     justifyContent: 'center',
     overflow: 'visible',
@@ -260,6 +298,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 144,
     borderRadius: 8,
+    borderColor: '#757575',
+    borderWidth: 0.5,
     marginBottom: 8,
   },
   horizontalTitleContainer: {
@@ -277,6 +317,10 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     height: 30,
   },
+  horizontalDetailsContainer: {
+    width: '100%',
+    marginBottom: 8,
+  },
   horizontalDetails: {
     fontFamily: 'Inter',
     fontWeight: '400',
@@ -285,7 +329,6 @@ const styles = StyleSheet.create({
     color: '#757575',
     textAlign: 'left',
     width: '100%',
-    marginBottom: 8,
   },
   horizontalInteractions: {
     flexDirection: 'row',
@@ -348,7 +391,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 8,
     alignItems: 'center',
-    width: 185,
+    width: VERTICAL_CARD_WIDTH,
     height: 266,
     justifyContent: 'space-between',
   },
@@ -356,6 +399,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 144,
     borderRadius: 8,
+    borderColor: '#757575',
+    borderWidth: 0.5,
     marginBottom: 8,
   },
   verticalTitle: {
@@ -365,8 +410,12 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     color: '#000000',
     textAlign: 'left',
-    width: 161,
+    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
     height: 30,
+    marginBottom: 8,
+  },
+  verticalDetailsContainer: {
+    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
     marginBottom: 8,
   },
   verticalDetails: {
@@ -376,8 +425,7 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     color: '#757575',
     textAlign: 'left',
-    width: 161,
-    marginBottom: 8,
+    width: '100%',
   },
   verticalInteractions: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView, 
   ScrollView, TextInput as RNTextInput, Alert
@@ -23,6 +23,12 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   const navigation = useNavigation<any>();
   const profile = route?.params?.profile;
   
+  console.log('ProfileEdit: Component rendered with params:', {
+    hasProfile: !!profile,
+    updatedCuisines: route?.params?.updatedCuisines,
+    city: profile?.location_city
+  });
+  
   const [formData, setFormData] = useState({
     fullName: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
     username: profile?.display_name || '',
@@ -34,6 +40,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   const [userCuisines, setUserCuisines] = useState<string[]>([]);
   const [savedCuisines, setSavedCuisines] = useState<string[]>([]);
   const [errors, setErrors] = useState({ username: '', email: '' });
+  const hasUpdatedCuisines = useRef(false);
 
   // Fetch cuisines when screen first loads
   useEffect(() => {
@@ -42,11 +49,13 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
 
   // Listen for updated cuisines from CuisineEdit screen
   useEffect(() => {
-    if (route?.params?.updatedCuisines) {
-      setUserCuisines(route.params.updatedCuisines);
-      navigation.setParams({ updatedCuisines: undefined }); // Clear the param
+    const updatedCuisines = route?.params?.updatedCuisines;
+    if (updatedCuisines && Array.isArray(updatedCuisines)) {
+      console.log('ProfileEdit: Received updated cuisines:', updatedCuisines);
+      hasUpdatedCuisines.current = true;
+      setUserCuisines(updatedCuisines);
     }
-  }, []);
+  }, [route?.params?.updatedCuisines]);
 
   const fetchUserCuisines = async () => {
     try {
@@ -69,7 +78,13 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
         ?.map((item: any) => item.cuisine?.cuisine_name)
         .filter(Boolean) || [];
       
-      setUserCuisines(cuisineNames);
+      // Only update cuisines if we haven't received updated ones from CuisineEdit
+      if (!hasUpdatedCuisines.current) {
+        console.log('ProfileEdit: Setting cuisines from database:', cuisineNames);
+        setUserCuisines(cuisineNames);
+      } else {
+        console.log('ProfileEdit: Skipping database cuisines, using updated ones instead');
+      }
       setSavedCuisines(cuisineNames);
     } catch (error) {
       console.error('Error fetching cuisines:', error);
@@ -191,9 +206,15 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
       
       await ProfileCacheService.clearCache();
       
-      // Navigate back to ProfilePage
+      // Reset the flag so next time we come to edit, cuisines are fetched fresh
+      hasUpdatedCuisines.current = false;
+      
+      // Navigate back to ProfileMain - pop all the way back to avoid infinite loop
       Alert.alert('Success', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { text: 'OK', onPress: () => {
+          // Navigate back to ProfileMain (the actual profile screen name in the navigator)
+          navigation.navigate('ProfileMain' as never);
+        }}
       ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile. Please try again.');

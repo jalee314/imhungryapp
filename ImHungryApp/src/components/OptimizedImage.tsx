@@ -2,6 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { Image, ImageProps, PixelRatio, Dimensions } from 'react-native';
 import { getOptimalImageVariant, getImageUrl, ImageVariants, VariantContext } from '../services/imageProcessingService';
 
+// Static set to track preloaded images
+const preloadedImages = new Set<string>();
+
+/**
+ * Preload an image before displaying it
+ */
+export const preloadImage = async (imageSource: any, variants?: ImageVariants, displaySize?: { width: number; height: number }) => {
+  try {
+    let uriToLoad = '';
+    
+    // If we have variants, get the optimal variant
+    if (variants && displaySize) {
+      const context: VariantContext = {
+        componentType: 'deal',
+        displaySize,
+        devicePixelRatio: PixelRatio.get(),
+        screenWidth: Dimensions.get('window').width,
+      };
+      const optimalVariant = getOptimalImageVariant(variants, context);
+      uriToLoad = getImageUrl(optimalVariant);
+    } else {
+      // Fallback to original image source
+      if (typeof imageSource === 'string') {
+        uriToLoad = imageSource;
+      } else {
+        const resolved = Image.resolveAssetSource(imageSource);
+        uriToLoad = resolved.uri;
+      }
+    }
+    
+    if (uriToLoad && !preloadedImages.has(uriToLoad)) {
+      console.log('🖼️ Preloading image:', uriToLoad);
+      await Image.prefetch(uriToLoad);
+      preloadedImages.add(uriToLoad);
+      console.log('✅ Image preloaded:', uriToLoad);
+    }
+  } catch (error) {
+    console.error('Error preloading image:', error);
+  }
+};
+
 interface OptimizedImageProps extends Omit<ImageProps, 'source'> {
   variants: ImageVariants;
   componentType: 'profile' | 'deal' | 'restaurant' | 'franchise_logo';

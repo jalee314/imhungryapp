@@ -1,5 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+
+const { width: screenWidth } = Dimensions.get('window');
+// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (8px), then divide by 2
+const HORIZONTAL_PADDING = 20; // 10px on each side
+const CARD_GAP = 8; // 4px padding on each card
+const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
+
+// Calculate horizontal card width to show ~1.5 cards (first card fully visible, half of second card visible)
+const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.5;
 
 interface DealCardSkeletonProps {
   variant?: 'horizontal' | 'vertical';
@@ -89,7 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
-    width: 220,
+    width: HORIZONTAL_CARD_WIDTH,
     height: 273,
     justifyContent: 'center',
   },
@@ -140,7 +150,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 8,
     alignItems: 'center',
-    width: 185,
+    width: VERTICAL_CARD_WIDTH,
     height: 266,
     justifyContent: 'space-between',
   },
@@ -151,13 +161,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   verticalTitleSkeleton: {
-    width: 161,
+    width: VERTICAL_CARD_WIDTH - 24,
     height: 30,
     borderRadius: 4,
     marginBottom: 8,
   },
   verticalDetailsSkeleton: {
-    width: 161,
+    width: VERTICAL_CARD_WIDTH - 24,
     height: 24,
     borderRadius: 4,
     marginBottom: 8,

@@ -269,6 +269,7 @@ const getRankedDealIds = async (): Promise<string[]> => {
       return [];
     }
 
+    const startTime = Date.now();
     const { data, error } = await supabase.functions.invoke('ranking_posts', {
       body: {
         user_id: await getCurrentUserId(),
@@ -278,6 +279,8 @@ const getRankedDealIds = async (): Promise<string[]> => {
         }
       }
     });
+    const rankingTime = Date.now() - startTime;
+    console.log(`⏱️ Ranking function took: ${rankingTime}ms`);
 
     if (error) {
       return [];

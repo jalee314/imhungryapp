@@ -19,6 +19,7 @@ interface LocationContextType {
   updateLocation: (location: LocationItem) => void;
   loadCurrentLocation: () => Promise<void>;
   isLoading: boolean;
+  isInitialLoad: boolean;
   selectedCoordinates: { lat: number; lng: number } | null;
   hasLocationSet: boolean;
   hasLocationPermission: boolean;
@@ -35,64 +36,34 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentLocation, setCurrentLocation] = useState<string>('Location');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedCoordinates, setSelectedCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [hasLocationSet, setHasLocationSet] = useState<boolean>(false);
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean>(false);
   const hasLoadedLocation = useRef(false);
 
-  // Helper function to get full location display "City, State" format
-  const getFullLocationDisplay = async (latitude: number, longitude: number): Promise<string> => {
-    try {
-      const reverseGeocode = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-      
-      if (reverseGeocode && reverseGeocode.length > 0) {
-        const location = reverseGeocode[0];
-        const city = location.city || location.subregion || 'Unknown City';
-        const state = location.region || location.isoCountryCode || 'CA';
-        
-        // Format state abbreviation if it's a full state name
-        let stateAbbr = state;
-        if (state.length > 2) {
-          // For common states, convert to abbreviation
-          const stateMap: { [key: string]: string } = {
-            'California': 'CA',
-            'New York': 'NY',
-            'Texas': 'TX',
-            'Florida': 'FL',
-            // Add more as needed
-          };
-          stateAbbr = stateMap[state] || state.substring(0, 2).toUpperCase();
-        }
-        
-        return `${city}, ${stateAbbr}`;
-      }
-    } catch (error) {
-      console.warn('Failed to get full location display:', error);
-    }
-    return 'Unknown Location';
-  };
-
   const loadCurrentLocation = async () => {
     try {
       setIsLoading(true);
+      const startTime = Date.now();
       const location = await getCurrentUserLocation();
+      const loadTime = Date.now() - startTime;
+      
       if (location) {
-        // Get a properly formatted "City, State" display
-        const displayName = await getFullLocationDisplay(location.lat, location.lng);
+        // Use city from database (much faster than reverse geocoding!)
+        const displayName = location.city || 'Unknown Location';
         
         setCurrentLocation(displayName);
         // Also set the coordinates for filtering and search functionality
         setSelectedCoordinates({ lat: location.lat, lng: location.lng });
         setHasLocationSet(true);
         hasLoadedLocation.current = true;
-        console.log('Loaded user location from database:', { 
+        console.log(`✅ Location loaded in ${loadTime}ms (from database, no geocoding):`, { 
           display: displayName,
           coordinates: { lat: location.lat, lng: location.lng }
         });
       } else {
+        console.log(`⚠️ No location found (${loadTime}ms)`);
         setHasLocationSet(false);
       }
     } catch (error) {
@@ -100,6 +71,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setHasLocationSet(false);
     } finally {
       setIsLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -134,6 +106,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       // Only load if we haven't already loaded a location to prevent flashing
       if (!hasLoadedLocation.current) {
         loadCurrentLocation();
+      } else {
+        // If location was already loaded (e.g., from a previous session), mark initial load as complete
+        setIsInitialLoad(false);
       }
       // Always check permission status when authenticated
       checkPermissionStatus();
@@ -145,6 +120,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setHasLocationSet(false);
       setHasLocationPermission(false);
       hasLoadedLocation.current = false;
+      setIsInitialLoad(false);
     }
   }, [isAuthenticated, authLoading]);
 
@@ -154,6 +130,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     updateLocation,
     loadCurrentLocation,
     isLoading,
+    isInitialLoad,
     selectedCoordinates,
     hasLocationSet,
     hasLocationPermission,

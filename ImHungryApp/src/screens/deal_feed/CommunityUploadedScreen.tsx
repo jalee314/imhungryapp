@@ -96,11 +96,20 @@ const CommunityUploadedScreen: React.FC = () => {
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || deals.length === 0) return;
+      if (!user) return;
 
       const userId = user.id;
       currentUserId.current = userId;
-      const dealIds = deals.map(d => d.id);
+
+      // Clean up existing subscriptions first
+      if (interactionChannel.current) {
+        supabase.removeChannel(interactionChannel.current);
+        interactionChannel.current = null;
+      }
+      if (favoriteChannel.current) {
+        supabase.removeChannel(favoriteChannel.current);
+        favoriteChannel.current = null;
+      }
 
       // Subscribe to interaction changes (for OTHER users' votes)
       interactionChannel.current = supabase
@@ -114,9 +123,6 @@ const CommunityUploadedScreen: React.FC = () => {
           },
           async (payload) => {
             const interaction = payload.new;
-            
-            // Only update if it affects our visible deals
-            if (!dealIds.includes(interaction.deal_id)) return;
             
             // Skip click events (too noisy)
             if (interaction.interaction_type === 'click') return;
@@ -174,7 +180,7 @@ const CommunityUploadedScreen: React.FC = () => {
             table: 'favorite',
             filter: `user_id=eq.${userId}`,
           },
-          (payload) => {
+          (payload: any) => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
             
             // Skip if we're already processing this action
@@ -199,9 +205,7 @@ const CommunityUploadedScreen: React.FC = () => {
         });
     };
 
-    if (deals.length > 0) {
-      setupRealtimeSubscription();
-    }
+    setupRealtimeSubscription();
 
     return () => {
       if (interactionChannel.current) {
@@ -212,7 +216,7 @@ const CommunityUploadedScreen: React.FC = () => {
       }
       recentActions.current.clear();
     };
-  }, [deals.length]);
+  }, []); // 🔥 CRITICAL FIX: Empty dependency array - only setup once on mount
 
   // Refresh vote states when returning to screen
   // REMOVED useFocusEffect - optimistic updates work without it!
@@ -522,16 +526,16 @@ const styles = StyleSheet.create({
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 4,
+    justifyContent: 'flex-start',
+    paddingBottom: 100,
   },
   leftCard: {
-    width: '48%',
-    marginBottom: 4,
+    marginBottom: 8,
+    marginRight: 4,
   },
   rightCard: {
-    width: '48%',
-    marginBottom: 4,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   loadingContainer: {
     flex: 1,

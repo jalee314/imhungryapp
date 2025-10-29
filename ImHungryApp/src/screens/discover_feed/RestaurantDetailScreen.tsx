@@ -10,9 +10,11 @@ import {
   Dimensions,
   Alert,
   Linking,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 import RowCard, { RowCardData } from '../../components/RowCard';
 import { DiscoverRestaurant } from '../../services/discoverService';
@@ -454,12 +456,11 @@ const RestaurantDetailScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header with Title and Navigation */}
       <View style={styles.header}>
-        
         <View style={styles.headerButtons}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20} color="#000000" />
@@ -475,19 +476,26 @@ const RestaurantDetailScreen: React.FC = () => {
       <View style={styles.restaurantInfoSection}>
         <View style={styles.restaurantHeader}>
           <Text style={styles.restaurantName}>{restaurant.name}</Text>
-          <TouchableOpacity style={styles.heartButton} onPress={handleRestaurantFavorite} disabled={favoriteLoading}>
-            <Ionicons 
-              name={isRestaurantFavorited ? "heart" : "heart-outline"} 
-              size={22} 
-              color={isRestaurantFavorited ? "#FF1E00" : "#000000"} 
+          <TouchableOpacity 
+            style={[styles.heartButton, isRestaurantFavorited && styles.favorited]} 
+            onPress={handleRestaurantFavorite} 
+            disabled={favoriteLoading}
+            activeOpacity={0.6}
+          >
+            <MaterialCommunityIcons
+              name={isRestaurantFavorited ? "heart" : "heart-outline"}
+              size={19} 
+              color={isRestaurantFavorited ? "#FF1E00" : "#000"} 
             />
           </TouchableOpacity>
         </View>
         
         <View style={styles.restaurantDetailsContainer}>
-          <Text style={styles.restaurantDetails}>
-            <Text style={styles.cuisineText}>🍽 {cuisineName || 'Cuisine'}</Text>
-          </Text>
+          {cuisineName && (
+            <Text style={styles.restaurantDetails}>
+              <Text style={styles.cuisineText}>🍽 {cuisineName}</Text>
+            </Text>
+          )}
           <Text style={styles.restaurantDetails}>
             <Text style={styles.distanceText}>📍 {formatDistance(restaurant.distance_miles)}mi away </Text>
             <Text style={styles.separator}>• </Text>
@@ -511,7 +519,7 @@ const RestaurantDetailScreen: React.FC = () => {
           />
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -526,7 +534,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 0.5,
     borderBottomColor: '#D7D7D7',
-    paddingTop: 50, // Account for status bar
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -539,24 +546,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 16,
   },
   directionsButton: {
-    backgroundColor: '#FF8C4C',
+    backgroundColor: 'rgba(255, 140, 76, 0.8)',
     borderRadius: 30,
     paddingHorizontal: 24,
     paddingVertical: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   directionsButtonText: {
-    fontSize: 14,
-    fontWeight: '400',
     color: '#000000',
-    fontFamily: 'Inter',
+    fontWeight: '400',
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 15,
+    textAlign: 'center',
   },
   restaurantInfoSection: {
     paddingHorizontal: 16,
@@ -571,16 +579,21 @@ const styles = StyleSheet.create({
   },
   restaurantName: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#000000',
     fontFamily: 'Inter',
     lineHeight: 24,
   },
   heartButton: {
-    width: 22,
-    height: 22,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    width: 40,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  favorited: {
+    // Don't change background - only the heart icon color changes
   },
   restaurantDetailsContainer: {
     flexDirection: 'column',

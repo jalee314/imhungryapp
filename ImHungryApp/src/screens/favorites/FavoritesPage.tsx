@@ -302,6 +302,7 @@ const FavoritesPage: React.FC = () => {
         restaurant: deal.restaurantName,
         details: deal.description,
         image: deal.imageUrl ? { uri: deal.imageUrl } : require('../../../img/default-rest.png'),
+        imageVariants: deal.imageVariants, // Include variants for proper skeleton loading
         votes: 0, // We don't have vote data in favorites
         isUpvoted: false,
         isDownvoted: false,

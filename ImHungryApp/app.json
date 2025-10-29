@@ -16,8 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.imhungri",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "We need access to your photos so you can select a profile picture.",
-        "NSCameraUsageDescription": "We need access to your camera so you can select a profile picture.",
+        "NSPhotoLibraryUsageDescription": "We need access to your photos so you can add photos to your posts and update your profile.",
+        "NSCameraUsageDescription": "We need access to your camera so you can take photos for your posts and profile.",
         "NSLocationWhenInUseUsageDescription": "We use your location to find restaurants and food spots near you.",
         "NSUserNotificationsUsageDescription": "We send notifications to let you know when your friends are hungry or when there's a new match.",
         "CFBundleURLTypes": [
@@ -38,7 +38,9 @@
       "edgeToEdgeEnabled": true,
       "package": "Adaluna.imhungry",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {

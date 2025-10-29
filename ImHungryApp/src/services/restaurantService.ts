@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { mapAndCreateRestaurantCuisine } from './cuisineMappingService';
 
 export interface GooglePlaceResult {
   google_place_id: string;
@@ -7,6 +8,7 @@ export interface GooglePlaceResult {
   lat: number;
   lng: number;
   distance_miles: number;
+  types: string[]; // Google Places API types for cuisine mapping
 }
 
 export interface RestaurantSearchResult {
@@ -67,6 +69,7 @@ export const searchRestaurants = async (
 /**
  * Get or create restaurant in database using RPC
  * Handles brand matching automatically via database function
+ * Also creates restaurant_cuisine entries based on Google Places types
  * Returns restaurant_id for deal creation
  */
 export const getOrCreateRestaurant = async (
@@ -74,6 +77,15 @@ export const getOrCreateRestaurant = async (
 ): Promise<{ success: boolean; restaurant_id?: string; error?: string }> => {
   try {
     console.log('🔄 Getting/creating restaurant via RPC:', placeData.name);
+
+    // First, check if restaurant already exists to determine if we need cuisine mapping
+    const { data: existingRestaurant } = await supabase
+      .from('restaurant')
+      .select('restaurant_id')
+      .eq('google_place_id', placeData.google_place_id)
+      .single();
+
+    const restaurantExisted = !!existingRestaurant;
 
     // Call the RPC function that handles duplicate checking and brand matching
     const { data: restaurantId, error: rpcError } = await supabase
@@ -91,6 +103,39 @@ export const getOrCreateRestaurant = async (
     }
 
     console.log('✅ Restaurant ID:', restaurantId);
+
+    // If restaurant was newly created or doesn't have cuisine mapping yet, apply cuisine mapping
+    if (!restaurantExisted || restaurantId) {
+      try {
+        // Check if restaurant already has cuisine mappings
+        const { data: existingCuisineMapping } = await supabase
+          .from('restaurant_cuisine')
+          .select('restaurant_id')
+          .eq('restaurant_id', restaurantId)
+          .limit(1);
+
+        // Only create cuisine mapping if none exists
+        if (!existingCuisineMapping || existingCuisineMapping.length === 0) {
+          console.log('🍽️ Applying cuisine mapping for restaurant:', placeData.name);
+          const cuisineMappingSuccess = await mapAndCreateRestaurantCuisine(
+            restaurantId, 
+            placeData.types || []
+          );
+          
+          if (cuisineMappingSuccess) {
+            console.log('✅ Cuisine mapping applied successfully');
+          } else {
+            console.warn('⚠️ Cuisine mapping failed, but restaurant creation succeeded');
+          }
+        } else {
+          console.log('ℹ️ Restaurant already has cuisine mapping, skipping');
+        }
+      } catch (cuisineError) {
+        console.error('Error applying cuisine mapping:', cuisineError);
+        // Don't fail the whole operation if cuisine mapping fails
+      }
+    }
+
     return { success: true, restaurant_id: restaurantId };
   } catch (error) {
     console.error('Error in getOrCreateRestaurant:', error);

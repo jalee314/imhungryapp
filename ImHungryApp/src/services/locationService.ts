@@ -9,6 +9,7 @@ interface UserLocation {
 
 /**
  * Get current user's location from database
+ * Now includes city to avoid expensive reverse geocoding
  */
 export const getCurrentUserLocation = async (): Promise<UserLocation | null> => {
   try {
@@ -20,7 +21,7 @@ export const getCurrentUserLocation = async (): Promise<UserLocation | null> => 
 
     console.log('Fetching location for user:', user.id);
 
-    // Query to extract lat/lng from PostGIS geography column
+    // Query to extract lat/lng/city from PostGIS geography column
     const { data: userData, error } = await supabase
       .rpc('get_user_location_coords', { user_uuid: user.id });
 
@@ -41,11 +42,16 @@ export const getCurrentUserLocation = async (): Promise<UserLocation | null> => 
       return null;
     }
 
-    console.log('Location found:', { lat: locationData.lat, lng: locationData.lng });
+    console.log('✅ Location found (with city from DB):', { 
+      lat: locationData.lat, 
+      lng: locationData.lng,
+      city: locationData.city 
+    });
+    
     return {
       lat: locationData.lat,
       lng: locationData.lng,
-      city: locationData.city
+      city: locationData.city // Now includes city from database!
     };
   } catch (error) {
     console.error('Error getting user location:', error);
