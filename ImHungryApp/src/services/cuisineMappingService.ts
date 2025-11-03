@@ -1,60 +1,16 @@
 import { supabase } from '../../lib/supabase';
+import { 
+  cuisineConfig, 
+  GOOGLE_PLACES_CUISINE_MAPPING,
+  CUISINE_PRIORITY_ORDER,
+  DEFAULT_CUISINE
+} from '../config/cuisineConfig';
 
 /**
- * Maps Google Places API types to cuisine names in our database
- * Based on the Google Places types returned in the search results
+ * Re-export for backwards compatibility
+ * @deprecated Import directly from '../config/cuisine.config' instead
  */
-export const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
-  // American variations
-  'american_restaurant': 'American',
-  'hamburger_restaurant': 'American',
-  'fast_food_restaurant': 'American',
-  'steak_house': 'American',
-  
-  // Asian cuisines
-  'chinese_restaurant': 'Chinese',
-  'japanese_restaurant': 'Japanese',
-  'korean_restaurant': 'Korean',
-  'thai_restaurant': 'Thai',
-  'vietnamese_restaurant': 'Vietnamese',
-  'indian_restaurant': 'Indian',
-  'sushi_restaurant': 'Japanese',
-  'ramen_restaurant': 'Japanese',
-  'noodle_house': 'Japanese', // Could also be Chinese/Vietnamese, but Japanese is common
-  
-  // European cuisines
-  'italian_restaurant': 'Italian',
-  'french_restaurant': 'French',
-  'greek_restaurant': 'Greek',
-  'german_restaurant': 'German',
-  
-  // Middle Eastern/Mediterranean
-  'mediterranean_restaurant': 'Mediterranean',
-  'middle_eastern_restaurant': 'MiddleEastern',
-  
-  // Mexican/Latin American
-  'mexican_restaurant': 'Mexican',
-  
-  // Other specific types
-  'seafood_restaurant': 'American', // Default to American for seafood
-  'pizza_restaurant': 'Italian',
-  'sandwich_shop': 'American',
-  'vegetarian_restaurant': 'American', // Could be any cuisine, defaulting to American
-  'vegan_restaurant': 'American',
-  
-  // General fallbacks
-  'restaurant': 'American', // Default fallback
-  'food': 'American',
-  'cafe': 'American',
-  'bakery': 'American',
-  'meal_takeaway': 'American',
-  'meal_delivery': 'American',
-  'bar': 'American',
-  'coffee_shop': 'American',
-  'ice_cream_shop': 'American',
-  'brunch_restaurant': 'American',
-  'breakfast_restaurant': 'American',
-};
+export { GOOGLE_PLACES_CUISINE_MAPPING };
 
 /**
  * Determines the best cuisine match for a restaurant based on Google Places types
@@ -63,56 +19,13 @@ export const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
  */
 export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): string | null => {
   if (!googlePlacesTypes || googlePlacesTypes.length === 0) {
-    return 'American'; // Default to American if no types provided
+    return cuisineConfig.defaultCuisine; // Default to American if no types provided
   }
 
-  // Priority mapping: more specific types take precedence
-  const priorityOrder = [
-    // Highly specific cuisine types (highest priority)
-    'chinese_restaurant',
-    'japanese_restaurant', 
-    'korean_restaurant',
-    'thai_restaurant',
-    'vietnamese_restaurant',
-    'indian_restaurant',
-    'italian_restaurant',
-    'french_restaurant',
-    'greek_restaurant',
-    'mexican_restaurant',
-    'mediterranean_restaurant',
-    'middle_eastern_restaurant',
-    'german_restaurant',
-    'sushi_restaurant',
-    'ramen_restaurant',
-    
-    // Moderately specific
-    'pizza_restaurant',
-    'seafood_restaurant',
-    'steak_house',
-    'hamburger_restaurant',
-    
-    // Less specific (lower priority)
-    'american_restaurant',
-    'fast_food_restaurant',
-    'sandwich_shop',
-    'vegetarian_restaurant',
-    'vegan_restaurant',
-    
-    // General fallbacks (lowest priority)
-    'restaurant',
-    'food',
-    'cafe',
-    'bakery',
-    'meal_takeaway',
-    'meal_delivery',
-    'bar',
-    'coffee_shop'
-  ];
-
-  // Check types in priority order
-  for (const priorityType of priorityOrder) {
+  // Check types in priority order (more specific types take precedence)
+  for (const priorityType of cuisineConfig.priorityOrder) {
     if (googlePlacesTypes.includes(priorityType)) {
-      const cuisine = GOOGLE_PLACES_CUISINE_MAPPING[priorityType];
+      const cuisine = cuisineConfig.getCuisineForType(priorityType);
       if (cuisine) {
         console.log(`🍽️ Mapped Google Places type '${priorityType}' to cuisine '${cuisine}'`);
         return cuisine;
@@ -122,7 +35,7 @@ export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): st
 
   // If no priority match found, check all types for any match
   for (const type of googlePlacesTypes) {
-    const cuisine = GOOGLE_PLACES_CUISINE_MAPPING[type.toLowerCase()];
+    const cuisine = cuisineConfig.getCuisineForType(type);
     if (cuisine) {
       console.log(`🍽️ Mapped Google Places type '${type}' to cuisine '${cuisine}'`);
       return cuisine;
@@ -130,8 +43,8 @@ export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): st
   }
 
   // Default fallback
-  console.log(`🍽️ No cuisine mapping found for types [${googlePlacesTypes.join(', ')}], defaulting to 'American'`);
-  return 'American';
+  console.log(`🍽️ No cuisine mapping found for types [${googlePlacesTypes.join(', ')}], defaulting to '${cuisineConfig.defaultCuisine}'`);
+  return cuisineConfig.defaultCuisine;
 };
 
 /**
