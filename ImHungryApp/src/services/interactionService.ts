@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import { getCurrentDatabaseSessionId } from './sessionService';
+import { getCurrentUserId } from '../utils/authUtils';
 
 // Interaction types matching your enum
 export type InteractionType = 
@@ -23,18 +24,7 @@ export type InteractionSource =
   | 'profile'
   | 'discover';
 
-/**
- * Get the current authenticated user's ID
- */
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
-};
+// Note: getCurrentUserId is now imported from authUtils
 
 /**
  * Log an interaction to the database

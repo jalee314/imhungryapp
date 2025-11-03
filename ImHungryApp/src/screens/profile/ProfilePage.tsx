@@ -17,7 +17,7 @@ import { ProfileCacheService } from '../../services/profileCacheService';
 import { signOut } from '../../services/sessionService';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
-import { loadCompleteUserProfile, loadCriticalProfileData, updateUserProfileCache } from '../../services/profileLoadingService';
+import { loadCompleteUserProfile, loadCriticalProfileData, updateUserProfileCache } from '../../services/profileService';
 import { UserProfileCache } from '../../services/userProfileService';
 import { fetchUserPosts, deleteDeal, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
@@ -28,16 +28,14 @@ import {
   handleTakePhoto, 
   handleChooseFromLibrary, 
   handleUserLogout, 
-  handleAccountDeletion 
-} from '../../services/profileActionsService';
-import { 
+  handleAccountDeletion,
   formatJoinDate, 
   getDisplayName, 
-  getUsernameFontSize, 
+  getUsernameFontSize,
   showProfilePhotoOptions,
   showLogoutConfirmation,
   showDeleteAccountConfirmation
-} from '../../services/profileUtilsService';
+} from '../../services/profileService';
 
 interface ProfilePageProps {}
 

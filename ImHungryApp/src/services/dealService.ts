@@ -2,21 +2,13 @@ import { Deal } from '../components/DealCard';
 import { supabase } from '../../lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';
-import { getCurrentUserLocation, calculateDistance, getRestaurantLocationsBatch } from './locationService';
+import { getCurrentUserLocation, getRestaurantLocationsBatch } from './locationService';
 import { getUserVoteStates, calculateVoteCounts } from './voteService';
 import { ImageVariants, ImageType, processImageWithEdgeFunction, getImageUrl } from './imageProcessingService';
-
-
-// Get current user ID from Supabase auth
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
-};
+import { getCurrentUserId } from '../utils/authUtils';
+import { getTimeAgo, parseDate } from '../utils/dateUtils';
+import { calculateDistance, formatDistance } from '../utils/distanceUtils';
+import type { CreateDealData as CreateDealDataType, DatabaseDeal as DatabaseDealType } from '../types/models/deal';
 
 // Upload image and get metadata ID
 const uploadDealImage = async (imageUri: string): Promise<string | null> => {
@@ -42,40 +34,9 @@ const uploadDealImage = async (imageUri: string): Promise<string | null> => {
   }
 };
 
-// Helper function to safely parse and format dates
-const parseDate = (dateString: string | null): string | null => {
-  if (!dateString || dateString === 'Unknown') {
-    return null;
-  }
-  try {
-    let date: Date;
-    if (dateString.includes('T') || dateString.includes('Z')) {
-      date = new Date(dateString);
-    } else {
-      date = new Date(dateString);
-    }
-    if (isNaN(date.getTime())) {
-      console.error('Invalid date format:', dateString);
-      return null;
-    }
-    return date.toISOString();
-  } catch (error) {
-    console.error('Error parsing date:', dateString, error);
-    return null;
-  }
-};
-
-// Interface for creating a deal
-export interface CreateDealData {
-  title: string;
-  description: string;
-  imageUri: string | null;
-  expirationDate: string | null;
-  restaurantId: string;
-  categoryId: string | null;
-  cuisineId: string | null;
-  isAnonymous: boolean;
-}
+// Re-export types for backwards compatibility
+export type CreateDealData = CreateDealDataType;
+export type DatabaseDeal = DatabaseDealType;
 
 // Create deal template ONLY (let database trigger create instance)
 export const createDeal = async (dealData: CreateDealData): Promise<{ success: boolean; error?: string }> => {
@@ -178,48 +139,7 @@ export const checkDealContentForProfanity = async (title: string, description?: 
 };
 
 
-// Interface for the ranking function response
-export interface RankedDealIds {
-  deal_ids: string[];
-}
-
-// Update DatabaseDeal interface to match your current schema
-export interface DatabaseDeal {
-  deal_id: string; // This is actually template_id from the view
-  template_id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  restaurant_name: string;
-  restaurant_address: string;
-  cuisine_name: string | null;
-  cuisine_id: string | null;
-  category_name: string | null;
-  created_at: string;
-  start_date: string;
-  end_date: string | null;
-  is_anonymous: boolean;
-  user_id: string;
-  user_display_name: string | null;
-  user_profile_photo: string | null;
-  restaurant_id: string;
-  // Add image metadata
-  image_metadata?: {
-    variants: ImageVariants;
-    image_type: ImageType;
-  };
-  // Add user profile metadata
-  user_profile_metadata?: {
-    variants: ImageVariants;
-  };
-  // Add distance
-  distance_miles?: number | null;
-  // Add vote information
-  votes?: number;
-  is_upvoted?: boolean;
-  is_downvoted?: boolean;
-  is_favorited?: boolean;
-}
+// Note: DatabaseDeal type is now imported from types/models/deal
 
 // Get user's location for ranking
 const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> => {
@@ -502,11 +422,8 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
   }
   // If no Cloudinary variant, leave as null (will show default avatar icon)
 
-  // Format distance
-  let milesAway = '?mi';
-  if (dbDeal.distance_miles !== null && dbDeal.distance_miles !== undefined) {
-    milesAway = `${Math.round(dbDeal.distance_miles * 10) / 10}mi`;
-  }
+  // Format distance using utility function
+  const milesAway = formatDistance(dbDeal.distance_miles);
 
   return {
     id: dbDeal.deal_id,
@@ -557,24 +474,7 @@ export const getDealUploaderId = async (dealId: string): Promise<string | null> 
   }
 };
 
-// Helper function to calculate time ago
-const getTimeAgo = (date: Date): string => {
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) {
-    return `${diffInSeconds}s ago`;
-  } else if (diffInSeconds < 3600) {
-    const minutes = Math.floor(diffInSeconds / 60);
-    return `${minutes}m ago`;
-  } else if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600);
-    return `${hours}h ago`;
-  } else {
-    const days = Math.floor(diffInSeconds / 86400);
-    return `${days}d ago`;
-  }
-};
+// Note: getTimeAgo is now imported from dateUtils
 
 // Fetch user's own posts
 export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {

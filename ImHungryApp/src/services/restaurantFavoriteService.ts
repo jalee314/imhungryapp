@@ -1,15 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import { getCurrentDatabaseSessionId } from './sessionService';
-
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
-};
+import { getCurrentUserId } from '../utils/authUtils';
 
 export interface RestaurantFavoriteResult {
   success: boolean;

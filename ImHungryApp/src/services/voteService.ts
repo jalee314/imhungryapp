@@ -1,18 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import { logInteraction, removeFavoriteInteractions } from './interactionService';
-
-/**
- * Get the current authenticated user's ID
- */
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
-};
+import { getCurrentUserId } from '../utils/authUtils';
 
 /**
  * Get the user's vote states for multiple deals

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
+import { getCurrentUserId as getAuthUserId } from '../utils/authUtils';
 
 // Get public URL for a file in Supabase Storage
 const getPublicUrl = (path: string) => {
@@ -36,18 +37,9 @@ export interface UserDisplayData {
   state: string;
 }
 
-/**
- * Get the current authenticated user's ID
- */
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
-};
+// Note: getCurrentUserId is now imported from authUtils as getAuthUserId
+// Use getAuthUserId() instead
+const getCurrentUserId = getAuthUserId;
 
 /**
  * Fetches user data from Supabase

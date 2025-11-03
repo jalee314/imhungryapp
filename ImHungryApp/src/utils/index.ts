@@ -9,4 +9,5 @@ export * from './authUtils';
 export * from './dateUtils';
 export * from './distanceUtils';
 export * from './validationUtils';
+export * from './errorUtils';
 

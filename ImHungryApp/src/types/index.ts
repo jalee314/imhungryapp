@@ -13,4 +13,7 @@ export * from './models/deal';
 export * from './models/restaurant';
 export * from './models/user';
 export * from './models/cuisine';
+export * from './models/report';
+export * from './models/block';
+export * from './models/favorite';
 

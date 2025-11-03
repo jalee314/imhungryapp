@@ -1,5 +1,8 @@
 import { supabase } from '../../lib/supabase';
 import { getCurrentUserLocation } from './locationService';
+import { getCurrentUserId } from '../utils/authUtils';
+import { calculateDistance } from '../utils/distanceUtils';
+import type { FavoriteDeal, FavoriteRestaurant } from '../types';
 
 // Simple cache to avoid redundant queries
 const cache = {
@@ -7,51 +10,6 @@ const cache = {
   deals: new Map<string, FavoriteDeal[]>(),
   lastFetch: new Map<string, number>(),
   CACHE_DURATION: 30000, // 30 seconds
-};
-
-export interface FavoriteDeal {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  imageVariants?: any; // Cloudinary variants for proper skeleton loading
-  restaurantName: string;
-  restaurantAddress: string;
-  distance: string;
-  dealCount: number;
-  cuisineName: string;
-  categoryName: string;
-  createdAt: string;
-  isFavorited: boolean;
-  // User information
-  userId?: string;
-  userDisplayName?: string;
-  userProfilePhoto?: string;
-  isAnonymous: boolean;
-}
-
-export interface FavoriteRestaurant {
-  id: string;
-  name: string;
-  address: string;
-  imageUrl: string;
-  distance: string;
-  dealCount: number;
-  cuisineName: string;
-  isFavorited: boolean;
-}
-
-/**
- * Get the current authenticated user's ID
- */
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
 };
 
 /**
@@ -632,19 +590,4 @@ export const clearFavoritesCache = (): void => {
   } catch (error) {
     console.error('Error clearing favorites cache:', error);
   }
-};
-
-/**
- * Calculate distance between two coordinates using Haversine formula
- */
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
 };

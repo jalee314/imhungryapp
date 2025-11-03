@@ -1,18 +1,5 @@
 import { supabase } from '../../lib/supabase';
-
-export interface ReportSubmission {
-  dealId: string;
-  reporterUserId: string;
-  uploaderUserId: string;
-  reasonCodeId: string;
-  reasonText?: string;
-}
-
-export interface ReasonCode {
-  reason_code_id: string;
-  reason_code: string;
-  description: string;
-}
+import type { ReasonCode, ReportSubmission, ReportSubmissionResult } from '../types';
 
 class ReportService {
   // Get all available reason codes from the database
@@ -34,7 +21,7 @@ class ReportService {
   }
 
   // Submit a user report
-  async submitReport(report: ReportSubmission): Promise<{ success: boolean; reportId?: string; error?: string }> {
+  async submitReport(report: ReportSubmission): Promise<ReportSubmissionResult> {
     try {
 
       // Validate required fields

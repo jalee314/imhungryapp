@@ -1,36 +1,6 @@
 import { supabase } from '../../lib/supabase';
-
-// Interface for block reason codes (you'll need to create this table)
-export interface ReasonCode {
-  reason_code_id: string;
-  reason_name: string;
-  description: string;
-}
-
-// Interface for creating a block
-export interface CreateBlockData {
-  blockerUserId: string;
-  blockedUserId: string;
-  reasonCodeId: string;
-  reasonText?: string;
-}
-
-// Interface for block submission result
-export interface BlockSubmissionResult {
-  success: boolean;
-  error?: string;
-  blockId?: string;
-}
-
-// Get current user ID from Supabase auth
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    return null;
-  }
-};
+import { getCurrentUserId } from '../utils/authUtils';
+import type { BlockReasonCode, CreateBlockData, BlockSubmissionResult, BlockedUser } from '../types';
 
 // Submit a block request
 export const submitBlock = async (
@@ -160,7 +130,7 @@ export const unblockUser = async (blockedUserId: string): Promise<BlockSubmissio
 };
 
 // Get blocked users for current user
-export const getBlockedUsers = async (): Promise<any[]> => {
+export const getBlockedUsers = async (): Promise<BlockedUser[]> => {
   try {
     const currentUser = await getCurrentUserId();
     if (!currentUser) {
