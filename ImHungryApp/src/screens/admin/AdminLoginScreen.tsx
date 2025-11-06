@@ -10,14 +10,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { supabase } from '../../../lib/supabase';
 import { adminService } from '../../services/adminService';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin } from '../../hooks/useAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 
 const AdminLoginScreen: React.FC = () => {
   const navigation = useNavigation();
   const { enterAdminMode, exitAdminMode } = useAdmin();
+  const { signIn, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,20 +35,15 @@ const AdminLoginScreen: React.FC = () => {
     enterAdminMode();
     
     try {
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      // Sign in via centralized auth action
+      await signIn(email, password);
 
       // Check if user is admin
       const isAdmin = await adminService.isAdmin();
       
       if (!isAdmin) {
         // Not an admin - sign out and exit admin mode
-        await supabase.auth.signOut();
+        await signOut();
         exitAdminMode();
         Alert.alert('Access Denied', 'You do not have admin privileges.');
         setLoading(false);

@@ -7,7 +7,11 @@ export function useAuth(): {
     isLoading: boolean;
     user: any;
     isPasswordResetMode: boolean;
+    signIn: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
+    completeSignup: (userData: any, selectedCuisines: string[]) => Promise<void>;
+    completeSignupSkip: (userData: any) => Promise<void>;
+    resetPasswordWithTokens: (accessToken: string, refreshToken: string, newPassword: string) => Promise<{ error: any } | { error: null }>;
     validateEmail: (email: string) => Promise<boolean>;
     setPasswordResetMode: (enabled: boolean) => void;
 };

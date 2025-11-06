@@ -618,15 +618,7 @@ export interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-export interface AdminContextType {
-  isAdmin: boolean;
-  loading: boolean;
-  checkAdminStatus: () => Promise<void>;
-}
-
-export interface AdminProviderProps {
-  children: React.ReactNode;
-}
+// Deprecated: AdminContext replaced by Zustand store (useAdminStore). Types removed.
 
 // ==========================================
 // Navigation Types

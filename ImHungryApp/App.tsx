@@ -7,7 +7,7 @@ import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { useAuth } from './src/hooks/useAuth';
 import { useInitializeAuth } from './src/stores/AuthStore';
-import { useAdmin } from './src/context/AdminContext';
+import { useAdmin } from './src/hooks/useAdmin';
 import AuthGuard from './src/components/AuthGuard';
 
 
@@ -54,7 +54,7 @@ import { DataCacheProvider } from './src/context/DataCacheContext';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
 import { LocationProvider } from './src/context/LocationContext';
-import { AdminProvider } from './src/context/AdminContext';
+import { useInitializeAdmin } from './src/stores/AdminStore';
 
 
 const Stack = createNativeStackNavigator();
@@ -279,6 +279,8 @@ const AppContent = () => {
 export default function App() {
   // Initialize Zustand auth store once at app start
   useInitializeAuth();
+  // Initialize admin store once at app start
+  useInitializeAdmin();
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
     'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
@@ -309,16 +311,14 @@ export default function App() {
   }
 
   return (
-    <AdminProvider>
-      <DataCacheProvider>
-        <DealUpdateProvider>
-          <FavoritesProvider>
-            <LocationProvider>
-              <AppContent />
-            </LocationProvider>
-          </FavoritesProvider>
-        </DealUpdateProvider>
-      </DataCacheProvider>
-    </AdminProvider>
+    <DataCacheProvider>
+      <DealUpdateProvider>
+        <FavoritesProvider>
+          <LocationProvider>
+            <AppContent />
+          </LocationProvider>
+        </FavoritesProvider>
+      </DealUpdateProvider>
+    </DataCacheProvider>
   );
 }

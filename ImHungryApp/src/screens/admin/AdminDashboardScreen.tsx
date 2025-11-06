@@ -12,13 +12,14 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { adminService, AppAnalytics } from '../../services/adminService';
-import { useAdmin } from '../../context/AdminContext';
-import { supabase } from '../../../lib/supabase';
+import { useAdmin } from '../../hooks/useAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 
 const AdminDashboardScreen: React.FC = () => {
   const navigation = useNavigation();
   const { exitAdminMode } = useAdmin();
+  const { signOut } = useAuth();
   const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,7 +56,7 @@ const AdminDashboardScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await supabase.auth.signOut();
+              await signOut();
               exitAdminMode();
             } catch (error) {
               console.error('Error signing out:', error);
