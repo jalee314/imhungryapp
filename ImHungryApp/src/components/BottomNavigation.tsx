@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
 
 interface BottomNavigationProps {

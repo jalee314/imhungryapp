@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import { 
   getCurrentUser,
   setupAuthStateListener,
@@ -6,8 +7,14 @@ import {
   validateEmail as authServiceValidateEmail,
   type AuthSubscription
 } from '../services/authService';
-import { initializeAuthSession, setupAppStateListener } from '../services/sessionService';
+
+import { 
+  initializeAuthSession, 
+  setupAppStateListener 
+} from '../services/sessionService';
+
 import type { User } from '@supabase/supabase-js';
+
 import React from 'react';
 
 /**
@@ -46,6 +53,9 @@ interface AuthState {
   
   /** App state listener cleanup function - called when store is destroyed */
   _appStateCleanup: (() => void) | null;
+
+  /** Internal flag to prevent double-initialization */
+  _initialized: boolean;
   
   // ============================================
   // ACTIONS - Public methods for components
@@ -118,11 +128,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   authEventCount: 0,
   _authSubscription: null,
   _appStateCleanup: null,
+  _initialized: false,
   
   // ============================================
   // INITIALIZE - Set up auth and listeners
   // ============================================
   initialize: async () => {
+    // Prevent multiple registrations that can cause duplicate events and re-renders
+    if (get()._initialized) {
+      return;
+    }
     // Step 1: Check initial auth status via sessionService
     try {
       const isAuth = await initializeAuthSession();
@@ -142,7 +157,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     // Step 2: Set up auth state listener via authService
     const subscription = setupAuthStateListener(async (event, session) => {
-      const currentState = get();
+    const currentState = get();
       
       // Prevent infinite loops
       const newCount = currentState.authEventCount + 1;
@@ -187,7 +202,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     // Step 3: Set up app state listener via sessionService
     const cleanup = setupAppStateListener();
-    set({ _appStateCleanup: cleanup });
+    set({ _appStateCleanup: cleanup, _initialized: true });
   },
   
   // ============================================
@@ -241,6 +256,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Clean up app state listener
     state._appStateCleanup?.();
     
+    // Reset internal flags
+    set({ _authSubscription: null, _appStateCleanup: null, _initialized: false });
     console.log('🧹 Auth store cleaned up');
   },
 }));

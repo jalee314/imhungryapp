@@ -1,33 +1,37 @@
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore } from '../stores/AuthStore';
 
-export const useAuth = () => {
-    const store = useAuthStore();
+// Overloads for better DX: either pass a selector or get the default shape
+export function useAuth<T>(selector: (state: any) => T, equality?: (a: T, b: T) => boolean): T;
+export function useAuth(): {
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    user: any;
+    isPasswordResetMode: boolean;
+    signOut: () => Promise<void>;
+    validateEmail: (email: string) => Promise<boolean>;
+    setPasswordResetMode: (enabled: boolean) => void;
+};
+export function useAuth<T>(selector?: (state: any) => T) {
+    if (selector) {
+        // Pass selector straight to the store
+        return useAuthStore(selector as any) as unknown as T;
+    }
+    // Default selection via individual subscriptions to avoid unnecessary renders
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const isLoading = useAuthStore((s) => s.isLoading);
+    const user = useAuthStore((s) => s.user);
+    const isPasswordResetMode = useAuthStore((s) => s.isPasswordResetMode);
+    const signOut = useAuthStore((s) => s.signOut);
+    const validateEmail = useAuthStore((s) => s.validateEmail);
+    const setPasswordResetMode = useAuthStore((s) => s.setPasswordResetMode);
 
-    const {
+    return {
         isAuthenticated,
         isLoading,
         user,
-        isPasswordResetMode,,
+        isPasswordResetMode,
         signOut,
         validateEmail,
         setPasswordResetMode,
-    } = useAuthStore(state => ({
-        isAuthenticated: state.isAuthenticated,
-        isLoading: state.isLoading,
-        user: state.user,
-        isPasswordResetMode: state.isPasswordResetMode,
-        signOut: state.signOut,
-        validateEmail: state.validateEmail,
-        setPasswordResetMode: state.setPasswordResetMode,
-    }));
-
-    return {
-    isAuthenticated,
-    isLoading,
-    user,
-    isPasswordResetMode,
-    signOut,
-    validateEmail,
-    setPasswordResetMode,
-  };
-};
+    };
+}

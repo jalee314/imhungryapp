@@ -7,10 +7,12 @@ import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function LogInScreen() {
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
+  const { isLoading: authLoading } = useAuth();
 
   const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
   const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
@@ -187,7 +189,7 @@ export default function LogInScreen() {
               <TouchableOpacity
                 style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
                 onPress={handleLogin}
-                disabled={loading}
+                disabled={loading || authLoading}
               >
                 <Text style={styles.continueButtonText}>Log in</Text>
               </TouchableOpacity>

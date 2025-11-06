@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { getCurrentUserLocation, getCityFromCoordinates, checkLocationPermission } from '../services/locationService';
-import { useAuth } from './AuthContext';
+import { useAuthStore } from '../stores/AuthStore';
 import * as Location from 'expo-location';
 
 interface LocationItem {
@@ -33,7 +33,9 @@ interface LocationProviderProps {
 }
 
 export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  // Subscribe directly to the minimal auth slices to avoid unnecessary re-renders
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const authLoading = useAuthStore((s) => s.isLoading);
   const [currentLocation, setCurrentLocation] = useState<string>('Location');
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
