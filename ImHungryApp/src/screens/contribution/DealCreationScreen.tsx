@@ -21,7 +21,7 @@ import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
-import { useDataCache } from '../../context/DataCacheContext';
+import { useDataCache } from '../../hooks/useDataCache';
 import { useDealUpdate } from '../../context/DealUpdateContext';
 import { fetchUserData, clearUserCache } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService';

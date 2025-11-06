@@ -8,7 +8,7 @@ import { useNavigation, useRoute, CommonActions } from '@react-navigation/native
 import { supabase } from '../../../lib/supabase';
 import { ProfileCacheService } from '../../services/profileCacheService';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useDataCache } from '../../context/DataCacheContext';
+import { useDataCache } from '../../hooks/useDataCache';
 
 interface ProfileEditProps {
   route?: {

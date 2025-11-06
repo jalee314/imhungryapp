@@ -25,7 +25,7 @@ import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../context/DealUpdateContext';
-import { useDataCache } from '../../context/DataCacheContext';
+import { useDataCache } from '../../hooks/useDataCache';
 import { useLocation } from '../../context/LocationContext';  
 
 /**

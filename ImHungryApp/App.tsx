@@ -50,7 +50,7 @@ import AdminDealsScreen from './src/screens/admin/AdminDealsScreen';
 import AdminUsersScreen from './src/screens/admin/AdminUsersScreen';
 import AdminMassUploadScreen from './src/screens/admin/AdminMassUploadScreen';
 
-import { DataCacheProvider } from './src/context/DataCacheContext';
+import { useInitializeDataCache } from './src/stores/DataCacheStore';
 import { DealUpdateProvider } from './src/context/DealUpdateContext';
 import { FavoritesProvider } from './src/context/FavoritesContext';
 import { LocationProvider } from './src/context/LocationContext';
@@ -281,6 +281,8 @@ export default function App() {
   useInitializeAuth();
   // Initialize admin store once at app start
   useInitializeAdmin();
+  // Initialize data cache store once at app start
+  useInitializeDataCache();
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
     'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
@@ -311,14 +313,12 @@ export default function App() {
   }
 
   return (
-    <DataCacheProvider>
-      <DealUpdateProvider>
-        <FavoritesProvider>
-          <LocationProvider>
-            <AppContent />
-          </LocationProvider>
-        </FavoritesProvider>
-      </DealUpdateProvider>
-    </DataCacheProvider>
+    <DealUpdateProvider>
+      <FavoritesProvider>
+        <LocationProvider>
+          <AppContent />
+        </LocationProvider>
+      </FavoritesProvider>
+    </DealUpdateProvider>
   );
 }
