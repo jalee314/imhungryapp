@@ -53,7 +53,8 @@ import AdminMassUploadScreen from './src/screens/admin/AdminMassUploadScreen';
 import { useInitializeDataCache } from './src/stores/DataCacheStore';
 // DealUpdateProvider removed; using Zustand store via hook now
 // FavoritesContext removed; replaced by Zustand store (useFavoritesStore)
-import { LocationProvider } from './src/context/LocationContext';
+// LocationProvider removed; replaced by Zustand store (useLocationStore)
+import { useInitializeLocation } from './src/stores/LocationStore';
 import { useInitializeAdmin } from './src/stores/AdminStore';
 
 
@@ -283,6 +284,8 @@ export default function App() {
   useInitializeAdmin();
   // Initialize data cache store once at app start
   useInitializeDataCache();
+  // Initialize location store once at app start
+  useInitializeLocation();
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
     'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
@@ -313,8 +316,6 @@ export default function App() {
   }
 
   return (
-    <LocationProvider>
-      <AppContent />
-    </LocationProvider>
+    <AppContent />
   );
 }
