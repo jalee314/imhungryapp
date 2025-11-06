@@ -6,7 +6,7 @@ import { TextInput } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { supabase } from '../../../lib/supabase';
+import { checkPhoneExists } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -89,9 +89,7 @@ export default function SignUpScreen() {
         // Use the auth hook's email validation to keep logic centralized
         exists = await validateEmail(queryValue);
       } else if (field === 'phoneNumber') {
-        const { data, error } = await supabase.rpc('check_phone_exists', { phone_input: queryValue });
-        if (error) throw error;
-        exists = data;
+        exists = await checkPhoneExists(queryValue);
       }
 
       if (exists) {

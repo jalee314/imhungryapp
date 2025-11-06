@@ -22,6 +22,10 @@ export function useAuth<T>(selector?: (state: any) => T) {
     const user = useAuthStore((s) => s.user);
     const isPasswordResetMode = useAuthStore((s) => s.isPasswordResetMode);
     const signOut = useAuthStore((s) => s.signOut);
+        const signIn = useAuthStore((s) => s.signIn);
+        const completeSignup = useAuthStore((s) => s.completeSignup);
+        const completeSignupSkip = useAuthStore((s) => s.completeSignupSkip);
+            const resetPasswordWithTokens = useAuthStore((s) => s.resetPasswordWithTokens);
     const validateEmail = useAuthStore((s) => s.validateEmail);
     const setPasswordResetMode = useAuthStore((s) => s.setPasswordResetMode);
 
@@ -31,6 +35,10 @@ export function useAuth<T>(selector?: (state: any) => T) {
         user,
         isPasswordResetMode,
         signOut,
+            signIn,
+            completeSignup,
+            completeSignupSkip,
+                resetPasswordWithTokens,
         validateEmail,
         setPasswordResetMode,
     };

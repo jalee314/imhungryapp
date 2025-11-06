@@ -211,3 +211,74 @@ export const sendPasswordResetEmail = async (
     };
   }
 };
+
+// ============================================
+// SIGN IN WITH PASSWORD
+// ============================================
+
+/**
+ * Sign in a user with email and password
+ * Returns { data, error } like Supabase
+ */
+export const signInWithPassword = async (email: string, password: string) => {
+  return supabase.auth.signInWithPassword({ email, password });
+};
+
+// ============================================
+// SIGN UP (thin wrapper)
+// ============================================
+
+/**
+ * Thin wrapper over supabase.auth.signUp so service/hook can centralize calls
+ */
+export const signUp = async (
+  params: Parameters<typeof supabase.auth.signUp>[0]
+) => {
+  return supabase.auth.signUp(params);
+};
+
+// ============================================
+// PASSWORD RESET HELPERS
+// ============================================
+
+/**
+ * Set a temporary session using access/refresh tokens
+ */
+export const setSessionWithTokens = async (access_token: string, refresh_token: string) => {
+  return supabase.auth.setSession({ access_token, refresh_token });
+};
+
+/**
+ * Update the current user's password
+ */
+export const updateUserPassword = async (newPassword: string) => {
+  return supabase.auth.updateUser({ password: newPassword });
+};
+
+/**
+ * Sign out locally (clear session without network propagation)
+ */
+export const signOutLocal = async () => {
+  return supabase.auth.signOut({ scope: 'local' as any });
+};
+
+/**
+ * Full password reset sequence: set session, update password, sign out locally
+ */
+export const resetPasswordWithTokens = async (
+  accessToken: string,
+  refreshToken: string,
+  newPassword: string
+) => {
+  const { error: sessionError } = await setSessionWithTokens(accessToken, refreshToken);
+  if (sessionError) return { error: sessionError } as const;
+
+  const { error: updateError } = await updateUserPassword(newPassword);
+  if (updateError) {
+    await signOutLocal();
+    return { error: updateError } as const;
+  }
+
+  await signOutLocal();
+  return { error: null } as const;
+};

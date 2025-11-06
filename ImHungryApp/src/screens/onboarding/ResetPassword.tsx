@@ -6,7 +6,6 @@ import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function ResetPasswordScreen() {
@@ -139,35 +138,15 @@ export default function ResetPasswordScreen() {
         return;
       }
 
-      // Set session temporarily for password update
-      // AuthContext won't react because password reset mode is enabled
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-
-      if (sessionError) {
+      // Use store-backed helper to set session, update password, and sign out locally
+      const { resetPasswordWithTokens } = useAuth();
+      const result = await resetPasswordWithTokens(accessToken, refreshToken, formData.newPassword);
+      if ((result as any).error) {
         Alert.alert('Error', 'This password reset link is invalid or has expired.');
-        isUpdatingRef.current = false;
-        return;
-      }
-
-      // Update the password
-      const { error } = await supabase.auth.updateUser({
-        password: formData.newPassword
-      });
-
-      if (error) {
-        Alert.alert('Error', error.message);
-        // Sign out even on error to ensure clean state
-        await supabase.auth.signOut({ scope: 'local' });
         isUpdatingRef.current = false;
       } else {
         // Success - sign out FIRST (synchronously), then disable password reset mode, then navigate
         console.log('Password updated successfully, signing out...');
-        
-        // Clear the session completely - use signOut with scope: 'local'
-        await supabase.auth.signOut({ scope: 'local' });
         
         // Wait a moment for the sign out to propagate
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -189,7 +168,7 @@ export default function ResetPasswordScreen() {
             'Your password has been updated successfully! Please log in with your new password.'
           );
         }, 300);
-      }
+  }
     } catch (err) {
       console.error('Password update error:', err);
       Alert.alert('Error', 'An unexpected error occurred');

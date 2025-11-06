@@ -5,8 +5,11 @@ import {
   setupAuthStateListener,
   signOut as authServiceSignOut,
   validateEmail as authServiceValidateEmail,
+  signInWithPassword,
+  resetPasswordWithTokens as resetPasswordWithTokensSvc,
   type AuthSubscription
 } from '../services/authService';
+import { completeSignup as completeSignupSvc, completeSignupSkip as completeSignupSkipSvc } from '../services/onboardingService';
 
 import { 
   initializeAuthSession, 
@@ -108,6 +111,12 @@ interface AuthState {
    * Call this when app unmounts or store is destroyed
    */
   cleanup: () => void;
+
+  // New actions
+  signIn: (email: string, password: string) => Promise<void>;
+  completeSignup: (userData: any, selectedCuisines: string[]) => Promise<void>;
+  completeSignupSkip: (userData: any) => Promise<void>;
+  resetPasswordWithTokens: (accessToken: string, refreshToken: string, newPassword: string) => Promise<{ error: any } | { error: null }>;
 }
 
 /**
@@ -259,6 +268,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Reset internal flags
     set({ _authSubscription: null, _appStateCleanup: null, _initialized: false });
     console.log('🧹 Auth store cleaned up');
+  },
+
+  // ============================================
+  // SIGN IN
+  // ============================================
+  signIn: async (email: string, password: string) => {
+    const { error } = await signInWithPassword(email, password);
+    if (error) {
+      throw error;
+    }
+  },
+
+  // ============================================
+  // COMPLETE SIGNUP
+  // ============================================
+  completeSignup: async (userData: any, selectedCuisines: string[]) => {
+    await completeSignupSvc(userData, selectedCuisines);
+  },
+
+  // ============================================
+  // COMPLETE SIGNUP (SKIP)
+  // ============================================
+  completeSignupSkip: async (userData: any) => {
+    await completeSignupSkipSvc(userData);
+  },
+
+  // ============================================
+  // RESET PASSWORD WITH TOKENS
+  // ============================================
+  resetPasswordWithTokens: async (accessToken: string, refreshToken: string, newPassword: string) => {
+    return resetPasswordWithTokensSvc(accessToken, refreshToken, newPassword);
   },
 }));
 
