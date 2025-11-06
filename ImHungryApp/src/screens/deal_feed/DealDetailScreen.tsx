@@ -21,7 +21,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
-import { useDealUpdate } from '../../context/DealUpdateContext';
+import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { getDealViewCount, logShare, logClickThrough } from '../../services/interactionService';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import OptimizedImage from '../../components/OptimizedImage';

@@ -22,7 +22,7 @@ import { UserProfileCache } from '../../services/userProfileService';
 import { fetchUserPosts, deleteDeal, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { logClick } from '../../services/interactionService';
-import { useDealUpdate } from '../../context/DealUpdateContext';
+import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { 
   uploadProfilePhoto, 
   handleTakePhoto, 

@@ -24,7 +24,7 @@ import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calcul
 import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
-import { useDealUpdate } from '../../context/DealUpdateContext';
+import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useDataCache } from '../../hooks/useDataCache';
 import { useLocation } from '../../context/LocationContext';  
 

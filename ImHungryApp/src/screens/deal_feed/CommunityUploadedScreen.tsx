@@ -17,7 +17,7 @@ import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calcul
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { supabase } from '../../../lib/supabase';
-import { useDealUpdate } from '../../context/DealUpdateContext';
+import { useDealUpdate } from '../../hooks/useDealUpdate';
 
 const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();

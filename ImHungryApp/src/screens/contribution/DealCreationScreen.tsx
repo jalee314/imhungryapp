@@ -22,7 +22,7 @@ import PhotoActionModal from '../../components/PhotoActionModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../hooks/useDataCache';
-import { useDealUpdate } from '../../context/DealUpdateContext';
+import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { fetchUserData, clearUserCache } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
