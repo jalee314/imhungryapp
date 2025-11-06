@@ -15,7 +15,7 @@ import { supabase } from '../../../lib/supabase';
 import RowCard from '../../components/RowCard';
 import { fetchFavoriteDeals, fetchFavoriteRestaurants, clearFavoritesCache, toggleRestaurantFavorite, FavoriteDeal, FavoriteRestaurant } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
-import { useFavorites } from '../../context/FavoritesContext';
+import { useFavorites } from '../../hooks/useFavorites';
 
 const FavoritesPage: React.FC = () => {
   const navigation = useNavigation();

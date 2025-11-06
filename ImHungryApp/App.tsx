@@ -51,8 +51,8 @@ import AdminUsersScreen from './src/screens/admin/AdminUsersScreen';
 import AdminMassUploadScreen from './src/screens/admin/AdminMassUploadScreen';
 
 import { useInitializeDataCache } from './src/stores/DataCacheStore';
-import { DealUpdateProvider } from './src/context/DealUpdateContext';
-import { FavoritesProvider } from './src/context/FavoritesContext';
+// DealUpdateProvider removed; using Zustand store via hook now
+// FavoritesContext removed; replaced by Zustand store (useFavoritesStore)
 import { LocationProvider } from './src/context/LocationContext';
 import { useInitializeAdmin } from './src/stores/AdminStore';
 
@@ -66,7 +66,7 @@ const DiscoverMainScreen = () => <FeedTabNavigator currentTab="discover" />;
 // Stack navigators for each tab - only containing tab-specific screens
 const FeedStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="FeedMain" component={FeedTabNavigator} />
+    <Stack.Screen name="Feed  Main" component={FeedTabNavigator} />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
   </Stack.Navigator>
 );
@@ -313,12 +313,8 @@ export default function App() {
   }
 
   return (
-    <DealUpdateProvider>
-      <FavoritesProvider>
-        <LocationProvider>
-          <AppContent />
-        </LocationProvider>
-      </FavoritesProvider>
-    </DealUpdateProvider>
+    <LocationProvider>
+      <AppContent />
+    </LocationProvider>
   );
 }
