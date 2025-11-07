@@ -3,6 +3,20 @@ import { processImageWithEdgeFunction } from './imageProcessingService';
 import { clearUserCache } from './userService';
 
 /**
+ * Check if a username is available
+ * Returns true when available, false when already taken
+ */
+export const isUsernameAvailable = async (username: string): Promise<boolean> => {
+  // Fast client-side validation first
+  if (!username || username.length < 3 || username.length > 20) return false;
+  const sanitized = username.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+  const { data, error } = await supabase.rpc('check_username_exists', { username_input: sanitized });
+  if (error) throw error;
+  // RPC returns true when username exists (taken). We invert.
+  return !data;
+};
+
+/**
  * Complete signup with cuisine preferences and optional location + profile photo
  */
 export const completeSignup = async (userData: any, selectedCuisines: string[]) => {

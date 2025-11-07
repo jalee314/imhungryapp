@@ -4,10 +4,8 @@ import {
   KeyboardAvoidingView, Platform, Alert, Image
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../../../lib/supabase';
 
 export default function ProfilePhotoScreen() {
   const navigation = useNavigation();

@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, BackHandler } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { supabase } from '../../../lib/supabase';
+import { isUsernameAvailable } from '../../services/onboardingService';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -66,14 +65,8 @@ export default function UsernameScreen() {
     setError('');
 
     try {
-      // Use database function that can be called by anonymous users
-      const { data, error: queryError } = await supabase.rpc('check_username_exists', { username_input: name });
-
-      if (queryError) { 
-        throw queryError;
-      }
-
-      if (data) {
+      const available = await isUsernameAvailable(name);
+      if (!available) {
         setError('Username is already taken.');
       }
     } catch (err) {
