@@ -80,6 +80,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
   // ---------- Data Loading (current user) ----------
   const loadProfileData = useCallback(async () => {
     try {
+      // 1) Show cached immediately (if any)
       const cached = await ProfileCacheService.getCachedProfile();
       if (cached) {
         setProfile(cached.profile);
@@ -88,25 +89,25 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
         setDealCount(cached.dealCount);
         setHasData(true);
       }
+      // 2) Then fetch fresh in background and overwrite state/cache
       const freshData = await ProfileCacheService.fetchFreshProfile();
       if (freshData) {
-        const dataChanged = JSON.stringify(freshData.profile) !== JSON.stringify(profile) ||
-          freshData.photoUrl !== photoUrl ||
-          freshData.dealCount !== dealCount;
-        if (dataChanged) {
-          setProfile(freshData.profile);
-          setPhotoUrl(freshData.photoUrl);
-            setCurrentUserPhotoUrl(freshData.photoUrl);
-          setDealCount(freshData.dealCount);
-          await ProfileCacheService.setCachedProfile(freshData.profile, freshData.photoUrl, freshData.dealCount);
-        }
+        setProfile(freshData.profile);
+        setPhotoUrl(freshData.photoUrl);
+        setCurrentUserPhotoUrl(freshData.photoUrl);
+        setDealCount(freshData.dealCount);
+        await ProfileCacheService.setCachedProfile(
+          freshData.profile,
+          freshData.photoUrl,
+          freshData.dealCount
+        );
       }
       if (!cached) setHasData(true);
     } catch (err) {
       console.error('Error loading profile:', err);
       setHasData(true);
     }
-  }, [profile, photoUrl, dealCount]);
+  }, []);
 
   // ---------- Data Loading (other user) ----------
   const loadOtherUserProfile = useCallback(async (targetUserId: string) => {
@@ -153,7 +154,9 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     } else {
       loadProfileData();
     }
-  }, [viewUser, userId, loadOtherUserProfile, loadProfileData]);
+    // Intentionally exclude function identities to avoid effect re-triggers on state changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewUser, userId]);
 
   // Focus refresh
   useFocusEffect(
@@ -167,25 +170,19 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
   // Refresh after post added & for current user only
   const refreshProfile = useCallback(async () => {
     const freshData = await ProfileCacheService.forceRefresh();
-    if (freshData) {
-      setProfile(freshData.profile);
-      setPhotoUrl(freshData.photoUrl);
-      setCurrentUserPhotoUrl(freshData.photoUrl);
-      setDealCount(freshData.dealCount);
-    }
-  }, []);
+    if (!freshData) return;
+    // Only update if something actually changed
+    const samePhoto = freshData.photoUrl === photoUrl;
+    const sameDeals = freshData.dealCount === dealCount;
+    const sameProfile = JSON.stringify(freshData.profile) === JSON.stringify(profile);
+    if (samePhoto && sameDeals && sameProfile) return;
+    setProfile(freshData.profile);
+    setPhotoUrl(freshData.photoUrl);
+    setCurrentUserPhotoUrl(freshData.photoUrl);
+    setDealCount(freshData.dealCount);
+  }, [photoUrl, dealCount, profile]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (postAdded) {
-        loadUserPosts();
-        setPostAdded(false);
-      }
-      if (!viewUser) {
-        refreshProfile();
-      }
-    }, [viewUser, postAdded, refreshProfile])
-  );
+  // Defer focus logic that depends on loadUserPosts until after its declaration
 
   // Load posts for current user (lazy)
   const loadUserPosts = useCallback(async () => {
@@ -219,6 +216,24 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     useCallback(() => {
       return () => { postsLoadedRef.current = false; };
     }, [])
+  );
+
+  // Focus-triggered refresh and post-added handling
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      const run = async () => {
+        if (postAdded) {
+          await loadUserPosts();
+          if (!cancelled) setPostAdded(false);
+        }
+        if (!viewUser) {
+          await refreshProfile();
+        }
+      };
+      run();
+      return () => { cancelled = true; };
+    }, [viewUser, postAdded, refreshProfile, loadUserPosts, setPostAdded])
   );
 
   // ---------- Optimistic vote/favorite handlers ----------
