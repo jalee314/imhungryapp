@@ -69,27 +69,15 @@ class DealCacheService {
       const fetchTime = Date.now() - fetchStart;
       console.log(`📊 Fetched ${dbDeals.length} deals in ${fetchTime}ms`);
       
-      // ⚡ OPTIMIZATION: Add distance and vote information IN PARALLEL (they don't depend on each other)
-      console.log('⚡ Adding distance & vote information in parallel...');
+      // ⚡ OPTIMIZATION: Only recompute distances when the caller overrides coordinates
+      console.log('⚡ Adding vote information (and custom distance overrides when requested)...');
       const enrichStart = Date.now();
-      const [dealsWithDistance, dealsWithVotes] = await Promise.all([
-        addDistancesToDeals(dbDeals, customCoordinates),
-        addVotesToDeals(dbDeals)
-      ]);
+      const baseDeals = customCoordinates
+        ? await addDistancesToDeals(dbDeals, customCoordinates)
+        : dbDeals;
+      const enrichedDeals = await addVotesToDeals(baseDeals);
       const enrichTime = Date.now() - enrichStart;
       console.log(`✅ Enrichment completed in ${enrichTime}ms`);
-      
-      // Merge the results (votes into deals with distance)
-      const enrichedDeals = dealsWithDistance.map(deal => {
-        const voteInfo = dealsWithVotes.find(d => d.deal_id === deal.deal_id);
-        return {
-          ...deal,
-          votes: voteInfo?.votes || 0,
-          is_upvoted: voteInfo?.is_upvoted || false,
-          is_downvoted: voteInfo?.is_downvoted || false,
-          is_favorited: voteInfo?.is_favorited || false
-        };
-      });
       
       // Log some vote states for debugging
       const voteSample = enrichedDeals.slice(0, 3).map(deal => ({

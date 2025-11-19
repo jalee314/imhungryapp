@@ -71,8 +71,9 @@ export interface CreateDealData {
   isAnonymous: boolean;
 }
 
-export interface RankedDealIds {
-  deal_ids: string[];
+export interface RankedDealMeta {
+  deal_id: string;
+  distance?: number | null;
 }
 
 // User Types

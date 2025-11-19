@@ -1,5 +1,4 @@
 import { supabase } from '../../lib/supabase';
-import { getCurrentUserLocation } from './locationService';
 
 // Simple cache to avoid redundant queries
 const cache = {
@@ -70,8 +69,6 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
     if (now - lastFetch < cache.CACHE_DURATION && cache.deals.has(cacheKey)) {
       return cache.deals.get(cacheKey)!;
     }
-
-    const userLocation = await getCurrentUserLocation();
 
     // Get favorite deal IDs first
     const { data: favoriteData, error: favoriteError } = await supabase
@@ -161,22 +158,24 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
     const categoriesMap = new Map(categoriesData?.map(c => [c.category_id, c]) || []);
 
-    // Get restaurant coordinates for distance calculation
-    let restaurantLocations: Record<string, { lat: number; lng: number }> = {};
-    if (userLocation && restaurantIds.length > 0) {
-      const { data: restaurantCoords } = await supabase
-        .from('restaurants_with_coords')
-        .select('restaurant_id, lat, lng')
-        .in('restaurant_id', restaurantIds);
+    // Fetch PostGIS distances once for all restaurants
+    const distanceMap = new Map<string, number | null>();
+    if (restaurantIds.length > 0) {
+      const { data: restaurantDistances, error: distanceError } = await supabase
+        .rpc('get_restaurant_coords_with_distance', {
+          restaurant_ids: restaurantIds,
+          user_uuid: userId
+        });
 
-      restaurantCoords?.forEach(restaurant => {
-        if (restaurant.lat && restaurant.lng) {
-          restaurantLocations[restaurant.restaurant_id] = {
-            lat: parseFloat(restaurant.lat),
-            lng: parseFloat(restaurant.lng)
-          };
-        }
-      });
+      if (distanceError) {
+        console.error('Error fetching restaurant distances:', distanceError);
+      } else {
+        restaurantDistances?.forEach((entry: any) => {
+          if (entry.restaurant_id) {
+            distanceMap.set(entry.restaurant_id, entry.distance_miles ?? null);
+          }
+        });
+      }
     }
 
     // Get deal counts for all restaurants in one query
@@ -194,20 +193,7 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       const restaurant = restaurantsMap.get(template.restaurant_id);
       if (!restaurant) continue;
 
-      // Calculate distance
-      let distance = 'Unknown';
-      if (userLocation && restaurantLocations[restaurant.restaurant_id]) {
-        const coords = restaurantLocations[restaurant.restaurant_id];
-        const distanceKm = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          coords.lat,
-          coords.lng
-        );
-        distance = distanceKm < 1 
-          ? `${Math.round(distanceKm * 1000)}m` 
-          : `${distanceKm.toFixed(1)}mi`;
-      }
+      const distance = formatDistance(distanceMap.get(restaurant.restaurant_id));
 
       // UPDATED: Handle image URL - use Cloudinary or use 'placeholder' string
       let imageUrl = 'placeholder'; // Default to placeholder
@@ -288,8 +274,6 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     cache.restaurants.delete(cacheKey);
     cache.lastFetch.delete(cacheKey);
 
-    const userLocation = await getCurrentUserLocation();
-
     // Get ONLY directly favorited restaurants (not restaurants with favorited deals)
     const { data: favoriteData, error: favoriteError } = await supabase
       .from('favorite')
@@ -319,19 +303,19 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
 
     // Execute all queries in parallel for much better performance
     const [
-      restaurantCoordsResult,
+      distanceResult,
       restaurantsResult,
       cuisinesResult,
       dealCountsResult,
       mostLikedDealsResult
     ] = await Promise.all([
-      // Get restaurant coordinates for distance calculation
-      userLocation && allRestaurantIds.length > 0 
-        ? supabase
-            .from('restaurants_with_coords')
-            .select('restaurant_id, lat, lng')
-            .in('restaurant_id', allRestaurantIds)
-        : Promise.resolve({ data: [] }),
+      // Use PostGIS to compute lat/lng and distances relative to the user
+      allRestaurantIds.length > 0
+        ? supabase.rpc('get_restaurant_coords_with_distance', {
+            restaurant_ids: allRestaurantIds,
+            user_uuid: userId
+          })
+        : Promise.resolve({ data: [], error: null }),
       
       // Get all restaurant details in one batch query
       supabase
@@ -474,14 +458,13 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     ]);
 
 
-    // Process restaurant coordinates
-    const restaurantLocations: Record<string, { lat: number; lng: number }> = {};
-    restaurantCoordsResult.data?.forEach(restaurant => {
-      if (restaurant.lat && restaurant.lng) {
-        restaurantLocations[restaurant.restaurant_id] = {
-          lat: parseFloat(restaurant.lat),
-          lng: parseFloat(restaurant.lng)
-        };
+    if (distanceResult.error) {
+      console.error('Error fetching restaurant distances:', distanceResult.error);
+    }
+    const distanceMap = new Map<string, number | null>();
+    distanceResult.data?.forEach((row: any) => {
+      if (row.restaurant_id) {
+        distanceMap.set(row.restaurant_id, row.distance_miles ?? null);
       }
     });
 
@@ -519,20 +502,7 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
         cuisineName = cuisineData.cuisine_name;
       }
 
-      // Calculate distance if user location is available
-      let distance = 'Unknown';
-      if (userLocation && restaurantLocations[restaurantId]) {
-        const coords = restaurantLocations[restaurantId];
-        const distanceKm = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          coords.lat,
-          coords.lng
-        );
-        distance = distanceKm < 1 
-          ? `${Math.round(distanceKm * 1000)}m` 
-          : `${distanceKm.toFixed(1)}mi`;
-      }
+      const distance = formatDistance(distanceMap.get(restaurantId));
 
       // Use the image from the most liked deal at this restaurant as the thumbnail
       let imageUrl = '';
@@ -635,16 +605,14 @@ export const clearFavoritesCache = (): void => {
 };
 
 /**
- * Calculate distance between two coordinates using Haversine formula
+ * Format a numeric distance (in miles) for display.
  */
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+const formatDistance = (distanceMiles?: number | null): string => {
+  if (distanceMiles === null || distanceMiles === undefined || Number.isNaN(distanceMiles)) {
+    return 'Unknown';
+  }
+  if (distanceMiles < 1) {
+    return `${Math.round(distanceMiles * 1609)}m`;
+  }
+  return `${distanceMiles.toFixed(1)}mi`;
 };
