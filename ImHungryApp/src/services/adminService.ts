@@ -24,17 +24,27 @@ export interface Report {
     description: string;
     image_url?: string;
     restaurant_name?: string;
+    restaurant_address?: string;
   };
   reporter?: {
     display_name: string;
+    profile_photo?: string | null;
   };
   uploader?: {
     display_name: string;
+    profile_photo?: string | null;
   };
   reason_code?: {
     reason_code: string;
     description: string;
   };
+}
+
+export interface ReportCounts {
+  total: number;
+  pending: number;
+  review: number;
+  resolved: number;
 }
 
 export interface Deal {
@@ -139,13 +149,22 @@ class AdminService {
         .select(`
           *,
           deal:deal_instance!inner(
+            deal_id,
+            template_id,
             deal_template!inner(
               title,
-              description
+              description,
+              restaurant:restaurant_id(
+                name,
+                address
+              ),
+              image_metadata:image_metadata_id(
+                variants
+              )
             )
           ),
-          reporter:user!user_report_reporter_user_id_fkey(display_name),
-          uploader:user!user_report_uploader_user_id_fkey(display_name),
+          reporter:user!user_report_reporter_user_id_fkey(display_name, profile_photo),
+          uploader:user!user_report_uploader_user_id_fkey(display_name, profile_photo),
           reason_code(reason_code, description)
         `)
         .order('created_at', { ascending: false });
@@ -157,14 +176,28 @@ class AdminService {
       const { data, error } = await query;
       if (error) throw error;
       
-      // Transform the data to flatten the nested structure
-      const transformedData = (data || []).map((report: any) => ({
-        ...report,
-        deal: {
-          title: report.deal?.deal_template?.title || 'Unknown',
-          description: report.deal?.deal_template?.description || '',
+      // Transform the data to flatten the nested structure and surface useful deal metadata
+      const transformedData = (data || []).map((report: any) => {
+        const template = report.deal?.deal_template || {};
+        const restaurant = template?.restaurant || {};
+        const variants = template?.image_metadata?.variants;
+
+        let imageUrl = null;
+        if (variants) {
+          imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
         }
-      }));
+
+        return {
+          ...report,
+          deal: {
+            title: template?.title || 'Unknown',
+            description: template?.description || '',
+            image_url: imageUrl,
+            restaurant_name: restaurant?.name || 'Unknown',
+            restaurant_address: restaurant?.address || '',
+          }
+        };
+      });
       
       return transformedData;
     } catch (error) {
@@ -173,14 +206,74 @@ class AdminService {
     }
   }
 
+  async updateReportStatus(
+    reportId: string,
+    status: 'pending' | 'review'
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('user_report')
+        .update({
+          status,
+          resolved_by: null,
+          resolution_action: null,
+        })
+        .eq('report_id', reportId);
+
+      if (error) throw error;
+
+      await this.logAction('update_report_status', 'report', reportId, { status });
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getReportCounts(): Promise<ReportCounts> {
+    try {
+      const [
+        { count: totalCount },
+        { count: pendingCount },
+        { count: reviewCount },
+        { count: resolvedCount },
+      ] = await Promise.all([
+        supabase.from('user_report').select('*', { count: 'exact', head: true }),
+        supabase.from('user_report').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('user_report').select('*', { count: 'exact', head: true }).eq('status', 'review'),
+        supabase.from('user_report').select('*', { count: 'exact', head: true }).eq('status', 'resolved'),
+      ]);
+
+      return {
+        total: totalCount || 0,
+        pending: pendingCount || 0,
+        review: reviewCount || 0,
+        resolved: resolvedCount || 0,
+      };
+    } catch (error) {
+      console.error('Error fetching report counts:', error);
+      return {
+        total: 0,
+        pending: 0,
+        review: 0,
+        resolved: 0,
+      };
+    }
+  }
+
   async dismissReport(reportId: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('user_report')
         .update({
           status: 'resolved',
           resolution_action: 'dismissed',
-          updated_at: new Date().toISOString(),
+          resolved_by: user.id,
         })
         .eq('report_id', reportId);
 
@@ -202,27 +295,41 @@ class AdminService {
     suspensionDays?: number
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       // Update report status
       const { error: reportError } = await supabase
         .from('user_report')
         .update({
           status: 'resolved',
           resolution_action: action,
-          updated_at: new Date().toISOString(),
+          resolved_by: user.id,
         })
         .eq('report_id', reportId);
 
       if (reportError) throw reportError;
 
       // Execute action
-      if (action === 'delete_deal' && dealId) {
-        await this.deleteDeal(dealId);
-      } else if (action === 'warn_user' && userId) {
-        await this.warnUser(userId);
-      } else if (action === 'ban_user' && userId) {
-        await this.banUser(userId, reason);
-      } else if (action === 'suspend_user' && userId && suspensionDays) {
-        await this.suspendUser(userId, suspensionDays, reason);
+      if (action === 'delete_deal') {
+        if (!dealId) throw new Error('Missing deal ID for delete action');
+        const result = await this.deleteDeal(dealId);
+        if (!result.success) throw new Error(result.error || 'Failed to delete deal');
+      } else if (action === 'warn_user') {
+        if (!userId) throw new Error('Missing user ID for warn action');
+        const result = await this.warnUser(userId);
+        if (!result.success) throw new Error(result.error || 'Failed to warn user');
+      } else if (action === 'ban_user') {
+        if (!userId) throw new Error('Missing user ID for ban action');
+        const result = await this.banUser(userId, reason);
+        if (!result.success) throw new Error(result.error || 'Failed to ban user');
+      } else if (action === 'suspend_user') {
+        if (!userId) throw new Error('Missing user ID for suspension');
+        if (!suspensionDays || Number.isNaN(suspensionDays)) {
+          throw new Error('Suspension days are required');
+        }
+        const result = await this.suspendUser(userId, suspensionDays, reason);
+        if (!result.success) throw new Error(result.error || 'Failed to suspend user');
       }
 
       await this.logAction('resolve_report', 'report', reportId, { action, dealId, userId, reason });

@@ -47,10 +47,11 @@ The dashboard provides an overview of app analytics:
 Manage user reports and take appropriate action:
 
 **Features:**
-- View all pending reports
-- See report details (deal title, reporter, uploader, reason)
-- Review reported content
-- Take moderation actions
+- Filter by status (Pending, In Review, Resolved, All) with live counts
+- Pull-to-refresh for real-time queue updates
+- See full report context (deal preview, restaurant, reporter/uploader, notes)
+- Review lifecycle timeline (created, last update, resolver, last action)
+- Take moderation actions without leaving the drawer
 
 **Available Actions:**
 1. **Dismiss Report** - Mark report as resolved without action
@@ -59,12 +60,12 @@ Manage user reports and take appropriate action:
 4. **Suspend User** - Temporarily suspend user (specify days)
 5. **Ban User** - Permanently ban user from the app
 
-**Workflow:**
-1. Tap on a report to review details
-2. Choose appropriate action based on violation severity
-3. Optionally add a reason for ban/suspension
-4. Confirm action
-5. Report is marked as resolved and logged
+**Workflow Controls:**
+1. Tap any report card to open the moderation drawer
+2. Use **Mark In Review** or **Move to Pending** to triage queues before enforcing
+3. Review notes, history, and deal preview to determine the correct action
+4. Capture suspension duration and ban/suspension reason when applicable
+5. Confirm the action — status changes and admin logs are recorded automatically
 
 ### 3. Deal Management
 
@@ -185,6 +186,8 @@ The admin panel uses a centralized service layer (`adminService.ts`) with the fo
 
 ### Report Management:
 - `getReports(status?)` - Fetch reports by status
+- `getReportCounts()` - Retrieve total, pending, in-review, and resolved counts
+- `updateReportStatus(reportId, status)` - Move reports between pending/review queues
 - `dismissReport(reportId)` - Dismiss a report
 - `resolveReportWithAction(...)` - Resolve with specific action
 
@@ -293,5 +296,5 @@ For admin panel issues or questions, contact the development team.
 
 ---
 
-Last Updated: October 18, 2025
+Last Updated: November 19, 2025
 

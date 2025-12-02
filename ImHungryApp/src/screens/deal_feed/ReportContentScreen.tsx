@@ -76,7 +76,7 @@ const ReportContentScreen: React.FC = () => {
       // Map selected options to reason code UUIDs from your Supabase database
       const reasonCodeMap: { [key: string]: string } = {
         'I\'ve seen this deal already / it\'s a repeat': '80c755ea-1e1b-4f11-8ed5-1ca3b6779b5b', 
-        'Inappropriate / offensive behavior': 'f4ad8941-54e7-4b86-8750-313360cefbda', 
+        'Inappropriate / offensive content': 'f4ad8941-54e7-4b86-8750-313360cefbda', 
         'This deal is no longer valid / has expired': 'b6fc9047-30f2-44f9-8787-69e415041581',
         'Wrong Price': 'bee4479d-4368-4fe8-9e31-7e7e4af8698e',
         'Wrong Deal': 'b8654ee1-9a0e-471f-b205-b05b0c5cc113',
