@@ -97,7 +97,26 @@ export interface AppAnalytics {
   dealsThisWeek: number;
 }
 
+type ResolutionActionEnum = 'keep' | 'remove' | 'warn_uploader' | 'ban_uploader';
+
 class AdminService {
+  private mapResolutionAction(
+    action: 'delete_deal' | 'warn_user' | 'ban_user' | 'suspend_user'
+  ): ResolutionActionEnum {
+    switch (action) {
+      case 'delete_deal':
+        return 'remove';
+      case 'warn_user':
+        return 'warn_uploader';
+      case 'ban_user':
+        return 'ban_uploader';
+      case 'suspend_user':
+        return 'ban_uploader';
+      default:
+        return 'keep';
+    }
+  }
+
   // Check if current user is admin
   async isAdmin(): Promise<boolean> {
     try {
@@ -272,7 +291,7 @@ class AdminService {
         .from('user_report')
         .update({
           status: 'resolved',
-          resolution_action: 'dismissed',
+          resolution_action: 'keep',
           resolved_by: user.id,
         })
         .eq('report_id', reportId);
@@ -299,11 +318,13 @@ class AdminService {
       if (!user) throw new Error('Not authenticated');
 
       // Update report status
+      const resolution_action = this.mapResolutionAction(action);
+
       const { error: reportError } = await supabase
         .from('user_report')
         .update({
           status: 'resolved',
-          resolution_action: action,
+          resolution_action,
           resolved_by: user.id,
         })
         .eq('report_id', reportId);

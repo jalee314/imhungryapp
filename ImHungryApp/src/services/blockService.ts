@@ -1,10 +1,11 @@
 import { supabase } from '../../lib/supabase';
+import type { BlockReasonCode } from '../types';
 
-// Interface for block reason codes (you'll need to create this table)
+// Interface for block reason codes pulled from reason_code table
 export interface ReasonCode {
   reason_code_id: string;
-  reason_name: string;
-  description: string;
+  reason_code: string | number;
+  description: string | null;
 }
 
 // Interface for creating a block
@@ -91,19 +92,24 @@ export const submitBlock = async (
   }
 };
 
-// Get block reason codes (you'll need to create this table)
+// Get block reason codes from existing reason_code table
 export const getBlockReasonCodes = async (): Promise<BlockReasonCode[]> => {
   try {
     const { data, error } = await supabase
-      .from('block_reason_codes')
-      .select('*')
-      .order('reason_name');
+      .from('reason_code')
+      .select('reason_code_id, reason_code, description')
+      .order('reason_code');
 
     if (error) {
       return [];
     }
 
-    return data || [];
+    // Normalize shape to BlockReasonCode interface
+    return (data || []).map((item: any) => ({
+      reason_code_id: item.reason_code_id,
+      reason_code: item.reason_code,
+      description: item.description ?? null,
+    }));
   } catch (error) {
     return [];
   }

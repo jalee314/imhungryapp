@@ -84,26 +84,63 @@ class ReportService {
         .select(`
           *,
           reason_code:reason_code_id(reason_code, description),
-          deal:deal_id(title, restaurant),
-          reporter:reporter_user_id(username),
-          uploader:uploader_user_id(username)
+          deal:deal_instance!inner(
+            deal_id,
+            template_id,
+            deal_template!inner(
+              title,
+              description,
+              restaurant:restaurant_id(
+                name,
+                address
+              ),
+              image_metadata:image_metadata_id(
+                variants
+              )
+            )
+          ),
+          reporter:user!user_report_reporter_user_id_fkey(display_name, profile_photo),
+          uploader:user!user_report_uploader_user_id_fkey(display_name, profile_photo)
         `)
-        .eq('uploader_user_id', userId);
+        .eq('uploader_user_id', userId)
+        .order('created_at', { ascending: false });
 
       if (status) {
         query = query.eq('status', status);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(report => this.transformReportRow(report));
     } catch (error) {
       throw error;
     }
+  }
+
+  private transformReportRow(report: any) {
+    const template = report.deal?.deal_template || {};
+    const restaurant = template?.restaurant || {};
+    const variants = template?.image_metadata?.variants;
+
+    let imageUrl = null;
+    if (variants) {
+      imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
+    }
+
+    return {
+      ...report,
+      deal: {
+        title: template?.title || 'Unknown',
+        description: template?.description || '',
+        image_url: imageUrl,
+        restaurant_name: restaurant?.name || 'Unknown',
+        restaurant_address: restaurant?.address || '',
+      },
+    };
   }
 
   // Update report status (for admin/moderator use)

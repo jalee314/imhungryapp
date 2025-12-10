@@ -415,8 +415,8 @@ export interface ReasonCode {
 
 export interface BlockReasonCode {
   reason_code_id: string;
-  reason_name: string;
-  description: string;
+  reason_code: string | number;
+  description: string | null;
 }
 
 export interface CreateBlockData {
