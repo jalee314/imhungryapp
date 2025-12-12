@@ -18,10 +18,12 @@ import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { supabase } from '../../../lib/supabase';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
+import { useFavorites } from '../../hooks/useFavorites';
 
 const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
+  const { markAsUnfavorited, markAsFavorited } = useFavorites();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -323,7 +325,28 @@ const CommunityUploadedScreen: React.FC = () => {
       });
     });
 
-    // THIRD: Save to database with the original state
+    // THIRD: Notify global store for instant favorites page update
+    if (wasFavorited) {
+      markAsUnfavorited(dealId, 'deal');
+    } else {
+      // Pass full deal data for instant display in favorites
+      markAsFavorited(dealId, 'deal', {
+        id: originalDeal.id,
+        title: originalDeal.title,
+        description: originalDeal.details || '',
+        imageUrl: typeof originalDeal.image === 'object' ? originalDeal.image.uri : '',
+        restaurantName: originalDeal.restaurant,
+        restaurantAddress: originalDeal.restaurantAddress || '',
+        distance: originalDeal.milesAway || '',
+        userId: originalDeal.userId,
+        userDisplayName: originalDeal.userDisplayName,
+        userProfilePhoto: originalDeal.userProfilePhoto,
+        isAnonymous: originalDeal.isAnonymous,
+        favoritedAt: new Date().toISOString(),
+      });
+    }
+
+    // FOURTH: Save to database with the original state
     console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     
     toggleFavorite(dealId, wasFavorited).catch((err) => {

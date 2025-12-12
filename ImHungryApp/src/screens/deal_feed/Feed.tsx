@@ -26,7 +26,8 @@ import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useDataCache } from '../../hooks/useDataCache';
-import { useLocation } from '../../context/LocationContext';  
+import { useLocation } from '../../context/LocationContext';
+import { useFavorites } from '../../hooks/useFavorites';  
 
 /**
  * Get the current authenticated user's ID
@@ -46,6 +47,7 @@ const Feed: React.FC = () => {
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
   const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad } = useLocation();
+  const { markAsUnfavorited, markAsFavorited } = useFavorites();
   
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -283,7 +285,32 @@ const Feed: React.FC = () => {
     const originalDeal = deals.find(d => d.id === dealId);
     if (!originalDeal) return;
     const wasFavorited = originalDeal.isFavorited;
+    
+    // 1. Instant UI update
     setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? { ...d, isFavorited: !wasFavorited } : d));
+    
+    // 2. Notify global store for instant favorites page update
+    if (wasFavorited) {
+      markAsUnfavorited(dealId, 'deal');
+    } else {
+      // Pass full deal data for instant display in favorites
+      markAsFavorited(dealId, 'deal', {
+        id: originalDeal.id,
+        title: originalDeal.title,
+        description: originalDeal.details || '',
+        imageUrl: typeof originalDeal.image === 'object' ? originalDeal.image.uri : '',
+        restaurantName: originalDeal.restaurant,
+        restaurantAddress: originalDeal.restaurantAddress || '',
+        distance: originalDeal.milesAway || '',
+        userId: originalDeal.userId,
+        userDisplayName: originalDeal.userDisplayName,
+        userProfilePhoto: originalDeal.userProfilePhoto,
+        isAnonymous: originalDeal.isAnonymous,
+        favoritedAt: new Date().toISOString(),
+      });
+    }
+    
+    // 3. Background database save
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
       setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal : d));

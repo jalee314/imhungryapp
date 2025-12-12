@@ -23,6 +23,7 @@ import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { getDealViewCount, logShare, logClickThrough } from '../../services/interactionService';
+import { useFavorites } from '../../hooks/useFavorites';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import OptimizedImage from '../../components/OptimizedImage';
 import { supabase } from '../../../lib/supabase';
@@ -34,6 +35,7 @@ const DealDetailScreen: React.FC = () => {
   const route = useRoute<DealDetailRouteProp>();
   const { deal } = route.params;
   const { updateDeal } = useDealUpdate();
+  const { markAsUnfavorited, markAsFavorited } = useFavorites();
 
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
@@ -260,7 +262,29 @@ const DealDetailScreen: React.FC = () => {
       isFavorited: !wasFavorited,
     });
 
-    // 2. Background database save
+    // 2. Notify global store immediately so FavoritesPage updates instantly
+    if (wasFavorited) {
+      // Unfavoriting - mark as removed
+      markAsUnfavorited(previousState.id, 'deal');
+    } else {
+      // Favoriting - pass full deal data for instant UI in favorites page
+      markAsFavorited(previousState.id, 'deal', {
+        id: previousState.id,
+        title: previousState.title,
+        description: previousState.details || '',
+        imageUrl: typeof previousState.image === 'object' ? previousState.image.uri : '',
+        restaurantName: previousState.restaurant,
+        restaurantAddress: previousState.restaurantAddress || '',
+        distance: previousState.milesAway || '',
+        userId: previousState.userId,
+        userDisplayName: previousState.userDisplayName,
+        userProfilePhoto: previousState.userProfilePhoto,
+        isAnonymous: previousState.isAnonymous,
+        favoritedAt: new Date().toISOString(),
+      });
+    }
+
+    // 3. Background database save
     console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
     toggleFavorite(previousState.id, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
