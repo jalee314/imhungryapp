@@ -4,11 +4,10 @@ import {
   ScrollView, TextInput as RNTextInput, Alert
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
-import { supabase } from '../../../lib/supabase';
-import { ProfileCacheService } from '../../services/profileCacheService';
+import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useDataCache } from '../../context/DataCacheContext';
+import { useDataCache } from '../../hooks/useDataCache';
+import { useProfileEdit } from '../../hooks/useProfileEdit';
 
 interface ProfileEditProps {
   route?: {
@@ -29,206 +28,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
     city: profile?.location_city
   });
   
-  const [formData, setFormData] = useState({
-    fullName: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
-    username: profile?.display_name || '',
-    email: profile?.email || '',
-    city: profile?.location_city || '',
-  });
-  
-  const [loading, setLoading] = useState(false);
-  const [userCuisines, setUserCuisines] = useState<string[]>([]);
-  const [savedCuisines, setSavedCuisines] = useState<string[]>([]);
-  const [errors, setErrors] = useState({ username: '', email: '' });
-  const hasUpdatedCuisines = useRef(false);
-
-  // Fetch cuisines when screen first loads
-  useEffect(() => {
-    fetchUserCuisines();
-  }, []);
-
-  // Listen for updated cuisines from CuisineEdit screen
-  useEffect(() => {
-    const updatedCuisines = route?.params?.updatedCuisines;
-    if (updatedCuisines && Array.isArray(updatedCuisines)) {
-      console.log('ProfileEdit: Received updated cuisines:', updatedCuisines);
-      hasUpdatedCuisines.current = true;
-      setUserCuisines(updatedCuisines);
-    }
-  }, [route?.params?.updatedCuisines]);
-
-  const fetchUserCuisines = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('user_cuisine_preference')
-        .select(`
-          cuisine_id,
-          cuisine:cuisine_id (
-            cuisine_name
-          )
-        `)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      const cuisineNames = data
-        ?.map((item: any) => item.cuisine?.cuisine_name)
-        .filter(Boolean) || [];
-      
-      // Only update cuisines if we haven't received updated ones from CuisineEdit
-      if (!hasUpdatedCuisines.current) {
-        console.log('ProfileEdit: Setting cuisines from database:', cuisineNames);
-        setUserCuisines(cuisineNames);
-      } else {
-        console.log('ProfileEdit: Skipping database cuisines, using updated ones instead');
-      }
-      setSavedCuisines(cuisineNames);
-    } catch (error) {
-      console.error('Error fetching cuisines:', error);
-    }
-  };
-
-  const saveCuisines = async (userId: string, cuisines: string[]) => {
-    try {
-      // Delete existing preferences
-      const { error: deleteError } = await supabase
-        .from('user_cuisine_preference')
-        .delete()
-        .eq('user_id', userId);
-
-      if (deleteError) throw deleteError;
-
-      // Insert new preferences
-      if (cuisines.length > 0) {
-        const { data: cuisineData, error: cuisineError } = await supabase
-          .from('cuisine')
-          .select('cuisine_id, cuisine_name')
-          .in('cuisine_name', cuisines);
-
-        if (cuisineError) throw cuisineError;
-
-        const preferences = cuisineData.map(cuisine => ({
-          user_id: userId,
-          cuisine_id: cuisine.cuisine_id
-        }));
-
-        const { error: insertError } = await supabase
-          .from('user_cuisine_preference')
-          .insert(preferences);
-
-        if (insertError) throw insertError;
-      }
-    } catch (error) {
-      console.error('Error saving cuisines:', error);
-      throw error;
-    }
-  };
-
-  const handleSave = async () => {
-    if (!formData.fullName || !formData.username || !formData.email || !formData.city) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-    if (formData.username.length < 3 || formData.username.length > 15) {
-      Alert.alert('Error', 'Username must be 3-15 characters long');
-      return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        Alert.alert('Error', 'User not found');
-        return;
-      }
-
-      const nameParts = formData.fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      // Save profile data
-      const { error: authError } = await supabase.auth.updateUser({
-        email: formData.email,
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: formData.fullName,
-          username: formData.username,
-          location_city: formData.city
-        }
-      });
-
-      if (authError) {
-        if (authError.message.includes('email') || authError.message.includes('unique constraint')) {
-          Alert.alert('Error', 'Email is already taken');
-          return;
-        }
-        throw authError;
-      }
-
-      const { error: userError } = await supabase
-        .from('user')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          display_name: formData.username,
-          email: formData.email,
-          location_city: formData.city
-        })
-        .eq('user_id', user.id);
-
-      if (userError) {
-        if (userError.message.includes('username') || userError.message.includes('unique constraint')) {
-          Alert.alert('Error', 'Username is already taken');
-          return;
-        }
-        if (userError.message.includes('email') || userError.message.includes('unique constraint')) {
-          Alert.alert('Error', 'Email is already taken');
-          return;
-        }
-        throw userError;
-      }
-
-      // Save cuisines if they changed
-      const cuisinesChanged = JSON.stringify(userCuisines.sort()) !== JSON.stringify(savedCuisines.sort());
-      if (cuisinesChanged) {
-        await saveCuisines(user.id, userCuisines);
-      }
-      
-      await ProfileCacheService.clearCache();
-      
-      // Reset the flag so next time we come to edit, cuisines are fetched fresh
-      hasUpdatedCuisines.current = false;
-      
-      // Navigate back to ProfileMain - pop all the way back to avoid infinite loop
-      Alert.alert('Success', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => {
-          // Navigate back to ProfileMain (the actual profile screen name in the navigator)
-          navigation.navigate('ProfileMain' as never);
-        }}
-      ]);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCuisinePress = () => {
-    navigation.navigate('CuisineEdit' as never, { 
-      selectedCuisines: userCuisines,
-      profile: profile
-    } as never);
-  };
+  const { formData, setField, loading, userCuisines, handleSave, handleCuisinePress } = useProfileEdit({ route });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -260,7 +60,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                 <RNTextInput
                   style={styles.fieldInput}
                   value={formData.fullName}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, fullName: text }))}
+                  onChangeText={(text) => setField('fullName', text)}
                   placeholder="Joe"
                   placeholderTextColor="#757575"
                 />
@@ -273,7 +73,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                 <RNTextInput
                   style={styles.fieldInput}
                   value={formData.username}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, username: text }))}
+                  onChangeText={(text) => setField('username', text)}
                   placeholder="JoeDeals"
                   placeholderTextColor="#757575"
                 />
@@ -286,7 +86,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                 <RNTextInput
                   style={styles.fieldInput}
                   value={formData.email}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+                  onChangeText={(text) => setField('email', text)}
                   placeholder="johndeals@gmail.com"
                   placeholderTextColor="#757575"
                   keyboardType="email-address"
@@ -302,7 +102,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   <RNTextInput
                     style={styles.fieldInput}
                     value={formData.city}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, city: text }))}
+                    onChangeText={(text) => setField('city', text)}
                     placeholder="Fullerton, CA"
                     placeholderTextColor="#757575"
                   />

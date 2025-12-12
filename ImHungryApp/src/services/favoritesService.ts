@@ -1,5 +1,4 @@
 import { supabase } from '../../lib/supabase';
-import { getCurrentUserLocation } from './locationService';
 
 // Simple cache to avoid redundant queries
 const cache = {
@@ -39,6 +38,7 @@ export interface FavoriteRestaurant {
   dealCount: number;
   cuisineName: string;
   isFavorited: boolean;
+  createdAt: string;
 }
 
 /**
@@ -70,8 +70,6 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
     if (now - lastFetch < cache.CACHE_DURATION && cache.deals.has(cacheKey)) {
       return cache.deals.get(cacheKey)!;
     }
-
-    const userLocation = await getCurrentUserLocation();
 
     // Get favorite deal IDs first
     const { data: favoriteData, error: favoriteError } = await supabase
@@ -134,56 +132,62 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
     const templatesMap = new Map(templatesData?.map(t => [t.template_id, t]) || []);
 
-    // Get all restaurant data in one batch query
+    // Get all unique IDs for batch queries
     const restaurantIds = [...new Set(templatesData?.map(t => t.restaurant_id).filter(Boolean))];
-    const { data: restaurantsData } = await supabase
-      .from('restaurant')
-      .select('restaurant_id, name, address')
-      .in('restaurant_id', restaurantIds);
-
-    const restaurantsMap = new Map(restaurantsData?.map(r => [r.restaurant_id, r]) || []);
-
-    // Get all cuisine data in one batch query
     const cuisineIds = [...new Set(templatesData?.map(t => t.cuisine_id).filter(Boolean))];
-    const { data: cuisinesData } = await supabase
-      .from('cuisine')
-      .select('cuisine_id, cuisine_name')
-      .in('cuisine_id', cuisineIds);
-
-    const cuisinesMap = new Map(cuisinesData?.map(c => [c.cuisine_id, c]) || []);
-
-    // Get all category data in one batch query
     const categoryIds = [...new Set(templatesData?.map(t => t.category_id).filter(Boolean))];
-    const { data: categoriesData } = await supabase
-      .from('category')
-      .select('category_id, category_name')
-      .in('category_id', categoryIds);
 
-    const categoriesMap = new Map(categoriesData?.map(c => [c.category_id, c]) || []);
+    // Execute all remaining queries in PARALLEL for much faster loading
+    const [restaurantsResult, cuisinesResult, categoriesResult, distancesResult, dealCountsResult] = await Promise.all([
+      // Get all restaurant data
+      supabase
+        .from('restaurant')
+        .select('restaurant_id, name, address')
+        .in('restaurant_id', restaurantIds),
+      
+      // Get all cuisine data
+      supabase
+        .from('cuisine')
+        .select('cuisine_id, cuisine_name')
+        .in('cuisine_id', cuisineIds),
+      
+      // Get all category data
+      supabase
+        .from('category')
+        .select('category_id, category_name')
+        .in('category_id', categoryIds),
+      
+      // Fetch PostGIS distances
+      restaurantIds.length > 0
+        ? supabase.rpc('get_restaurant_coords_with_distance', {
+            restaurant_ids: restaurantIds,
+            user_uuid: userId
+          })
+        : Promise.resolve({ data: [], error: null }),
+      
+      // Get deal counts
+      restaurantIds.length > 0
+        ? supabase.rpc('get_deal_counts_for_restaurants', { r_ids: restaurantIds })
+        : Promise.resolve({ data: [] })
+    ]);
 
-    // Get restaurant coordinates for distance calculation
-    let restaurantLocations: Record<string, { lat: number; lng: number }> = {};
-    if (userLocation && restaurantIds.length > 0) {
-      const { data: restaurantCoords } = await supabase
-        .from('restaurants_with_coords')
-        .select('restaurant_id, lat, lng')
-        .in('restaurant_id', restaurantIds);
-
-      restaurantCoords?.forEach(restaurant => {
-        if (restaurant.lat && restaurant.lng) {
-          restaurantLocations[restaurant.restaurant_id] = {
-            lat: parseFloat(restaurant.lat),
-            lng: parseFloat(restaurant.lng)
-          };
+    // Create lookup maps from parallel query results
+    const restaurantsMap = new Map(restaurantsResult.data?.map(r => [r.restaurant_id, r]) || []);
+    const cuisinesMap = new Map(cuisinesResult.data?.map(c => [c.cuisine_id, c]) || []);
+    const categoriesMap = new Map(categoriesResult.data?.map(c => [c.category_id, c]) || []);
+    
+    const distanceMap = new Map<string, number | null>();
+    if (distancesResult.error) {
+      console.error('Error fetching restaurant distances:', distancesResult.error);
+    } else {
+      distancesResult.data?.forEach((entry: any) => {
+        if (entry.restaurant_id) {
+          distanceMap.set(entry.restaurant_id, entry.distance_miles ?? null);
         }
       });
     }
 
-    // Get deal counts for all restaurants in one query
-    const { data: dealCountsData } = await supabase
-      .rpc('get_deal_counts_for_restaurants', { r_ids: restaurantIds });
-
-    const dealCountsMap = new Map(dealCountsData?.map((dc: any) => [dc.restaurant_id, dc.deal_count]) || []);
+    const dealCountsMap = new Map(dealCountsResult.data?.map((dc: any) => [dc.restaurant_id, dc.deal_count]) || []);
 
     const favoriteDeals: FavoriteDeal[] = [];
 
@@ -194,20 +198,7 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       const restaurant = restaurantsMap.get(template.restaurant_id);
       if (!restaurant) continue;
 
-      // Calculate distance
-      let distance = 'Unknown';
-      if (userLocation && restaurantLocations[restaurant.restaurant_id]) {
-        const coords = restaurantLocations[restaurant.restaurant_id];
-        const distanceKm = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          coords.lat,
-          coords.lng
-        );
-        distance = distanceKm < 1 
-          ? `${Math.round(distanceKm * 1000)}m` 
-          : `${distanceKm.toFixed(1)}mi`;
-      }
+      const distance = formatDistance(distanceMap.get(restaurant.restaurant_id));
 
       // UPDATED: Handle image URL - use Cloudinary or use 'placeholder' string
       let imageUrl = 'placeholder'; // Default to placeholder
@@ -256,6 +247,9 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       });
     }
 
+    // Sort by createdAt descending (newest favorited first)
+    favoriteDeals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
     // Cache the results
     cache.deals.set(cacheKey, favoriteDeals);
     cache.lastFetch.set(cacheKey, now);
@@ -288,14 +282,13 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     cache.restaurants.delete(cacheKey);
     cache.lastFetch.delete(cacheKey);
 
-    const userLocation = await getCurrentUserLocation();
-
     // Get ONLY directly favorited restaurants (not restaurants with favorited deals)
     const { data: favoriteData, error: favoriteError } = await supabase
       .from('favorite')
       .select('restaurant_id, created_at')
       .eq('user_id', userId)
-      .not('restaurant_id', 'is', null);
+      .not('restaurant_id', 'is', null)
+      .order('created_at', { ascending: false });
 
     if (favoriteError) {
       console.error('Error fetching favorites:', favoriteError);
@@ -311,6 +304,11 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       .map(fav => fav.restaurant_id)
       .filter((id): id is string => id !== null);
 
+    // Create a map of restaurant_id to created_at for sorting
+    const favoriteCreatedAtMap = new Map(
+      favoriteData.map(fav => [fav.restaurant_id, fav.created_at])
+    );
+
     if (directRestaurantIds.length === 0) {
       return [];
     }
@@ -319,19 +317,19 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
 
     // Execute all queries in parallel for much better performance
     const [
-      restaurantCoordsResult,
+      distanceResult,
       restaurantsResult,
       cuisinesResult,
       dealCountsResult,
       mostLikedDealsResult
     ] = await Promise.all([
-      // Get restaurant coordinates for distance calculation
-      userLocation && allRestaurantIds.length > 0 
-        ? supabase
-            .from('restaurants_with_coords')
-            .select('restaurant_id, lat, lng')
-            .in('restaurant_id', allRestaurantIds)
-        : Promise.resolve({ data: [] }),
+      // Use PostGIS to compute lat/lng and distances relative to the user
+      allRestaurantIds.length > 0
+        ? supabase.rpc('get_restaurant_coords_with_distance', {
+            restaurant_ids: allRestaurantIds,
+            user_uuid: userId
+          })
+        : Promise.resolve({ data: [], error: null }),
       
       // Get all restaurant details in one batch query
       supabase
@@ -474,14 +472,13 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     ]);
 
 
-    // Process restaurant coordinates
-    const restaurantLocations: Record<string, { lat: number; lng: number }> = {};
-    restaurantCoordsResult.data?.forEach(restaurant => {
-      if (restaurant.lat && restaurant.lng) {
-        restaurantLocations[restaurant.restaurant_id] = {
-          lat: parseFloat(restaurant.lat),
-          lng: parseFloat(restaurant.lng)
-        };
+    if (distanceResult.error) {
+      console.error('Error fetching restaurant distances:', distanceResult.error);
+    }
+    const distanceMap = new Map<string, number | null>();
+    distanceResult.data?.forEach((row: any) => {
+      if (row.restaurant_id) {
+        distanceMap.set(row.restaurant_id, row.distance_miles ?? null);
       }
     });
 
@@ -519,20 +516,7 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
         cuisineName = cuisineData.cuisine_name;
       }
 
-      // Calculate distance if user location is available
-      let distance = 'Unknown';
-      if (userLocation && restaurantLocations[restaurantId]) {
-        const coords = restaurantLocations[restaurantId];
-        const distanceKm = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          coords.lat,
-          coords.lng
-        );
-        distance = distanceKm < 1 
-          ? `${Math.round(distanceKm * 1000)}m` 
-          : `${distanceKm.toFixed(1)}mi`;
-      }
+      const distance = formatDistance(distanceMap.get(restaurantId));
 
       // Use the image from the most liked deal at this restaurant as the thumbnail
       let imageUrl = '';
@@ -564,8 +548,12 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
         dealCount: Number(dealCountsMap.get(restaurantId)) || 0,
         cuisineName,
         isFavorited: true,
+        createdAt: favoriteCreatedAtMap.get(restaurantId) || new Date().toISOString(),
       });
     }
+
+    // Sort by createdAt descending (newest favorited first)
+    restaurants.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Cache the results
     cache.restaurants.set(cacheKey, restaurants);
@@ -600,6 +588,8 @@ export const toggleRestaurantFavorite = async (
         .eq('restaurant_id', restaurantId);
       
       if (error) throw error;
+      // Bust caches so favorites lists refresh with this change
+      clearFavoritesCache();
       return false;
     } else {
       // Add to favorites
@@ -611,6 +601,8 @@ export const toggleRestaurantFavorite = async (
         });
       
       if (error) throw error;
+      // Bust caches so favorites lists refresh with this change
+      clearFavoritesCache();
       return true;
     }
   } catch (error) {
@@ -635,16 +627,14 @@ export const clearFavoritesCache = (): void => {
 };
 
 /**
- * Calculate distance between two coordinates using Haversine formula
+ * Format a numeric distance (in miles) for display.
  */
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+const formatDistance = (distanceMiles?: number | null): string => {
+  if (distanceMiles === null || distanceMiles === undefined || Number.isNaN(distanceMiles)) {
+    return 'Unknown';
+  }
+  if (distanceMiles < 1) {
+    return `${Math.round(distanceMiles * 1609)}m`;
+  }
+  return `${distanceMiles.toFixed(1)}mi`;
 };

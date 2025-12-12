@@ -1,3 +1,5 @@
+/*
+
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { supabase } from '../../lib/supabase';
 import { initializeAuthSession, setupAppStateListener } from '../services/sessionService';
@@ -151,3 +153,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+*/

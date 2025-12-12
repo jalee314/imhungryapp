@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { useDataCache } from '../../context/DataCacheContext';
+import { useDataCache } from '../../hooks/useDataCache';
 import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../../services/restaurantService';
 import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
 import { supabase } from '../../../lib/supabase';

@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import { logInteraction, removeFavoriteInteractions } from './interactionService';
+import { clearFavoritesCache } from './favoritesService';
 
 /**
  * Get the current authenticated user's ID
@@ -279,6 +280,9 @@ export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean
       await logInteraction(dealId, 'favorite');
       console.log('✅ Favorite added successfully');
     }
+
+    // Clear favorites caches so the favorites screen sees the change immediately
+    clearFavoritesCache();
 
     return true;
   } catch (error) {

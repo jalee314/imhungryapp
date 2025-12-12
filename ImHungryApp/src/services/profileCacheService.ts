@@ -12,6 +12,7 @@ const PROFILE_CACHE_KEY = 'cached_profile_data';
 const PHOTO_URL_CACHE_KEY = 'cached_photo_urls';
 
 export class ProfileCacheService {
+  private static freshInFlight: Promise<{ profile: any; photoUrl: string | null; dealCount: number } | null> | null = null;
   // Show cached data immediately (no expiry check)
   static async getCachedProfile(): Promise<CachedProfileData | null> {
     try {
@@ -78,7 +79,10 @@ export class ProfileCacheService {
 
   // Fetch fresh data in background (Instagram-style)
   static async fetchFreshProfile(): Promise<{ profile: any; photoUrl: string | null; dealCount: number } | null> {
-    try {
+    // De-dupe concurrent calls
+    if (this.freshInFlight) return this.freshInFlight;
+    this.freshInFlight = (async () => {
+      try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
@@ -133,7 +137,11 @@ export class ProfileCacheService {
     } catch (error) {
       console.error('Error fetching fresh profile:', error);
       return null;
+    } finally {
+      this.freshInFlight = null;
     }
+    })();
+    return this.freshInFlight;
   }
 
   // Clear cache (when user logs out or deletes account)

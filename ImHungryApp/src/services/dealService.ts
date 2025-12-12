@@ -2,7 +2,7 @@ import { Deal } from '../components/DealCard';
 import { supabase } from '../../lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';
-import { getCurrentUserLocation, calculateDistance, getRestaurantLocationsBatch } from './locationService';
+import { calculateDistance, getRestaurantLocationsBatch } from './locationService';
 import { getUserVoteStates, calculateVoteCounts } from './voteService';
 import { ImageVariants, ImageType, processImageWithEdgeFunction, getImageUrl } from './imageProcessingService';
 
@@ -179,8 +179,9 @@ export const checkDealContentForProfanity = async (title: string, description?: 
 
 
 // Interface for the ranking function response
-export interface RankedDealIds {
-  deal_ids: string[];
+export interface RankedDealMeta {
+  deal_id: string;
+  distance?: number | null;
 }
 
 // Update DatabaseDeal interface to match your current schema
@@ -261,8 +262,8 @@ const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> =
   }
 };
 
-// Call the ranking function to get ranked deal IDs
-const getRankedDealIds = async (): Promise<string[]> => {
+// Call the ranking function to get ranked deal metadata (id + distance)
+const getRankedDealsMeta = async (): Promise<RankedDealMeta[]> => {
   try {
     const location = await getUserLocation();
     if (!location) {
@@ -290,8 +291,13 @@ const getRankedDealIds = async (): Promise<string[]> => {
       return [];
     }
 
-    // Extract deal IDs from the response
-    return data.map((item: any) => item.deal_id).filter(Boolean);
+    // Preserve both the id and the server-computed distance
+    return data
+      .map((item: any) => ({
+        deal_id: item.deal_id,
+        distance: item.distance ?? null
+      }))
+      .filter((item: RankedDealMeta) => Boolean(item.deal_id));
   } catch (error) {
     return [];
   }
@@ -336,45 +342,41 @@ export const addVotesToDeals = async (deals: DatabaseDeal[]): Promise<DatabaseDe
 // Utility function to add distance information to deals
 export const addDistancesToDeals = async (deals: DatabaseDeal[], customCoordinates?: { lat: number; lng: number }): Promise<DatabaseDeal[]> => {
   try {
-    // Get location for distance calculation
-    let locationToUse: { lat: number; lng: number } | null = null;
-    
-    if (customCoordinates) {
-      console.log('📍 Using custom coordinates for distance calculation:', customCoordinates);
-      locationToUse = customCoordinates;
-    } else {
-      // Get user location
-      const userLocation = await getCurrentUserLocation();
-      if (!userLocation) {
-        console.log('No user location available for distance calculation');
-        return deals; // Return deals without distance if no user location
-      }
-      locationToUse = userLocation;
+    if (!customCoordinates) {
+      // Distances already come from the ranking pipeline; nothing to recompute.
+      return deals;
     }
 
-    // Get all restaurant locations
-    const restaurantIds = deals.map(deal => deal.restaurant_id);
-    const locationMap = await getRestaurantLocationsBatch(restaurantIds);
+    console.log('📍 Using custom coordinates for distance calculation:', customCoordinates);
+    const restaurantIds = Array.from(new Set(deals.map(deal => deal.restaurant_id)));
+    if (restaurantIds.length === 0) {
+      return deals;
+    }
 
-    // Add distance to each deal
-    return deals.map(deal => {
-      const restaurantLocation = locationMap[deal.restaurant_id];
-      let distanceMiles = null;
-      
-      if (restaurantLocation) {
-        distanceMiles = calculateDistance(
-          locationToUse!.lat,
-          locationToUse!.lng,
-          restaurantLocation.lat,
-          restaurantLocation.lng
-        );
-      }
-
-      return {
-        ...deal,
-        distance_miles: distanceMiles
-      };
+    const { data, error } = await supabase.rpc('get_restaurant_coords_with_distance', {
+      restaurant_ids: restaurantIds,
+      ref_lat: customCoordinates.lat,
+      ref_lng: customCoordinates.lng
     });
+
+    if (error) {
+      console.error('Error fetching custom distance overrides:', error);
+      return deals;
+    }
+
+    const distanceMap = new Map<string, number | null>();
+    data?.forEach((row: any) => {
+      if (row.restaurant_id) {
+        distanceMap.set(row.restaurant_id, row.distance_miles ?? null);
+      }
+    });
+
+    return deals.map(deal => ({
+      ...deal,
+      distance_miles: distanceMap.has(deal.restaurant_id)
+        ? distanceMap.get(deal.restaurant_id) ?? null
+        : deal.distance_miles ?? null
+    }));
   } catch (error) {
     console.error('Error adding distances to deals:', error);
     return deals; // Return deals without distance if error
@@ -385,8 +387,14 @@ export const addDistancesToDeals = async (deals: DatabaseDeal[], customCoordinat
 export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
   try {
     console.log('🔍 fetchRankedDeals: Starting to fetch deals...');
-    const rankedIds = await getRankedDealIds();
+    const rankedMeta = await getRankedDealsMeta();
+    const rankedIds = rankedMeta.map(item => item.deal_id);
+    const distanceMap = new Map(rankedMeta.map(item => [item.deal_id, item.distance ?? null]));
     console.log('🔍 fetchRankedDeals: Ranked IDs:', rankedIds.length);
+
+    if (rankedIds.length === 0) {
+      return [];
+    }
 
     // Query the actual tables directly - NO VIEWS
     const { data: deals, error } = await supabase
@@ -457,7 +465,8 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       // Add image metadata with fallback
       image_metadata: (deal.deal_template as any).image_metadata || null,
       // Add user profile image metadata
-      user_profile_metadata: (deal.deal_template as any).user?.image_metadata || null
+      user_profile_metadata: (deal.deal_template as any).user?.image_metadata || null,
+      distance_miles: distanceMap.get(deal.deal_id) ?? null
     })) || [];
 
     // Reorder based on ranking

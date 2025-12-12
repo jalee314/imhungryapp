@@ -200,6 +200,23 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
 };
 
 /**
+ * Check if a phone number exists in the system (expects E.164 or normalized input used by RPC)
+ */
+export const checkPhoneExists = async (phoneInput: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('check_phone_exists', { phone_input: phoneInput });
+    if (error) {
+      console.error('Error checking phone existence:', error);
+      throw new Error('Unable to verify phone number');
+    }
+    return data || false;
+  } catch (error) {
+    console.error('Error in checkPhoneExists:', error);
+    throw error as any;
+  }
+};
+
+/**
  * Clear user data cache
  */
 export const clearUserCache = async (): Promise<void> => {

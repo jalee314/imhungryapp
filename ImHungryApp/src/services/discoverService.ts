@@ -1,6 +1,5 @@
 import { supabase } from '../../lib/supabase';
 import { getCurrentUserLocation } from './locationService';
-import { calculateDistance } from './locationService';
 
 export interface DiscoverRestaurant {
   restaurant_id: string;
@@ -198,6 +197,26 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       };
     }
 
+    // Fetch PostGIS distances (using either custom coordinates or the user's location)
+    const distanceMap = new Map<string, number | null>();
+    if (uniqueRestaurantIds.length > 0 && locationToUse) {
+      const { data: distanceRows, error: distanceError } = await supabase.rpc('get_restaurant_coords_with_distance', {
+        restaurant_ids: uniqueRestaurantIds,
+        ref_lat: locationToUse.lat,
+        ref_lng: locationToUse.lng
+      });
+
+      if (distanceError) {
+        console.error('Error fetching restaurant distances:', distanceError);
+      } else {
+        distanceRows?.forEach((row: any) => {
+          if (row.restaurant_id) {
+            distanceMap.set(row.restaurant_id, row.distance_miles ?? null);
+          }
+        });
+      }
+    }
+
     // Get deal counts for each restaurant
     const dealCounts: Record<string, number> = {};
     for (const restaurantId of uniqueRestaurantIds) {
@@ -218,12 +237,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
     const result: DiscoverRestaurant[] = restaurants
       .filter(restaurant => restaurant.lat && restaurant.lng)
       .map(restaurant => {
-        const distance = calculateDistance(
-          locationToUse!.lat,
-          locationToUse!.lng,
-          restaurant.lat,
-          restaurant.lng
-        );
+        const rawDistance = distanceMap.get(restaurant.restaurant_id);
 
         return {
           restaurant_id: restaurant.restaurant_id,
@@ -231,7 +245,9 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
           address: restaurant.address,
           logo_image: '', // Will be populated below
           deal_count: dealCounts[restaurant.restaurant_id] || 0,
-          distance_miles: Math.round(distance * 10) / 10, // Round to 1 decimal place
+          distance_miles: rawDistance !== undefined && rawDistance !== null
+            ? Math.round(rawDistance * 10) / 10
+            : 0,
           lat: restaurant.lat,
           lng: restaurant.lng
         };

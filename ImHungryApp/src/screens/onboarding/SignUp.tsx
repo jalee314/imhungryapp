@@ -6,7 +6,8 @@ import { TextInput } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { supabase } from '../../../lib/supabase';
+import { checkPhoneExists } from '../../services/userService';
+import { useAuth } from '../../hooks/useAuth';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -24,6 +25,7 @@ export default function SignUpScreen() {
   const route = useRoute();
   const existingUserData = (route.params as any)?.userData;
   const { width, height } = useWindowDimensions();
+  const { validateEmail } = useAuth();
 
   const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
   const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
@@ -84,13 +86,10 @@ export default function SignUpScreen() {
       let exists = false;
       
       if (field === 'email') {
-        const { data, error } = await supabase.rpc('check_email_exists', { email_input: queryValue });
-        if (error) throw error;
-        exists = data;
+        // Use the auth hook's email validation to keep logic centralized
+        exists = await validateEmail(queryValue);
       } else if (field === 'phoneNumber') {
-        const { data, error } = await supabase.rpc('check_phone_exists', { phone_input: queryValue });
-        if (error) throw error;
-        exists = data;
+        exists = await checkPhoneExists(queryValue);
       }
 
       if (exists) {

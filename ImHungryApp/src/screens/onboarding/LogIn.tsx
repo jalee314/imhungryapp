@@ -6,11 +6,12 @@ import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function LogInScreen() {
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
+  const { isLoading: authLoading } = useAuth();
 
   const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
   const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
@@ -37,6 +38,7 @@ export default function LogInScreen() {
   const [loading, setLoading] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { signIn } = useAuth();
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -50,19 +52,10 @@ export default function LogInScreen() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (error) {
-        Alert.alert('Error', error.message);
-      } else {
-        // Authentication state change will automatically trigger navigation
-        // No need to manually navigate - AuthContext handles this
-        console.log('Login successful, AuthContext will handle navigation');
-      }
-    } catch (err) {
+      await signIn(formData.email, formData.password);
+      // Auth listeners will update navigation flow automatically
+      console.log('Login successful, auth store will handle navigation');
+    } catch (err: any) {
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -187,7 +180,7 @@ export default function LogInScreen() {
               <TouchableOpacity
                 style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
                 onPress={handleLogin}
-                disabled={loading}
+                disabled={loading || authLoading}
               >
                 <Text style={styles.continueButtonText}>Log in</Text>
               </TouchableOpacity>

@@ -5,8 +5,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-import { useAdmin } from './src/context/AdminContext';
+import { useAuth } from './src/hooks/useAuth';
+import { useInitializeAuth } from './src/stores/AuthStore';
+import { useAdmin } from './src/hooks/useAdmin';
 import AuthGuard from './src/components/AuthGuard';
 
 
@@ -49,11 +50,12 @@ import AdminDealsScreen from './src/screens/admin/AdminDealsScreen';
 import AdminUsersScreen from './src/screens/admin/AdminUsersScreen';
 import AdminMassUploadScreen from './src/screens/admin/AdminMassUploadScreen';
 
-import { DataCacheProvider } from './src/context/DataCacheContext';
-import { DealUpdateProvider } from './src/context/DealUpdateContext';
-import { FavoritesProvider } from './src/context/FavoritesContext';
-import { LocationProvider } from './src/context/LocationContext';
-import { AdminProvider } from './src/context/AdminContext';
+import { useInitializeDataCache } from './src/stores/DataCacheStore';
+// DealUpdateProvider removed; using Zustand store via hook now
+// FavoritesContext removed; replaced by Zustand store (useFavoritesStore)
+// LocationProvider removed; replaced by Zustand store (useLocationStore)
+import { useInitializeLocation } from './src/stores/LocationStore';
+import { useInitializeAdmin } from './src/stores/AdminStore';
 
 
 const Stack = createNativeStackNavigator();
@@ -65,7 +67,7 @@ const DiscoverMainScreen = () => <FeedTabNavigator currentTab="discover" />;
 // Stack navigators for each tab - only containing tab-specific screens
 const FeedStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="FeedMain" component={FeedTabNavigator} />
+    <Stack.Screen name="Feed  Main" component={FeedTabNavigator} />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
   </Stack.Navigator>
 );
@@ -276,6 +278,14 @@ const AppContent = () => {
 };
 
 export default function App() {
+  // Initialize Zustand auth store once at app start
+  useInitializeAuth();
+  // Initialize admin store once at app start
+  useInitializeAdmin();
+  // Initialize data cache store once at app start
+  useInitializeDataCache();
+  // Initialize location store once at app start
+  useInitializeLocation();
   const [fontsLoaded, fontError] = useFonts({
     'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
     'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
@@ -306,18 +316,6 @@ export default function App() {
   }
 
   return (
-    <AuthProvider>
-      <AdminProvider>
-        <DataCacheProvider>
-          <DealUpdateProvider>
-            <FavoritesProvider>
-              <LocationProvider>
-                <AppContent />
-              </LocationProvider>
-            </FavoritesProvider>
-          </DealUpdateProvider>
-        </DataCacheProvider>
-      </AdminProvider>
-    </AuthProvider>
+    <AppContent />
   );
 }
