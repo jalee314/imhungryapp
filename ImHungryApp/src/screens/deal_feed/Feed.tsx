@@ -342,7 +342,7 @@ const Feed: React.FC = () => {
     <DealCard deal={item} variant="horizontal" onUpvote={handleUpvote} onDownvote={handleDownvote} onFavorite={handleFavorite} onPress={handleDealPress} />
   );
 
-  const renderItemSeparator = () => <View style={{ width: 8 }} />;
+  const renderItemSeparator = () => <View style={{ width: 0 }} />;
 
   const renderFilterSkeleton = () => (
     <View style={styles.filterSkeletonContainer}>

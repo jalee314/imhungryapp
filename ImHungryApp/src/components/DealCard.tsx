@@ -9,10 +9,10 @@ const HORIZONTAL_PADDING = 20; // 10px on each side
 const CARD_GAP = 8; // 4px padding on each card
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
-// Calculate horizontal card width to show ~1.5 cards (first card fully visible, half of second card visible)
+// Calculate horizontal card width to align with header location icon
 // This creates the "peek" effect that hints at horizontal scrolling
 const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
-const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.5;
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.32;
 
 export interface Deal {
   id: string;
@@ -102,7 +102,7 @@ const DealCard: React.FC<DealCardProps> = ({
     if (deal.imageVariants) {
       // Use OptimizedImage for database images with variants
       const displaySize = variant === 'horizontal' 
-        ? { width: HORIZONTAL_CARD_WIDTH, height: 144 }
+        ? { width: HORIZONTAL_CARD_WIDTH, height: 165 }
         : { width: VERTICAL_CARD_WIDTH, height: 144 };
       
       return (
@@ -287,16 +287,17 @@ const styles = StyleSheet.create({
   horizontalCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     alignItems: 'center',
     width: HORIZONTAL_CARD_WIDTH,
-    height: 273,
+    height: 290,
     justifyContent: 'center',
     overflow: 'visible',
   },
   horizontalImage: {
     width: '100%',
-    height: 144,
+    height: 165,
     borderRadius: 8,
     borderColor: '#757575',
     borderWidth: 0.5,

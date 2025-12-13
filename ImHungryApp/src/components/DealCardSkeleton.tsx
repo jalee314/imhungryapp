@@ -7,9 +7,9 @@ const HORIZONTAL_PADDING = 20; // 10px on each side
 const CARD_GAP = 8; // 4px padding on each card
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
-// Calculate horizontal card width to show ~1.5 cards (first card fully visible, half of second card visible)
+// Calculate horizontal card width to align with header location icon
 const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
-const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.5;
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.32;
 
 interface DealCardSkeletonProps {
   variant?: 'horizontal' | 'vertical';
@@ -97,15 +97,16 @@ const styles = StyleSheet.create({
   horizontalCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     alignItems: 'center',
     width: HORIZONTAL_CARD_WIDTH,
-    height: 273,
+    height: 290,
     justifyContent: 'center',
   },
   horizontalImage: {
     width: '100%',
-    height: 144,
+    height: 165,
     borderRadius: 8,
     marginBottom: 8,
   },
