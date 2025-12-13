@@ -19,6 +19,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
@@ -343,18 +344,32 @@ const Feed: React.FC = () => {
 
   const renderItemSeparator = () => <View style={{ width: 8 }} />;
 
+  const renderFilterSkeleton = () => (
+    <View style={styles.filterSkeletonContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterSkeletonList}>
+        {[60, 75, 55, 80, 65, 70].map((width, index) => (
+          <SkeletonLoader key={index} width={width} height={34} borderRadius={20} style={styles.filterSkeletonItem} />
+        ))}
+      </ScrollView>
+    </View>
+  );
+
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
+      {/* Filter Skeleton */}
+      {renderFilterSkeleton()}
+      
+      {/* Featured Deals Section Skeleton */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>✨ Featured Deals</Text>
-        <TouchableOpacity style={styles.seeAllButton}>
-          <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
-        </TouchableOpacity>
+        <SkeletonLoader width={140} height={20} borderRadius={4} />
+        <SkeletonLoader width={30} height={30} borderRadius={15} />
       </View>
       <FlatList data={[1, 2, 3]} renderItem={() => <DealCardSkeleton variant="horizontal" />} keyExtractor={(item) => item.toString()} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
       <View style={styles.sectionSeparator} />
+      
+      {/* Deals For You Section Skeleton */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
+        <SkeletonLoader width={130} height={20} borderRadius={4} />
       </View>
       <View style={styles.dealsGrid}>
         {[1, 2, 3, 4, 5, 6].map((item, index) => (
@@ -419,9 +434,25 @@ const Feed: React.FC = () => {
       return renderEmptyState('no_deals');
     }
 
-    // Priority 6: Render the deals.
+    // Priority 6: Render the deals with cuisine filter.
+    const cuisinesWithDeals = cuisines.filter(cuisine => 
+      deals.some(deal => deal.cuisineId === cuisine.id)
+    );
+
     return (
       <>
+        {/* Cuisine Filter */}
+        {!cuisinesLoading && cuisinesWithDeals.length > 0 && (
+          <CuisineFilter
+            filters={cuisinesWithDeals.map(c => c.name)}
+            selectedFilter={selectedCuisineId === 'All' ? 'All' : cuisinesWithDeals.find(c => c.id === selectedCuisineId)?.name || 'All'}
+            onFilterSelect={(filterName) => {
+              const cuisine = cuisinesWithDeals.find(c => c.name === filterName);
+              setSelectedCuisineId(cuisine ? cuisine.id : 'All');
+            }}
+          />
+        )}
+        
         {communityDeals.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
@@ -463,24 +494,6 @@ const Feed: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FF8C4C']} tintColor="#FF8C4C" />
         }
       >
-        {!cuisinesLoading && cuisines.length > 0 && (() => {
-          // Filter cuisines to only show those with active deals
-          const cuisinesWithDeals = cuisines.filter(cuisine => 
-            deals.some(deal => deal.cuisineId === cuisine.id)
-          );
-          
-          return cuisinesWithDeals.length > 0 ? (
-            <CuisineFilter
-              filters={cuisinesWithDeals.map(c => c.name)}
-              selectedFilter={selectedCuisineId === 'All' ? 'All' : cuisinesWithDeals.find(c => c.id === selectedCuisineId)?.name || 'All'}
-              onFilterSelect={(filterName) => {
-                  const cuisine = cuisinesWithDeals.find(c => c.name === filterName);
-                  setSelectedCuisineId(cuisine ? cuisine.id : 'All');
-              }}
-            />
-          ) : null;
-        })()}
-        
         {renderContent()}
 
       </ScrollView>
@@ -551,6 +564,17 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     paddingBottom: 0,
+  },
+  filterSkeletonContainer: {
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  filterSkeletonList: {
+    paddingLeft: 18.5,
+    gap: 4,
+  },
+  filterSkeletonItem: {
+    marginRight: 4,
   },
   errorContainer: {
     flex: 1,
