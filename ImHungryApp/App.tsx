@@ -67,7 +67,7 @@ const DiscoverMainScreen = () => <FeedTabNavigator currentTab="discover" />;
 // Stack navigators for each tab - only containing tab-specific screens
 const FeedStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Feed  Main" component={FeedTabNavigator} />
+    <Stack.Screen name="Feed Main" component={FeedTabNavigator} />
     <Stack.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
   </Stack.Navigator>
 );

@@ -408,26 +408,20 @@ const CommunityUploadedScreen: React.FC = () => {
       
       {/* Header with back button and title */}
       <View style={styles.headerBackground}>
-        <View style={styles.header}>
-          <View style={styles.timeBattery}>
-            <Text style={styles.time}>9:41</Text>
-          </View>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
+          </TouchableOpacity>
           
-          <View style={styles.trackTitle}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <MaterialCommunityIcons name="arrow-left" size={20} color="#000000" />
-            </TouchableOpacity>
-            
-            <View style={styles.bestValueDeals}>
-              <Text style={styles.titleText}>
-                <Text style={styles.titleEmoji}>✨ </Text>
-                <Text style={styles.titleBold}>Featured Deals</Text>
-              </Text>
-            </View>
-          </View>
+          <Text style={styles.headerTitle}>
+            <Text style={styles.headerTitleBold}>Featured Deals</Text>
+          </Text>
+          
+          {/* Spacer to balance the back button for centering */}
+          <View style={styles.headerSpacer} />
         </View>
       </View>
 
@@ -481,61 +475,36 @@ const styles = StyleSheet.create({
   },
   headerBackground: {
     backgroundColor: '#FFFFFF',
+    height: 100,
+    justifyContent: 'flex-end',
     borderBottomWidth: 0.5,
     borderBottomColor: '#DEDEDE',
-    paddingTop: 15,
-    position: 'relative',
-    zIndex: 2,
   },
-  header: {
-    alignItems: 'flex-start',
-    gap: 16,
-    paddingBottom: 4,
-  },
-  timeBattery: {
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    height: 21,
-    width: '100%',
-  },
-  time: {
-    fontFamily: 'SF Pro',
-    fontWeight: '700',
-    fontSize: 16,
-    color: '#000000',
-  },
-  trackTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 60,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    width: '100%',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingBottom: 10,
   },
   backButton: {
-    width: 20,
-    height: 20,
+    width: 40,
+    height: 24,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  bestValueDeals: {
-    alignItems: 'center',
-    borderRadius: 20,
-    paddingHorizontal: 4,
-  },
-  titleText: {
+  headerTitle: {
     fontFamily: 'Inter',
-    fontSize: 16,
+    fontSize: 20,
     color: '#000000',
+    textAlign: 'center',
   },
-  titleEmoji: {
+  headerTitleBold: {
+    fontFamily: 'Inter',
     fontWeight: '700',
   },
-  titleBold: {
-    fontFamily: 'Inter',
-    fontWeight: '900',
+  headerSpacer: {
+    width: 40,
   },
   content: {
     flex: 1,

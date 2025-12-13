@@ -605,11 +605,12 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#ffffff',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    height: 100,
+    justifyContent: 'flex-end',
+    paddingBottom: 10,
+    paddingHorizontal: 10,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#d7d7d7',
+    borderBottomColor: '#DEDEDE',
   },
   headerTitle: {
     fontSize: 24,
