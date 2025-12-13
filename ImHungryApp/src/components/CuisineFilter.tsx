@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   filterList: {
-    paddingLeft: 20,
+    paddingLeft: 18.5,
   },
   filterCell: {
     backgroundColor: '#FFFFFF',

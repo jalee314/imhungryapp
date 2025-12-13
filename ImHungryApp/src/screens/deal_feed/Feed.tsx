@@ -505,7 +505,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
     marginBottom: 4,
-    paddingHorizontal: 10,
+    paddingLeft: 17,
+    paddingRight: 10,
   },
   sectionTitle: {
     fontFamily: 'Inter',
@@ -523,13 +524,13 @@ const styles = StyleSheet.create({
   },
   communityList: {
     paddingBottom: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: 7,
   },
   sectionSeparator: {
     height: 0.5,
     backgroundColor: '#AAAAAA',
     marginVertical: 8,
-    marginHorizontal: -10,
+    marginHorizontal: -20,
     width: '110%',
   },
   dealsGrid: {

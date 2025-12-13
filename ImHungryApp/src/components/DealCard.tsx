@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import OptimizedImage, { preloadImage } from './OptimizedImage';
 
 const { width: screenWidth } = Dimensions.get('window');
-// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (8px), then divide by 2
+// Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (8px), then divide by 2
 const HORIZONTAL_PADDING = 20; // 10px on each side
 const CARD_GAP = 8; // 4px padding on each card
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
