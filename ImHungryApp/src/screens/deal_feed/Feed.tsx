@@ -463,16 +463,23 @@ const Feed: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FF8C4C']} tintColor="#FF8C4C" />
         }
       >
-        {!cuisinesLoading && cuisines.length > 0 && (
-          <CuisineFilter
-            filters={cuisines.map(c => c.name)}
-            selectedFilter={selectedCuisineId === 'All' ? 'All' : cuisines.find(c => c.id === selectedCuisineId)?.name || 'All'}
-            onFilterSelect={(filterName) => {
-                const cuisine = cuisines.find(c => c.name === filterName);
-                setSelectedCuisineId(cuisine ? cuisine.id : 'All');
-            }}
-          />
-        )}
+        {!cuisinesLoading && cuisines.length > 0 && (() => {
+          // Filter cuisines to only show those with active deals
+          const cuisinesWithDeals = cuisines.filter(cuisine => 
+            deals.some(deal => deal.cuisineId === cuisine.id)
+          );
+          
+          return cuisinesWithDeals.length > 0 ? (
+            <CuisineFilter
+              filters={cuisinesWithDeals.map(c => c.name)}
+              selectedFilter={selectedCuisineId === 'All' ? 'All' : cuisinesWithDeals.find(c => c.id === selectedCuisineId)?.name || 'All'}
+              onFilterSelect={(filterName) => {
+                  const cuisine = cuisinesWithDeals.find(c => c.name === filterName);
+                  setSelectedCuisineId(cuisine ? cuisine.id : 'All');
+              }}
+            />
+          ) : null;
+        })()}
         
         {renderContent()}
 
