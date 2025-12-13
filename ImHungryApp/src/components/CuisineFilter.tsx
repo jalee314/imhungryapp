@@ -98,7 +98,7 @@ const CuisineFilter: React.FC<CuisineFilterProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginTop: 4,
-    marginBottom: 10,
+    marginBottom: 4,
   },
   filterList: {
     paddingLeft: 18.5,

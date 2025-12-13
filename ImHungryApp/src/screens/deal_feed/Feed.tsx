@@ -365,7 +365,7 @@ const Feed: React.FC = () => {
         <SkeletonLoader width={30} height={30} borderRadius={15} />
       </View>
       <FlatList data={[1, 2, 3]} renderItem={() => <DealCardSkeleton variant="horizontal" />} keyExtractor={(item) => item.toString()} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
-      <View style={styles.sectionSeparator} />
+      <View style={styles.skeletonSeparator} />
       
       {/* Deals For You Section Skeleton */}
       <View style={styles.sectionHeader}>
@@ -516,15 +516,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 4,
-    marginBottom: 4,
+    paddingVertical: 6,
     paddingLeft: 17,
     paddingRight: 10,
   },
   sectionTitle: {
     fontFamily: 'Inter',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 17,
     color: '#000000',
   },
   seeAllButton: {
@@ -575,6 +574,10 @@ const styles = StyleSheet.create({
   },
   filterSkeletonItem: {
     marginRight: 4,
+  },
+  skeletonSeparator: {
+    height: 0.5,
+    marginVertical: 8,
   },
   errorContainer: {
     flex: 1,
