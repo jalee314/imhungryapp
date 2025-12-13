@@ -4,9 +4,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import OptimizedImage, { preloadImage } from './OptimizedImage';
 
 const { width: screenWidth } = Dimensions.get('window');
-// Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (8px), then divide by 2
+// Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (4px), then divide by 2
 const HORIZONTAL_PADDING = 20; // 10px on each side
-const CARD_GAP = 8; // 4px padding on each card
+const CARD_GAP = 4; // 2px padding on each card (halved for tighter spacing)
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
 // Calculate horizontal card width to align with header location icon
@@ -103,7 +103,7 @@ const DealCard: React.FC<DealCardProps> = ({
       // Use OptimizedImage for database images with variants
       const displaySize = variant === 'horizontal' 
         ? { width: HORIZONTAL_CARD_WIDTH, height: 165 }
-        : { width: VERTICAL_CARD_WIDTH, height: 144 };
+        : { width: VERTICAL_CARD_WIDTH, height: 175 };
       
       return (
         <OptimizedImage 
@@ -299,9 +299,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 165,
     borderRadius: 8,
-    borderColor: '#757575',
-    borderWidth: 0.5,
     marginBottom: 8,
+    resizeMode: 'cover',
   },
   horizontalTitleContainer: {
     width: '100%',
@@ -389,19 +388,17 @@ const styles = StyleSheet.create({
   // Vertical Card Styles (for 2-column grid)
   verticalCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    borderRadius: 16,
     padding: 8,
     alignItems: 'center',
     width: VERTICAL_CARD_WIDTH,
-    height: 266,
+    height: 305,
     justifyContent: 'space-between',
   },
   verticalImage: {
     width: '100%',
-    height: 144,
+    height: 175,
     borderRadius: 8,
-    borderColor: '#757575',
-    borderWidth: 0.5,
     marginBottom: 8,
   },
   verticalTitle: {

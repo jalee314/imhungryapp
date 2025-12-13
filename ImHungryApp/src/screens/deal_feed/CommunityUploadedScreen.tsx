@@ -522,12 +522,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   leftCard: {
-    marginBottom: 8,
-    marginRight: 4,
+    marginBottom: 4,
+    marginRight: 2,
   },
   rightCard: {
-    marginBottom: 8,
-    marginLeft: 4,
+    marginBottom: 4,
+    marginLeft: 2,
   },
   loadingContainer: {
     flex: 1,

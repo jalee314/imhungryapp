@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 6,
-    paddingLeft: 17,
+    paddingLeft: 16,
     paddingRight: 10,
   },
   sectionTitle: {
@@ -536,7 +536,8 @@ const styles = StyleSheet.create({
   },
   communityList: {
     paddingBottom: 4,
-    paddingHorizontal: 7,
+    paddingLeft: 10.5,
+    paddingRight: 10,
   },
   sectionSeparator: {
     height: 0.5,
@@ -549,16 +550,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    paddingHorizontal: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
     paddingBottom: 100,
   },
   leftCard: {
-    marginBottom: 8,
-    marginRight: 4,
+    marginBottom: 4,
+    marginRight: 2,
   },
   rightCard: {
-    marginBottom: 8,
-    marginLeft: 4,
+    marginBottom: 4,
+    marginLeft: 2,
   },
   loadingContainer: {
     flex: 1,
