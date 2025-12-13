@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 import RowCard from '../../components/RowCard';
 import RowCardSkeleton from '../../components/RowCardSkeleton';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { fetchFavoriteDeals, fetchFavoriteRestaurants, clearFavoritesCache, toggleRestaurantFavorite, FavoriteDeal, FavoriteRestaurant } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
 import { useFavorites } from '../../hooks/useFavorites';
@@ -512,19 +513,20 @@ const FavoritesPage: React.FC = () => {
   if (loading) {
     return (
       <View style={styles.container}>
+        {/* Header Skeleton */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Favorites</Text>
+          <SkeletonLoader width={120} height={28} borderRadius={4} />
         </View>
+        
+        {/* Tab Skeleton */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity style={[styles.tab, styles.activeTab]}>
-            <Text style={[styles.tabText, styles.activeTabText]}>🤝 Deals</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>🍽 Restaurants</Text>
-          </TouchableOpacity>
+          <SkeletonLoader width={85} height={34} borderRadius={20} />
+          <SkeletonLoader width={115} height={34} borderRadius={20} />
         </View>
+        
+        {/* Content Skeleton */}
         <View style={styles.skeletonContainer}>
-          {[1, 2, 3, 4, 5].map((item) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((item) => (
             <RowCardSkeleton key={item} />
           ))}
         </View>

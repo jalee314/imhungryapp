@@ -17,6 +17,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard, { RowCardData } from '../../components/RowCard';
+import RowCardSkeleton from '../../components/RowCardSkeleton';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
 import { useLocation } from '../../context/LocationContext';
 
@@ -106,10 +108,17 @@ const DiscoverFeed: React.FC = () => {
   );
 
 
+  const renderSearchSkeleton = () => (
+    <View style={styles.searchContainer}>
+      <SkeletonLoader width={screenWidth - 40} height={35} borderRadius={30} />
+    </View>
+  );
+
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#FFA05C" />
-      <Text style={styles.loadingText}>Loading restaurants...</Text>
+      {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+        <RowCardSkeleton key={item} />
+      ))}
     </View>
   );
 
@@ -157,19 +166,7 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#666" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              value={searchQuery}
-              onChangeText={handleSearchChange}
-              placeholderTextColor="#999"
-              editable={false}
-            />
-          </View>
-        </View>
+        {renderSearchSkeleton()}
         {renderLoadingState()}
       </View>
     );
@@ -179,19 +176,7 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#666" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              value={searchQuery}
-              onChangeText={handleSearchChange}
-              placeholderTextColor="#999"
-              editable={false}
-            />
-          </View>
-        </View>
+        {renderSearchSkeleton()}
         {renderErrorState()}
       </View>
     );
@@ -305,15 +290,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 16,
-    fontFamily: 'Inter',
+    paddingTop: 4,
   },
   errorContainer: {
     flex: 1,

@@ -5,6 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import DealCard from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { useProfile } from '../../hooks/useProfile';
 
 interface ProfilePageProps {}
@@ -75,18 +76,18 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <View style={styles.userInfo}>
                   <View>
                     {/* Username skeleton */}
-                    <View style={[styles.skeleton, styles.skeletonUsername]} />
+                    <SkeletonLoader width={150} height={24} borderRadius={4} style={{ marginBottom: 6 }} />
                     {/* Join date skeleton */}
-                    <View style={[styles.skeleton, styles.skeletonJoinDate]} />
+                    <SkeletonLoader width={120} height={14} borderRadius={4} style={{ marginBottom: 4 }} />
                     {/* Location skeleton */}
-                    <View style={[styles.skeleton, styles.skeletonLocation]} />
+                    <SkeletonLoader width={100} height={14} borderRadius={4} />
                   </View>
                 </View>
               </View>
               
               <View style={styles.rightSection}>
                 {/* Profile photo skeleton */}
-                <View style={[styles.skeleton, styles.skeletonProfilePhoto]} />
+                <SkeletonLoader width={75} height={75} borderRadius={37.5} />
               </View>
             </View>
           </View>
@@ -94,10 +95,10 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
           {/* Tabs Section Skeleton */}
           <View style={styles.actionButtonsContainer}>
             <View style={{ flexDirection: 'row', gap: 4 }}>
-              <View style={[styles.skeleton, styles.skeletonButton]} />
-              <View style={[styles.skeleton, styles.skeletonButton]} />
+              <SkeletonLoader width={80} height={35} borderRadius={20} />
+              <SkeletonLoader width={80} height={35} borderRadius={20} />
             </View>
-            <View style={[styles.skeleton, styles.skeletonShareButton]} />
+            <SkeletonLoader width={40} height={32} borderRadius={12} />
           </View>
 
           {/* Content area skeleton - Grid of posts */}
