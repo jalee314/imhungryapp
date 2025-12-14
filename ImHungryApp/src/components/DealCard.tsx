@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
 import { Monicon } from '@monicon/native';
 import OptimizedImage, { preloadImage } from './OptimizedImage';
+import VoteButtons from './VoteButtons';
 
 const { width: screenWidth } = Dimensions.get('window');
 // Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (4px), then divide by 2
@@ -152,34 +153,13 @@ const DealCard: React.FC<DealCardProps> = ({
         </View>
         
         <View style={styles.horizontalInteractions}>
-          <TouchableWithoutFeedback onPress={handleUpvote}>
-            <View style={styles.horizontalVoteContainer}>
-              <TouchableOpacity 
-                style={[styles.horizontalVoteButton, deal.isUpvoted && styles.upvotedcom]}
-                onPress={handleUpvote}
-                activeOpacity={0.6}
-              >
-                <Monicon
-                  name="ph:arrow-fat-up-fill"
-                  size={18}
-                  color={deal.isUpvoted ? "#FF8C4C" : "#D8D8D8"}
-                />
-              </TouchableOpacity>
-              <Text style={styles.horizontalVoteCount}>{deal.votes}</Text>
-              <View style={styles.horizontalVoteSeparator} />
-              <TouchableOpacity 
-                style={[styles.horizontalVoteButton, deal.isDownvoted && styles.downvotedcom]}
-                onPress={handleDownvote}
-                activeOpacity={0.6}
-              >
-                <Monicon
-                  name="ph:arrow-fat-down-fill"
-                  size={18}
-                  color={deal.isDownvoted ? "#9796FF" : "#D8D8D8"}
-                />
-              </TouchableOpacity>
-            </View>
-          </TouchableWithoutFeedback>
+          <VoteButtons
+            votes={deal.votes}
+            isUpvoted={deal.isUpvoted}
+            isDownvoted={deal.isDownvoted}
+            onUpvote={handleUpvote}
+            onDownvote={handleDownvote}
+          />
           <View style={styles.horizontalFavoriteWrapper}>
             <TouchableOpacity 
               style={[styles.horizontalFavoriteButton, deal.isFavorited && styles.favorited]}
@@ -222,34 +202,13 @@ const DealCard: React.FC<DealCardProps> = ({
       </View>
       
       <View style={styles.verticalInteractions}>
-        <TouchableWithoutFeedback onPress={handleUpvote}>
-          <View style={styles.verticalVoteContainer}>
-            <TouchableOpacity 
-              style={[styles.verticalVoteButton, deal.isUpvoted && styles.upvoteddeals]}
-              onPress={handleUpvote}
-              activeOpacity={0.6}
-            >
-                <Monicon
-                  name="ph:arrow-fat-up-fill"
-                  size={18}
-                  color={deal.isUpvoted ? "#FF8C4C" : "#D8D8D8"}
-                />
-            </TouchableOpacity>
-            <Text style={styles.verticalVoteCount}>{deal.votes}</Text>
-            <View style={styles.verticalVoteSeparator} />
-            <TouchableOpacity 
-              style={[styles.verticalVoteButton, deal.isDownvoted && styles.downvoteddeals]}
-              onPress={handleDownvote}
-              activeOpacity={0.6}
-            >
-                <Monicon
-                  name="ph:arrow-fat-down-fill"
-                  size={18}
-                  color={deal.isDownvoted ? "#9796FF" : "#D8D8D8"}
-                />
-            </TouchableOpacity>
-          </View>
-        </TouchableWithoutFeedback>
+        <VoteButtons
+          votes={deal.votes}
+          isUpvoted={deal.isUpvoted}
+          isDownvoted={deal.isDownvoted}
+          onUpvote={handleUpvote}
+          onDownvote={handleDownvote}
+        />
         
         {/* Replace favorite button with delete button conditionally */}
         {showDelete ? (
@@ -367,7 +326,7 @@ const styles = StyleSheet.create({
   },
   horizontalVoteSeparator: {
     width: 1,
-    height: 16,
+    height: 12,
     backgroundColor: '#DEDEDE',
     marginHorizontal: 6,
   },
@@ -377,7 +336,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   horizontalFavoriteButton: {
-    backgroundColor: '#F7F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
@@ -463,12 +422,12 @@ const styles = StyleSheet.create({
   },
   verticalVoteSeparator: {
     width: 1,
-    height: 16,
+    height: 12,
     backgroundColor: '#DEDEDE',
     marginHorizontal: 6,
   },
   verticalFavoriteButton: {
-    backgroundColor: '#F7F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
@@ -478,7 +437,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   verticalDeleteButton: {
-    backgroundColor: '#F7F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,

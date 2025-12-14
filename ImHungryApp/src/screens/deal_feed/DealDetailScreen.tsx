@@ -21,6 +21,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
+import VoteButtons from '../../components/VoteButtons';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
@@ -561,39 +562,22 @@ const DealDetailScreen: React.FC = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <View style={styles.voteContainer}>
-            <TouchableOpacity 
-              style={[styles.voteButton, dealData.isUpvoted && styles.upvoted]}
-              onPress={handleUpvote}
-            >
-              <Monicon 
-                name="ph:arrow-fat-up-fill"
-                size={18}
-                color={dealData.isUpvoted ? "#FF8C4C" : "#000"} 
-              />
-            </TouchableOpacity>
-            <Text style={styles.voteCount}>{dealData.votes}</Text>
-            {/* Vertical separator line */}
-            <View style={styles.voteSeparator} />
-            <TouchableOpacity 
-              style={[styles.voteButton, dealData.isDownvoted && styles.downvoted]}
-              onPress={handleDownvote}
-            >
-              <Monicon 
-                name="ph:arrow-fat-down-fill"
-                size={18}
-                color={dealData.isDownvoted ? "#9796FF" : "#000"} 
-              />
-            </TouchableOpacity>
-          </View>
+          <VoteButtons
+            votes={dealData.votes}
+            isUpvoted={dealData.isUpvoted}
+            isDownvoted={dealData.isDownvoted}
+            onUpvote={handleUpvote}
+            onDownvote={handleDownvote}
+          />
 
           <View style={styles.rightActions}>
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={handleFavorite}
+              activeOpacity={0.6}
             >
-              <MaterialCommunityIcons 
-                name={dealData.isFavorited ? "heart" : "heart-outline"} 
+              <Monicon 
+                name={dealData.isFavorited ? "mdi:heart" : "mdi:heart-outline"} 
                 size={19} 
                 color={dealData.isFavorited ? "#FF1E00" : "#000"} 
               />
@@ -827,7 +811,7 @@ const styles = StyleSheet.create({
   },
   viewCount: {
     fontSize: 12,
-    color: '#666666',
+    color: '#000000',
     fontFamily: 'Inter',
     marginRight: 6,
   },
@@ -919,42 +903,42 @@ const styles = StyleSheet.create({
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    justifyContent: 'space-between',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
-    borderColor: '#D7D7D7', // Match feed border color
+    borderColor: '#D7D7D7',
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
     height: 28,
+    width: 85,
   },
   voteButton: {
     backgroundColor: 'transparent',
     width: 20,
-    height: 24,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 4, // Match feed styling
+    borderRadius: 4,
   },
   upvoted: {
     // No background change - only icon color changes
-    // marginBottom: 1, // Removed to prevent shifting
   },
   downvoted: {
     // No background change - only icon color changes
-    // marginBottom: 1, // Removed to prevent shifting
   },
   voteCount: {
+    fontFamily: 'Inter',
     fontSize: 10,
     fontWeight: '400',
     color: '#000000',
     marginHorizontal: 6,
-    fontFamily: 'Inter',
   },
   voteSeparator: {
     width: 1,
-    height: 16,
-    backgroundColor: '#DEDEDE', // Match feed separator color
-    marginHorizontal: 6, // Match feed margin (was 4, now 6)
+    height: 12,
+    backgroundColor: '#DEDEDE',
+    marginHorizontal: 6,
   },
   rightActions: {
     flexDirection: 'row',
@@ -963,7 +947,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D7D7D7', // Match feed border color
+    borderColor: '#D7D7D7',
     borderRadius: 30,
     width: 40,
     height: 28,
