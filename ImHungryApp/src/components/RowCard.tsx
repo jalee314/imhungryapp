@@ -88,7 +88,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             </View>
             
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
+              <Ionicons name="chevron-forward" size={16} color="#000000" />
             </View>
           </View>
         );
@@ -181,15 +181,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   image: {
-    width: 70,
-    height: 70,
+    width: 80,
+    height: 80,
     borderRadius: 8,
   },
   textFrame: {
     flex: 1,
     flexDirection: 'column',
     gap: 4,
-    height: 66,
+    height: 76,
     justifyContent: 'center',
     paddingRight: 8, // Add padding to prevent text from touching arrow
   },
@@ -254,13 +254,13 @@ const styles = StyleSheet.create({
   
   // Variant-specific styles
   'explore-deal-card': {
-    height: 86,
+    height: 96,
   },
   'rest-deal': {
-    height: 86,
+    height: 96,
   },
   'favorites-deal-card': {
-    height: 86,
+    height: 96,
   },
   // User profile styles
   userProfileSection: {

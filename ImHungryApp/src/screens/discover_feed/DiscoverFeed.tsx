@@ -68,10 +68,17 @@ const DiscoverFeed: React.FC = () => {
   // Load current location on mount and when location changes
   // This is now handled by LocationContext, so we can remove this effect
 
-  // Filter restaurants based on search query (name only)
-  const filteredRestaurants = restaurants.filter(restaurant => 
-    restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Maximum distance limit in miles
+  const MAX_DISTANCE_MILES = 20;
+
+  // Filter restaurants based on search query (name only) and 20-mile distance limit
+  // Also sort by distance (nearest first)
+  const filteredRestaurants = restaurants
+    .filter(restaurant => 
+      restaurant.distance_miles <= MAX_DISTANCE_MILES &&
+      restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => a.distance_miles - b.distance_miles);
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
@@ -239,32 +246,24 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 8,
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffffed',
     borderWidth: 0.5,
-    borderColor: '#757575',
+    borderColor: '#d7d7d7',
     borderRadius: 30,
     paddingHorizontal: 16,
     height: 35,
     gap: 16,
-    width: screenWidth - 40,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    width: 369,
+    alignSelf: 'center',
     elevation: 2,
   },
   searchInputContainerFocused: {
-    borderColor: '#757575',
-    shadowOpacity: 0.2,
+    borderColor: '#d7d7d7',
     elevation: 4,
   },
   searchInput: {
