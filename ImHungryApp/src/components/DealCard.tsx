@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 import OptimizedImage, { preloadImage } from './OptimizedImage';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -159,10 +159,10 @@ const DealCard: React.FC<DealCardProps> = ({
                 onPress={handleUpvote}
                 activeOpacity={0.6}
               >
-                <MaterialCommunityIcons
-                  name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                  size={deal.isUpvoted ? 23 : 17} 
-                  color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
+                <Monicon
+                  name="ph:arrow-fat-up-fill"
+                  size={18}
+                  color={deal.isUpvoted ? "#FF8C4C" : "#D8D8D8"}
                 />
               </TouchableOpacity>
               <Text style={styles.horizontalVoteCount}>{deal.votes}</Text>
@@ -172,10 +172,10 @@ const DealCard: React.FC<DealCardProps> = ({
                 onPress={handleDownvote}
                 activeOpacity={0.6}
               >
-                <MaterialCommunityIcons
-                  name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                  size={deal.isDownvoted ? 22 : 17} 
-                  color={deal.isDownvoted ? "#9796FF" : "#000"} 
+                <Monicon
+                  name="ph:arrow-fat-down-fill"
+                  size={18}
+                  color={deal.isDownvoted ? "#9796FF" : "#D8D8D8"}
                 />
               </TouchableOpacity>
             </View>
@@ -186,8 +186,8 @@ const DealCard: React.FC<DealCardProps> = ({
               onPress={handleFavorite}
               activeOpacity={0.6}
             >
-              <MaterialCommunityIcons
-                name={deal.isFavorited ? "heart" : "heart-outline"}
+              <Monicon
+                name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
                 size={19} 
                 color={deal.isFavorited ? "#FF1E00" : "#000"} 
               />
@@ -229,10 +229,10 @@ const DealCard: React.FC<DealCardProps> = ({
               onPress={handleUpvote}
               activeOpacity={0.6}
             >
-                <MaterialCommunityIcons
-                  name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                  size={deal.isUpvoted ? 23 : 17} 
-                  color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
+                <Monicon
+                  name="ph:arrow-fat-up-fill"
+                  size={18}
+                  color={deal.isUpvoted ? "#FF8C4C" : "#D8D8D8"}
                 />
             </TouchableOpacity>
             <Text style={styles.verticalVoteCount}>{deal.votes}</Text>
@@ -242,10 +242,10 @@ const DealCard: React.FC<DealCardProps> = ({
               onPress={handleDownvote}
               activeOpacity={0.6}
             >
-                <MaterialCommunityIcons
-                  name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                  size={deal.isDownvoted ? 22 : 17} 
-                  color={deal.isDownvoted ? "#9796FF" : "#000"} 
+                <Monicon
+                  name="ph:arrow-fat-down-fill"
+                  size={18}
+                  color={deal.isDownvoted ? "#9796FF" : "#D8D8D8"}
                 />
             </TouchableOpacity>
           </View>
@@ -258,8 +258,8 @@ const DealCard: React.FC<DealCardProps> = ({
             onPress={handleDelete}
             activeOpacity={0.6}
           >
-            <MaterialCommunityIcons
-              name="delete-outline"
+            <Monicon
+              name="mdi:delete-outline"
               size={16} 
               color="#000000" 
             />
@@ -270,8 +270,8 @@ const DealCard: React.FC<DealCardProps> = ({
             onPress={handleFavorite}
             activeOpacity={0.6}
           >
-            <MaterialCommunityIcons
-              name={deal.isFavorited ? "heart" : "heart-outline"}
+            <Monicon
+              name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
               size={19} 
               color={deal.isFavorited ? "#FF1E00" : "#000"} 
             />
@@ -340,13 +340,15 @@ const styles = StyleSheet.create({
   horizontalVoteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
     height: 28,
+    width: 85,
+    justifyContent: 'space-between',
   },
   horizontalVoteButton: {
     backgroundColor: 'transparent',
@@ -366,7 +368,7 @@ const styles = StyleSheet.create({
   horizontalVoteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D7D7D7',
+    backgroundColor: '#DEDEDE',
     marginHorizontal: 6,
   },
   horizontalFavoriteWrapper: {
@@ -375,7 +377,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   horizontalFavoriteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
@@ -434,13 +436,15 @@ const styles = StyleSheet.create({
   verticalVoteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
     height: 28,
+    width: 85,
+    justifyContent: 'space-between',
   },
   verticalVoteButton: {
     backgroundColor: 'transparent',
@@ -460,11 +464,11 @@ const styles = StyleSheet.create({
   verticalVoteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D7D7D7',
+    backgroundColor: '#DEDEDE',
     marginHorizontal: 6,
   },
   verticalFavoriteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
@@ -474,7 +478,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   verticalDeleteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
@@ -485,21 +489,27 @@ const styles = StyleSheet.create({
   },
 
   // Shared styles
+  arrowIconContainer: {
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   upvotedcom: {
     // No background change - only icon color changes
-    marginBottom: 2,
+    // marginBottom: 2, // Removed to prevent shifting
   },
   downvotedcom: {
     // No background change - only icon color changes
-    marginBottom: 1,
+    // marginBottom: 1, // Removed to prevent shifting
   },
   upvoteddeals: {
     // No background change - only icon color changes
-    marginBottom: 5,
+    // marginBottom: 5, // Removed to prevent shifting
   },
   downvoteddeals: {
     // No background change - only icon color changes
-    marginBottom: 2,
+    // marginBottom: 2, // Removed to prevent shifting
   },
   favorited: {
     // Don't change background - only the heart icon color changes

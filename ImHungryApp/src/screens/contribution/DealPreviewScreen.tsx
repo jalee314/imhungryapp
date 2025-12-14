@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
 
 interface Restaurant {
@@ -260,12 +261,12 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         <View style={styles.interactionsContainer}>
                             <View style={styles.voteContainer}>
                                 <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="arrow-up-bold-outline" size={17} color="#000" />
+                                    <Monicon name="ph:arrow-fat-up-fill" size={17} color="#000" />
                                 </TouchableOpacity>
                                 <Text style={styles.voteCount}>0</Text>
                                 <View style={styles.voteSeparator} />
                                 <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="arrow-down-bold-outline" size={17} color="#000" />
+                                    <Monicon name="ph:arrow-fat-down-fill" size={17} color="#000" />
                                 </TouchableOpacity>
                             </View>
                             
@@ -512,7 +513,7 @@ const styles = StyleSheet.create({
   voteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D7D7D7',
+    backgroundColor: '#DEDEDE',
     marginHorizontal: 6,
   },
   favContainer: {

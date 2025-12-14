@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   },
   sectionSeparator: {
     height: 0.5,
-    backgroundColor: '#AAAAAA',
+    backgroundColor: '#DEDEDE',
     marginVertical: 8,
     marginHorizontal: -20,
     width: '110%',

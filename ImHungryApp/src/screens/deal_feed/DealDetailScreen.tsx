@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
@@ -561,9 +562,9 @@ const DealDetailScreen: React.FC = () => {
               style={[styles.voteButton, dealData.isUpvoted && styles.upvoted]}
               onPress={handleUpvote}
             >
-              <MaterialCommunityIcons 
-                name={dealData.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                size={dealData.isUpvoted ? 23 : 17} 
+              <Monicon 
+                name="ph:arrow-fat-up-fill"
+                size={18}
                 color={dealData.isUpvoted ? "#FF8C4C" : "#000"} 
               />
             </TouchableOpacity>
@@ -574,9 +575,9 @@ const DealDetailScreen: React.FC = () => {
               style={[styles.voteButton, dealData.isDownvoted && styles.downvoted]}
               onPress={handleDownvote}
             >
-              <MaterialCommunityIcons 
-                name={dealData.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                size={dealData.isDownvoted ? 22 : 17} 
+              <Monicon 
+                name="ph:arrow-fat-down-fill"
+                size={18}
                 color={dealData.isDownvoted ? "#9796FF" : "#000"} 
               />
             </TouchableOpacity>
@@ -931,11 +932,11 @@ const styles = StyleSheet.create({
   },
   upvoted: {
     // No background change - only icon color changes
-    marginBottom: 1,
+    // marginBottom: 1, // Removed to prevent shifting
   },
   downvoted: {
     // No background change - only icon color changes
-    marginBottom: 1,
+    // marginBottom: 1, // Removed to prevent shifting
   },
   voteCount: {
     fontSize: 10,
@@ -947,7 +948,7 @@ const styles = StyleSheet.create({
   voteSeparator: {
     width: 1,
     height: 16,
-    backgroundColor: '#D7D7D7', // Match feed separator color
+    backgroundColor: '#DEDEDE', // Match feed separator color
     marginHorizontal: 6, // Match feed margin (was 4, now 6)
   },
   rightActions: {

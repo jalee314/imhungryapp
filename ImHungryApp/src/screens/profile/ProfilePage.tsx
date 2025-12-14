@@ -752,19 +752,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    gap: 4,
     paddingTop: 8,
     paddingBottom: 100,
-    paddingHorizontal: 8,
+    paddingLeft: 10,
+    paddingRight: 10,
     width: '100%',
   },
   leftCard: {
     marginBottom: 4,
-    marginRight: 4,
+    marginRight: 2,
   },
   rightCard: {
     marginBottom: 4,
-    marginLeft: 4,
+    marginLeft: 2,
   },
   emptyContainer: {
     flex: 1,

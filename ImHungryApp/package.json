@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@monicon/metro": "^1.2.2",
+    "@monicon/native": "^1.2.2",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.4.8",
     "@react-navigation/native": "^7.1.17",
