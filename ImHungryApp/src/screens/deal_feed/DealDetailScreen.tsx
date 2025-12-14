@@ -23,7 +23,7 @@ import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
-import { getDealViewCount, logShare, logClickThrough } from '../../services/interactionService';
+import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
 import { useFavorites } from '../../hooks/useFavorites';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import OptimizedImage from '../../components/OptimizedImage';
@@ -42,6 +42,7 @@ const DealDetailScreen: React.FC = () => {
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [viewCount, setViewCount] = useState<number>(0);
+  const [viewerPhotos, setViewerPhotos] = useState<string[]>([]);
   const [isImageViewVisible, setImageViewVisible] = useState(false);
   const [modalImageLoading, setModalImageLoading] = useState(false);
   const [modalImageError, setModalImageError] = useState(false);
@@ -152,14 +153,18 @@ const DealDetailScreen: React.FC = () => {
     setImageDimensions(null);
   }, [dealData.id]);
 
-  // Fetch initial view count and subscribe to realtime updates
+  // Fetch initial view count, viewer photos, and subscribe to realtime updates
   useEffect(() => {
-    const fetchViewCount = async () => {
-      const count = await getDealViewCount(dealData.id);
+    const fetchViewData = async () => {
+      const [count, photos] = await Promise.all([
+        getDealViewCount(dealData.id),
+        getDealViewerPhotos(dealData.id, 3)
+      ]);
       setViewCount(count);
+      setViewerPhotos(photos);
     };
 
-    fetchViewCount();
+    fetchViewData();
 
     // Subscribe to realtime click interactions for this deal
     const subscription = supabase
@@ -432,21 +437,20 @@ const DealDetailScreen: React.FC = () => {
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
             <View style={styles.viewCountContainer}>
               <Text style={styles.viewCount}>{viewCount} viewed</Text>
-              <View style={styles.avatarGroup}>
-                {/* Mock viewer avatars */}
-                <Image 
-                  source={{ uri: 'https://via.placeholder.com/20x20/ff8c4c/ffffff?text=A' }} 
-                  style={[styles.viewerAvatar, { zIndex: 3 }]} 
-                />
-                <Image 
-                  source={{ uri: 'https://via.placeholder.com/20x20/4CAF50/ffffff?text=B' }} 
-                  style={[styles.viewerAvatar, { zIndex: 2, marginLeft: -8 }]} 
-                />
-                <Image 
-                  source={{ uri: 'https://via.placeholder.com/20x20/2196F3/ffffff?text=C' }} 
-                  style={[styles.viewerAvatar, { zIndex: 1, marginLeft: -8 }]} 
-                />
-              </View>
+              {viewerPhotos.length > 0 && (
+                <View style={styles.avatarGroup}>
+                  {viewerPhotos.map((photoUrl, index) => (
+                    <Image 
+                      key={index}
+                      source={{ uri: photoUrl }} 
+                      style={[
+                        styles.viewerAvatar, 
+                        { zIndex: viewerPhotos.length - index, marginLeft: index > 0 ? -8 : 0 }
+                      ]} 
+                    />
+                  ))}
+                </View>
+              )}
             </View>
           </View>
 
@@ -818,13 +822,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   viewCount: {
     fontSize: 12,
     color: '#666666',
-    marginBottom: 4,
     fontFamily: 'Inter',
+    marginRight: 6,
   },
   avatarGroup: {
     flexDirection: 'row',
