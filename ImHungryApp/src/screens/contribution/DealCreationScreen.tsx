@@ -548,7 +548,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
               onPress={handlePreview}
               disabled={dataLoading}
             >
-              <Text style={styles.nextButtonText}>Next</Text>
+              <Text style={styles.nextButtonText}>Review</Text>
             </TouchableOpacity>
           </View>
 

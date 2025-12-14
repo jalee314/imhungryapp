@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: 30,
+    borderRadius: 10,
     minWidth: 90,
   },
   disabledButton: {
