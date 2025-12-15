@@ -203,6 +203,8 @@ export interface DatabaseDeal {
   user_id: string;
   user_display_name: string | null;
   user_profile_photo: string | null;
+  user_city?: string | null;
+  user_state?: string | null;
   restaurant_id: string;
   // Add image metadata
   image_metadata?: {
@@ -432,6 +434,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
             display_name,
             profile_photo,
             profile_photo_metadata_id,
+            location_city,
             image_metadata:profile_photo_metadata_id (
               variants
             )
@@ -461,6 +464,8 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       user_id: (deal.deal_template as any).user_id,
       user_display_name: (deal.deal_template as any).user?.display_name || null,
       user_profile_photo: (deal.deal_template as any).user?.profile_photo || null,
+      user_city: (deal.deal_template as any).user?.location_city || null,
+      user_state: 'CA', // Hardcoded for California (as per app's current scope)
       restaurant_id: (deal.deal_template as any).restaurant_id,
       // Add image metadata with fallback
       image_metadata: (deal.deal_template as any).image_metadata || null,
@@ -536,6 +541,8 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     userId: dbDeal.user_id,
     userDisplayName: dbDeal.user_display_name || undefined,
     userProfilePhoto: userProfilePhoto || undefined,  // Only Cloudinary or null
+    userCity: dbDeal.user_city || undefined,
+    userState: dbDeal.user_state || undefined,
     restaurantAddress: dbDeal.restaurant_address,
     isAnonymous: dbDeal.is_anonymous,
   };
@@ -633,6 +640,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
             display_name,
             profile_photo,
             profile_photo_metadata_id,
+            location_city,
             image_metadata:profile_photo_metadata_id(
               variants
             )
@@ -704,6 +712,8 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
         user_id: template.user_id,
         user_display_name: template.user?.display_name || null,
         user_profile_photo: template.user?.profile_photo || null,
+        user_city: template.user?.location_city || null,
+        user_state: 'CA', // Hardcoded for California (as per app's current scope)
         user_profile_metadata: template.user?.image_metadata, // ✅ Add this
         votes: voteCounts[deal.deal_id] || 0,
         is_upvoted: voteState.isUpvoted,

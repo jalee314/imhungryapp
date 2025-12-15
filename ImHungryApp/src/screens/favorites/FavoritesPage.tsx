@@ -30,6 +30,8 @@ const FavoritesPage: React.FC = () => {
   const [unfavoritingIds, setUnfavoritingIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
+  const [hasLoadedDeals, setHasLoadedDeals] = useState(false);
+  const [hasLoadedRestaurants, setHasLoadedRestaurants] = useState(false);
   const favoriteChannel = useRef<any>(null);
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
@@ -55,8 +57,8 @@ const FavoritesPage: React.FC = () => {
 
   const loadRestaurants = async (silent: boolean = false) => {
     try {
-      // Only show skeleton if not a silent refresh and we don't have data yet
-      if (!silent) {
+      // Only show skeleton if not a silent refresh and we haven't loaded data yet
+      if (!silent && !hasLoadedRestaurants) {
         setRestaurantsLoading(true);
       }
       console.log('🔄 Loading restaurants...', silent ? '(silent)' : '');
@@ -73,10 +75,11 @@ const FavoritesPage: React.FC = () => {
       const filteredData = restaurantsData.filter(restaurant => !isUnfavorited(restaurant.id, 'restaurant'));
       console.log('🔍 Filtered restaurants:', filteredData);
       setRestaurants(filteredData);
+      setHasLoadedRestaurants(true);
     } catch (error) {
       console.error('Error loading restaurants:', error);
     } finally {
-      if (!silent) {
+      if (!silent && !hasLoadedRestaurants) {
         setRestaurantsLoading(false);
       }
     }
@@ -84,8 +87,8 @@ const FavoritesPage: React.FC = () => {
 
   const loadDeals = async (silent: boolean = false) => {
     try {
-      // Only show skeleton if not a silent refresh and we don't have data yet
-      if (!silent) {
+      // Only show skeleton if not a silent refresh and we haven't loaded data yet
+      if (!silent && !hasLoadedDeals) {
         setDealsLoading(true);
       }
       console.log('🔄 Loading deals...', silent ? '(silent)' : '');
@@ -100,10 +103,11 @@ const FavoritesPage: React.FC = () => {
       // Filter out unfavorited deals
       const filteredData = dealsData.filter(deal => !isUnfavorited(deal.id, 'deal'));
       setDeals(filteredData);
+      setHasLoadedDeals(true);
     } catch (error) {
       console.error('Error loading deals:', error);
     } finally {
-      if (!silent) {
+      if (!silent && !hasLoadedDeals) {
         setDealsLoading(false);
       }
     }
@@ -154,11 +158,15 @@ const FavoritesPage: React.FC = () => {
   useEffect(() => {
     console.log('🔄 Tab changed to:', activeTab);
     if (activeTab === 'restaurants' && !restaurantsLoading) {
-      console.log('🔄 Loading restaurants for tab switch');
-      loadRestaurants();
+      // If already loaded, do a silent background refresh; otherwise show skeleton
+      const isSilent = hasLoadedRestaurants;
+      console.log('🔄 Loading restaurants for tab switch', isSilent ? '(silent)' : '');
+      loadRestaurants(isSilent);
     } else if (activeTab === 'deals' && !dealsLoading) {
-      console.log('🔄 Loading deals for tab switch');
-      loadDeals();
+      // If already loaded, do a silent background refresh; otherwise show skeleton
+      const isSilent = hasLoadedDeals;
+      console.log('🔄 Loading deals for tab switch', isSilent ? '(silent)' : '');
+      loadDeals(isSilent);
     }
   }, [activeTab]);
 
@@ -534,7 +542,9 @@ const FavoritesPage: React.FC = () => {
     );
   }
 
-  const isTabLoading = (activeTab === 'restaurants' && restaurantsLoading) || (activeTab === 'deals' && dealsLoading);
+  // Only show loading skeleton if data hasn't been loaded yet for this tab
+  const isTabLoading = (activeTab === 'restaurants' && restaurantsLoading && !hasLoadedRestaurants) || 
+                       (activeTab === 'deals' && dealsLoading && !hasLoadedDeals);
 
   return (
     <View style={styles.container}>
@@ -610,7 +620,7 @@ const styles = StyleSheet.create({
     height: 100,
     justifyContent: 'flex-end',
     paddingBottom: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     borderBottomWidth: 0.5,
     borderBottomColor: '#DEDEDE',
   },

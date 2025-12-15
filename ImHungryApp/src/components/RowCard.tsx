@@ -140,7 +140,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             </View>
             
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
+              <Ionicons name="chevron-forward" size={16} color="#000000" />
             </View>
           </View>
         );

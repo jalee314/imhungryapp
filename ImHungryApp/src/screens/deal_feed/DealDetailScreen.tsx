@@ -619,7 +619,7 @@ const DealDetailScreen: React.FC = () => {
           <View style={styles.userInfo}>
             <Text style={styles.sharedByLabel}>Shared By</Text>
             <Text style={styles.userName}>{displayName}</Text>
-            <Text style={styles.userLocation}>Fullerton, California</Text>
+            <Text style={styles.userLocation}>{dealData.userCity || 'Unknown'}, {dealData.userState || 'CA'}</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -975,18 +975,14 @@ const styles = StyleSheet.create({
   sharedByContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    paddingBottom: 32,
-    paddingTop: 16,
-    borderRadius: 8,
-    marginHorizontal: 0,
-    backgroundColor: 'transparent',
+    gap: 8,
   },
   profilePicture: {
-    width: 50.25,
-    height: 50.25,
-    borderRadius: 25.125,
-    marginRight: 8,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
   userInfo: {
     flex: 1,
@@ -994,18 +990,18 @@ const styles = StyleSheet.create({
   sharedByLabel: {
     fontSize: 10,
     color: '#000000',
-    marginBottom: 0,
     fontFamily: 'Inter',
     fontWeight: '400',
     letterSpacing: 0.2,
+    lineHeight: 15,
   },
   userName: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
     color: '#000000',
-    marginBottom: 0,
     fontFamily: 'Inter',
-    letterSpacing: 0.24,
+    letterSpacing: 0.2,
+    lineHeight: 15,
   },
   userLocation: {
     fontSize: 10,
@@ -1013,6 +1009,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     letterSpacing: 0.2,
+    lineHeight: 15,
   },
   imageViewerContainer: {
     flex: 1,
