@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Monicon } from '@monicon/native';
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 
 interface VoteButtonsProps {
   votes: number;
@@ -24,10 +24,10 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
         onPress={onUpvote}
         activeOpacity={0.6}
       >
-        <Monicon
-          name="ph:arrow-fat-up-fill"
+        <ArrowBigUp
           size={18}
-          color={isUpvoted ? "#FF8C4C" : "#D8D8D8"}
+          color={isUpvoted ? "#FF8C4C" : "#000000"}
+          fill={isUpvoted ? "#FF8C4C" : "transparent"}
         />
       </TouchableOpacity>
       <Text style={styles.voteCount}>{votes}</Text>
@@ -37,10 +37,10 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
         onPress={onDownvote}
         activeOpacity={0.6}
       >
-        <Monicon
-          name="ph:arrow-fat-down-fill"
+        <ArrowBigDown
           size={18}
-          color={isDownvoted ? "#9796FF" : "#D8D8D8"}
+          color={isDownvoted ? "#9796FF" : "#000000"}
+          fill={isDownvoted ? "#9796FF" : "transparent"}
         />
       </TouchableOpacity>
     </View>

@@ -81,12 +81,12 @@ const DealCard: React.FC<DealCardProps> = ({
 
   const handlePress = () => {
     // Start preloading in background without blocking navigation
-    if (deal.imageVariants) {
+    if (deal.imageVariants && deal.image) {
       // Preload the large version for detail view (full screen width)
       preloadImage(deal.image, deal.imageVariants, { width: screenWidth, height: 400 }).catch(err => {
         console.error('Failed to preload image:', err);
       });
-    } else if (deal.image) {
+    } else if (deal.image && (typeof deal.image === 'string' ? deal.image.trim() : deal.image)) {
       preloadImage(deal.image).catch(err => {
         console.error('Failed to preload image:', err);
       });
@@ -114,10 +114,10 @@ const DealCard: React.FC<DealCardProps> = ({
           componentType="deal"
           displaySize={displaySize}
           style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage}
-          fallbackSource={typeof deal.image === 'string' ? { uri: deal.image } : deal.image}
+          fallbackSource={typeof deal.image === 'string' && deal.image ? { uri: deal.image } : deal.image}
         />
       );
-    } else {
+    } else if (deal.image) {
       // Fallback to regular Image for static images or simple URIs
       const imageSource = typeof deal.image === 'string' 
         ? { uri: deal.image } 
@@ -130,6 +130,8 @@ const DealCard: React.FC<DealCardProps> = ({
         />
       );
     }
+    // Return null if no valid image source
+    return null;
   };
 
   if (variant === 'horizontal') {
@@ -271,7 +273,7 @@ const styles = StyleSheet.create({
   },
   horizontalTitle: {
     fontFamily: 'Inter',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 12,
     lineHeight: 15,
     color: '#000000',

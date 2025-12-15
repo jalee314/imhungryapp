@@ -37,6 +37,7 @@
     "expo-notifications": "^0.31.4",
     "expo-secure-store": "~14.2.4",
     "expo-status-bar": "~2.2.3",
+    "lucide-react-native": "^0.561.0",
     "react": "19.0.0",
     "react-native": "0.79.5",
     "react-native-calendars": "^1.1313.0",

@@ -16,6 +16,17 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
+import Animated, { 
+  FadeIn, 
+  FadeInDown, 
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
@@ -453,7 +464,10 @@ const DealDetailScreen: React.FC = () => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Restaurant Header */}
-        <View style={styles.restaurantSection}>
+        <Animated.View 
+          entering={FadeInDown.duration(400).delay(100)}
+          style={styles.restaurantSection}
+        >
           {/* Restaurant name with view count positioned absolutely */}
           <View style={styles.restaurantHeaderContainer}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
@@ -523,18 +537,29 @@ const DealDetailScreen: React.FC = () => {
               </View>
             )}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Separator after restaurant section */}
-        <View style={styles.separator} />
+        <Animated.View entering={FadeIn.duration(300).delay(150)} style={styles.separator} />
 
         {/* Deal Title */}
-        <Text style={styles.dealTitle}>{dealData.title}</Text>
+        <Animated.Text 
+          entering={FadeInDown.duration(400).delay(200)}
+          style={styles.dealTitle}
+        >
+          {dealData.title}
+        </Animated.Text>
 
         {/* Deal Image */}
         <TouchableOpacity onPress={openImageViewer} disabled={imageLoading}>
-          <View style={styles.imageContainer}>
-            <View style={styles.imageWrapper}>
+          <Animated.View 
+            entering={FadeInDown.duration(500).delay(300).springify().damping(15)}
+            style={styles.imageContainer}
+          >
+            <View style={[
+              styles.imageWrapper,
+              imageLoading && { minHeight: Math.max(skeletonHeight, 200), borderWidth: 0 }
+            ]}>
               {imageLoading && (
                 <View style={styles.imageLoadingContainer}>
                   <SkeletonLoader 
@@ -591,11 +616,14 @@ const DealDetailScreen: React.FC = () => {
                 </View>
               )}
             </View>
-          </View>
+          </Animated.View>
         </TouchableOpacity>
 
         {/* Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
+        <Animated.View 
+          entering={FadeInDown.duration(400).delay(400)}
+          style={styles.actionButtonsContainer}
+        >
           <VoteButtons
             votes={dealData.votes}
             isUpvoted={dealData.isUpvoted}
@@ -620,42 +648,47 @@ const DealDetailScreen: React.FC = () => {
               <Monicon name="mdi-light:share" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Only show Details section if details exist */}
         {dealData.details && dealData.details.trim() !== '' && (
           <>
             {/* Separator after image/actions */}
-            <View style={styles.separator} />
+            <Animated.View entering={FadeIn.duration(300).delay(450)} style={styles.separator} />
 
             {/* Details Section */}
-            <View style={styles.detailsSection}>
+            <Animated.View 
+              entering={FadeInDown.duration(400).delay(500)}
+              style={styles.detailsSection}
+            >
               <Text style={styles.detailsTitle}>Details</Text>
               <Text style={styles.detailsText}>{dealData.details}</Text>
-            </View>
+            </Animated.View>
           </>
         )}
 
         {/* Separator before shared by section */}
-        <View style={styles.separator} />
+        <Animated.View entering={FadeIn.duration(300).delay(550)} style={styles.separator} />
 
         {/* Shared By Section */}
-        <TouchableOpacity 
-          style={styles.sharedByContainer}
-          onPress={handleUserPress}
-          activeOpacity={dealData.isAnonymous ? 1 : 0.7} // No feedback for anonymous
-          disabled={dealData.isAnonymous} // Disable press for anonymous
-        >
-          <Image 
-            source={profilePicture} 
-            style={styles.profilePicture} 
-          />
-          <View style={styles.userInfo}>
-            <Text style={styles.sharedByLabel}>Shared By</Text>
-            <Text style={styles.userName}>{displayName}</Text>
-            <Text style={styles.userLocation}>{dealData.userCity || 'Unknown'}, {dealData.userState || 'CA'}</Text>
-          </View>
-        </TouchableOpacity>
+        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
+          <TouchableOpacity 
+            style={styles.sharedByContainer}
+            onPress={handleUserPress}
+            activeOpacity={dealData.isAnonymous ? 1 : 0.7} // No feedback for anonymous
+            disabled={dealData.isAnonymous} // Disable press for anonymous
+          >
+            <Image 
+              source={profilePicture} 
+              style={styles.profilePicture} 
+            />
+            <View style={styles.userInfo}>
+              <Text style={styles.sharedByLabel}>Shared By</Text>
+              <Text style={styles.userName}>{displayName}</Text>
+              <Text style={styles.userLocation}>{dealData.userCity || 'Unknown'}, {dealData.userState || 'CA'}</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
       {/* 3-Dot Popup Modal */}
       <ThreeDotPopup

@@ -513,9 +513,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profilePhoto: {
-    width: 75,
-    height: 75,
-    borderRadius: 9999,
+    width: 85,
+    height: 85,
+    borderRadius: 50,
     borderWidth: 2,
     borderColor: '#FFA05C',
   },
