@@ -49,6 +49,7 @@ const DealDetailScreen: React.FC = () => {
   const [modalImageError, setModalImageError] = useState(false);
   const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
   const [imageViewerKey, setImageViewerKey] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
@@ -56,6 +57,19 @@ const DealDetailScreen: React.FC = () => {
   
   // State to hold image dimensions for skeleton
   const [skeletonHeight, setSkeletonHeight] = useState(250); // Better default height
+
+  // Get current user ID
+  useEffect(() => {
+    const fetchCurrentUserId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id || null);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+      }
+    };
+    fetchCurrentUserId();
+  }, []);
 
   // Debug the deal data
   useEffect(() => {
@@ -583,7 +597,7 @@ const DealDetailScreen: React.FC = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <MaterialCommunityIcons name="share-outline" size={19} color="#000" />
+              <Monicon name="mdi-light:share" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
         </View>
@@ -631,6 +645,7 @@ const DealDetailScreen: React.FC = () => {
         onBlockUser={handleBlockUser}
         dealId={dealData.id}
         uploaderUserId={dealData.userId || "00000000-0000-0000-0000-000000000000"}
+        currentUserId={currentUserId || undefined}
       />
 
       {fullScreenImageSource && (

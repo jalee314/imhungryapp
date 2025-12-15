@@ -99,36 +99,41 @@ const BlockUserScreen: React.FC = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+        <TouchableOpacity onPress={handleCancel}>
           <Text style={styles.headerButtonText}>Cancel</Text>
         </TouchableOpacity>
         
         <Text style={styles.headerTitle}>Block User</Text>
         
-        <TouchableOpacity onPress={handleSubmit} style={styles.headerButton}>
-          <Text style={styles.submitButtonText}>Submit</Text>
+        <TouchableOpacity onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>Block</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Block Options */}
         <View style={styles.optionsContainer}>
-          {blockOptions.map((option, index) => (
-            <View key={option}>
-              <TouchableOpacity 
-                style={styles.optionRow}
-                onPress={() => toggleOption(option)}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-                <View style={styles.checkbox}>
-                  {selectedOptions.includes(option) && (
-                    <MaterialCommunityIcons name="check" size={16} color="#000000" />
+          {blockOptions.map((option, index) => {
+            const isSelected = selectedOptions.includes(option);
+            return (
+              <React.Fragment key={option}>
+                <TouchableOpacity 
+                  style={styles.optionRow}
+                  onPress={() => toggleOption(option)}
+                >
+                  <Text style={styles.optionText}>{option}</Text>
+                  {isSelected ? (
+                    <View style={styles.checkmark}>
+                      <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
+                    </View>
+                  ) : (
+                    <View style={styles.checkmarkPlaceholder} />
                   )}
-                </View>
-              </TouchableOpacity>
-              {index < blockOptions.length - 1 && <View style={styles.divider} />}
-            </View>
-          ))}
+                </TouchableOpacity>
+                {index < blockOptions.length - 1 && <View style={styles.separator} />}
+              </React.Fragment>
+            );
+          })}
         </View>
 
         {/* Additional Details - Only show when "Other" is selected */}
@@ -137,12 +142,14 @@ const BlockUserScreen: React.FC = () => {
             <TextInput
               style={styles.textInput}
               placeholder="Please provide details about why you're blocking this user."
+              placeholderTextColor="#999999"
               value={additionalDetails}
               onChangeText={setAdditionalDetails}
               multiline
               maxLength={200}
               textAlignVertical="top"
             />
+            <Text style={styles.characterCount}>{additionalDetails.length}/200</Text>
           </View>
         )}
       </ScrollView>
@@ -154,99 +161,93 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    paddingVertical: 64,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 0,
-    height: 19,
-  },
-  headerButton: {
-    padding: 0,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    marginBottom: 10,
   },
   headerButtonText: {
     fontSize: 16,
     color: '#000000',
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular',
-    letterSpacing: 0,
-    lineHeight: 16,
+    fontFamily: 'Inter',
   },
   headerTitle: {
     fontSize: 16,
     color: '#000000',
     fontWeight: '700',
-    fontFamily: 'Inter-Bold',
-    letterSpacing: 0,
-    lineHeight: 16,
+    fontFamily: 'Inter',
   },
   submitButtonText: {
     fontSize: 16,
     color: '#FF8C4C',
     fontWeight: '700',
-    fontFamily: 'Inter-Bold',
-    letterSpacing: 0,
-    lineHeight: 16,
+    fontFamily: 'Inter',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    gap: 24,
   },
   optionsContainer: {
-    marginTop: 0,
+    backgroundColor: '#FFFFFF',
   },
   optionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
   },
   optionText: {
-    fontSize: 16,
+    fontFamily: 'Inter',
+    fontSize: 14,
     color: '#000000',
-    fontFamily: 'Inter-Regular',
-    fontWeight: '400',
-    letterSpacing: 0,
-    lineHeight: 16,
     flex: 1,
+    paddingLeft: 2,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderColor: '#000000',
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#C1C1C1',
+    marginHorizontal: 10,
+  },
+  checkmark: {
+    width: 24,
+    height: 24,
     borderRadius: 4,
+    backgroundColor: '#FFA05C',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 0,
+  checkmarkPlaceholder: {
+    width: 24,
+    height: 24,
   },
   detailsContainer: {
-    flex: 1,
-    marginTop: 4,
-    marginBottom: 32,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   textInput: {
     borderWidth: 1,
     borderColor: '#CCCCCC',
-    borderRadius: 5,
-    padding: 8,
-    fontSize: 14,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 12,
     color: '#000000',
-    minHeight: 120,
+    minHeight: 128,
     textAlignVertical: 'top',
-    fontFamily: 'Inter-Regular',
-    lineHeight: 20,
+    fontFamily: 'Inter',
+    lineHeight: 18,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#999999',
+    textAlign: 'right',
+    marginTop: 8,
+    fontFamily: 'Inter',
   },
 });
 

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ interface ThreeDotPopupProps {
   onBlockUser: () => void;
   dealId?: string;
   uploaderUserId?: string;
+  currentUserId?: string;
 }
 
 const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
@@ -26,11 +28,22 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
   onBlockUser,
   dealId,
   uploaderUserId,
+  currentUserId,
 }) => {
   const navigation = useNavigation();
 
   const handleReportContent = () => {
     onClose();
+    
+    // Check if user is trying to report their own post
+    if (currentUserId && uploaderUserId && currentUserId === uploaderUserId) {
+      Alert.alert(
+        'Cannot Report Own Post',
+        'You cannot report your own post. If you want to remove it, please delete it from your profile instead.'
+      );
+      return;
+    }
+    
     if (dealId && uploaderUserId) {
       (navigation as any).navigate('ReportContent', { dealId, uploaderUserId });
     }
@@ -38,6 +51,16 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
 
   const handleBlockUser = () => {
     onClose();
+    
+    // Check if user is trying to block themselves
+    if (currentUserId && uploaderUserId && currentUserId === uploaderUserId) {
+      Alert.alert(
+        'Cannot Block Yourself',
+        'You cannot block yourself.'
+      );
+      return;
+    }
+    
     onBlockUser();
   };
   return (

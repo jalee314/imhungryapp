@@ -64,6 +64,7 @@ module.exports = withMonicon(config, {
     "mdi:filter-outline",
     "mdi:sort",
     "mdi:menu",
+    "mdi-light:share",
     "mdi:chevron-left",
     "mdi:chevron-right",
     "mdi:chevron-down",

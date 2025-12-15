@@ -100,43 +100,13 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
               <Image source={data.image} style={styles.image} />
             </View>
             
-            <View style={styles.textFrame}>
-              <View style={styles.dealTitle}>
-                <Text style={[styles.titleText, styles.favoritesTitle]} numberOfLines={2}>
-                  {data.title}
-                </Text>
-              </View>
-              
-              <View style={styles.dealDetails}>
-                <Text style={[styles.subtitleText, styles.favoritesSubtitle]}>
-                  {data.subtitle}
-                </Text>
-                
-                {/* User profile section */}
-                {data.userDisplayName && (
-                  <View style={styles.userProfileSection}>
-                    <TouchableOpacity 
-                      style={styles.userProfileContainer}
-                      onPress={handleUserPress}
-                      activeOpacity={0.7}
-                    >
-                      {data.userProfilePhoto ? (
-                        <Image 
-                          source={{ uri: data.userProfilePhoto }} 
-                          style={styles.userProfileImage} 
-                        />
-                      ) : (
-                        <View style={styles.userProfilePlaceholder}>
-                          <Ionicons name="person" size={12} color="#666" />
-                        </View>
-                      )}
-                      <Text style={styles.userProfileText}>
-                        Shared by {data.userDisplayName}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
+            <View style={styles.favoritesTextFrame}>
+              <Text style={[styles.titleText, styles.favoritesTitle]} numberOfLines={2}>
+                {data.title}
+              </Text>
+              <Text style={[styles.subtitleText, styles.favoritesSubtitle]}>
+                {data.subtitle}
+              </Text>
             </View>
             
             <View style={styles.arrow}>
@@ -192,6 +162,13 @@ const styles = StyleSheet.create({
     height: 76,
     justifyContent: 'center',
     paddingRight: 8, // Add padding to prevent text from touching arrow
+  },
+  favoritesTextFrame: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 4,
+    paddingRight: 8,
   },
   dealTitle: {
     alignSelf: 'stretch',

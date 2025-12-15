@@ -272,10 +272,10 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             
                             <View style={styles.favContainer}>
                                 <TouchableOpacity style={styles.favoriteButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="heart-outline" size={19} color="#000" />
+                                    <MaterialCommunityIcons name="heart-outline" size={24} color="#000" />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.shareIconButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="share-outline" size={16} color="#000" />
+                                    <Monicon name="mdi-light:share" size={24} color="#000000" />
                                 </TouchableOpacity>
                             </View>
                         </View>

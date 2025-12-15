@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, ScrollVi
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Monicon } from '@monicon/native';
 import DealCard from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import SkeletonLoader from '../../components/SkeletonLoader';
@@ -216,7 +217,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             style={styles.shareActionButton}
             onPress={onShareProfile}
           >
-          <MaterialCommunityIcons name="share-variant" size={16} color="#000" />
+          <Monicon name="mdi-light:share" size={24} color="#000" />
         </TouchableOpacity>
         </View>
 
@@ -551,7 +552,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   shareActionButton: {
-    borderRadius: 12,
+    borderRadius: 30,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#fff',
