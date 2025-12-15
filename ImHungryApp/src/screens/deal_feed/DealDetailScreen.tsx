@@ -42,8 +42,9 @@ const DealDetailScreen: React.FC = () => {
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const [viewCount, setViewCount] = useState<number>(0);
-  const [viewerPhotos, setViewerPhotos] = useState<string[]>([]);
+  const [viewCount, setViewCount] = useState<number | null>(null);
+  const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null);
+  const [isViewDataLoading, setIsViewDataLoading] = useState(true);
   const [isImageViewVisible, setImageViewVisible] = useState(false);
   const [modalImageLoading, setModalImageLoading] = useState(false);
   const [modalImageError, setModalImageError] = useState(false);
@@ -170,6 +171,11 @@ const DealDetailScreen: React.FC = () => {
 
   // Fetch initial view count, viewer photos, and subscribe to realtime updates
   useEffect(() => {
+    // Reset loading state when deal changes
+    setIsViewDataLoading(true);
+    setViewCount(null);
+    setViewerPhotos(null);
+
     const fetchViewData = async () => {
       const [count, photos] = await Promise.all([
         getDealViewCount(dealData.id),
@@ -177,6 +183,7 @@ const DealDetailScreen: React.FC = () => {
       ]);
       setViewCount(count);
       setViewerPhotos(photos);
+      setIsViewDataLoading(false);
     };
 
     fetchViewData();
@@ -197,7 +204,7 @@ const DealDetailScreen: React.FC = () => {
           // Only increment for click interactions
           if (interaction.interaction_type === 'click') {
             console.log('⚡ New view detected via Realtime');
-            setViewCount(prev => prev + 1);
+            setViewCount(prev => (prev ?? 0) + 1);
           }
         }
       )
@@ -451,20 +458,33 @@ const DealDetailScreen: React.FC = () => {
           <View style={styles.restaurantHeaderContainer}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
             <View style={styles.viewCountContainer}>
-              <Text style={styles.viewCount}>{viewCount} viewed</Text>
-              {viewerPhotos.length > 0 && (
-                <View style={styles.avatarGroup}>
-                  {viewerPhotos.map((photoUrl, index) => (
-                    <Image 
-                      key={index}
-                      source={{ uri: photoUrl }} 
-                      style={[
-                        styles.viewerAvatar, 
-                        { zIndex: viewerPhotos.length - index, marginLeft: index > 0 ? -8 : 0 }
-                      ]} 
-                    />
-                  ))}
+              {isViewDataLoading ? (
+                // Skeleton for view count while loading
+                <View style={styles.viewCountSkeletonContainer}>
+                  <SkeletonLoader width={60} height={12} borderRadius={4} />
+                  <View style={styles.avatarSkeletonGroup}>
+                    <SkeletonLoader width={20} height={20} borderRadius={10} style={{ marginLeft: 6 }} />
+                    <SkeletonLoader width={20} height={20} borderRadius={10} style={{ marginLeft: -8 }} />
+                  </View>
                 </View>
+              ) : (
+                <>
+                  <Text style={styles.viewCount}>{viewCount ?? 0} viewed</Text>
+                  {viewerPhotos && viewerPhotos.length > 0 && (
+                    <View style={styles.avatarGroup}>
+                      {viewerPhotos.map((photoUrl, index) => (
+                        <Image 
+                          key={index}
+                          source={{ uri: photoUrl }} 
+                          style={[
+                            styles.viewerAvatar, 
+                            { zIndex: viewerPhotos.length - index, marginLeft: index > 0 ? -8 : 0 }
+                          ]} 
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
             </View>
           </View>
@@ -821,6 +841,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewCountSkeletonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarSkeletonGroup: {
     flexDirection: 'row',
     alignItems: 'center',
   },
