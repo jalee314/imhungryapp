@@ -3,7 +3,14 @@ import { View, ActivityIndicator, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useFonts } from 'expo-font';
+import {
+  useFonts,
+  Inter_300Light,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import * as Linking from 'expo-linking';
 import { useAuth } from './src/hooks/useAuth';
 import { useInitializeAuth } from './src/stores/AuthStore';
@@ -287,10 +294,18 @@ export default function App() {
   // Initialize location store once at app start
   useInitializeLocation();
   const [fontsLoaded, fontError] = useFonts({
-    'Mitr-Bold': require('./assets/fonts/Mitr-Bold.ttf'),
-    'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
-    'Manrope-Bold': require('./assets/fonts/Manrope-Bold.ttf'),
-    'MuseoModerno-Bold': require('./assets/fonts/MuseoModerno-Bold.ttf'),
+    Inter_300Light,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    // Map aliases for easier use
+    'Inter': Inter_400Regular,
+    'Inter-Light': Inter_300Light,
+    'Inter-Regular': Inter_400Regular,
+    'Inter-Medium': Inter_500Medium,
+    'Inter-SemiBold': Inter_600SemiBold,
+    'Inter-Bold': Inter_700Bold,
   }); 
   
   const [timeoutReached, setTimeoutReached] = React.useState(false);

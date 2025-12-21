@@ -10,6 +10,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
     "@expo/vector-icons": "^14.1.0",
     "@monicon/metro": "^1.2.2",
     "@monicon/native": "^1.2.2",

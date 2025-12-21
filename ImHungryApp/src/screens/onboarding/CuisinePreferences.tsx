@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     color: '#000', 
     fontWeight: 'bold', 
     marginBottom: 15,
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Inter-Bold',
     textAlign: 'left',
     marginLeft: 20  ,
   },

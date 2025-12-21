@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     color: '#000', 
     fontWeight: 'bold', 
     textAlign: 'center',
-    fontFamily: 'Manrope-Bold'
+    fontFamily: 'Inter-Bold'
   },
 
   inputContainer: { width: '100%', alignItems: 'center', marginBottom: 30 },

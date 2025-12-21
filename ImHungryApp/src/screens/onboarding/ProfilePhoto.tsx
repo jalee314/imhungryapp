@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     color: '#000', 
     fontWeight: 'bold', 
     marginBottom: 25,
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Inter-Bold',
     textAlign: 'left'
   },
   subtitle: { 
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: '#666',
-    fontFamily: 'Manrope-Regular'
+    fontFamily: 'Inter-Regular'
   },
   photoPlaceholder: {
     width: 200,

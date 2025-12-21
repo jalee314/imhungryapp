@@ -151,8 +151,8 @@ const styles = StyleSheet.create({
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
   backButton: { alignSelf: 'flex-start' },
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: { fontSize: 20, color: '#000', fontFamily: 'Manrope-Bold' },
-  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Manrope-Regular' },
+  welcomeTitle: { fontSize: 20, color: '#000', fontFamily: 'Inter-Bold' },
+  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Inter-Regular' },
   formContainer: { width: '100%' },
   paperInput: { backgroundColor: 'white' },
   textInputStyle: {
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   successText: {
     marginTop: 10,
     color: '#2E7D32', // A shade of green
-    fontFamily: 'Manrope-Regular',
+    fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },
 });
