@@ -83,11 +83,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   );
 
   const navItems = [
-    { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' },
-    { id: 'search', icon: 'magnify', label: 'Search', screen: 'DiscoverFeed' }, // CHANGED: Now routes to DiscoverFeed
-    { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
-    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesPage' },
-    { id: 'profile', icon: 'account-circle-outline', label: 'Profile', screen: 'ProfilePage' },
+    { id: 'feed', icon: 'view-grid', activeIcon: 'view-grid', label: 'Feed', screen: 'Feed' },
+    { id: 'search', icon: 'magnify', activeIcon: 'magnify', label: 'Explore', screen: 'ExploreFeed' },
+    { id: 'contribute', icon: 'plus-circle-outline', activeIcon: 'plus-circle', label: 'Contribute', screen: 'DealCreationScreen' },
+    { id: 'favorites', icon: 'heart-outline', activeIcon: 'heart', label: 'Favorites', screen: 'FavoritesPage' },
+    { id: 'profile', icon: 'account-circle-outline', activeIcon: 'account-circle', label: 'Profile', screen: 'ProfilePage' },
   ];
 
   const handleTabPress = (screenName: string) => {
@@ -110,7 +110,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     }
   };
 
-  const renderNavItem = (item: { id: string; icon: any; label: string, screen: string }) => {
+  const renderNavItem = (item: { id: string; icon: any; activeIcon: any; label: string; screen: string }) => {
     // Contribute button should never be considered active
     const isActive = item.id !== 'contribute' && activeTab === item.id;
     const isContributePressed = item.id === 'contribute' && contributePressed;
@@ -121,18 +121,21 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       return (
         <TouchableOpacity
           key={item.id}
-          style={[styles.navItem, isActive && styles.activeNavItem]}
+          style={styles.navItem}
           onPress={() => handleTabPress(item.screen)}
         >
-          {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
-            <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
-          ) : displayPhotoUrl ? (
-            <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
-          ) : (
-            <View style={styles.navProfilePlaceholder}>
-              <Text style={styles.navPlaceholderText}>👤</Text>
-            </View>
-          )}
+          <View style={styles.iconContainer}>
+            {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
+              <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+            ) : displayPhotoUrl ? (
+              <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+            ) : (
+              <View style={[styles.navProfilePlaceholder, isActive && styles.activeNavProfilePhoto]}>
+                <Text style={styles.navPlaceholderText}>👤</Text>
+              </View>
+            )}
+          </View>
+          <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
         </TouchableOpacity>
       );
     }
@@ -142,16 +145,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         key={item.id}
         style={[
           styles.navItem, 
-          isActive && styles.activeNavItem,
           isContributePressed && { opacity: 0.5 }
         ]}
         onPress={() => handleTabPress(item.screen)}
       >
-        <MaterialCommunityIcons  // CHANGED: Back to original
-          name={item.icon} 
-          size={28} 
-          color={isActive ? '#000000' : '#666'} 
-        />
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons
+            name={isActive ? item.activeIcon : item.icon} 
+            size={26} 
+            color={isActive ? '#000000' : '#757575'} 
+          />
+        </View>
+        <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
       </TouchableOpacity>
     );
   };
@@ -180,45 +185,56 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    paddingVertical: 6, // CHANGED: Reduced from 6 to 3 to move icons up slightly
-    paddingHorizontal: 15,
+    backgroundColor: '#fdfdfd',
+    borderTopWidth: 0.5,
+    borderTopColor: '#bcbcbc',
+    paddingTop: 4,
+    paddingBottom: 32,
+    paddingHorizontal: 8,
     justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingBottom:16, // CHANGED: Increased from 34 to 44 for more space from bottom
+    alignItems: 'flex-start',
   },
   navItem: {
     alignItems: 'center',
-    padding: 8,
+    justifyContent: 'flex-start',
+    minWidth: 65,
+    paddingHorizontal: 4,
   },
-  activeNavItem: {
-    // Add any active state styling here if needed
+  iconContainer: {
+    height: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  navIcon: {
-    fontSize: 24,
-    color: '#666',
+  navLabel: {
+    fontSize: 13,
+    color: '#757575',
+    fontWeight: '400',
+    marginTop: 4,
+    textAlign: 'center',
   },
-  activeNavIcon: {
+  activeNavLabel: {
     color: '#000000',
+    fontWeight: '400',
   },
   navProfilePhoto: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   activeNavProfilePhoto: {
-    borderWidth: 2,
     borderColor: '#000000',
   },
   navProfilePlaceholder: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   navPlaceholderText: {
     fontSize: 12,
