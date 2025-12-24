@@ -58,9 +58,6 @@ import AdminUsersScreen from './src/screens/admin/AdminUsersScreen';
 import AdminMassUploadScreen from './src/screens/admin/AdminMassUploadScreen';
 
 import { useInitializeDataCache } from './src/stores/DataCacheStore';
-// DealUpdateProvider removed; using Zustand store via hook now
-// FavoritesContext removed; replaced by Zustand store (useFavoritesStore)
-// LocationProvider removed; replaced by Zustand store (useLocationStore)
 import { useInitializeLocation } from './src/stores/LocationStore';
 import { useInitializeAdmin } from './src/stores/AdminStore';
 

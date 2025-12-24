@@ -516,7 +516,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingTop: 4,
+    paddingBottom: 4,
     paddingLeft: 16,
     paddingRight: 10,
   },
@@ -535,16 +536,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   communityList: {
-    paddingBottom: 4,
     paddingLeft: 10.5,
     paddingRight: 10,
   },
   sectionSeparator: {
     height: 0.5,
     backgroundColor: '#DEDEDE',
-    marginVertical: 8,
     marginHorizontal: -20,
     width: '110%',
+    marginBottom: 4,
   },
   dealsGrid: {
     flexDirection: 'row',
@@ -555,11 +555,11 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   leftCard: {
-    marginBottom: 4,
+    marginBottom: 0,
     marginRight: 2,
   },
   rightCard: {
-    marginBottom: 4,
+    marginTop: 0,
     marginLeft: 2,
   },
   loadingContainer: {

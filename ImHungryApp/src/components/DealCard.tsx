@@ -104,9 +104,10 @@ const DealCard: React.FC<DealCardProps> = ({
   const getImageSource = () => {
     if (deal.imageVariants) {
       // Use OptimizedImage for database images with variants
+      // Figma specs: horizontal 260x167, vertical 175x175 (square)
       const displaySize = variant === 'horizontal' 
-        ? { width: HORIZONTAL_CARD_WIDTH, height: 165 }
-        : { width: VERTICAL_CARD_WIDTH, height: 175 };
+        ? { width: 260, height: 167 }
+        : { width: 175, height: 175 };
       
       return (
         <OptimizedImage 
@@ -252,28 +253,27 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 8,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: HORIZONTAL_CARD_WIDTH,
-    height: 290,
+    height: 280,
     justifyContent: 'center',
     overflow: 'visible',
   },
   horizontalImage: {
-    width: '100%',
-    height: 165,
+    width: 260,
+    height: 167,
     borderRadius: 8,
     marginBottom: 8,
     resizeMode: 'cover',
   },
   horizontalTitleContainer: {
     width: '100%',
-    marginBottom: 8,
-    height: 30,
+    height: 20,
     justifyContent: 'flex-start',
   },
   horizontalTitle: {
     fontFamily: 'Inter',
-    fontWeight: '700',
+    fontWeight: '600',
     fontSize: 12,
     lineHeight: 15,
     color: '#000000',
@@ -355,13 +355,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 8,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: VERTICAL_CARD_WIDTH,
-    height: 305,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   verticalImage: {
-    width: '100%',
+    width: 175,
     height: 175,
     borderRadius: 8,
     marginBottom: 8,
@@ -373,12 +372,10 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     color: '#000000',
     textAlign: 'left',
-    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
-    height: 30,
-    marginBottom: 8,
+    width: VERTICAL_CARD_WIDTH - 24,
   },
   verticalDetailsContainer: {
-    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
+    width: VERTICAL_CARD_WIDTH - 24,
     marginBottom: 8,
   },
   verticalDetails: {
