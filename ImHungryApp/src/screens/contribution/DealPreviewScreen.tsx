@@ -211,7 +211,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             
                             {/* Valid until row */}
                             <View style={styles.validUntilRow}>
-                                <Text style={styles.infoText}>⏳ Valid Until: {formatDate(expirationDate)}</Text>
+                                <Text style={styles.infoText}>⏳ Valid Until • {formatDate(expirationDate)}</Text>
                             </View>
                             
                             {/* Only show category row if cuisine or deal type exists and has meaningful content */}
@@ -241,7 +241,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         <Text style={styles.dealTitle}>{dealTitle}</Text>
 
                         {/* Deal Image */}
-                        {imageUri && (
+                        {imageUri && typeof imageUri === 'string' && imageUri.trim() !== '' && (
                             <TouchableOpacity onPress={openImageViewer}>
                                 <Image 
                                     source={{ uri: imageUri }} 
@@ -309,7 +309,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
             </SafeAreaView>
             </Animated.View>
 
-            {imageUri && (
+            {imageUri && typeof imageUri === 'string' && imageUri.trim() !== '' && (
                 <Modal
                     visible={isImageViewVisible}
                     transparent={true}
@@ -458,9 +458,10 @@ const styles = StyleSheet.create({
   },
   separator: {
     alignSelf: 'stretch',
-    height: 1,
-    backgroundColor: '#D7D7D7',
+    height: 0.5,
+    backgroundColor: '#DEDEDE',
     width: '100%',
+    marginVertical: 8,
   },
   dealTitle: {
     alignSelf: 'stretch',
@@ -469,8 +470,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 18,
     letterSpacing: 0,
-    lineHeight: 18,
-    marginTop: 1,
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 16,
   },
   dealImage: {
     width: '100%',

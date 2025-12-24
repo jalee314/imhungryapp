@@ -231,9 +231,10 @@ const DealDetailScreen: React.FC = () => {
   // The click is already logged in Feed.tsx/CommunityUploadedScreen.tsx
   // when the user clicks the card, so we don't need to log it here again
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString || dateString === 'Unknown') return 'Not Known';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -515,7 +516,7 @@ const DealDetailScreen: React.FC = () => {
             </View>
             <View style={styles.validUntilRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={styles.clockIcon} />
-              <Text style={styles.validUntilText}>Valid Until: September 20th, 2025</Text>
+              <Text style={styles.validUntilText}>Valid Until • {formatDate(dealData.expirationDate || null)}</Text>
             </View>
             {/* Only show category row if cuisine or deal type exists and has meaningful content */}
             {((dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine') || 
@@ -913,6 +914,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000000',
     paddingHorizontal: 24,
+    marginTop: 8,
     marginBottom: 16,
     fontFamily: 'Inter',
     lineHeight: 20,

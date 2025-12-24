@@ -70,7 +70,7 @@ export const getOptimalImageVariant = (
   const componentThresholds = VARIANT_THRESHOLDS[componentType];
   
   // Select variant based on required resolution
-  let selectedVariant: string;
+  let selectedVariant: string | undefined;
   
   if (requiredWidth <= componentThresholds.thumbnail) {
     selectedVariant = variants.thumbnail || variants.small || variants.medium || variants.large || variants.original;
@@ -91,10 +91,22 @@ export const getOptimalImageVariant = (
     else if (variants.medium) selectedVariant = variants.medium;
   }
   
+  // Ensure we never return undefined - return empty string if no variant found
+  if (!selectedVariant) {
+    console.warn('No image variant found, returning empty string');
+    return '';
+  }
+  
   return selectedVariant;
 };
 
 export const getImageUrl = (path: string): string => {
+  // Validate input - prevent nil URIs from reaching networking layer
+  if (!path || typeof path !== 'string' || path.trim() === '') {
+    console.warn('getImageUrl called with invalid path:', path);
+    return '';
+  }
+  
   // NEW: If it's already a Cloudinary URL, return it directly
   if (path.startsWith('https://res.cloudinary.com/')) {
     return path;

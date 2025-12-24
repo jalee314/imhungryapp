@@ -50,6 +50,7 @@ export interface Deal {
   userState?: string;
   restaurantAddress?: string;
   isAnonymous?: boolean;
+  expirationDate?: string | null;
 }
 
 interface DealCardProps {

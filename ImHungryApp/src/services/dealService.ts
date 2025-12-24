@@ -545,6 +545,7 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     userState: dbDeal.user_state || undefined,
     restaurantAddress: dbDeal.restaurant_address,
     isAnonymous: dbDeal.is_anonymous,
+    expirationDate: dbDeal.end_date || null,
   };
 };
 
