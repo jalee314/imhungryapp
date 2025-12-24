@@ -21,7 +21,7 @@ import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
-import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
+import { toggleUpvote, toggleDownvote, toggleFavorite, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
@@ -124,6 +124,10 @@ const Feed: React.FC = () => {
             // Skip clicks - we don't need realtime updates for those
             if (interaction.interaction_type === 'click') return;
             
+            // Skip if this is our own action - optimistic updates already handled it
+            // This prevents the "flicker" where DB response overwrites local calculation
+            if (interaction.user_id === userId) return;
+            
             const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
             if (recentActions.current.has(actionKey)) return;
             
@@ -131,24 +135,19 @@ const Feed: React.FC = () => {
             setTimeout(() => recentActions.current.delete(actionKey), 1000);
             
             const changedDealId = interaction.deal_id;
-            const [voteStates, voteCounts] = await Promise.all([
-              getUserVoteStates([changedDealId]),
-              calculateVoteCounts([changedDealId])
-            ]);
+            // Only fetch vote count - we preserve our own vote state from optimistic updates
+            const voteCounts = await calculateVoteCounts([changedDealId]);
             
-            setTimeout(() => {
-              setDeals(prevDeals => prevDeals.map(deal => {
-                if (deal.id === changedDealId) {
-                  return {
-                    ...deal,
-                    isUpvoted: voteStates[changedDealId]?.isUpvoted || false,
-                    isDownvoted: voteStates[changedDealId]?.isDownvoted || false,
-                    votes: voteCounts[changedDealId] || 0,
-                  };
-                }
-                return deal;
-              }));
-            }, 0);
+            setDeals(prevDeals => prevDeals.map(deal => {
+              if (deal.id === changedDealId) {
+                return {
+                  ...deal,
+                  // Only update vote count from other users, keep our own vote state
+                  votes: voteCounts[changedDealId] ?? deal.votes,
+                };
+              }
+              return deal;
+            }));
           }
         )
         .subscribe();
@@ -221,63 +220,63 @@ const Feed: React.FC = () => {
     }
   }, []);
 
-  // Handlers (handleUpvote, handleDownvote, etc.) are unchanged
+  // Handlers - optimistic updates happen synchronously to prevent flickering
   const handleUpvote = (dealId: string) => {
     let originalDeal: Deal | undefined;
-    setTimeout(() => {
-      setDeals(prevDeals => {
-        return prevDeals.map(d => {
-          if (d.id === dealId) {
-            originalDeal = d;
-            const wasUpvoted = d.isUpvoted;
-            const wasDownvoted = d.isDownvoted;
-            return {
-              ...d,
-              isUpvoted: !wasUpvoted,
-              isDownvoted: false,
-              votes: wasUpvoted ? d.votes - 1 : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-            };
-          }
-          return d;
-        });
+    
+    // Synchronous optimistic update - no setTimeout to prevent flicker
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasUpvoted = d.isUpvoted;
+          const wasDownvoted = d.isDownvoted;
+          return {
+            ...d,
+            isUpvoted: !wasUpvoted,
+            isDownvoted: false,
+            votes: wasUpvoted ? d.votes - 1 : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+          };
+        }
+        return d;
       });
-    }, 0);
+    });
+    
+    // Background database save
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
       if (originalDeal) {
-        setTimeout(() => {
-          setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
-        }, 0);
+        setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
       }
     });
   };
 
   const handleDownvote = (dealId: string) => {
     let originalDeal: Deal | undefined;
-    setTimeout(() => {
-      setDeals(prevDeals => {
-        return prevDeals.map(d => {
-          if (d.id === dealId) {
-            originalDeal = d;
-            const wasDownvoted = d.isDownvoted;
-            const wasUpvoted = d.isUpvoted;
-            return {
-              ...d,
-              isDownvoted: !wasDownvoted,
-              isUpvoted: false,
-              votes: wasDownvoted ? d.votes + 1 : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-            };
-          }
-          return d;
-        });
+    
+    // Synchronous optimistic update - no setTimeout to prevent flicker
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasDownvoted = d.isDownvoted;
+          const wasUpvoted = d.isUpvoted;
+          return {
+            ...d,
+            isDownvoted: !wasDownvoted,
+            isUpvoted: false,
+            votes: wasDownvoted ? d.votes + 1 : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+          };
+        }
+        return d;
       });
-    }, 0);
+    });
+    
+    // Background database save
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
       if (originalDeal) {
-        setTimeout(() => {
-          setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
-        }, 0);
+        setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
       }
     });
   };

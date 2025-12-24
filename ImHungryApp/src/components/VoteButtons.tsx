@@ -19,8 +19,9 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
 }) => {
   return (
     <View style={styles.voteContainer}>
+      {/* Left half - upvote touchable area */}
       <TouchableOpacity
-        style={styles.voteButton}
+        style={styles.upvoteArea}
         onPress={onUpvote}
         activeOpacity={0.6}
       >
@@ -29,11 +30,14 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
           color={isUpvoted ? "#FF8C4C" : "#000000"}
           fill={isUpvoted ? "#FF8C4C" : "transparent"}
         />
+        <Text style={styles.voteCount}>{votes}</Text>
       </TouchableOpacity>
-      <Text style={styles.voteCount}>{votes}</Text>
+      
       <View style={styles.voteSeparator} />
+      
+      {/* Right half - downvote touchable area */}
       <TouchableOpacity
-        style={styles.voteButton}
+        style={styles.downvoteArea}
         onPress={onDownvote}
         activeOpacity={0.6}
       >
@@ -51,36 +55,40 @@ const styles = StyleSheet.create({
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
     height: 28,
     width: 85,
+    overflow: 'hidden',
   },
-  voteButton: {
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
+  upvoteArea: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    justifyContent: 'center',
+    height: '100%',
+    paddingLeft: 8,
+    paddingRight: 2,
+  },
+  downvoteArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    paddingHorizontal: 10,
   },
   voteCount: {
     fontFamily: 'Inter',
     fontSize: 10,
     fontWeight: '400',
     color: '#000000',
-    marginHorizontal: 6,
+    marginLeft: 4,
   },
   voteSeparator: {
     width: 1,
     height: 12,
     backgroundColor: '#DEDEDE',
-    marginHorizontal: 6,
   },
 });
 

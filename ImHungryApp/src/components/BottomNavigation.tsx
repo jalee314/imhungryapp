@@ -192,16 +192,18 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     paddingHorizontal: 8,
     justifyContent: 'space-around',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'flex-start',
     minWidth: 65,
     paddingHorizontal: 4,
+    flex: 1,
   },
   iconContainer: {
-    height: 26,
+    height: 25,
+    width: 25,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -211,6 +213,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 4,
     textAlign: 'center',
+    width: '100%',
   },
   activeNavLabel: {
     color: '#000000',
