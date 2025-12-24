@@ -5,15 +5,26 @@ import OptimizedImage, { preloadImage } from './OptimizedImage';
 import VoteButtons from './VoteButtons';
 
 const { width: screenWidth } = Dimensions.get('window');
+
+// Base design width (iPhone 15 = 393pt)
+const BASE_WIDTH = 393;
+// Scale factor for larger screens (Pro Max = 430pt)
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+
 // Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (4px), then divide by 2
-const HORIZONTAL_PADDING = 20; // 10px on each side
-const CARD_GAP = 4; // 2px padding on each card (halved for tighter spacing)
+const HORIZONTAL_PADDING = scale(20); // 10px on each side, scaled
+const CARD_GAP = scale(4); // 2px padding on each card (halved for tighter spacing)
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
 // Calculate horizontal card width to align with header location icon
 // This creates the "peek" effect that hints at horizontal scrolling
-const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
-const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.32;
+const HORIZONTAL_CARD_PADDING = scale(10); // Left padding for horizontal scroll
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - scale(20)) / 1.32;
+
+// Dynamic image dimensions
+const HORIZONTAL_IMAGE_WIDTH = HORIZONTAL_CARD_WIDTH - scale(16); // Card padding
+const HORIZONTAL_IMAGE_HEIGHT = HORIZONTAL_IMAGE_WIDTH * 0.64; // Maintain aspect ratio ~260:167
+const VERTICAL_IMAGE_SIZE = VERTICAL_CARD_WIDTH - scale(16); // Square image for vertical cards
 
 export interface Deal {
   id: string;
@@ -104,10 +115,10 @@ const DealCard: React.FC<DealCardProps> = ({
   const getImageSource = () => {
     if (deal.imageVariants) {
       // Use OptimizedImage for database images with variants
-      // Figma specs: horizontal 260x167, vertical 175x175 (square)
+      // Dynamic sizing based on screen width
       const displaySize = variant === 'horizontal' 
-        ? { width: 260, height: 167 }
-        : { width: 175, height: 175 };
+        ? { width: Math.round(HORIZONTAL_IMAGE_WIDTH), height: Math.round(HORIZONTAL_IMAGE_HEIGHT) }
+        : { width: Math.round(VERTICAL_IMAGE_SIZE), height: Math.round(VERTICAL_IMAGE_SIZE) };
       
       return (
         <OptimizedImage 
@@ -173,7 +184,7 @@ const DealCard: React.FC<DealCardProps> = ({
             >
               <Monicon
                 name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
-                size={19} 
+                size={scale(19)} 
                 color={deal.isFavorited ? "#FF1E00" : "#000"} 
               />
             </TouchableOpacity>
@@ -224,7 +235,7 @@ const DealCard: React.FC<DealCardProps> = ({
           >
             <Monicon
               name="mdi:delete-outline"
-              size={16} 
+              size={scale(16)} 
               color="#000000" 
             />
           </TouchableOpacity>
@@ -236,7 +247,7 @@ const DealCard: React.FC<DealCardProps> = ({
           >
             <Monicon
               name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
-              size={19} 
+              size={scale(19)} 
               color={deal.isFavorited ? "#FF1E00" : "#000"} 
             />
           </TouchableOpacity>
@@ -250,45 +261,45 @@ const styles = StyleSheet.create({
   // Horizontal Card Styles (for community track - actually vertical cards in horizontal scroll)
   horizontalCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    borderRadius: scale(10),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(8),
     alignItems: 'flex-start',
     width: HORIZONTAL_CARD_WIDTH,
-    height: 280,
+    height: HORIZONTAL_IMAGE_HEIGHT + scale(113), // Image + content below
     justifyContent: 'center',
     overflow: 'visible',
   },
   horizontalImage: {
-    width: 260,
-    height: 167,
-    borderRadius: 8,
-    marginBottom: 8,
+    width: HORIZONTAL_IMAGE_WIDTH,
+    height: HORIZONTAL_IMAGE_HEIGHT,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
     resizeMode: 'cover',
   },
   horizontalTitleContainer: {
     width: '100%',
-    height: 20,
+    height: scale(20),
     justifyContent: 'flex-start',
   },
   horizontalTitle: {
     fontFamily: 'Inter',
     fontWeight: '600',
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: scale(12),
+    lineHeight: scale(15),
     color: '#000000',
     textAlign: 'left',
-    height: 30,
+    height: scale(30),
   },
   horizontalDetailsContainer: {
     width: '100%',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   horizontalDetails: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: scale(10),
+    lineHeight: scale(12),
     color: '#757575',
     textAlign: 'left',
     width: '100%',
@@ -307,35 +318,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    height: 28,
-    width: 85,
+    paddingHorizontal: scale(10),
+    paddingVertical: scale(2),
+    height: scale(28),
+    width: scale(85),
     justifyContent: 'space-between',
   },
   horizontalVoteButton: {
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 20,
-    height: 24,
+    width: scale(20),
+    height: scale(24),
     borderRadius: 4,
   },
   horizontalVoteCount: {
     fontFamily: 'Inter',
-    fontSize: 10,
+    fontSize: scale(10),
     fontWeight: '400',
     color: '#000000',
-    marginHorizontal: 6,
+    marginHorizontal: scale(6),
   },
   horizontalVoteSeparator: {
     width: 1,
-    height: 12,
+    height: scale(12),
     backgroundColor: '#DEDEDE',
-    marginHorizontal: 6,
+    marginHorizontal: scale(6),
   },
   horizontalFavoriteWrapper: {
-    width: 62,
+    width: scale(62),
     alignItems: 'flex-end',
     overflow: 'visible',
   },
@@ -344,45 +355,45 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 12,
+    paddingHorizontal: scale(12),
     justifyContent: 'center',
     alignItems: 'center',
-    height: 28,
+    height: scale(28),
     overflow: 'visible',
   },
   // Vertical Card Styles (for 2-column grid)
   verticalCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 8,
+    borderRadius: scale(16),
+    padding: scale(8),
     alignItems: 'flex-start',
     width: VERTICAL_CARD_WIDTH,
     justifyContent: 'flex-start',
   },
   verticalImage: {
-    width: 175,
-    height: 175,
-    borderRadius: 8,
-    marginBottom: 8,
+    width: VERTICAL_IMAGE_SIZE,
+    height: VERTICAL_IMAGE_SIZE,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
   },
   verticalTitle: {
     fontFamily: 'Inter',
     fontWeight: '600',
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: scale(12),
+    lineHeight: scale(15),
     color: '#000000',
     textAlign: 'left',
-    width: VERTICAL_CARD_WIDTH - 24,
+    width: VERTICAL_CARD_WIDTH - scale(24),
   },
   verticalDetailsContainer: {
-    width: VERTICAL_CARD_WIDTH - 24,
-    marginBottom: 8,
+    width: VERTICAL_CARD_WIDTH - scale(24),
+    marginBottom: scale(8),
   },
   verticalDetails: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: scale(10),
+    lineHeight: scale(12),
     color: '#757575',
     textAlign: 'left',
     width: '100%',
@@ -400,40 +411,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    height: 28,
-    width: 85,
+    paddingHorizontal: scale(10),
+    paddingVertical: scale(2),
+    height: scale(28),
+    width: scale(85),
     justifyContent: 'space-between',
   },
   verticalVoteButton: {
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 20,
-    height: 20,
+    width: scale(20),
+    height: scale(20),
     borderRadius: 4,
   },
   verticalVoteCount: {
     fontFamily: 'Inter',
-    fontSize: 10,
+    fontSize: scale(10),
     fontWeight: '400',
     color: '#000000',
-    marginHorizontal: 6,
+    marginHorizontal: scale(6),
   },
   verticalVoteSeparator: {
     width: 1,
-    height: 12,
+    height: scale(12),
     backgroundColor: '#DEDEDE',
-    marginHorizontal: 6,
+    marginHorizontal: scale(6),
   },
   verticalFavoriteButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    width: 40,
-    height: 28,
+    width: scale(40),
+    height: scale(28),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -442,8 +453,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    width: 40,
-    height: 28,
+    width: scale(40),
+    height: scale(28),
     justifyContent: 'center',
     alignItems: 'center',
   },

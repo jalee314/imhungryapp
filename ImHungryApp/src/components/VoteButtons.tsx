@@ -1,6 +1,18 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
+
+const { width: screenWidth } = Dimensions.get('window');
+
+// Base design width (iPhone 15 = 393pt)
+const BASE_WIDTH = 393;
+// Scale factor for responsive sizing
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+
+// Dynamic sizes
+const PILL_WIDTH = scale(85);
+const PILL_HEIGHT = scale(28);
+const ARROW_SIZE = Math.round(scale(18));
 
 interface VoteButtonsProps {
   votes: number;
@@ -26,7 +38,7 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
         activeOpacity={0.6}
       >
         <ArrowBigUp
-          size={18}
+          size={ARROW_SIZE}
           color={isUpvoted ? "#FF8C4C" : "#000000"}
           fill={isUpvoted ? "#FF8C4C" : "transparent"}
         />
@@ -42,7 +54,7 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
         activeOpacity={0.6}
       >
         <ArrowBigDown
-          size={18}
+          size={ARROW_SIZE}
           color={isDownvoted ? "#9796FF" : "#000000"}
           fill={isDownvoted ? "#9796FF" : "transparent"}
         />
@@ -59,8 +71,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    height: 28,
-    width: 85,
+    height: PILL_HEIGHT,
+    width: PILL_WIDTH,
     overflow: 'hidden',
   },
   upvoteArea: {
@@ -69,25 +81,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    paddingLeft: 8,
-    paddingRight: 2,
+    paddingLeft: scale(8),
+    paddingRight: scale(2),
   },
   downvoteArea: {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    paddingHorizontal: 10,
+    paddingHorizontal: scale(10),
   },
   voteCount: {
     fontFamily: 'Inter',
-    fontSize: 10,
+    fontSize: scale(10),
     fontWeight: '400',
     color: '#000000',
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   voteSeparator: {
     width: 1,
-    height: 12,
+    height: scale(12),
     backgroundColor: '#DEDEDE',
   },
 });

@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
 import { useAuth } from '../hooks/useAuth';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
+
+const { width: screenWidth } = Dimensions.get('window');
+
+// Base design width (iPhone 15 = 393pt)
+const BASE_WIDTH = 393;
+// Scale factor for responsive sizing
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+
+// Dynamic icon size - 25 on iPhone 15, ~28 on Pro Max
+const ICON_SIZE = Math.round(scale(25));
+const PROFILE_SIZE = Math.round(scale(25));
 
 interface BottomNavigationProps {
   photoUrl?: any;
@@ -152,7 +163,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons
             name={isActive ? item.activeIcon : item.icon} 
-            size={25} 
+            size={ICON_SIZE} 
             color={isActive ? '#000000' : '#757575'} 
           />
         </View>
@@ -188,30 +199,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fdfdfd',
     borderTopWidth: 0.5,
     borderTopColor: '#bcbcbc',
-    paddingTop: 4,
-    paddingBottom: 32,
-    paddingHorizontal: 8,
+    paddingTop: scale(4),
+    paddingBottom: scale(32),
+    paddingHorizontal: scale(8),
     justifyContent: 'space-around',
     alignItems: 'center',
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'flex-start',
-    minWidth: 65,
-    paddingHorizontal: 4,
+    minWidth: scale(65),
+    paddingHorizontal: scale(4),
     flex: 1,
   },
   iconContainer: {
-    height: 25,
-    width: 25,
+    height: ICON_SIZE,
+    width: ICON_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
   },
   navLabel: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#757575',
     fontWeight: '400',
-    marginTop: 4,
+    marginTop: scale(4),
     textAlign: 'center',
     width: '100%',
   },
@@ -220,9 +231,9 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   navProfilePhoto: {
-    width: 25,
-    height: 25,
-    borderRadius: 13,
+    width: PROFILE_SIZE,
+    height: PROFILE_SIZE,
+    borderRadius: PROFILE_SIZE / 2,
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
@@ -230,9 +241,9 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
   },
   navProfilePlaceholder: {
-    width: 24,
-    height: 24,
-    borderRadius: 13,
+    width: PROFILE_SIZE,
+    height: PROFILE_SIZE,
+    borderRadius: PROFILE_SIZE / 2,
     backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
@@ -240,7 +251,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   navPlaceholderText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
   },
 });
