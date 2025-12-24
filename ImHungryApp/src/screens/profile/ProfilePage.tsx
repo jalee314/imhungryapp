@@ -137,7 +137,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               style={styles.backButton} 
               onPress={() => navigation.goBack()}
             >
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#404040" />
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
         )}
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   settingArrow: {
     fontSize: 20,
-    color: '#666',
+    color: '#000000',
     fontWeight: 'bold',
   },
 

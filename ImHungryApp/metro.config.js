@@ -155,7 +155,5 @@ module.exports = withMonicon(config, {
     // Lucide icons (big arrows with rounded edges)
     "lucide:arrow-big-up",
     "lucide:arrow-big-down",
-    // Unicons (thicker stroke trash icon)
-    "uil:trash-alt",
   ],
 });

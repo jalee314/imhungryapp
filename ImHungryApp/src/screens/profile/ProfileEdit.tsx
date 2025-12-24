@@ -106,7 +106,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                     placeholder="Fullerton, CA"
                     placeholderTextColor="#757575"
                   />
-                  <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+                  <MaterialCommunityIcons name="chevron-right" size={20} color="#000000" />
                 </View>
               </View>
             </View>
