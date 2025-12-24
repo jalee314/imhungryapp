@@ -235,7 +235,7 @@ const DealCard: React.FC<DealCardProps> = ({
             activeOpacity={0.6}
           >
             <Monicon
-              name="mdi:delete-outline"
+              name="uil:trash-alt"
               size={scale(16)} 
               color="#000000" 
             />

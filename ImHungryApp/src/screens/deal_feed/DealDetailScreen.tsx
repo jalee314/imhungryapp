@@ -39,6 +39,7 @@ import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from
 import { useFavorites } from '../../hooks/useFavorites';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import OptimizedImage from '../../components/OptimizedImage';
+import MapSelectionModal from '../../components/MapSelectionModal';
 import { supabase } from '../../../lib/supabase';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
@@ -62,6 +63,7 @@ const DealDetailScreen: React.FC = () => {
   const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
   const [imageViewerKey, setImageViewerKey] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
@@ -354,33 +356,77 @@ const DealDetailScreen: React.FC = () => {
     }
   };
 
-  const handleDirections = async () => {
-    try {
-      // Log the click-through interaction with source 'feed'
-      logClickThrough(dealData.id, 'feed').catch(err => {
-        console.error('Failed to log click-through interaction:', err);
-      });
+  const handleDirections = () => {
+    // Log the click-through interaction with source 'feed'
+    logClickThrough(dealData.id, 'feed').catch(err => {
+      console.error('Failed to log click-through interaction:', err);
+    });
 
+    // Show map selection modal
+    setIsMapModalVisible(true);
+  };
+
+  const handleSelectAppleMaps = async () => {
+    setIsMapModalVisible(false);
+    try {
       const address = dealData.restaurantAddress || dealData.restaurant;
       const encodedAddress = encodeURIComponent(address);
       
-      // Try to open platform-specific map apps
-      const url = Platform.OS === 'ios' 
-        ? `maps://maps.google.com/maps?daddr=${encodedAddress}`
-        : `geo:0,0?q=${encodedAddress}`;
-      
-      const supported = await Linking.canOpenURL(url);
+      // Apple Maps URL scheme
+      const appleMapsUrl = `maps://?daddr=${encodedAddress}`;
+      const supported = await Linking.canOpenURL(appleMapsUrl);
       
       if (supported) {
-        await Linking.openURL(url);
+        await Linking.openURL(appleMapsUrl);
       } else {
-        // Fallback to web maps
-        const webUrl = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+        // Fallback to Apple Maps web
+        const webUrl = `http://maps.apple.com/?daddr=${encodedAddress}`;
         await Linking.openURL(webUrl);
       }
     } catch (error) {
-      console.error('Error opening directions:', error);
-      Alert.alert('Error', 'Unable to open directions');
+      console.error('Error opening Apple Maps:', error);
+      Alert.alert('Error', 'Unable to open Apple Maps');
+    }
+  };
+
+  const handleSelectGoogleMaps = async () => {
+    setIsMapModalVisible(false);
+    try {
+      const address = dealData.restaurantAddress || dealData.restaurant;
+      const encodedAddress = encodeURIComponent(address);
+      
+      let url: string;
+      
+      if (Platform.OS === 'ios') {
+        // Try Google Maps app first on iOS
+        url = `comgooglemaps://?daddr=${encodedAddress}`;
+        const supported = await Linking.canOpenURL(url);
+        
+        if (!supported) {
+          // Fallback to Google Maps web
+          url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+        }
+      } else {
+        // Android: Try Google Maps navigation first
+        url = `google.navigation:q=${encodedAddress}`;
+        const supported = await Linking.canOpenURL(url);
+        
+        if (!supported) {
+          // Fallback to geo URI
+          url = `geo:0,0?q=${encodedAddress}`;
+          const geoSupported = await Linking.canOpenURL(url);
+          
+          if (!geoSupported) {
+            // Final fallback to web
+            url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+          }
+        }
+      }
+      
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('Error opening Google Maps:', error);
+      Alert.alert('Error', 'Unable to open Google Maps');
     }
   };
 
@@ -750,6 +796,14 @@ const DealDetailScreen: React.FC = () => {
               </View>
           </Modal>
       )}
+
+      {/* Map Selection Modal */}
+      <MapSelectionModal
+        visible={isMapModalVisible}
+        onClose={() => setIsMapModalVisible(false)}
+        onSelectAppleMaps={handleSelectAppleMaps}
+        onSelectGoogleMaps={handleSelectGoogleMaps}
+      />
     </SafeAreaView>
   );
 };

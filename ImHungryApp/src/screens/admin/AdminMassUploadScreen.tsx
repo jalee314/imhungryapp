@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -416,7 +417,7 @@ const AdminMassUploadScreen: React.FC = () => {
         <Text style={styles.formTitle}>Deal #{index + 1}</Text>
         {dealForms.length > 1 && (
           <TouchableOpacity onPress={() => removeForm(form.id)}>
-            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+            <Monicon name="uil:trash-alt" size={24} color="#FF3B30" />
           </TouchableOpacity>
         )}
       </View>

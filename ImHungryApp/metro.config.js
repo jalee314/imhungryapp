@@ -20,6 +20,7 @@ module.exports = withMonicon(config, {
     "mdi:heart",
     "mdi:heart-outline",
     "mdi:delete-outline",
+    "mdi:delete",
     "mdi:arrow-left",
     "mdi:arrow-right",
     "mdi:dots-vertical",
@@ -29,6 +30,7 @@ module.exports = withMonicon(config, {
     "mdi:minus",
     "mdi:magnify",
     "mdi:account",
+    "uil:trash-alt",
     "mdi:account-outline",
     "mdi:cog",
     "mdi:cog-outline",
@@ -153,5 +155,7 @@ module.exports = withMonicon(config, {
     // Lucide icons (big arrows with rounded edges)
     "lucide:arrow-big-up",
     "lucide:arrow-big-down",
+    // Unicons (thicker stroke trash icon)
+    "uil:trash-alt",
   ],
 });

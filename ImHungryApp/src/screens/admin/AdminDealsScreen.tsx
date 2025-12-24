@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { adminService, Deal } from '../../services/adminService';
 import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
 import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 
 const AdminDealsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -292,7 +293,7 @@ const AdminDealsScreen: React.FC = () => {
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={handleDeleteDeal}
                 >
-                  <Ionicons name="trash" size={20} color="#FFF" />
+                  <Monicon name="uil:trash-alt" size={20} color="#FFF" />
                   <Text style={styles.actionButtonText}>Delete Deal</Text>
                 </TouchableOpacity>
               </View>
