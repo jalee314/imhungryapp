@@ -152,7 +152,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons
             name={isActive ? item.activeIcon : item.icon} 
-            size={26} 
+            size={25} 
             color={isActive ? '#000000' : '#757575'} 
           />
         </View>
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#757575',
     fontWeight: '400',
     marginTop: 4,
@@ -217,8 +217,8 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   navProfilePhoto: {
-    width: 26,
-    height: 26,
+    width: 25,
+    height: 25,
     borderRadius: 13,
     borderWidth: 1.5,
     borderColor: 'transparent',
@@ -227,8 +227,8 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
   },
   navProfilePlaceholder: {
-    width: 26,
-    height: 26,
+    width: 24,
+    height: 24,
     borderRadius: 13,
     backgroundColor: '#E0E0E0',
     justifyContent: 'center',
