@@ -16,17 +16,6 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import Animated, { 
-  FadeIn, 
-  FadeInDown, 
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  withSpring,
-  Easing,
-} from 'react-native-reanimated';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
@@ -511,10 +500,7 @@ const DealDetailScreen: React.FC = () => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Restaurant Header */}
-        <Animated.View 
-          entering={FadeInDown.duration(400).delay(100)}
-          style={styles.restaurantSection}
-        >
+        <View style={styles.restaurantSection}>
           {/* Restaurant name with view count positioned absolutely */}
           <View style={styles.restaurantHeaderContainer}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
@@ -584,25 +570,19 @@ const DealDetailScreen: React.FC = () => {
               </View>
             )}
           </View>
-        </Animated.View>
+        </View>
 
         {/* Separator after restaurant section */}
-        <Animated.View entering={FadeIn.duration(300).delay(150)} style={styles.separator} />
+        <View style={styles.separator} />
 
         {/* Deal Title */}
-        <Animated.Text 
-          entering={FadeInDown.duration(400).delay(200)}
-          style={styles.dealTitle}
-        >
+        <Text style={styles.dealTitle}>
           {dealData.title}
-        </Animated.Text>
+        </Text>
 
         {/* Deal Image */}
         <TouchableOpacity onPress={openImageViewer} disabled={imageLoading}>
-          <Animated.View 
-            entering={FadeInDown.duration(500).delay(300).springify().damping(15)}
-            style={styles.imageContainer}
-          >
+          <View style={styles.imageContainer}>
             <View style={[
               styles.imageWrapper,
               imageLoading && { minHeight: Math.max(skeletonHeight, 200), borderWidth: 0 }
@@ -663,14 +643,11 @@ const DealDetailScreen: React.FC = () => {
                 </View>
               )}
             </View>
-          </Animated.View>
+          </View>
         </TouchableOpacity>
 
         {/* Action Buttons */}
-        <Animated.View 
-          entering={FadeInDown.duration(400).delay(400)}
-          style={styles.actionButtonsContainer}
-        >
+        <View style={styles.actionButtonsContainer}>
           <VoteButtons
             votes={dealData.votes}
             isUpvoted={dealData.isUpvoted}
@@ -695,30 +672,27 @@ const DealDetailScreen: React.FC = () => {
               <Monicon name="mdi-light:share" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Only show Details section if details exist */}
         {dealData.details && dealData.details.trim() !== '' && (
           <>
             {/* Separator after image/actions */}
-            <Animated.View entering={FadeIn.duration(300).delay(450)} style={styles.separator} />
+            <View style={styles.separator} />
 
             {/* Details Section */}
-            <Animated.View 
-              entering={FadeInDown.duration(400).delay(500)}
-              style={styles.detailsSection}
-            >
+            <View style={styles.detailsSection}>
               <Text style={styles.detailsTitle}>Details</Text>
               <Text style={styles.detailsText}>{dealData.details}</Text>
-            </Animated.View>
+            </View>
           </>
         )}
 
         {/* Separator before shared by section */}
-        <Animated.View entering={FadeIn.duration(300).delay(550)} style={styles.separator} />
+        <View style={styles.separator} />
 
         {/* Shared By Section */}
-        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
+        <View>
           <TouchableOpacity 
             style={styles.sharedByContainer}
             onPress={handleUserPress}
@@ -735,7 +709,7 @@ const DealDetailScreen: React.FC = () => {
               <Text style={styles.userLocation}>{dealData.userCity || 'Unknown'}, {dealData.userState || 'CA'}</Text>
             </View>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       </ScrollView>
       {/* 3-Dot Popup Modal */}
       <ThreeDotPopup
