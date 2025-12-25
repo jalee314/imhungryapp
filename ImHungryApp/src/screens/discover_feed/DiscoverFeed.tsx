@@ -117,7 +117,7 @@ const DiscoverFeed: React.FC = () => {
 
   const renderSearchSkeleton = () => (
     <View style={styles.searchContainer}>
-      <SkeletonLoader width={screenWidth - 40} height={35} borderRadius={30} />
+      <SkeletonLoader width={screenWidth - 24} height={35} borderRadius={30} />
     </View>
   );
 
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   searchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 8,
   },
   searchInputContainer: {
@@ -258,8 +258,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 35,
     gap: 16,
-    width: 369,
-    alignSelf: 'center',
     elevation: 2,
   },
   searchInputContainerFocused: {

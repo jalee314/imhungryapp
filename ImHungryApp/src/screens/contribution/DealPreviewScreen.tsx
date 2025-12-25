@@ -15,7 +15,19 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
+
+const { width: screenWidth } = Dimensions.get('window');
+
+// Base design width (iPhone 15 = 393pt) - matches VoteButtons component
+const BASE_WIDTH = 393;
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+
+// Dynamic sizes for vote buttons - matches VoteButtons component exactly
+const PILL_WIDTH = scale(85);
+const PILL_HEIGHT = scale(28);
+const ARROW_SIZE = Math.round(scale(18));
 
 interface Restaurant {
   id: string;
@@ -257,26 +269,26 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             </TouchableOpacity>
                         )}
 
-                        {/* Interactions */}
-                        <View style={styles.interactionsContainer}>
+                        {/* Interactions (Preview State - Non-interactive, matches DealDetailScreen) */}
+                        <View style={styles.actionButtonsContainer}>
                             <View style={styles.voteContainer}>
-                                <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
-                                    <Monicon name="ph:arrow-fat-up-fill" size={17} color="#000" />
-                                </TouchableOpacity>
-                                <Text style={styles.voteCount}>0</Text>
+                                <View style={styles.upvoteArea}>
+                                    <ArrowBigUp size={ARROW_SIZE} color="#000000" fill="transparent" />
+                                    <Text style={styles.voteCount}>0</Text>
+                                </View>
                                 <View style={styles.voteSeparator} />
-                                <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
-                                    <Monicon name="ph:arrow-fat-down-fill" size={17} color="#000" />
-                                </TouchableOpacity>
+                                <View style={styles.downvoteArea}>
+                                    <ArrowBigDown size={ARROW_SIZE} color="#000000" fill="transparent" />
+                                </View>
                             </View>
                             
-                            <View style={styles.favContainer}>
-                                <TouchableOpacity style={styles.favoriteButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="heart-outline" size={24} color="#000" />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.shareIconButton} activeOpacity={1}>
+                            <View style={styles.rightActions}>
+                                <View style={styles.actionButton}>
+                                    <Monicon name="mdi:heart-outline" size={19} color="#000" />
+                                </View>
+                                <View style={styles.actionButton}>
                                     <Monicon name="mdi-light:share" size={24} color="#000000" />
-                                </TouchableOpacity>
+                                </View>
                             </View>
                         </View>
 
@@ -410,7 +422,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingVertical: 16,
-    gap: 12,
   },
   restaurantWrapper: {
     alignSelf: 'stretch',
@@ -479,63 +490,66 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFEFEF',
     borderRadius: 8,
     alignSelf: 'center',
+    marginBottom: 16,
   },
-  interactionsContainer: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
+  // Matches DealDetailScreen.actionButtonsContainer exactly
+  actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    alignItems: 'center',
+    marginBottom: 8,
   },
+  // Matches VoteButtons.voteContainer exactly
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    height: 28,
+    height: PILL_HEIGHT,
+    width: PILL_WIDTH,
+    overflow: 'hidden',
   },
-  voteButton: {
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 20,
-    height: 24,
-  },
-  voteCount: {
-    fontFamily: 'Inter',
-    fontSize: 10,
-    fontWeight: '400',
-    color: '#000000',
-    marginHorizontal: 6,
-  },
-  voteSeparator: {
-    width: 1,
-    height: 16,
-    backgroundColor: '#DEDEDE',
-    marginHorizontal: 6,
-  },
-  favContainer: {
+  // Matches VoteButtons.upvoteArea exactly
+  upvoteArea: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    height: 28,
-  },
-  favoriteButton: {
-    backgroundColor: '#F8F4F4',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    paddingHorizontal: 12,
-    height: 28,
     justifyContent: 'center',
-    alignItems: 'center',
+    height: '100%',
+    paddingLeft: scale(8),
+    paddingRight: scale(2),
   },
-  shareIconButton: {
-    backgroundColor: '#F8F4F4',
+  // Matches VoteButtons.downvoteArea exactly
+  downvoteArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    paddingHorizontal: scale(10),
+  },
+  // Matches VoteButtons.voteCount exactly
+  voteCount: {
+    fontFamily: 'Inter',
+    fontSize: scale(10),
+    fontWeight: '400',
+    color: '#000000',
+    marginLeft: scale(4),
+  },
+  // Matches VoteButtons.voteSeparator exactly
+  voteSeparator: {
+    width: 1,
+    height: scale(12),
+    backgroundColor: '#DEDEDE',
+  },
+  // Matches DealDetailScreen.rightActions exactly
+  rightActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  // Matches DealDetailScreen.actionButton exactly
+  actionButton: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,

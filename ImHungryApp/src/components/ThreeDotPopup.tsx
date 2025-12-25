@@ -97,8 +97,6 @@ const styles = StyleSheet.create({
   popupContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    borderWidth: 1.25,
-    borderColor: '#000000',
     width: 369,
     paddingVertical: 8,
     flexDirection: 'column',
