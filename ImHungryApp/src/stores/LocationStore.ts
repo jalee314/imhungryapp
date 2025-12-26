@@ -104,7 +104,7 @@ export const useLocationStore = create<LocationState>((set, get) => ({
       const location = await getCurrentUserLocation();
       const took = Date.now() - start;
       if (location) {
-        const displayName = location.city || 'Unknown Location';
+        const displayName = location.city ? `${location.city}, CA` : 'Unknown Location';
         set({
           currentLocation: displayName,
           selectedCoordinates: { lat: location.lat, lng: location.lng },

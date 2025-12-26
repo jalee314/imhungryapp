@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     color: '#404040', 
     fontWeight: '700',
-    fontFamily: 'Manrope-Bold'
+    fontFamily: 'Inter-Bold'
   },
 
   welcomeSection: { alignSelf: 'stretch' },
@@ -330,13 +330,13 @@ const styles = StyleSheet.create({
     color: '#181619', 
     textAlign: 'left', 
     lineHeight: 16,
-    fontFamily: 'Manrope-Medium',
+    fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
   legalLink: { 
     color: '#FFA05C', 
     fontWeight: '600',
-    fontFamily: 'Manrope-SemiBold'
+    fontFamily: 'Inter-SemiBold'
   },
   errorText: {
     color: 'red',

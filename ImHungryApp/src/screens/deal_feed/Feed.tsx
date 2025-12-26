@@ -19,8 +19,9 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
-import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
+import { toggleUpvote, toggleDownvote, toggleFavorite, calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
@@ -123,6 +124,10 @@ const Feed: React.FC = () => {
             // Skip clicks - we don't need realtime updates for those
             if (interaction.interaction_type === 'click') return;
             
+            // Skip if this is our own action - optimistic updates already handled it
+            // This prevents the "flicker" where DB response overwrites local calculation
+            if (interaction.user_id === userId) return;
+            
             const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
             if (recentActions.current.has(actionKey)) return;
             
@@ -130,24 +135,19 @@ const Feed: React.FC = () => {
             setTimeout(() => recentActions.current.delete(actionKey), 1000);
             
             const changedDealId = interaction.deal_id;
-            const [voteStates, voteCounts] = await Promise.all([
-              getUserVoteStates([changedDealId]),
-              calculateVoteCounts([changedDealId])
-            ]);
+            // Only fetch vote count - we preserve our own vote state from optimistic updates
+            const voteCounts = await calculateVoteCounts([changedDealId]);
             
-            setTimeout(() => {
-              setDeals(prevDeals => prevDeals.map(deal => {
-                if (deal.id === changedDealId) {
-                  return {
-                    ...deal,
-                    isUpvoted: voteStates[changedDealId]?.isUpvoted || false,
-                    isDownvoted: voteStates[changedDealId]?.isDownvoted || false,
-                    votes: voteCounts[changedDealId] || 0,
-                  };
-                }
-                return deal;
-              }));
-            }, 0);
+            setDeals(prevDeals => prevDeals.map(deal => {
+              if (deal.id === changedDealId) {
+                return {
+                  ...deal,
+                  // Only update vote count from other users, keep our own vote state
+                  votes: voteCounts[changedDealId] ?? deal.votes,
+                };
+              }
+              return deal;
+            }));
           }
         )
         .subscribe();
@@ -220,63 +220,63 @@ const Feed: React.FC = () => {
     }
   }, []);
 
-  // Handlers (handleUpvote, handleDownvote, etc.) are unchanged
+  // Handlers - optimistic updates happen synchronously to prevent flickering
   const handleUpvote = (dealId: string) => {
     let originalDeal: Deal | undefined;
-    setTimeout(() => {
-      setDeals(prevDeals => {
-        return prevDeals.map(d => {
-          if (d.id === dealId) {
-            originalDeal = d;
-            const wasUpvoted = d.isUpvoted;
-            const wasDownvoted = d.isDownvoted;
-            return {
-              ...d,
-              isUpvoted: !wasUpvoted,
-              isDownvoted: false,
-              votes: wasUpvoted ? d.votes - 1 : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-            };
-          }
-          return d;
-        });
+    
+    // Synchronous optimistic update - no setTimeout to prevent flicker
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasUpvoted = d.isUpvoted;
+          const wasDownvoted = d.isDownvoted;
+          return {
+            ...d,
+            isUpvoted: !wasUpvoted,
+            isDownvoted: false,
+            votes: wasUpvoted ? d.votes - 1 : (wasDownvoted ? d.votes + 2 : d.votes + 1)
+          };
+        }
+        return d;
       });
-    }, 0);
+    });
+    
+    // Background database save
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
       if (originalDeal) {
-        setTimeout(() => {
-          setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
-        }, 0);
+        setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
       }
     });
   };
 
   const handleDownvote = (dealId: string) => {
     let originalDeal: Deal | undefined;
-    setTimeout(() => {
-      setDeals(prevDeals => {
-        return prevDeals.map(d => {
-          if (d.id === dealId) {
-            originalDeal = d;
-            const wasDownvoted = d.isDownvoted;
-            const wasUpvoted = d.isUpvoted;
-            return {
-              ...d,
-              isDownvoted: !wasDownvoted,
-              isUpvoted: false,
-              votes: wasDownvoted ? d.votes + 1 : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-            };
-          }
-          return d;
-        });
+    
+    // Synchronous optimistic update - no setTimeout to prevent flicker
+    setDeals(prevDeals => {
+      return prevDeals.map(d => {
+        if (d.id === dealId) {
+          originalDeal = d;
+          const wasDownvoted = d.isDownvoted;
+          const wasUpvoted = d.isUpvoted;
+          return {
+            ...d,
+            isDownvoted: !wasDownvoted,
+            isUpvoted: false,
+            votes: wasDownvoted ? d.votes + 1 : (wasUpvoted ? d.votes - 2 : d.votes - 1)
+          };
+        }
+        return d;
       });
-    }, 0);
+    });
+    
+    // Background database save
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
       if (originalDeal) {
-        setTimeout(() => {
-          setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
-        }, 0);
+        setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
       }
     });
   };
@@ -341,20 +341,34 @@ const Feed: React.FC = () => {
     <DealCard deal={item} variant="horizontal" onUpvote={handleUpvote} onDownvote={handleDownvote} onFavorite={handleFavorite} onPress={handleDealPress} />
   );
 
-  const renderItemSeparator = () => <View style={{ width: 8 }} />;
+  const renderItemSeparator = () => <View style={{ width: 0 }} />;
+
+  const renderFilterSkeleton = () => (
+    <View style={styles.filterSkeletonContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterSkeletonList}>
+        {[60, 75, 55, 80, 65, 70].map((width, index) => (
+          <SkeletonLoader key={index} width={width} height={34} borderRadius={20} style={styles.filterSkeletonItem} />
+        ))}
+      </ScrollView>
+    </View>
+  );
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
+      {/* Filter Skeleton */}
+      {renderFilterSkeleton()}
+      
+      {/* Featured Deals Section Skeleton */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>✨ Featured Deals</Text>
-        <TouchableOpacity style={styles.seeAllButton}>
-          <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
-        </TouchableOpacity>
+        <SkeletonLoader width={140} height={20} borderRadius={4} />
+        <SkeletonLoader width={30} height={30} borderRadius={15} />
       </View>
       <FlatList data={[1, 2, 3]} renderItem={() => <DealCardSkeleton variant="horizontal" />} keyExtractor={(item) => item.toString()} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
-      <View style={styles.sectionSeparator} />
+      <View style={styles.skeletonSeparator} />
+      
+      {/* Deals For You Section Skeleton */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>💰️ Deals For You</Text>
+        <SkeletonLoader width={130} height={20} borderRadius={4} />
       </View>
       <View style={styles.dealsGrid}>
         {[1, 2, 3, 4, 5, 6].map((item, index) => (
@@ -419,9 +433,25 @@ const Feed: React.FC = () => {
       return renderEmptyState('no_deals');
     }
 
-    // Priority 6: Render the deals.
+    // Priority 6: Render the deals with cuisine filter.
+    const cuisinesWithDeals = cuisines.filter(cuisine => 
+      deals.some(deal => deal.cuisineId === cuisine.id)
+    );
+
     return (
       <>
+        {/* Cuisine Filter */}
+        {!cuisinesLoading && cuisinesWithDeals.length > 0 && (
+          <CuisineFilter
+            filters={cuisinesWithDeals.map(c => c.name)}
+            selectedFilter={selectedCuisineId === 'All' ? 'All' : cuisinesWithDeals.find(c => c.id === selectedCuisineId)?.name || 'All'}
+            onFilterSelect={(filterName) => {
+              const cuisine = cuisinesWithDeals.find(c => c.name === filterName);
+              setSelectedCuisineId(cuisine ? cuisine.id : 'All');
+            }}
+          />
+        )}
+        
         {communityDeals.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
@@ -463,17 +493,6 @@ const Feed: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FF8C4C']} tintColor="#FF8C4C" />
         }
       >
-        {!cuisinesLoading && cuisines.length > 0 && (
-          <CuisineFilter
-            filters={cuisines.map(c => c.name)}
-            selectedFilter={selectedCuisineId === 'All' ? 'All' : cuisines.find(c => c.id === selectedCuisineId)?.name || 'All'}
-            onFilterSelect={(filterName) => {
-                const cuisine = cuisines.find(c => c.name === filterName);
-                setSelectedCuisineId(cuisine ? cuisine.id : 'All');
-            }}
-          />
-        )}
-        
         {renderContent()}
 
       </ScrollView>
@@ -496,14 +515,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 4,
-    marginBottom: 4,
-    paddingHorizontal: 10,
+    paddingTop: 4,
+    paddingBottom: 4,
+    paddingLeft: 16,
+    paddingRight: 10,
   },
   sectionTitle: {
     fontFamily: 'Inter',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 17,
     color: '#000000',
   },
   seeAllButton: {
@@ -515,34 +535,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   communityList: {
-    paddingBottom: 4,
-    paddingHorizontal: 10,
+    paddingLeft: 10.5,
+    paddingRight: 10,
   },
   sectionSeparator: {
     height: 0.5,
-    backgroundColor: '#AAAAAA',
-    marginVertical: 8,
-    marginHorizontal: -10,
+    backgroundColor: '#DEDEDE',
+    marginHorizontal: -20,
     width: '110%',
+    marginBottom: 4,
   },
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    paddingHorizontal: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
     paddingBottom: 100,
   },
   leftCard: {
-    marginBottom: 8,
-    marginRight: 4,
+    marginBottom: 0,
+    marginRight: 2,
   },
   rightCard: {
-    marginBottom: 8,
-    marginLeft: 4,
+    marginTop: 0,
+    marginLeft: 2,
   },
   loadingContainer: {
     flex: 1,
     paddingBottom: 0,
+  },
+  filterSkeletonContainer: {
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  filterSkeletonList: {
+    paddingLeft: 18.5,
+    gap: 4,
+  },
+  filterSkeletonItem: {
+    marginRight: 4,
+  },
+  skeletonSeparator: {
+    height: 0.5,
+    marginVertical: 8,
   },
   errorContainer: {
     flex: 1,

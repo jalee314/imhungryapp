@@ -23,6 +23,7 @@ import { calculateDistance } from '../../services/locationService';
 import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '../../services/restaurantFavoriteService';
 import { Deal } from '../../components/DealCard';
 import { logClick } from '../../services/interactionService';
+import { useFavorites } from '../../hooks/useFavorites';
 
 type RestaurantDetailRouteProp = RouteProp<{ 
   RestaurantDetail: { 
@@ -61,6 +62,7 @@ const RestaurantDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RestaurantDetailRouteProp>();
   const { restaurant } = route.params;
+  const { markAsUnfavorited, markAsFavorited } = useFavorites();
   
   const [deals, setDeals] = useState<RestaurantDeal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -225,6 +227,13 @@ const RestaurantDetailScreen: React.FC = () => {
   const handleRestaurantFavorite = async () => {
     try {
       setFavoriteLoading(true);
+      
+      // Notify global store for instant favorites page update
+      if (isRestaurantFavorited) {
+        markAsUnfavorited(restaurant.restaurant_id, 'restaurant');
+      } else {
+        markAsFavorited(restaurant.restaurant_id, 'restaurant');
+      }
       
       const result = await toggleRestaurantFavorite(
         restaurant.restaurant_id,

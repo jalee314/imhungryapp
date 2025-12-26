@@ -14,6 +14,7 @@ import {
   formatJoinDate, getDisplayName, getUsernameFontSize, showProfilePhotoOptions, showDeleteAccountConfirmation 
 } from '../services/profileUtilsService';
 import { useDealUpdate } from './useDealUpdate';
+import { useFavorites } from './useFavorites';
 
 // Types kept intentionally broad to avoid tight coupling; can refine later
 export interface UseProfileParams {
@@ -76,6 +77,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
   const [userProfileCache, setUserProfileCache] = useState<Map<string, UserProfileCache>>(new Map());
   const postsLoadedRef = useRef(false);
   const { postAdded, setPostAdded } = useDealUpdate();
+  const { markAsUnfavorited, markAsFavorited } = useFavorites();
 
   // ---------- Data Loading (current user) ----------
   const loadProfileData = useCallback(async () => {
@@ -273,7 +275,31 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     const original = userPosts.find(d => d.id === dealId);
     if (!original) return;
     const wasFav = original.isFavorited;
+    
+    // 1. Optimistic UI update
     setUserPosts(prev => prev.map(d => d.id === dealId ? { ...d, isFavorited: !wasFav } : d));
+    
+    // 2. Notify global store for instant favorites page update
+    if (wasFav) {
+      markAsUnfavorited(dealId, 'deal');
+    } else {
+      markAsFavorited(dealId, 'deal', {
+        id: original.id,
+        title: original.title,
+        description: original.details || '',
+        imageUrl: typeof original.image === 'object' ? original.image.uri : '',
+        restaurantName: original.restaurant,
+        restaurantAddress: original.restaurantAddress || '',
+        distance: original.milesAway || '',
+        userId: original.userId,
+        userDisplayName: original.userDisplayName,
+        userProfilePhoto: original.userProfilePhoto,
+        isAnonymous: original.isAnonymous,
+        favoritedAt: new Date().toISOString(),
+      });
+    }
+    
+    // 3. Background database save
     toggleFavorite(dealId, wasFav).catch(err => {
       console.error('Failed favorite revert', err);
       if (original) setUserPosts(prev => prev.map(d => d.id === dealId ? original : d));

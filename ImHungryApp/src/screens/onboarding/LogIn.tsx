@@ -277,10 +277,10 @@ const styles = StyleSheet.create({
     color: '#181619',
     textAlign: 'left',
     lineHeight: 16,
-    fontFamily: 'Manrope-Medium',
+    fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
-  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Manrope-SemiBold' },
+  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Inter-SemiBold' },
   textInputStyle: {
     backgroundColor: 'white',
     minHeight: 56,

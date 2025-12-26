@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, ScrollVi
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Monicon } from '@monicon/native';
 import DealCard from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { useProfile } from '../../hooks/useProfile';
 
 interface ProfilePageProps {}
@@ -75,18 +77,18 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <View style={styles.userInfo}>
                   <View>
                     {/* Username skeleton */}
-                    <View style={[styles.skeleton, styles.skeletonUsername]} />
+                    <SkeletonLoader width={150} height={24} borderRadius={4} style={{ marginBottom: 6 }} />
                     {/* Join date skeleton */}
-                    <View style={[styles.skeleton, styles.skeletonJoinDate]} />
+                    <SkeletonLoader width={120} height={14} borderRadius={4} style={{ marginBottom: 4 }} />
                     {/* Location skeleton */}
-                    <View style={[styles.skeleton, styles.skeletonLocation]} />
+                    <SkeletonLoader width={100} height={14} borderRadius={4} />
                   </View>
                 </View>
               </View>
               
               <View style={styles.rightSection}>
                 {/* Profile photo skeleton */}
-                <View style={[styles.skeleton, styles.skeletonProfilePhoto]} />
+                <SkeletonLoader width={75} height={75} borderRadius={37.5} />
               </View>
             </View>
           </View>
@@ -94,10 +96,10 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
           {/* Tabs Section Skeleton */}
           <View style={styles.actionButtonsContainer}>
             <View style={{ flexDirection: 'row', gap: 4 }}>
-              <View style={[styles.skeleton, styles.skeletonButton]} />
-              <View style={[styles.skeleton, styles.skeletonButton]} />
+              <SkeletonLoader width={80} height={35} borderRadius={20} />
+              <SkeletonLoader width={80} height={35} borderRadius={20} />
             </View>
-            <View style={[styles.skeleton, styles.skeletonShareButton]} />
+            <SkeletonLoader width={40} height={32} borderRadius={12} />
           </View>
 
           {/* Content area skeleton - Grid of posts */}
@@ -135,7 +137,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               style={styles.backButton} 
               onPress={() => navigation.goBack()}
             >
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#404040" />
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
         )}
@@ -215,7 +217,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             style={styles.shareActionButton}
             onPress={onShareProfile}
           >
-          <MaterialCommunityIcons name="share-variant" size={16} color="#000" />
+          <Monicon name="mdi-light:share" size={24} color="#000" />
         </TouchableOpacity>
         </View>
 
@@ -511,9 +513,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profilePhoto: {
-    width: 75,
-    height: 75,
-    borderRadius: 9999,
+    width: 85,
+    height: 85,
+    borderRadius: 50,
     borderWidth: 2,
     borderColor: '#FFA05C',
   },
@@ -550,7 +552,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   shareActionButton: {
-    borderRadius: 12,
+    borderRadius: 30,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#fff',
@@ -614,7 +616,7 @@ const styles = StyleSheet.create({
   },
   settingArrow: {
     fontSize: 20,
-    color: '#666',
+    color: '#000000',
     fontWeight: 'bold',
   },
 
@@ -751,19 +753,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    gap: 4,
     paddingTop: 8,
     paddingBottom: 100,
-    paddingHorizontal: 8,
+    paddingLeft: 10,
+    paddingRight: 10,
     width: '100%',
   },
   leftCard: {
     marginBottom: 4,
-    marginRight: 4,
+    marginRight: 2,
   },
   rightCard: {
     marginBottom: 4,
-    marginLeft: 4,
+    marginLeft: 2,
   },
   emptyContainer: {
     flex: 1,

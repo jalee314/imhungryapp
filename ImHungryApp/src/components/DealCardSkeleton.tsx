@@ -2,14 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (8px), then divide by 2
+// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (4px), then divide by 2
 const HORIZONTAL_PADDING = 20; // 10px on each side
-const CARD_GAP = 8; // 4px padding on each card
+const CARD_GAP = 4; // 2px padding on each card (halved for tighter spacing)
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
-// Calculate horizontal card width to show ~1.5 cards (first card fully visible, half of second card visible)
+// Calculate horizontal card width to align with header location icon
 const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
-const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.5;
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.32;
 
 interface DealCardSkeletonProps {
   variant?: 'horizontal' | 'vertical';
@@ -97,15 +97,16 @@ const styles = StyleSheet.create({
   horizontalCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'flex-start',
     width: HORIZONTAL_CARD_WIDTH,
-    height: 273,
+    height: 280,
     justifyContent: 'center',
   },
   horizontalImage: {
-    width: '100%',
-    height: 144,
+    width: 260,
+    height: 167,
     borderRadius: 8,
     marginBottom: 8,
   },
@@ -147,16 +148,15 @@ const styles = StyleSheet.create({
   // Vertical Card Styles (matching DealCard dimensions exactly)
   verticalCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    borderRadius: 16,
     padding: 8,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: VERTICAL_CARD_WIDTH,
-    height: 266,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   verticalImage: {
     width: '100%',
-    height: 144,
+    height: 175,
     borderRadius: 8,
     marginBottom: 8,
   },

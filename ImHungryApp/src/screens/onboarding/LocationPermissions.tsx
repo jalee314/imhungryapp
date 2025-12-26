@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     color: '#000', 
     fontWeight: 'bold', 
     marginBottom: 25,
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Inter-Bold',
     textAlign: 'left'
   },
   subtitle: { 

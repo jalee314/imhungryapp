@@ -17,6 +17,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard, { RowCardData } from '../../components/RowCard';
+import RowCardSkeleton from '../../components/RowCardSkeleton';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
 import { useLocation } from '../../context/LocationContext';
 
@@ -66,10 +68,17 @@ const DiscoverFeed: React.FC = () => {
   // Load current location on mount and when location changes
   // This is now handled by LocationContext, so we can remove this effect
 
-  // Filter restaurants based on search query (name only)
-  const filteredRestaurants = restaurants.filter(restaurant => 
-    restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Maximum distance limit in miles
+  const MAX_DISTANCE_MILES = 20;
+
+  // Filter restaurants based on search query (name only) and 20-mile distance limit
+  // Also sort by distance (nearest first)
+  const filteredRestaurants = restaurants
+    .filter(restaurant => 
+      restaurant.distance_miles <= MAX_DISTANCE_MILES &&
+      restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => a.distance_miles - b.distance_miles);
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
@@ -106,10 +115,17 @@ const DiscoverFeed: React.FC = () => {
   );
 
 
+  const renderSearchSkeleton = () => (
+    <View style={styles.searchContainer}>
+      <SkeletonLoader width={screenWidth - 24} height={35} borderRadius={30} />
+    </View>
+  );
+
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#FFA05C" />
-      <Text style={styles.loadingText}>Loading restaurants...</Text>
+      {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+        <RowCardSkeleton key={item} />
+      ))}
     </View>
   );
 
@@ -157,19 +173,7 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#666" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              value={searchQuery}
-              onChangeText={handleSearchChange}
-              placeholderTextColor="#999"
-              editable={false}
-            />
-          </View>
-        </View>
+        {renderSearchSkeleton()}
         {renderLoadingState()}
       </View>
     );
@@ -179,19 +183,7 @@ const DiscoverFeed: React.FC = () => {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#666" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              value={searchQuery}
-              onChangeText={handleSearchChange}
-              placeholderTextColor="#999"
-              editable={false}
-            />
-          </View>
-        </View>
+        {renderSearchSkeleton()}
         {renderErrorState()}
       </View>
     );
@@ -253,33 +245,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffffed',
     borderWidth: 0.5,
-    borderColor: '#757575',
+    borderColor: '#d7d7d7',
     borderRadius: 30,
     paddingHorizontal: 16,
     height: 35,
     gap: 16,
-    width: screenWidth - 40,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
     elevation: 2,
   },
   searchInputContainerFocused: {
-    borderColor: '#757575',
-    shadowOpacity: 0.2,
+    borderColor: '#d7d7d7',
     elevation: 4,
   },
   searchInput: {
@@ -305,15 +287,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 16,
-    fontFamily: 'Inter',
+    paddingTop: 4,
   },
   errorContainer: {
     flex: 1,

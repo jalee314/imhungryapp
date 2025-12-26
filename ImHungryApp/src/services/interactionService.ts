@@ -185,3 +185,90 @@ export const getDealViewCounts = async (dealIds: string[]): Promise<Record<strin
     return {};
   }
 };
+
+/**
+ * Get random viewer profile photos for a deal (up to 3)
+ */
+export const getDealViewerPhotos = async (dealId: string, limit: number = 3): Promise<string[]> => {
+  try {
+    // First, get unique user_ids who viewed this deal (excluding null users)
+    const { data: interactions, error: interactionError } = await supabase
+      .from('interaction')
+      .select('user_id')
+      .eq('deal_id', dealId)
+      .eq('interaction_type', 'click-open')
+      .not('user_id', 'is', null);
+
+    if (interactionError) {
+      console.error('Error fetching viewer interactions:', interactionError);
+      return [];
+    }
+
+    if (!interactions || interactions.length === 0) {
+      return [];
+    }
+
+    // Get unique user IDs
+    const uniqueUserIds = [...new Set(interactions.map(i => i.user_id).filter(Boolean))] as string[];
+    
+    if (uniqueUserIds.length === 0) {
+      return [];
+    }
+
+    // Shuffle and take up to `limit` random users
+    const shuffledUserIds = uniqueUserIds.sort(() => Math.random() - 0.5).slice(0, limit);
+
+    // Fetch profile photos for these users
+    const { data: users, error: userError } = await supabase
+      .from('user')
+      .select(`
+        user_id,
+        profile_photo,
+        profile_photo_metadata_id,
+        image_metadata:profile_photo_metadata_id (
+          variants
+        )
+      `)
+      .in('user_id', shuffledUserIds);
+
+    if (userError) {
+      console.error('Error fetching viewer profiles:', userError);
+      return [];
+    }
+
+    // Extract profile photo URLs, preferring optimized versions
+    const profilePhotos: string[] = [];
+    users?.forEach(user => {
+      let photoUrl: string | null = null;
+      
+      // Prefer small/medium optimized version for avatars from variants
+      if (user.image_metadata) {
+        const metadata = user.image_metadata as any;
+        if (metadata.variants) {
+          // variants is an object with size keys like 'small', 'medium', 'large', 'original'
+          photoUrl = metadata.variants.small || metadata.variants.medium || metadata.variants.original;
+        }
+      }
+      
+      // Fallback to profile_photo field
+      if (!photoUrl && user.profile_photo) {
+        if (user.profile_photo.startsWith('http')) {
+          photoUrl = user.profile_photo;
+        } else {
+          // Build storage URL
+          const { data } = supabase.storage.from('profile-photos').getPublicUrl(user.profile_photo);
+          photoUrl = data.publicUrl;
+        }
+      }
+      
+      if (photoUrl) {
+        profilePhotos.push(photoUrl);
+      }
+    });
+
+    return profilePhotos;
+  } catch (error) {
+    console.error('Error in getDealViewerPhotos:', error);
+    return [];
+  }
+};

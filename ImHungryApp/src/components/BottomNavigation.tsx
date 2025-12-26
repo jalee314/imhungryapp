@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
 import { useAuth } from '../hooks/useAuth';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
+
+const { width: screenWidth } = Dimensions.get('window');
+
+// Base design width (iPhone 15 = 393pt)
+const BASE_WIDTH = 393;
+// Scale factor for responsive sizing
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+
+// Dynamic icon size - 25 on iPhone 15, ~28 on Pro Max
+const ICON_SIZE = Math.round(scale(25));
+const PROFILE_SIZE = Math.round(scale(25));
 
 interface BottomNavigationProps {
   photoUrl?: any;
@@ -83,11 +94,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   );
 
   const navItems = [
-    { id: 'feed', icon: 'view-grid-outline', label: 'Feed', screen: 'Feed' },
-    { id: 'search', icon: 'magnify', label: 'Search', screen: 'DiscoverFeed' }, // CHANGED: Now routes to DiscoverFeed
-    { id: 'contribute', icon: 'plus-circle-outline', label: 'Contribute', screen: 'DealCreationScreen' },
-    { id: 'favorites', icon: 'heart-outline', label: 'Favorites', screen: 'FavoritesPage' },
-    { id: 'profile', icon: 'account-circle-outline', label: 'Profile', screen: 'ProfilePage' },
+    { id: 'feed', icon: 'view-grid', activeIcon: 'view-grid', label: 'Feed', screen: 'Feed' },
+    { id: 'search', icon: 'magnify', activeIcon: 'magnify', label: 'Explore', screen: 'ExploreFeed' },
+    { id: 'contribute', icon: 'plus-circle-outline', activeIcon: 'plus-circle', label: 'Contribute', screen: 'DealCreationScreen' },
+    { id: 'favorites', icon: 'heart-outline', activeIcon: 'heart', label: 'Favorites', screen: 'FavoritesPage' },
+    { id: 'profile', icon: 'account-circle-outline', activeIcon: 'account-circle', label: 'Profile', screen: 'ProfilePage' },
   ];
 
   const handleTabPress = (screenName: string) => {
@@ -110,7 +121,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     }
   };
 
-  const renderNavItem = (item: { id: string; icon: any; label: string, screen: string }) => {
+  const renderNavItem = (item: { id: string; icon: any; activeIcon: any; label: string; screen: string }) => {
     // Contribute button should never be considered active
     const isActive = item.id !== 'contribute' && activeTab === item.id;
     const isContributePressed = item.id === 'contribute' && contributePressed;
@@ -121,18 +132,21 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       return (
         <TouchableOpacity
           key={item.id}
-          style={[styles.navItem, isActive && styles.activeNavItem]}
+          style={styles.navItem}
           onPress={() => handleTabPress(item.screen)}
         >
-          {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
-            <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
-          ) : displayPhotoUrl ? (
-            <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
-          ) : (
-            <View style={styles.navProfilePlaceholder}>
-              <Text style={styles.navPlaceholderText}>👤</Text>
-            </View>
-          )}
+          <View style={styles.iconContainer}>
+            {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
+              <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+            ) : displayPhotoUrl ? (
+              <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+            ) : (
+              <View style={[styles.navProfilePlaceholder, isActive && styles.activeNavProfilePhoto]}>
+                <Text style={styles.navPlaceholderText}>👤</Text>
+              </View>
+            )}
+          </View>
+          <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
         </TouchableOpacity>
       );
     }
@@ -142,16 +156,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         key={item.id}
         style={[
           styles.navItem, 
-          isActive && styles.activeNavItem,
           isContributePressed && { opacity: 0.5 }
         ]}
         onPress={() => handleTabPress(item.screen)}
       >
-        <MaterialCommunityIcons  // CHANGED: Back to original
-          name={item.icon} 
-          size={28} 
-          color={isActive ? '#000000' : '#666'} 
-        />
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons
+            name={isActive ? item.activeIcon : item.icon} 
+            size={ICON_SIZE} 
+            color={isActive ? '#000000' : '#757575'} 
+          />
+        </View>
+        <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
       </TouchableOpacity>
     );
   };
@@ -180,48 +196,62 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    paddingVertical: 6, // CHANGED: Reduced from 6 to 3 to move icons up slightly
-    paddingHorizontal: 15,
+    backgroundColor: '#fdfdfd',
+    borderTopWidth: 0.5,
+    borderTopColor: '#bcbcbc',
+    paddingTop: scale(4),
+    paddingBottom: scale(32),
+    paddingHorizontal: scale(8),
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingBottom:16, // CHANGED: Increased from 34 to 44 for more space from bottom
   },
   navItem: {
     alignItems: 'center',
-    padding: 8,
+    justifyContent: 'flex-start',
+    minWidth: scale(65),
+    paddingHorizontal: scale(4),
+    flex: 1,
   },
-  activeNavItem: {
-    // Add any active state styling here if needed
-  },
-  navIcon: {
-    fontSize: 24,
-    color: '#666',
-  },
-  activeNavIcon: {
-    color: '#000000',
-  },
-  navProfilePhoto: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-  },
-  activeNavProfilePhoto: {
-    borderWidth: 2,
-    borderColor: '#000000',
-  },
-  navProfilePlaceholder: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#E0E0E0',
+  iconContainer: {
+    height: ICON_SIZE,
+    width: ICON_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  navLabel: {
+    fontSize: scale(12),
+    color: '#757575',
+    fontWeight: '400',
+    marginTop: scale(4),
+    textAlign: 'center',
+    width: '100%',
+  },
+  activeNavLabel: {
+    color: '#000000',
+    fontWeight: '400',
+  },
+  navProfilePhoto: {
+    width: PROFILE_SIZE,
+    height: PROFILE_SIZE,
+    borderRadius: PROFILE_SIZE / 2,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  activeNavProfilePhoto: {
+    borderColor: '#000000',
+  },
+  navProfilePlaceholder: {
+    width: PROFILE_SIZE,
+    height: PROFILE_SIZE,
+    borderRadius: PROFILE_SIZE / 2,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
   navPlaceholderText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
   },
 });

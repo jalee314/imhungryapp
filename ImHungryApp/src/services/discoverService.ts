@@ -98,14 +98,17 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       }
     });
 
-    // Sort by distance (closest first)
-    restaurants.sort((a, b) => a.distance_miles - b.distance_miles);
+    // Filter to 20-mile maximum distance and sort by distance (closest first)
+    const MAX_DISTANCE_MILES = 20;
+    const filteredRestaurants = restaurants
+      .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
+      .sort((a, b) => a.distance_miles - b.distance_miles);
 
-    console.log(`✅ Found ${restaurants.length} restaurants with deals`);
+    console.log(`✅ Found ${filteredRestaurants.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
     return {
       success: true,
-      restaurants,
-      count: restaurants.length
+      restaurants: filteredRestaurants,
+      count: filteredRestaurants.length
     };
 
   } catch (error) {
@@ -266,14 +269,17 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       }
     });
     
-    // Sort by distance
-    result.sort((a, b) => a.distance_miles - b.distance_miles);
+    // Filter to 20-mile maximum distance and sort by distance (closest first)
+    const MAX_DISTANCE_MILES = 20;
+    const filteredResult = result
+      .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
+      .sort((a, b) => a.distance_miles - b.distance_miles);
 
-    console.log(`✅ Found ${result.length} restaurants with deals`);
+    console.log(`✅ Found ${filteredResult.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
     return {
       success: true,
-      restaurants: result,
-      count: result.length
+      restaurants: filteredResult,
+      count: filteredResult.length
     };
 
   } catch (error) {

@@ -21,6 +21,10 @@ export const preloadImage = async (imageSource: any, variants?: ImageVariants, d
         screenWidth: Dimensions.get('window').width,
       };
       const optimalVariant = getOptimalImageVariant(variants, context);
+      if (!optimalVariant || optimalVariant.trim() === '') {
+        console.warn('No valid variant found for preload');
+        return;
+      }
       uriToLoad = getImageUrl(optimalVariant);
     } else {
       // Fallback to original image source
@@ -30,6 +34,12 @@ export const preloadImage = async (imageSource: any, variants?: ImageVariants, d
         const resolved = Image.resolveAssetSource(imageSource);
         uriToLoad = resolved.uri;
       }
+    }
+    
+    // Validate URI before prefetching to prevent nil URIs
+    if (!uriToLoad || uriToLoad.trim() === '') {
+      console.warn('Cannot preload image: invalid URI');
+      return;
     }
     
     if (uriToLoad && !preloadedImages.has(uriToLoad)) {
@@ -95,9 +105,25 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     return <Image {...props} source={fallbackSource} />;
   }
   
-  const imageSource = currentVariant 
-    ? { uri: getImageUrl(currentVariant) }
+  // Validate variant before creating URI to prevent nil URIs
+  const imageSource = currentVariant && currentVariant.trim() !== ''
+    ? (() => {
+        const uri = getImageUrl(currentVariant);
+        // Double-check URI is valid before using it
+        if (!uri || uri.trim() === '') {
+          return fallbackSource;
+        }
+        return { uri };
+      })()
     : fallbackSource;
+  
+  // Ensure we never pass invalid source to Image component
+  if (!imageSource || (typeof imageSource === 'object' && 'uri' in imageSource && (!imageSource.uri || imageSource.uri.trim() === ''))) {
+    if (fallbackSource) {
+      return <Image {...props} source={fallbackSource} />;
+    }
+    return null;
+  }
   
   return (
     <Image

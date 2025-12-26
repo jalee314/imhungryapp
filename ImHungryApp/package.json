@@ -10,7 +10,10 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
     "@expo/vector-icons": "^14.1.0",
+    "@monicon/metro": "^1.2.2",
+    "@monicon/native": "^1.2.2",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.4.8",
     "@react-navigation/native": "^7.1.17",
@@ -35,6 +38,7 @@
     "expo-notifications": "^0.31.4",
     "expo-secure-store": "~14.2.4",
     "expo-status-bar": "~2.2.3",
+    "lucide-react-native": "^0.561.0",
     "react": "19.0.0",
     "react-native": "0.79.5",
     "react-native-calendars": "^1.1313.0",
@@ -58,6 +62,7 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
     "@types/react-native-vector-icons": "^6.4.18",
+    "baseline-browser-mapping": "^2.9.11",
     "typescript": "~5.8.3"
   },
   "private": true

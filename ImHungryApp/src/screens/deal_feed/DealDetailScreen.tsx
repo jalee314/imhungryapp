@@ -18,14 +18,17 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
+import VoteButtons from '../../components/VoteButtons';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
-import { getDealViewCount, logShare, logClickThrough } from '../../services/interactionService';
+import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
 import { useFavorites } from '../../hooks/useFavorites';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import OptimizedImage from '../../components/OptimizedImage';
+import MapSelectionModal from '../../components/MapSelectionModal';
 import { supabase } from '../../../lib/supabase';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
@@ -40,12 +43,16 @@ const DealDetailScreen: React.FC = () => {
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const [viewCount, setViewCount] = useState<number>(0);
+  const [viewCount, setViewCount] = useState<number | null>(null);
+  const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null);
+  const [isViewDataLoading, setIsViewDataLoading] = useState(true);
   const [isImageViewVisible, setImageViewVisible] = useState(false);
   const [modalImageLoading, setModalImageLoading] = useState(false);
   const [modalImageError, setModalImageError] = useState(false);
   const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
   const [imageViewerKey, setImageViewerKey] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
@@ -53,6 +60,19 @@ const DealDetailScreen: React.FC = () => {
   
   // State to hold image dimensions for skeleton
   const [skeletonHeight, setSkeletonHeight] = useState(250); // Better default height
+
+  // Get current user ID
+  useEffect(() => {
+    const fetchCurrentUserId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id || null);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+      }
+    };
+    fetchCurrentUserId();
+  }, []);
 
   // Debug the deal data
   useEffect(() => {
@@ -151,14 +171,24 @@ const DealDetailScreen: React.FC = () => {
     setImageDimensions(null);
   }, [dealData.id]);
 
-  // Fetch initial view count and subscribe to realtime updates
+  // Fetch initial view count, viewer photos, and subscribe to realtime updates
   useEffect(() => {
-    const fetchViewCount = async () => {
-      const count = await getDealViewCount(dealData.id);
+    // Reset loading state when deal changes
+    setIsViewDataLoading(true);
+    setViewCount(null);
+    setViewerPhotos(null);
+
+    const fetchViewData = async () => {
+      const [count, photos] = await Promise.all([
+        getDealViewCount(dealData.id),
+        getDealViewerPhotos(dealData.id, 3)
+      ]);
       setViewCount(count);
+      setViewerPhotos(photos);
+      setIsViewDataLoading(false);
     };
 
-    fetchViewCount();
+    fetchViewData();
 
     // Subscribe to realtime click interactions for this deal
     const subscription = supabase
@@ -176,7 +206,7 @@ const DealDetailScreen: React.FC = () => {
           // Only increment for click interactions
           if (interaction.interaction_type === 'click') {
             console.log('⚡ New view detected via Realtime');
-            setViewCount(prev => prev + 1);
+            setViewCount(prev => (prev ?? 0) + 1);
           }
         }
       )
@@ -192,9 +222,10 @@ const DealDetailScreen: React.FC = () => {
   // The click is already logged in Feed.tsx/CommunityUploadedScreen.tsx
   // when the user clicks the card, so we don't need to log it here again
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString || dateString === 'Unknown') return 'Not Known';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -314,33 +345,77 @@ const DealDetailScreen: React.FC = () => {
     }
   };
 
-  const handleDirections = async () => {
-    try {
-      // Log the click-through interaction with source 'feed'
-      logClickThrough(dealData.id, 'feed').catch(err => {
-        console.error('Failed to log click-through interaction:', err);
-      });
+  const handleDirections = () => {
+    // Log the click-through interaction with source 'feed'
+    logClickThrough(dealData.id, 'feed').catch(err => {
+      console.error('Failed to log click-through interaction:', err);
+    });
 
+    // Show map selection modal
+    setIsMapModalVisible(true);
+  };
+
+  const handleSelectAppleMaps = async () => {
+    setIsMapModalVisible(false);
+    try {
       const address = dealData.restaurantAddress || dealData.restaurant;
       const encodedAddress = encodeURIComponent(address);
       
-      // Try to open platform-specific map apps
-      const url = Platform.OS === 'ios' 
-        ? `maps://maps.google.com/maps?daddr=${encodedAddress}`
-        : `geo:0,0?q=${encodedAddress}`;
-      
-      const supported = await Linking.canOpenURL(url);
+      // Apple Maps URL scheme
+      const appleMapsUrl = `maps://?daddr=${encodedAddress}`;
+      const supported = await Linking.canOpenURL(appleMapsUrl);
       
       if (supported) {
-        await Linking.openURL(url);
+        await Linking.openURL(appleMapsUrl);
       } else {
-        // Fallback to web maps
-        const webUrl = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+        // Fallback to Apple Maps web
+        const webUrl = `http://maps.apple.com/?daddr=${encodedAddress}`;
         await Linking.openURL(webUrl);
       }
     } catch (error) {
-      console.error('Error opening directions:', error);
-      Alert.alert('Error', 'Unable to open directions');
+      console.error('Error opening Apple Maps:', error);
+      Alert.alert('Error', 'Unable to open Apple Maps');
+    }
+  };
+
+  const handleSelectGoogleMaps = async () => {
+    setIsMapModalVisible(false);
+    try {
+      const address = dealData.restaurantAddress || dealData.restaurant;
+      const encodedAddress = encodeURIComponent(address);
+      
+      let url: string;
+      
+      if (Platform.OS === 'ios') {
+        // Try Google Maps app first on iOS
+        url = `comgooglemaps://?daddr=${encodedAddress}`;
+        const supported = await Linking.canOpenURL(url);
+        
+        if (!supported) {
+          // Fallback to Google Maps web
+          url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+        }
+      } else {
+        // Android: Try Google Maps navigation first
+        url = `google.navigation:q=${encodedAddress}`;
+        const supported = await Linking.canOpenURL(url);
+        
+        if (!supported) {
+          // Fallback to geo URI
+          url = `geo:0,0?q=${encodedAddress}`;
+          const geoSupported = await Linking.canOpenURL(url);
+          
+          if (!geoSupported) {
+            // Final fallback to web
+            url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+          }
+        }
+      }
+      
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('Error opening Google Maps:', error);
+      Alert.alert('Error', 'Unable to open Google Maps');
     }
   };
 
@@ -430,22 +505,34 @@ const DealDetailScreen: React.FC = () => {
           <View style={styles.restaurantHeaderContainer}>
             <Text style={styles.restaurantName}>{dealData.restaurant}</Text>
             <View style={styles.viewCountContainer}>
-              <Text style={styles.viewCount}>{viewCount} viewed</Text>
-              <View style={styles.avatarGroup}>
-                {/* Mock viewer avatars */}
-                <Image 
-                  source={{ uri: 'https://via.placeholder.com/20x20/ff8c4c/ffffff?text=A' }} 
-                  style={[styles.viewerAvatar, { zIndex: 3 }]} 
-                />
-                <Image 
-                  source={{ uri: 'https://via.placeholder.com/20x20/4CAF50/ffffff?text=B' }} 
-                  style={[styles.viewerAvatar, { zIndex: 2, marginLeft: -8 }]} 
-                />
-                <Image 
-                  source={{ uri: 'https://via.placeholder.com/20x20/2196F3/ffffff?text=C' }} 
-                  style={[styles.viewerAvatar, { zIndex: 1, marginLeft: -8 }]} 
-                />
-              </View>
+              {isViewDataLoading ? (
+                // Skeleton for view count while loading
+                <View style={styles.viewCountSkeletonContainer}>
+                  <SkeletonLoader width={60} height={12} borderRadius={4} />
+                  <View style={styles.avatarSkeletonGroup}>
+                    <SkeletonLoader width={20} height={20} borderRadius={10} style={{ marginLeft: 6 }} />
+                    <SkeletonLoader width={20} height={20} borderRadius={10} style={{ marginLeft: -8 }} />
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.viewCount}>{viewCount ?? 0} viewed</Text>
+                  {viewerPhotos && viewerPhotos.length > 0 && (
+                    <View style={styles.avatarGroup}>
+                      {viewerPhotos.map((photoUrl, index) => (
+                        <Image 
+                          key={index}
+                          source={{ uri: photoUrl }} 
+                          style={[
+                            styles.viewerAvatar, 
+                            { zIndex: viewerPhotos.length - index, marginLeft: index > 0 ? -8 : 0 }
+                          ]} 
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
             </View>
           </View>
 
@@ -461,7 +548,7 @@ const DealDetailScreen: React.FC = () => {
             </View>
             <View style={styles.validUntilRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={styles.clockIcon} />
-              <Text style={styles.validUntilText}>Valid Until: September 20th, 2025</Text>
+              <Text style={styles.validUntilText}>Valid Until • {formatDate(dealData.expirationDate || null)}</Text>
             </View>
             {/* Only show category row if cuisine or deal type exists and has meaningful content */}
             {((dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine') || 
@@ -489,12 +576,17 @@ const DealDetailScreen: React.FC = () => {
         <View style={styles.separator} />
 
         {/* Deal Title */}
-        <Text style={styles.dealTitle}>{dealData.title}</Text>
+        <Text style={styles.dealTitle}>
+          {dealData.title}
+        </Text>
 
         {/* Deal Image */}
         <TouchableOpacity onPress={openImageViewer} disabled={imageLoading}>
           <View style={styles.imageContainer}>
-            <View style={styles.imageWrapper}>
+            <View style={[
+              styles.imageWrapper,
+              imageLoading && { minHeight: Math.max(skeletonHeight, 200), borderWidth: 0 }
+            ]}>
               {imageLoading && (
                 <View style={styles.imageLoadingContainer}>
                   <SkeletonLoader 
@@ -556,45 +648,28 @@ const DealDetailScreen: React.FC = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <View style={styles.voteContainer}>
-            <TouchableOpacity 
-              style={[styles.voteButton, dealData.isUpvoted && styles.upvoted]}
-              onPress={handleUpvote}
-            >
-              <MaterialCommunityIcons 
-                name={dealData.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                size={dealData.isUpvoted ? 23 : 17} 
-                color={dealData.isUpvoted ? "#FF8C4C" : "#000"} 
-              />
-            </TouchableOpacity>
-            <Text style={styles.voteCount}>{dealData.votes}</Text>
-            {/* Vertical separator line */}
-            <View style={styles.voteSeparator} />
-            <TouchableOpacity 
-              style={[styles.voteButton, dealData.isDownvoted && styles.downvoted]}
-              onPress={handleDownvote}
-            >
-              <MaterialCommunityIcons 
-                name={dealData.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                size={dealData.isDownvoted ? 22 : 17} 
-                color={dealData.isDownvoted ? "#9796FF" : "#000"} 
-              />
-            </TouchableOpacity>
-          </View>
+          <VoteButtons
+            votes={dealData.votes}
+            isUpvoted={dealData.isUpvoted}
+            isDownvoted={dealData.isDownvoted}
+            onUpvote={handleUpvote}
+            onDownvote={handleDownvote}
+          />
 
           <View style={styles.rightActions}>
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={handleFavorite}
+              activeOpacity={0.6}
             >
-              <MaterialCommunityIcons 
-                name={dealData.isFavorited ? "heart" : "heart-outline"} 
+              <Monicon 
+                name={dealData.isFavorited ? "mdi:heart" : "mdi:heart-outline"} 
                 size={19} 
                 color={dealData.isFavorited ? "#FF1E00" : "#000"} 
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <MaterialCommunityIcons name="share-outline" size={19} color="#000" />
+              <Monicon name="mdi-light:share" size={24} color="#000000" />
             </TouchableOpacity>
           </View>
         </View>
@@ -617,22 +692,24 @@ const DealDetailScreen: React.FC = () => {
         <View style={styles.separator} />
 
         {/* Shared By Section */}
-        <TouchableOpacity 
-          style={styles.sharedByContainer}
-          onPress={handleUserPress}
-          activeOpacity={dealData.isAnonymous ? 1 : 0.7} // No feedback for anonymous
-          disabled={dealData.isAnonymous} // Disable press for anonymous
-        >
-          <Image 
-            source={profilePicture} 
-            style={styles.profilePicture} 
-          />
-          <View style={styles.userInfo}>
-            <Text style={styles.sharedByLabel}>Shared By</Text>
-            <Text style={styles.userName}>{displayName}</Text>
-            <Text style={styles.userLocation}>Fullerton, California</Text>
-          </View>
-        </TouchableOpacity>
+        <View>
+          <TouchableOpacity 
+            style={styles.sharedByContainer}
+            onPress={handleUserPress}
+            activeOpacity={dealData.isAnonymous ? 1 : 0.7} // No feedback for anonymous
+            disabled={dealData.isAnonymous} // Disable press for anonymous
+          >
+            <Image 
+              source={profilePicture} 
+              style={styles.profilePicture} 
+            />
+            <View style={styles.userInfo}>
+              <Text style={styles.sharedByLabel}>Shared By</Text>
+              <Text style={styles.userName}>{displayName}</Text>
+              <Text style={styles.userLocation}>{dealData.userCity || 'Unknown'}, {dealData.userState || 'CA'}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
       {/* 3-Dot Popup Modal */}
       <ThreeDotPopup
@@ -642,6 +719,7 @@ const DealDetailScreen: React.FC = () => {
         onBlockUser={handleBlockUser}
         dealId={dealData.id}
         uploaderUserId={dealData.userId || "00000000-0000-0000-0000-000000000000"}
+        currentUserId={currentUserId || undefined}
       />
 
       {fullScreenImageSource && (
@@ -692,6 +770,14 @@ const DealDetailScreen: React.FC = () => {
               </View>
           </Modal>
       )}
+
+      {/* Map Selection Modal */}
+      <MapSelectionModal
+        visible={isMapModalVisible}
+        onClose={() => setIsMapModalVisible(false)}
+        onSelectAppleMaps={handleSelectAppleMaps}
+        onSelectGoogleMaps={handleSelectGoogleMaps}
+      />
     </SafeAreaView>
   );
 };
@@ -817,13 +903,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewCountSkeletonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarSkeletonGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   viewCount: {
     fontSize: 12,
-    color: '#666666',
-    marginBottom: 4,
+    color: '#000000',
     fontFamily: 'Inter',
+    marginRight: 6,
   },
   avatarGroup: {
     flexDirection: 'row',
@@ -847,6 +942,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000000',
     paddingHorizontal: 24,
+    marginTop: 8,
     marginBottom: 16,
     fontFamily: 'Inter',
     lineHeight: 20,
@@ -913,42 +1009,42 @@ const styles = StyleSheet.create({
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    justifyContent: 'space-between',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
-    borderColor: '#D7D7D7', // Match feed border color
+    borderColor: '#D7D7D7',
     borderRadius: 30,
     paddingHorizontal: 10,
     paddingVertical: 2,
     height: 28,
+    width: 85,
   },
   voteButton: {
     backgroundColor: 'transparent',
     width: 20,
-    height: 24,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 4, // Match feed styling
+    borderRadius: 4,
   },
   upvoted: {
     // No background change - only icon color changes
-    marginBottom: 1,
   },
   downvoted: {
     // No background change - only icon color changes
-    marginBottom: 1,
   },
   voteCount: {
+    fontFamily: 'Inter',
     fontSize: 10,
     fontWeight: '400',
     color: '#000000',
     marginHorizontal: 6,
-    fontFamily: 'Inter',
   },
   voteSeparator: {
     width: 1,
-    height: 16,
-    backgroundColor: '#D7D7D7', // Match feed separator color
-    marginHorizontal: 6, // Match feed margin (was 4, now 6)
+    height: 12,
+    backgroundColor: '#DEDEDE',
+    marginHorizontal: 6,
   },
   rightActions: {
     flexDirection: 'row',
@@ -957,7 +1053,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D7D7D7', // Match feed border color
+    borderColor: '#D7D7D7',
     borderRadius: 30,
     width: 40,
     height: 28,
@@ -985,18 +1081,14 @@ const styles = StyleSheet.create({
   sharedByContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    paddingBottom: 32,
-    paddingTop: 16,
-    borderRadius: 8,
-    marginHorizontal: 0,
-    backgroundColor: 'transparent',
+    gap: 8,
   },
   profilePicture: {
-    width: 50.25,
-    height: 50.25,
-    borderRadius: 25.125,
-    marginRight: 8,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
   userInfo: {
     flex: 1,
@@ -1004,18 +1096,18 @@ const styles = StyleSheet.create({
   sharedByLabel: {
     fontSize: 10,
     color: '#000000',
-    marginBottom: 0,
     fontFamily: 'Inter',
     fontWeight: '400',
     letterSpacing: 0.2,
+    lineHeight: 15,
   },
   userName: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
     color: '#000000',
-    marginBottom: 0,
     fontFamily: 'Inter',
-    letterSpacing: 0.24,
+    letterSpacing: 0.2,
+    lineHeight: 15,
   },
   userLocation: {
     fontSize: 10,
@@ -1023,6 +1115,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     letterSpacing: 0.2,
+    lineHeight: 15,
   },
   imageViewerContainer: {
     flex: 1,

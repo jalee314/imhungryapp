@@ -93,6 +93,9 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
         onPress={() => handleSelectItem(item.id)}
         disabled={isInfoItem}
       >
+        {isSearchModal && !isInfoItem && (
+          <Ionicons name="location-sharp" size={28} color="#FF8C4C" style={styles.locationIcon} />
+        )}
         <View style={styles.textContainer}>
           {isSearchModal ? (
             <>
@@ -212,6 +215,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     backgroundColor: '#FFFFFF',
+  },
+  locationIcon: {
+    marginRight: 5,
   },
   textContainer: {
     flex: 1,

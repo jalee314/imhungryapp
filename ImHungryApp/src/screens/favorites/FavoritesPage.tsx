@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 import RowCard from '../../components/RowCard';
 import RowCardSkeleton from '../../components/RowCardSkeleton';
+import SkeletonLoader from '../../components/SkeletonLoader';
 import { fetchFavoriteDeals, fetchFavoriteRestaurants, clearFavoritesCache, toggleRestaurantFavorite, FavoriteDeal, FavoriteRestaurant } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
 import { useFavorites } from '../../hooks/useFavorites';
@@ -29,6 +30,8 @@ const FavoritesPage: React.FC = () => {
   const [unfavoritingIds, setUnfavoritingIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
+  const [hasLoadedDeals, setHasLoadedDeals] = useState(false);
+  const [hasLoadedRestaurants, setHasLoadedRestaurants] = useState(false);
   const favoriteChannel = useRef<any>(null);
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
@@ -54,8 +57,8 @@ const FavoritesPage: React.FC = () => {
 
   const loadRestaurants = async (silent: boolean = false) => {
     try {
-      // Only show skeleton if not a silent refresh and we don't have data yet
-      if (!silent) {
+      // Only show skeleton if not a silent refresh and we haven't loaded data yet
+      if (!silent && !hasLoadedRestaurants) {
         setRestaurantsLoading(true);
       }
       console.log('🔄 Loading restaurants...', silent ? '(silent)' : '');
@@ -72,10 +75,11 @@ const FavoritesPage: React.FC = () => {
       const filteredData = restaurantsData.filter(restaurant => !isUnfavorited(restaurant.id, 'restaurant'));
       console.log('🔍 Filtered restaurants:', filteredData);
       setRestaurants(filteredData);
+      setHasLoadedRestaurants(true);
     } catch (error) {
       console.error('Error loading restaurants:', error);
     } finally {
-      if (!silent) {
+      if (!silent && !hasLoadedRestaurants) {
         setRestaurantsLoading(false);
       }
     }
@@ -83,8 +87,8 @@ const FavoritesPage: React.FC = () => {
 
   const loadDeals = async (silent: boolean = false) => {
     try {
-      // Only show skeleton if not a silent refresh and we don't have data yet
-      if (!silent) {
+      // Only show skeleton if not a silent refresh and we haven't loaded data yet
+      if (!silent && !hasLoadedDeals) {
         setDealsLoading(true);
       }
       console.log('🔄 Loading deals...', silent ? '(silent)' : '');
@@ -99,10 +103,11 @@ const FavoritesPage: React.FC = () => {
       // Filter out unfavorited deals
       const filteredData = dealsData.filter(deal => !isUnfavorited(deal.id, 'deal'));
       setDeals(filteredData);
+      setHasLoadedDeals(true);
     } catch (error) {
       console.error('Error loading deals:', error);
     } finally {
-      if (!silent) {
+      if (!silent && !hasLoadedDeals) {
         setDealsLoading(false);
       }
     }
@@ -153,11 +158,15 @@ const FavoritesPage: React.FC = () => {
   useEffect(() => {
     console.log('🔄 Tab changed to:', activeTab);
     if (activeTab === 'restaurants' && !restaurantsLoading) {
-      console.log('🔄 Loading restaurants for tab switch');
-      loadRestaurants();
+      // If already loaded, do a silent background refresh; otherwise show skeleton
+      const isSilent = hasLoadedRestaurants;
+      console.log('🔄 Loading restaurants for tab switch', isSilent ? '(silent)' : '');
+      loadRestaurants(isSilent);
     } else if (activeTab === 'deals' && !dealsLoading) {
-      console.log('🔄 Loading deals for tab switch');
-      loadDeals();
+      // If already loaded, do a silent background refresh; otherwise show skeleton
+      const isSilent = hasLoadedDeals;
+      console.log('🔄 Loading deals for tab switch', isSilent ? '(silent)' : '');
+      loadDeals(isSilent);
     }
   }, [activeTab]);
 
@@ -512,19 +521,20 @@ const FavoritesPage: React.FC = () => {
   if (loading) {
     return (
       <View style={styles.container}>
+        {/* Header Skeleton */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Favorites</Text>
+          <SkeletonLoader width={120} height={28} borderRadius={4} />
         </View>
+        
+        {/* Tab Skeleton */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity style={[styles.tab, styles.activeTab]}>
-            <Text style={[styles.tabText, styles.activeTabText]}>🤝 Deals</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.tab}>
-            <Text style={styles.tabText}>🍽 Restaurants</Text>
-          </TouchableOpacity>
+          <SkeletonLoader width={85} height={34} borderRadius={20} />
+          <SkeletonLoader width={115} height={34} borderRadius={20} />
         </View>
+        
+        {/* Content Skeleton */}
         <View style={styles.skeletonContainer}>
-          {[1, 2, 3, 4, 5].map((item) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((item) => (
             <RowCardSkeleton key={item} />
           ))}
         </View>
@@ -532,7 +542,9 @@ const FavoritesPage: React.FC = () => {
     );
   }
 
-  const isTabLoading = (activeTab === 'restaurants' && restaurantsLoading) || (activeTab === 'deals' && dealsLoading);
+  // Only show loading skeleton if data hasn't been loaded yet for this tab
+  const isTabLoading = (activeTab === 'restaurants' && restaurantsLoading && !hasLoadedRestaurants) || 
+                       (activeTab === 'deals' && dealsLoading && !hasLoadedDeals);
 
   return (
     <View style={styles.container}>
@@ -605,11 +617,12 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#ffffff',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    height: 100,
+    justifyContent: 'flex-end',
+    paddingBottom: 10,
+    paddingHorizontal: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#d7d7d7',
+    borderBottomColor: '#DEDEDE',
   },
   headerTitle: {
     fontSize: 24,

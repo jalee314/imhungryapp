@@ -11,7 +11,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, paddingHorizontal }) => {
   // Calculate dynamic padding based on screen width
   const screenWidth = Dimensions.get('window').width;
-  const dynamicPadding = paddingHorizontal || Math.max(10, screenWidth * 0.025); // 5% of screen width, minimum 10
+  const dynamicPadding = paddingHorizontal || Math.max(10, screenWidth * 0.025); // 2.5% of screen width, minimum 10
   return (
     <View style={styles.header}>
       <View style={[styles.headerBottomFrame, { paddingHorizontal: dynamicPadding }]}>

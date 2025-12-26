@@ -14,7 +14,20 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
+
+const { width: screenWidth } = Dimensions.get('window');
+
+// Base design width (iPhone 15 = 393pt) - matches VoteButtons component
+const BASE_WIDTH = 393;
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+
+// Dynamic sizes for vote buttons - matches VoteButtons component exactly
+const PILL_WIDTH = scale(85);
+const PILL_HEIGHT = scale(28);
+const ARROW_SIZE = Math.round(scale(18));
 
 interface Restaurant {
   id: string;
@@ -210,7 +223,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             
                             {/* Valid until row */}
                             <View style={styles.validUntilRow}>
-                                <Text style={styles.infoText}>⏳ Valid Until: {formatDate(expirationDate)}</Text>
+                                <Text style={styles.infoText}>⏳ Valid Until • {formatDate(expirationDate)}</Text>
                             </View>
                             
                             {/* Only show category row if cuisine or deal type exists and has meaningful content */}
@@ -240,7 +253,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                         <Text style={styles.dealTitle}>{dealTitle}</Text>
 
                         {/* Deal Image */}
-                        {imageUri && (
+                        {imageUri && typeof imageUri === 'string' && imageUri.trim() !== '' && (
                             <TouchableOpacity onPress={openImageViewer}>
                                 <Image 
                                     source={{ uri: imageUri }} 
@@ -256,26 +269,26 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             </TouchableOpacity>
                         )}
 
-                        {/* Interactions */}
-                        <View style={styles.interactionsContainer}>
+                        {/* Interactions (Preview State - Non-interactive, matches DealDetailScreen) */}
+                        <View style={styles.actionButtonsContainer}>
                             <View style={styles.voteContainer}>
-                                <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="arrow-up-bold-outline" size={17} color="#000" />
-                                </TouchableOpacity>
-                                <Text style={styles.voteCount}>0</Text>
+                                <View style={styles.upvoteArea}>
+                                    <ArrowBigUp size={ARROW_SIZE} color="#000000" fill="transparent" />
+                                    <Text style={styles.voteCount}>0</Text>
+                                </View>
                                 <View style={styles.voteSeparator} />
-                                <TouchableOpacity style={styles.voteButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="arrow-down-bold-outline" size={17} color="#000" />
-                                </TouchableOpacity>
+                                <View style={styles.downvoteArea}>
+                                    <ArrowBigDown size={ARROW_SIZE} color="#000000" fill="transparent" />
+                                </View>
                             </View>
                             
-                            <View style={styles.favContainer}>
-                                <TouchableOpacity style={styles.favoriteButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="heart-outline" size={19} color="#000" />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.shareIconButton} activeOpacity={1}>
-                                    <MaterialCommunityIcons name="share-outline" size={16} color="#000" />
-                                </TouchableOpacity>
+                            <View style={styles.rightActions}>
+                                <View style={styles.actionButton}>
+                                    <Monicon name="mdi:heart-outline" size={19} color="#000" />
+                                </View>
+                                <View style={styles.actionButton}>
+                                    <Monicon name="mdi-light:share" size={24} color="#000000" />
+                                </View>
                             </View>
                         </View>
 
@@ -308,7 +321,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
             </SafeAreaView>
             </Animated.View>
 
-            {imageUri && (
+            {imageUri && typeof imageUri === 'string' && imageUri.trim() !== '' && (
                 <Modal
                     visible={isImageViewVisible}
                     transparent={true}
@@ -389,7 +402,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: 30,
+    borderRadius: 10,
     minWidth: 90,
   },
   disabledButton: {
@@ -409,7 +422,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingVertical: 16,
-    gap: 12,
   },
   restaurantWrapper: {
     alignSelf: 'stretch',
@@ -457,9 +469,10 @@ const styles = StyleSheet.create({
   },
   separator: {
     alignSelf: 'stretch',
-    height: 1,
-    backgroundColor: '#D7D7D7',
+    height: 0.5,
+    backgroundColor: '#DEDEDE',
     width: '100%',
+    marginVertical: 8,
   },
   dealTitle: {
     alignSelf: 'stretch',
@@ -468,71 +481,75 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 18,
     letterSpacing: 0,
-    lineHeight: 18,
-    marginTop: 1,
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 16,
   },
   dealImage: {
     width: '100%',
     backgroundColor: '#EFEFEF',
     borderRadius: 8,
     alignSelf: 'center',
+    marginBottom: 16,
   },
-  interactionsContainer: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
+  // Matches DealDetailScreen.actionButtonsContainer exactly
+  actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    alignItems: 'center',
+    marginBottom: 8,
   },
+  // Matches VoteButtons.voteContainer exactly
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F4F4',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    height: 28,
+    height: PILL_HEIGHT,
+    width: PILL_WIDTH,
+    overflow: 'hidden',
   },
-  voteButton: {
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 20,
-    height: 24,
-  },
-  voteCount: {
-    fontFamily: 'Inter',
-    fontSize: 10,
-    fontWeight: '400',
-    color: '#000000',
-    marginHorizontal: 6,
-  },
-  voteSeparator: {
-    width: 1,
-    height: 16,
-    backgroundColor: '#D7D7D7',
-    marginHorizontal: 6,
-  },
-  favContainer: {
+  // Matches VoteButtons.upvoteArea exactly
+  upvoteArea: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    height: 28,
-  },
-  favoriteButton: {
-    backgroundColor: '#F8F4F4',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    paddingHorizontal: 12,
-    height: 28,
     justifyContent: 'center',
-    alignItems: 'center',
+    height: '100%',
+    paddingLeft: scale(8),
+    paddingRight: scale(2),
   },
-  shareIconButton: {
-    backgroundColor: '#F8F4F4',
+  // Matches VoteButtons.downvoteArea exactly
+  downvoteArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    paddingHorizontal: scale(10),
+  },
+  // Matches VoteButtons.voteCount exactly
+  voteCount: {
+    fontFamily: 'Inter',
+    fontSize: scale(10),
+    fontWeight: '400',
+    color: '#000000',
+    marginLeft: scale(4),
+  },
+  // Matches VoteButtons.voteSeparator exactly
+  voteSeparator: {
+    width: 1,
+    height: scale(12),
+    backgroundColor: '#DEDEDE',
+  },
+  // Matches DealDetailScreen.rightActions exactly
+  rightActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  // Matches DealDetailScreen.actionButton exactly
+  actionButton: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
@@ -561,37 +578,34 @@ const styles = StyleSheet.create({
   },
   sharedByComponent: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 8,
     paddingVertical: 16,
   },
   pfp: {
-    width: 50.25,
-    height: 50.25,
-    borderRadius: 25.125,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
   sharedByText: {
     color: '#000000',
     fontFamily: 'Inter',
     fontSize: 10,
     fontWeight: '400',
-    height: 46.5,
     letterSpacing: 0.2,
     lineHeight: 15,
-    marginTop: -1,
-    width: 186,
   },
   sharedByLabel: {
-    letterSpacing: 0.02,
+    letterSpacing: 0.2,
   },
   userName: {
     fontFamily: 'Inter',
     fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.03,
+    letterSpacing: 0.2,
   },
   userLocation: {
-    letterSpacing: 0.02,
+    letterSpacing: 0.2,
   },
   imageViewerContainer: {
     flex: 1,

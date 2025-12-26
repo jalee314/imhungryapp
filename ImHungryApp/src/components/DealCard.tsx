@@ -1,18 +1,30 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 import OptimizedImage, { preloadImage } from './OptimizedImage';
+import VoteButtons from './VoteButtons';
 
 const { width: screenWidth } = Dimensions.get('window');
-// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (8px), then divide by 2
-const HORIZONTAL_PADDING = 20; // 10px on each side
-const CARD_GAP = 8; // 4px padding on each card
+
+// Base design width (iPhone 15 = 393pt)
+const BASE_WIDTH = 393;
+// Scale factor for larger screens (Pro Max = 430pt)
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+
+// Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (4px), then divide by 2
+const HORIZONTAL_PADDING = scale(20); // 10px on each side, scaled
+const CARD_GAP = scale(4); // 2px padding on each card (halved for tighter spacing)
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
-// Calculate horizontal card width to show ~1.5 cards (first card fully visible, half of second card visible)
+// Calculate horizontal card width to align with header location icon
 // This creates the "peek" effect that hints at horizontal scrolling
-const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
-const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.5;
+const HORIZONTAL_CARD_PADDING = scale(10); // Left padding for horizontal scroll
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - scale(20)) / 1.32;
+
+// Dynamic image dimensions
+const HORIZONTAL_IMAGE_WIDTH = HORIZONTAL_CARD_WIDTH - scale(16); // Card padding
+const HORIZONTAL_IMAGE_HEIGHT = HORIZONTAL_IMAGE_WIDTH * 0.64; // Maintain aspect ratio ~260:167
+const VERTICAL_IMAGE_SIZE = VERTICAL_CARD_WIDTH - scale(16); // Square image for vertical cards
 
 export interface Deal {
   id: string;
@@ -34,8 +46,11 @@ export interface Deal {
   userId?: string;
   userDisplayName?: string;
   userProfilePhoto?: string;
+  userCity?: string;
+  userState?: string;
   restaurantAddress?: string;
   isAnonymous?: boolean;
+  expirationDate?: string | null;
 }
 
 interface DealCardProps {
@@ -78,12 +93,12 @@ const DealCard: React.FC<DealCardProps> = ({
 
   const handlePress = () => {
     // Start preloading in background without blocking navigation
-    if (deal.imageVariants) {
+    if (deal.imageVariants && deal.image) {
       // Preload the large version for detail view (full screen width)
       preloadImage(deal.image, deal.imageVariants, { width: screenWidth, height: 400 }).catch(err => {
         console.error('Failed to preload image:', err);
       });
-    } else if (deal.image) {
+    } else if (deal.image && (typeof deal.image === 'string' ? deal.image.trim() : deal.image)) {
       preloadImage(deal.image).catch(err => {
         console.error('Failed to preload image:', err);
       });
@@ -101,9 +116,10 @@ const DealCard: React.FC<DealCardProps> = ({
   const getImageSource = () => {
     if (deal.imageVariants) {
       // Use OptimizedImage for database images with variants
+      // Dynamic sizing based on screen width
       const displaySize = variant === 'horizontal' 
-        ? { width: HORIZONTAL_CARD_WIDTH, height: 144 }
-        : { width: VERTICAL_CARD_WIDTH, height: 144 };
+        ? { width: Math.round(HORIZONTAL_IMAGE_WIDTH), height: Math.round(HORIZONTAL_IMAGE_HEIGHT) }
+        : { width: Math.round(VERTICAL_IMAGE_SIZE), height: Math.round(VERTICAL_IMAGE_SIZE) };
       
       return (
         <OptimizedImage 
@@ -111,10 +127,10 @@ const DealCard: React.FC<DealCardProps> = ({
           componentType="deal"
           displaySize={displaySize}
           style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage}
-          fallbackSource={typeof deal.image === 'string' ? { uri: deal.image } : deal.image}
+          fallbackSource={typeof deal.image === 'string' && deal.image ? { uri: deal.image } : deal.image}
         />
       );
-    } else {
+    } else if (deal.image) {
       // Fallback to regular Image for static images or simple URIs
       const imageSource = typeof deal.image === 'string' 
         ? { uri: deal.image } 
@@ -127,6 +143,8 @@ const DealCard: React.FC<DealCardProps> = ({
         />
       );
     }
+    // Return null if no valid image source
+    return null;
   };
 
   if (variant === 'horizontal') {
@@ -152,43 +170,22 @@ const DealCard: React.FC<DealCardProps> = ({
         </View>
         
         <View style={styles.horizontalInteractions}>
-          <TouchableWithoutFeedback onPress={handleUpvote}>
-            <View style={styles.horizontalVoteContainer}>
-              <TouchableOpacity 
-                style={[styles.horizontalVoteButton, deal.isUpvoted && styles.upvotedcom]}
-                onPress={handleUpvote}
-                activeOpacity={0.6}
-              >
-                <MaterialCommunityIcons
-                  name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                  size={deal.isUpvoted ? 23 : 17} 
-                  color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
-                />
-              </TouchableOpacity>
-              <Text style={styles.horizontalVoteCount}>{deal.votes}</Text>
-              <View style={styles.horizontalVoteSeparator} />
-              <TouchableOpacity 
-                style={[styles.horizontalVoteButton, deal.isDownvoted && styles.downvotedcom]}
-                onPress={handleDownvote}
-                activeOpacity={0.6}
-              >
-                <MaterialCommunityIcons
-                  name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                  size={deal.isDownvoted ? 22 : 17} 
-                  color={deal.isDownvoted ? "#9796FF" : "#000"} 
-                />
-              </TouchableOpacity>
-            </View>
-          </TouchableWithoutFeedback>
+          <VoteButtons
+            votes={deal.votes}
+            isUpvoted={deal.isUpvoted}
+            isDownvoted={deal.isDownvoted}
+            onUpvote={handleUpvote}
+            onDownvote={handleDownvote}
+          />
           <View style={styles.horizontalFavoriteWrapper}>
             <TouchableOpacity 
               style={[styles.horizontalFavoriteButton, deal.isFavorited && styles.favorited]}
               onPress={handleFavorite}
               activeOpacity={0.6}
             >
-              <MaterialCommunityIcons
-                name={deal.isFavorited ? "heart" : "heart-outline"}
-                size={19} 
+              <Monicon
+                name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
+                size={scale(19)} 
                 color={deal.isFavorited ? "#FF1E00" : "#000"} 
               />
             </TouchableOpacity>
@@ -222,34 +219,13 @@ const DealCard: React.FC<DealCardProps> = ({
       </View>
       
       <View style={styles.verticalInteractions}>
-        <TouchableWithoutFeedback onPress={handleUpvote}>
-          <View style={styles.verticalVoteContainer}>
-            <TouchableOpacity 
-              style={[styles.verticalVoteButton, deal.isUpvoted && styles.upvoteddeals]}
-              onPress={handleUpvote}
-              activeOpacity={0.6}
-            >
-                <MaterialCommunityIcons
-                  name={deal.isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
-                  size={deal.isUpvoted ? 23 : 17} 
-                  color={deal.isUpvoted ? "#FF8C4C" : "#000"} 
-                />
-            </TouchableOpacity>
-            <Text style={styles.verticalVoteCount}>{deal.votes}</Text>
-            <View style={styles.verticalVoteSeparator} />
-            <TouchableOpacity 
-              style={[styles.verticalVoteButton, deal.isDownvoted && styles.downvoteddeals]}
-              onPress={handleDownvote}
-              activeOpacity={0.6}
-            >
-                <MaterialCommunityIcons
-                  name={deal.isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"}
-                  size={deal.isDownvoted ? 22 : 17} 
-                  color={deal.isDownvoted ? "#9796FF" : "#000"} 
-                />
-            </TouchableOpacity>
-          </View>
-        </TouchableWithoutFeedback>
+        <VoteButtons
+          votes={deal.votes}
+          isUpvoted={deal.isUpvoted}
+          isDownvoted={deal.isDownvoted}
+          onUpvote={handleUpvote}
+          onDownvote={handleDownvote}
+        />
         
         {/* Replace favorite button with delete button conditionally */}
         {showDelete ? (
@@ -258,9 +234,9 @@ const DealCard: React.FC<DealCardProps> = ({
             onPress={handleDelete}
             activeOpacity={0.6}
           >
-            <MaterialCommunityIcons
-              name="delete-outline"
-              size={16} 
+            <Monicon
+              name="uil:trash-alt"
+              size={scale(16)} 
               color="#000000" 
             />
           </TouchableOpacity>
@@ -270,9 +246,9 @@ const DealCard: React.FC<DealCardProps> = ({
             onPress={handleFavorite}
             activeOpacity={0.6}
           >
-            <MaterialCommunityIcons
-              name={deal.isFavorited ? "heart" : "heart-outline"}
-              size={19} 
+            <Monicon
+              name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
+              size={scale(19)} 
               color={deal.isFavorited ? "#FF1E00" : "#000"} 
             />
           </TouchableOpacity>
@@ -286,46 +262,45 @@ const styles = StyleSheet.create({
   // Horizontal Card Styles (for community track - actually vertical cards in horizontal scroll)
   horizontalCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
+    borderRadius: scale(10),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(8),
+    alignItems: 'flex-start',
     width: HORIZONTAL_CARD_WIDTH,
-    height: 273,
+    height: HORIZONTAL_IMAGE_HEIGHT + scale(113), // Image + content below
     justifyContent: 'center',
     overflow: 'visible',
   },
   horizontalImage: {
-    width: '100%',
-    height: 144,
-    borderRadius: 8,
-    borderColor: '#757575',
-    borderWidth: 0.5,
-    marginBottom: 8,
+    width: HORIZONTAL_IMAGE_WIDTH,
+    height: HORIZONTAL_IMAGE_HEIGHT,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
+    resizeMode: 'cover',
   },
   horizontalTitleContainer: {
     width: '100%',
-    marginBottom: 8,
-    height: 30,
+    height: scale(20),
     justifyContent: 'flex-start',
   },
   horizontalTitle: {
     fontFamily: 'Inter',
     fontWeight: '600',
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: scale(12),
+    lineHeight: scale(15),
     color: '#000000',
     textAlign: 'left',
-    height: 30,
+    height: scale(30),
   },
   horizontalDetailsContainer: {
     width: '100%',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   horizontalDetails: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: scale(10),
+    lineHeight: scale(12),
     color: '#757575',
     textAlign: 'left',
     width: '100%',
@@ -340,37 +315,39 @@ const styles = StyleSheet.create({
   horizontalVoteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    height: 28,
+    paddingHorizontal: scale(10),
+    paddingVertical: scale(2),
+    height: scale(28),
+    width: scale(85),
+    justifyContent: 'space-between',
   },
   horizontalVoteButton: {
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 20,
-    height: 24,
+    width: scale(20),
+    height: scale(24),
     borderRadius: 4,
   },
   horizontalVoteCount: {
     fontFamily: 'Inter',
-    fontSize: 10,
+    fontSize: scale(10),
     fontWeight: '400',
     color: '#000000',
-    marginHorizontal: 6,
+    marginHorizontal: scale(6),
   },
   horizontalVoteSeparator: {
     width: 1,
-    height: 16,
-    backgroundColor: '#D7D7D7',
-    marginHorizontal: 6,
+    height: scale(12),
+    backgroundColor: '#DEDEDE',
+    marginHorizontal: scale(6),
   },
   horizontalFavoriteWrapper: {
-    width: 62,
+    width: scale(62),
     alignItems: 'flex-end',
     overflow: 'visible',
   },
@@ -379,50 +356,45 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 12,
+    paddingHorizontal: scale(12),
     justifyContent: 'center',
     alignItems: 'center',
-    height: 28,
+    height: scale(28),
     overflow: 'visible',
   },
   // Vertical Card Styles (for 2-column grid)
   verticalCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 8,
-    alignItems: 'center',
+    borderRadius: scale(16),
+    padding: scale(8),
+    alignItems: 'flex-start',
     width: VERTICAL_CARD_WIDTH,
-    height: 266,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   verticalImage: {
-    width: '100%',
-    height: 144,
-    borderRadius: 8,
-    borderColor: '#757575',
-    borderWidth: 0.5,
-    marginBottom: 8,
+    width: VERTICAL_IMAGE_SIZE,
+    height: VERTICAL_IMAGE_SIZE,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
   },
   verticalTitle: {
     fontFamily: 'Inter',
     fontWeight: '600',
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: scale(12),
+    lineHeight: scale(15),
     color: '#000000',
     textAlign: 'left',
-    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
-    height: 30,
-    marginBottom: 8,
+    width: VERTICAL_CARD_WIDTH - scale(24),
   },
   verticalDetailsContainer: {
-    width: VERTICAL_CARD_WIDTH - 24, // Card width minus padding (8px on each side = 16) minus some margin (8px)
-    marginBottom: 8,
+    width: VERTICAL_CARD_WIDTH - scale(24),
+    marginBottom: scale(8),
   },
   verticalDetails: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: scale(10),
+    lineHeight: scale(12),
     color: '#757575',
     textAlign: 'left',
     width: '100%',
@@ -436,42 +408,44 @@ const styles = StyleSheet.create({
   verticalVoteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    height: 28,
+    paddingHorizontal: scale(10),
+    paddingVertical: scale(2),
+    height: scale(28),
+    width: scale(85),
+    justifyContent: 'space-between',
   },
   verticalVoteButton: {
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 20,
-    height: 20,
+    width: scale(20),
+    height: scale(20),
     borderRadius: 4,
   },
   verticalVoteCount: {
     fontFamily: 'Inter',
-    fontSize: 10,
+    fontSize: scale(10),
     fontWeight: '400',
     color: '#000000',
-    marginHorizontal: 6,
+    marginHorizontal: scale(6),
   },
   verticalVoteSeparator: {
     width: 1,
-    height: 16,
-    backgroundColor: '#D7D7D7',
-    marginHorizontal: 6,
+    height: scale(12),
+    backgroundColor: '#DEDEDE',
+    marginHorizontal: scale(6),
   },
   verticalFavoriteButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    width: 40,
-    height: 28,
+    width: scale(40),
+    height: scale(28),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -480,28 +454,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
-    width: 40,
-    height: 28,
+    width: scale(40),
+    height: scale(28),
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   // Shared styles
+  arrowIconContainer: {
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   upvotedcom: {
     // No background change - only icon color changes
-    marginBottom: 2,
+    // marginBottom: 2, // Removed to prevent shifting
   },
   downvotedcom: {
     // No background change - only icon color changes
-    marginBottom: 1,
+    // marginBottom: 1, // Removed to prevent shifting
   },
   upvoteddeals: {
     // No background change - only icon color changes
-    marginBottom: 5,
+    // marginBottom: 5, // Removed to prevent shifting
   },
   downvoteddeals: {
     // No background change - only icon color changes
-    marginBottom: 2,
+    // marginBottom: 2, // Removed to prevent shifting
   },
   favorited: {
     // Don't change background - only the heart icon color changes
