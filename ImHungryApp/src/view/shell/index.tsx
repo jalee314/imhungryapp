@@ -6,8 +6,10 @@
  */
 
 import React from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 
+import { atoms as a, useTheme } from '#/ui';
+import * as tokens from '#/ui/tokens';
 import { useAuth } from '../../hooks/useAuth';
 import { useAdmin } from '../../hooks/useAdmin';
 import {
@@ -21,9 +23,11 @@ import {
  * Loading screen displayed during auth state resolution
  */
 function LoadingScreen() {
+  const t = useTheme();
+
   return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#FFA05C" />
+    <View style={[a.flex_1, a.justify_center, a.align_center, { backgroundColor: tokens.color.primary_100 }]}>
+      <ActivityIndicator size="large" color={tokens.color.primary_500} />
     </View>
   );
 }
@@ -79,14 +83,5 @@ export function Shell() {
     </RoutesContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFE5B4',
-  },
-});
 
 export default Shell;

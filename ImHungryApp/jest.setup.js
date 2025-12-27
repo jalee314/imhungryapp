@@ -7,6 +7,19 @@ jest.mock('react-native', () => {
     Text: 'Text',
     StyleSheet: {
       create: (styles) => styles,
+      flatten: (style) => {
+        // Simple flatten implementation for tests
+        if (!style) return {};
+        if (Array.isArray(style)) {
+          return style.reduce((acc, s) => {
+            if (s) {
+              return { ...acc, ...(Array.isArray(s) ? jest.requireMock('react-native').StyleSheet.flatten(s) : s) };
+            }
+            return acc;
+          }, {});
+        }
+        return style;
+      },
     },
     ActivityIndicator: 'ActivityIndicator',
     TouchableOpacity: 'TouchableOpacity',

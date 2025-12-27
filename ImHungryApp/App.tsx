@@ -3,7 +3,7 @@
  * 
  * Root application component.
  * Following Bluesky's pattern, this file is now focused solely on:
- * - Provider setup
+ * - Provider setup (including ThemeProvider)
  * - Store initialization
  * - Font loading
  * 
@@ -28,6 +28,10 @@ import { useInitializeDataCache } from './src/stores/DataCacheStore';
 import { useInitializeLocation } from './src/stores/LocationStore';
 import { useInitializeAdmin } from './src/stores/AdminStore';
 
+// UI System
+import { ThemeProvider } from './src/ui';
+import * as tokens from './src/ui/tokens';
+
 // Shell component (contains all navigation logic)
 import { Shell } from './src/view/shell';
 
@@ -37,7 +41,7 @@ import { Shell } from './src/view/shell';
 function SplashScreen() {
   return (
     <View style={styles.splash}>
-      <ActivityIndicator size="large" color="#FFA05C" />
+      <ActivityIndicator size="large" color={tokens.color.primary_500} />
     </View>
   );
 }
@@ -93,8 +97,12 @@ export default function App() {
     return <SplashScreen />;
   }
 
-  // Render the shell (which handles all navigation)
-  return <Shell />;
+  // Render the shell wrapped in ThemeProvider
+  return (
+    <ThemeProvider theme="light">
+      <Shell />
+    </ThemeProvider>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -102,6 +110,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFE5B4',
+    backgroundColor: tokens.color.primary_100,
   },
 });

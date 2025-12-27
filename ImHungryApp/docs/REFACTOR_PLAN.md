@@ -264,10 +264,10 @@ export default function App() {
 ```
 
 ### Phase 1 Deliverables
-- [ ] Types split into 7 files
-- [ ] `src/Navigation.tsx` created with all navigation logic
-- [ ] `src/view/shell/` structure created  
-- [ ] App.tsx reduced from 333 lines to ~80 lines
+- [x] Types split into 7 files
+- [x] `src/Navigation.tsx` created with all navigation logic
+- [x] `src/view/shell/` structure created  
+- [x] App.tsx reduced from 333 lines to ~80 lines
 - [ ] All existing functionality preserved
 
 ---
@@ -454,10 +454,10 @@ const t = useTheme()
 ```
 
 ### Phase 2 Deliverables
-- [ ] `src/ui/` folder structure created
-- [ ] 10+ components migrated to use ui atoms
-- [ ] Theme system established
-- [ ] All imports updated
+- [x] `src/ui/` folder structure created
+- [x] 10+ components migrated to use ui atoms
+- [x] Theme system established
+- [ ] All imports updated (ongoing - gradual migration)
 
 ---
 
