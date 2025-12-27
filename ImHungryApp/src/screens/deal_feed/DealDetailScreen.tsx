@@ -27,7 +27,7 @@ import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
 import { useFavorites } from '../../hooks/useFavorites';
 import SkeletonLoader from '../../components/SkeletonLoader';
-import OptimizedImage from '../../components/OptimizedImage';
+import { OptimizedImage } from '../../components/Image';
 import MapSelectionModal from '../../components/MapSelectionModal';
 import { supabase } from '../../../lib/supabase';
 

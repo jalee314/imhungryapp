@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+/**
+ * CommunityUploadedScreen.tsx
+ *
+ * Featured deals screen using React Query for data management.
+ * Shows all community uploaded deals in a grid layout.
+ */
+
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,13 +17,11 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { RealtimeChannel } from '@supabase/supabase-js';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
-import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
+import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { logClick } from '../../services/interactionService';
-import { dealCacheService } from '../../services/dealCacheService';
-import { supabase } from '../../../lib/supabase';
+import { useFeedQuery } from '../../state/queries';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useFavorites } from '../../hooks/useFavorites';
 
@@ -24,312 +29,91 @@ const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const interactionChannel = useRef<RealtimeChannel | null>(null);
-  const favoriteChannel = useRef<RealtimeChannel | null>(null);
-  const recentActions = useRef<Set<string>>(new Set());
-  const currentUserId = useRef<string | null>(null);
 
-  useEffect(() => {
-    const loadDeals = async () => {
-      try {
-        setLoading(true);
-        const cachedDeals = await dealCacheService.getDeals();
-        setDeals(cachedDeals);
-        setError(null);
-      } catch (err) {
-        console.error('Error loading deals:', err);
-        setError('Failed to load deals. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Use React Query hook for deals - shares cache with Feed.tsx
+  const {
+    deals,
+    isLoading: loading,
+    isRefreshing: refreshing,
+    error,
+    onRefresh,
+    updateDealOptimistic,
+    revertDealOptimistic,
+  } = useFeedQuery({ enabled: true });
 
-    loadDeals();
-
-    // Subscribe to cache updates
-    const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
-      setDeals(updatedDeals);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  // ✨ NEW: Sync updated deals from context when screen comes into focus (same as Feed)
+  // Sync updated deals from context when screen comes into focus
   useFocusEffect(
-    React.useCallback(() => {
-      // Use setTimeout to defer the state update until after the current render cycle
-      const timeoutId = setTimeout(() => {
-        const dealsToClean: string[] = [];
-        
-        setDeals(prevDeals => {
-          let hasChanges = false;
-          const updatedDeals = prevDeals.map(deal => {
-            const updatedDeal = getUpdatedDeal(deal.id);
-            if (updatedDeal) {
-              hasChanges = true;
-              dealsToClean.push(deal.id); // Mark for cleanup, don't clear yet
-              return updatedDeal;
-            }
-            return deal;
-          });
-          
-          return hasChanges ? updatedDeals : prevDeals;
-        });
-        
-        // Clear after render completes
-        if (dealsToClean.length > 0) {
-          setTimeout(() => {
-            dealsToClean.forEach(id => clearUpdatedDeal(id));
-          }, 0);
+    useCallback(() => {
+      deals.forEach((deal) => {
+        const updatedDeal = getUpdatedDeal(deal.id);
+        if (updatedDeal) {
+          updateDealOptimistic(deal.id, updatedDeal);
+          clearUpdatedDeal(deal.id);
         }
-      }, 0);
-
-      return () => clearTimeout(timeoutId);
-    }, [getUpdatedDeal, clearUpdatedDeal])
+      });
+    }, [deals, getUpdatedDeal, clearUpdatedDeal, updateDealOptimistic])
   );
 
-  // Setup Realtime subscriptions for interactions and favorites
-  useEffect(() => {
-    const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  // Handlers with optimistic updates
+  const handleUpvote = useCallback((dealId: string) => {
+    const originalDeal = deals.find((d) => d.id === dealId);
+    if (!originalDeal) return;
 
-      const userId = user.id;
-      currentUserId.current = userId;
+    const wasUpvoted = originalDeal.isUpvoted;
+    const wasDownvoted = originalDeal.isDownvoted;
 
-      // Clean up existing subscriptions first
-      if (interactionChannel.current) {
-        supabase.removeChannel(interactionChannel.current);
-        interactionChannel.current = null;
-      }
-      if (favoriteChannel.current) {
-        supabase.removeChannel(favoriteChannel.current);
-        favoriteChannel.current = null;
-      }
-
-      // Subscribe to interaction changes (for OTHER users' votes)
-      interactionChannel.current = supabase
-        .channel('community-interactions')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'interaction',
-          },
-          async (payload) => {
-            const interaction = payload.new;
-            
-            // Skip click events (too noisy)
-            if (interaction.interaction_type === 'click') return;
-            
-            // IMPORTANT: Skip if this is OUR OWN action (optimistic updates handle this)
-            if (interaction.user_id === userId) {
-              console.log('⏭️ Skipping own action - optimistic update already handled it');
-              return;
-            }
-            
-            // Debounce
-            const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
-            if (recentActions.current.has(actionKey)) return;
-            
-            recentActions.current.add(actionKey);
-            setTimeout(() => recentActions.current.delete(actionKey), 1000);
-            
-            console.log('⚡ Realtime interaction from another user:', interaction.interaction_type);
-            
-            // Only recalculate for THIS SPECIFIC deal, not all deals
-            const [voteStates, voteCounts] = await Promise.all([
-              getUserVoteStates([interaction.deal_id]),
-              calculateVoteCounts([interaction.deal_id])
-            ]);
-            
-            // Update only the affected deal
-            setDeals(prevDeals => prevDeals.map(deal => {
-              if (deal.id === interaction.deal_id) {
-                return {
-                  ...deal,
-                  votes: voteCounts[deal.id] || deal.votes,
-                  // Keep current user's vote state (don't override optimistic updates)
-                  isUpvoted: deal.isUpvoted,
-                  isDownvoted: deal.isDownvoted,
-                };
-              }
-              return deal;
-            }));
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('📡 Community Interaction channel: SUBSCRIBED');
-          }
-        });
-
-      // Subscribe to favorite changes (only for current user)
-      favoriteChannel.current = supabase
-        .channel('community-favorites')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'favorite',
-            filter: `user_id=eq.${userId}`,
-          },
-          (payload: any) => {
-            const dealId = payload.new?.deal_id || payload.old?.deal_id;
-            
-            // Skip if we're already processing this action
-            const actionKey = `favorite-${dealId}`;
-            if (recentActions.current.has(actionKey)) {
-              console.log('⏭️ Skipping duplicate favorite event');
-              return;
-            }
-            
-            const isFavorited = payload.eventType === 'INSERT';
-            console.log('⚡ Realtime favorite:', payload.eventType, dealId);
-            
-            setDeals(prevDeals => prevDeals.map(deal => 
-              deal.id === dealId ? { ...deal, isFavorited } : deal
-            ));
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('📡 Community Favorite channel: SUBSCRIBED');
-          }
-        });
-    };
-
-    setupRealtimeSubscription();
-
-    return () => {
-      if (interactionChannel.current) {
-        supabase.removeChannel(interactionChannel.current);
-      }
-      if (favoriteChannel.current) {
-        supabase.removeChannel(favoriteChannel.current);
-      }
-      recentActions.current.clear();
-    };
-  }, []); // 🔥 CRITICAL FIX: Empty dependency array - only setup once on mount
-
-  // Refresh vote states when returning to screen
-  // REMOVED useFocusEffect - optimistic updates work without it!
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      const freshDeals = await dealCacheService.getDeals(true);
-      setDeals(freshDeals);
-    } catch (err) {
-      console.error('Error refreshing deals:', err);
-    } finally {
-      setRefreshing(false);
-    }
-  }, []);
-
-  const handleUpvote = (dealId: string) => {
-    let originalDeal: Deal | undefined;
-    
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          const wasUpvoted = d.isUpvoted;
-          const wasDownvoted = d.isDownvoted;
-          
-          return {
-            ...d,
-            isUpvoted: !wasUpvoted,
-            isDownvoted: false,
-            votes: wasUpvoted 
-              ? d.votes - 1
-              : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-          };
-        }
-        return d;
-      });
+    updateDealOptimistic(dealId, {
+      isUpvoted: !wasUpvoted,
+      isDownvoted: false,
+      votes: wasUpvoted
+        ? originalDeal.votes - 1
+        : wasDownvoted
+        ? originalDeal.votes + 2
+        : originalDeal.votes + 1,
     });
 
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed to save upvote, reverting:', err);
-      if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
-      }
+      revertDealOptimistic(dealId, originalDeal);
     });
-  };
+  }, [deals, updateDealOptimistic, revertDealOptimistic]);
 
-  const handleDownvote = (dealId: string) => {
-    let originalDeal: Deal | undefined;
-    
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          const wasDownvoted = d.isDownvoted;
-          const wasUpvoted = d.isUpvoted;
-          
-          return {
-            ...d,
-            isDownvoted: !wasDownvoted,
-            isUpvoted: false,
-            votes: wasDownvoted 
-              ? d.votes + 1
-              : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-          };
-        }
-        return d;
-      });
+  const handleDownvote = useCallback((dealId: string) => {
+    const originalDeal = deals.find((d) => d.id === dealId);
+    if (!originalDeal) return;
+
+    const wasDownvoted = originalDeal.isDownvoted;
+    const wasUpvoted = originalDeal.isUpvoted;
+
+    updateDealOptimistic(dealId, {
+      isDownvoted: !wasDownvoted,
+      isUpvoted: false,
+      votes: wasDownvoted
+        ? originalDeal.votes + 1
+        : wasUpvoted
+        ? originalDeal.votes - 2
+        : originalDeal.votes - 1,
     });
 
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed to save downvote, reverting:', err);
-      if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
-      }
+      revertDealOptimistic(dealId, originalDeal);
     });
-  };
+  }, [deals, updateDealOptimistic, revertDealOptimistic]);
 
-  const handleFavorite = (dealId: string) => {
-    // FIRST: Find and capture the original deal state
-    const originalDeal = deals.find(d => d.id === dealId);
-    if (!originalDeal) {
-      console.error('Deal not found:', dealId);
-      return;
-    }
+  const handleFavorite = useCallback((dealId: string) => {
+    const originalDeal = deals.find((d) => d.id === dealId);
+    if (!originalDeal) return;
 
     const wasFavorited = originalDeal.isFavorited;
-    console.log('🔄 Toggling favorite for deal:', dealId, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
-    
-    // SECOND: Optimistically update the UI
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          return {
-            ...d,
-            isFavorited: !wasFavorited
-          };
-        }
-        return d;
-      });
-    });
 
-    // THIRD: Notify global store for instant favorites page update
+    // Optimistic UI update
+    updateDealOptimistic(dealId, { isFavorited: !wasFavorited });
+
+    // Notify global store for instant favorites page update
     if (wasFavorited) {
       markAsUnfavorited(dealId, 'deal');
     } else {
-      // Pass full deal data for instant display in favorites
       markAsFavorited(dealId, 'deal', {
         id: originalDeal.id,
         title: originalDeal.title,
@@ -346,39 +130,28 @@ const CommunityUploadedScreen: React.FC = () => {
       });
     }
 
-    // FOURTH: Save to database with the original state
-    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
-    
     toggleFavorite(dealId, wasFavorited).catch((err) => {
       console.error('Failed to save favorite, reverting:', err);
-      // Revert to original state
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? originalDeal : d
-      ));
+      revertDealOptimistic(dealId, originalDeal);
     });
-  };
+  }, [deals, updateDealOptimistic, revertDealOptimistic, markAsUnfavorited, markAsFavorited]);
 
-  const handleDealPress = (dealId: string) => {
-    const selectedDeal = deals.find(deal => deal.id === dealId);
+  const handleDealPress = useCallback((dealId: string) => {
+    const selectedDeal = deals.find((deal) => deal.id === dealId);
     if (selectedDeal) {
-      const positionInFeed = deals.findIndex(d => d.id === dealId);
-      
-      // Log the click interaction with source 'feed'
-      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+      const positionInFeed = deals.findIndex((d) => d.id === dealId);
+      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch((err) => {
         console.error('Failed to log click:', err);
       });
-      
       navigation.navigate('DealDetail' as never, { deal: selectedDeal } as never);
     }
-  };
+  }, [deals, navigation]);
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
       <View style={styles.dealsGrid}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((item, index) => (
-          <View key={item} style={[
-            index % 2 === 0 ? styles.leftCard : styles.rightCard
-          ]}>
+          <View key={item} style={[index % 2 === 0 ? styles.leftCard : styles.rightCard]}>
             <DealCardSkeleton variant="vertical" />
           </View>
         ))}
@@ -388,7 +161,7 @@ const CommunityUploadedScreen: React.FC = () => {
 
   const renderErrorState = () => (
     <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>{error}</Text>
+      <Text style={styles.errorText}>{error?.message || 'Failed to load deals'}</Text>
       <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
         <Text style={styles.retryButtonText}>Retry</Text>
       </TouchableOpacity>
@@ -405,27 +178,21 @@ const CommunityUploadedScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header with back button and title */}
+
+      {/* Header */}
       <View style={styles.headerBackground}>
         <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
           </TouchableOpacity>
-          
           <Text style={styles.headerTitle}>
             <Text style={styles.headerTitleBold}>Featured Deals</Text>
           </Text>
-          
-          {/* Spacer to balance the back button for centering */}
           <View style={styles.headerSpacer} />
         </View>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -438,7 +205,7 @@ const CommunityUploadedScreen: React.FC = () => {
           />
         }
       >
-        {loading ? (
+        {loading && deals.length === 0 ? (
           renderLoadingState()
         ) : error ? (
           renderErrorState()
@@ -447,9 +214,7 @@ const CommunityUploadedScreen: React.FC = () => {
         ) : (
           <View style={styles.dealsGrid}>
             {deals.map((deal, index) => (
-              <View key={deal.id} style={[
-                index % 2 === 0 ? styles.leftCard : styles.rightCard
-              ]}>
+              <View key={deal.id} style={[index % 2 === 0 ? styles.leftCard : styles.rightCard]}>
                 <DealCard
                   deal={deal}
                   variant="vertical"
@@ -463,7 +228,6 @@ const CommunityUploadedScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
-
     </View>
   );
 };
@@ -513,7 +277,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 10,
     paddingTop: 8,
-    paddingBottom: 0, // MainAppLayout handles bottom navigation spacing
+    paddingBottom: 0,
   },
   dealsGrid: {
     flexDirection: 'row',

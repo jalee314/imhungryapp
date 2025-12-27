@@ -1,37 +1,48 @@
-/**
- * BlockedUsersPage.tsx
- *
- * Blocked users management screen using React Query.
- */
-
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { useBlockedUsersQuery, BlockedUser } from '../../state/queries';
+import { getBlockedUsers, unblockUser } from '../../services/blockService';
+
+interface BlockedUser {
+  block_id: string;
+  blocked_user_id: string;
+  reason_code_id: string;
+  reason_text: string | null;
+  created_at: string;
+  blocked_user: {
+    user_id: string;
+    display_name: string | null;
+    profile_photo: string | null;
+  };
+}
 
 const BlockedUsersPage = () => {
   const navigation = useNavigation();
-  const { blockedUsers, isLoading, unblockMultiple, isUnblocking } = useBlockedUsersQuery();
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
-  // Initialize selected users when data loads
   useEffect(() => {
-    if (blockedUsers.length > 0) {
-      setSelectedUsers(new Set(blockedUsers.map((user) => user.blocked_user_id)));
+    loadBlockedUsers();
+  }, []);
+
+  const loadBlockedUsers = async () => {
+    try {
+      setLoading(true);
+      const users = await getBlockedUsers();
+      setBlockedUsers(users);
+      // Initialize all users as selected (checked) by default
+      setSelectedUsers(new Set(users.map(user => user.blocked_user_id)));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load blocked users');
+    } finally {
+      setLoading(false);
     }
-  }, [blockedUsers]);
+  };
 
   const toggleUserSelection = (blockedUserId: string) => {
-    setSelectedUsers((prev) => {
+    setSelectedUsers(prev => {
       const newSet = new Set(prev);
       if (newSet.has(blockedUserId)) {
         newSet.delete(blockedUserId);
@@ -43,23 +54,31 @@ const BlockedUsersPage = () => {
   };
 
   const handleUpdate = async () => {
-    const usersToUnblock = blockedUsers.filter(
-      (user) => !selectedUsers.has(user.blocked_user_id)
-    );
-
+    const usersToUnblock = blockedUsers.filter(user => !selectedUsers.has(user.blocked_user_id));
+    
     if (usersToUnblock.length === 0) {
       Alert.alert('No Changes', 'No users selected for unblocking');
       return;
     }
 
     try {
-      const { successCount } = await unblockMultiple(
-        usersToUnblock.map((u) => u.blocked_user_id)
-      );
-
+      // Unblock all users who are NOT selected (unchecked)
+      const unblockPromises = usersToUnblock.map(user => unblockUser(user.blocked_user_id));
+      const results = await Promise.all(unblockPromises);
+      
+      const successCount = results.filter(result => result.success).length;
+      
       if (successCount > 0) {
+        // Remove successfully unblocked users from the list
+        setBlockedUsers(prevUsers => 
+          prevUsers.filter(user => selectedUsers.has(user.blocked_user_id))
+        );
+        
+        // Update selected users to only include remaining blocked users
+        setSelectedUsers(new Set(blockedUsers.filter(user => selectedUsers.has(user.blocked_user_id)).map(user => user.blocked_user_id)));
+        
         Alert.alert('Success', `${successCount} user(s) have been unblocked`, [
-          { text: 'OK', onPress: () => navigation.goBack() },
+          { text: 'OK', onPress: () => navigation.goBack() }
         ]);
       } else {
         Alert.alert('Error', 'Failed to unblock users');
@@ -71,18 +90,18 @@ const BlockedUsersPage = () => {
 
   const renderUserItem = (user: BlockedUser, index: number) => {
     const isSelected = selectedUsers.has(user.blocked_user_id);
-
+    
     return (
       <View key={user.block_id}>
-        <TouchableOpacity
-          style={styles.userItem}
+        <TouchableOpacity 
+          style={styles.userItem} 
           onPress={() => toggleUserSelection(user.blocked_user_id)}
           activeOpacity={1}
         >
           <Text style={styles.userName}>
             {user.blocked_user.display_name || 'Unknown User'}
           </Text>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={[styles.checkbox, isSelected ? styles.checkedBox : styles.uncheckedBox]}
             onPress={() => toggleUserSelection(user.blocked_user_id)}
             activeOpacity={1}
@@ -105,16 +124,14 @@ const BlockedUsersPage = () => {
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.titleText}>Block Users</Text>
-        <TouchableOpacity onPress={handleUpdate} disabled={isUnblocking}>
-          <Text style={[styles.updateText, isUnblocking && styles.disabledText]}>
-            {isUnblocking ? 'Updating...' : 'Update'}
-          </Text>
+        <TouchableOpacity onPress={handleUpdate}>
+          <Text style={styles.updateText}>Update</Text>
         </TouchableOpacity>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        {isLoading ? (
+        {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FFA05C" />
             <Text style={styles.loadingText}>Loading blocked users...</Text>
@@ -169,9 +186,6 @@ const styles = StyleSheet.create({
     color: '#FFA05C',
     flex: 1,
     textAlign: 'right',
-  },
-  disabledText: {
-    opacity: 0.5,
   },
   content: {
     flex: 1,

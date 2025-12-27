@@ -1,11 +1,4 @@
-/**
- * screens/admin/AdminUsersScreen.tsx
- *
- * Admin user management screen - refactored to use React Query.
- * Uses useAdminUsersQuery + useAdminUserMutations for server state.
- */
-
-import React, { useState, useCallback } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,49 +10,77 @@ import {
   Alert,
   Modal,
   TextInput,
-} from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import { UserProfile } from '../../services/adminService'
-import { Ionicons } from '@expo/vector-icons'
-import { useAdminUsersQuery, useAdminUserMutations } from '../../state/queries/admin'
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { adminService, UserProfile } from '../../services/adminService';
+import { supabase } from '../../../lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 const AdminUsersScreen: React.FC = () => {
-  const navigation = useNavigation()
-  
-  // Local UI state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchInput, setSearchInput] = useState('')
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
-  const [userModalVisible, setUserModalVisible] = useState(false)
-  const [actionModalVisible, setActionModalVisible] = useState(false)
-  const [suspensionDays, setSuspensionDays] = useState('7')
-  const [actionReason, setActionReason] = useState('')
+  const navigation = useNavigation();
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [userModalVisible, setUserModalVisible] = useState(false);
+  const [actionModalVisible, setActionModalVisible] = useState(false);
+  const [suspensionDays, setSuspensionDays] = useState('7');
+  const [actionReason, setActionReason] = useState('');
 
-  // React Query hooks
-  const { users, isLoading, search: searchUsers, refetch } = useAdminUsersQuery({ searchQuery })
-  const { warnUser, suspendUser, unsuspendUser, banUser, unbanUser, deleteUser } = useAdminUserMutations()
+  // Load all users on mount
+  useEffect(() => {
+    loadAllUsers();
+  }, []);
 
-  const handleSearch = useCallback(async () => {
-    if (!searchInput.trim()) {
-      setSearchQuery('')
-      refetch()
-      return
+  const loadAllUsers = async () => {
+    setLoading(true);
+    try {
+      // Get recent users
+      const { data, error } = await supabase
+        .from('user')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setLoading(false);
     }
-    setSearchQuery(searchInput)
-  }, [searchInput, refetch])
+  };
 
-  const handleUserPress = useCallback((user: UserProfile) => {
-    setSelectedUser(user)
-    setUserModalVisible(true)
-  }, [])
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      loadAllUsers();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await adminService.searchUsers(searchQuery);
+      setUsers(data);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      Alert.alert('Error', 'Failed to search users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUserPress = (user: UserProfile) => {
+    setSelectedUser(user);
+    setUserModalVisible(true);
+  };
 
   const openActionModal = () => {
-    setUserModalVisible(false)
-    setActionModalVisible(true)
-  }
+    setUserModalVisible(false);
+    setActionModalVisible(true);
+  };
 
-  const handleWarnUser = () => {
-    if (!selectedUser) return
+  const handleWarnUser = async () => {
+    if (!selectedUser) return;
 
     Alert.alert(
       'Confirm Warn',
@@ -69,26 +90,27 @@ const AdminUsersScreen: React.FC = () => {
         {
           text: 'Warn',
           onPress: async () => {
-            try {
-              await warnUser.mutateAsync(selectedUser.user_id)
-              Alert.alert('Success', 'User warned')
-              setActionModalVisible(false)
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to warn user')
+            const result = await adminService.warnUser(selectedUser.user_id);
+            if (result.success) {
+              Alert.alert('Success', 'User warned');
+              setActionModalVisible(false);
+              handleSearch();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to warn user');
             }
           },
         },
       ]
-    )
-  }
+    );
+  };
 
-  const handleSuspendUser = () => {
-    if (!selectedUser) return
+  const handleSuspendUser = async () => {
+    if (!selectedUser) return;
 
-    const days = parseInt(suspensionDays)
+    const days = parseInt(suspensionDays);
     if (isNaN(days) || days <= 0) {
-      Alert.alert('Error', 'Please enter valid number of days')
-      return
+      Alert.alert('Error', 'Please enter valid number of days');
+      return;
     }
 
     Alert.alert(
@@ -100,50 +122,27 @@ const AdminUsersScreen: React.FC = () => {
           text: 'Suspend',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await suspendUser.mutateAsync({
-                userId: selectedUser.user_id,
-                days,
-                reason: actionReason || undefined,
-              })
-              Alert.alert('Success', 'User suspended')
-              setActionModalVisible(false)
-              setActionReason('')
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to suspend user')
+            const result = await adminService.suspendUser(
+              selectedUser.user_id,
+              days,
+              actionReason || undefined
+            );
+            if (result.success) {
+              Alert.alert('Success', 'User suspended');
+              setActionModalVisible(false);
+              setActionReason('');
+              handleSearch();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to suspend user');
             }
           },
         },
       ]
-    )
-  }
+    );
+  };
 
-  const handleUnsuspendUser = () => {
-    if (!selectedUser) return
-
-    Alert.alert(
-      'Confirm Unsuspend',
-      'Are you sure you want to remove suspension from this user?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unsuspend',
-          onPress: async () => {
-            try {
-              await unsuspendUser.mutateAsync(selectedUser.user_id)
-              Alert.alert('Success', 'User suspension removed')
-              setActionModalVisible(false)
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to unsuspend user')
-            }
-          },
-        },
-      ]
-    )
-  }
-
-  const handleBanUser = () => {
-    if (!selectedUser) return
+  const handleBanUser = async () => {
+    if (!selectedUser) return;
 
     Alert.alert(
       'Confirm Ban',
@@ -154,25 +153,26 @@ const AdminUsersScreen: React.FC = () => {
           text: 'Ban',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await banUser.mutateAsync({
-                userId: selectedUser.user_id,
-                reason: actionReason || undefined,
-              })
-              Alert.alert('Success', 'User banned')
-              setActionModalVisible(false)
-              setActionReason('')
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to ban user')
+            const result = await adminService.banUser(
+              selectedUser.user_id,
+              actionReason || undefined
+            );
+            if (result.success) {
+              Alert.alert('Success', 'User banned');
+              setActionModalVisible(false);
+              setActionReason('');
+              handleSearch();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to ban user');
             }
           },
         },
       ]
-    )
-  }
+    );
+  };
 
-  const handleUnbanUser = () => {
-    if (!selectedUser) return
+  const handleUnbanUser = async () => {
+    if (!selectedUser) return;
 
     Alert.alert(
       'Confirm Unban',
@@ -182,21 +182,47 @@ const AdminUsersScreen: React.FC = () => {
         {
           text: 'Unban',
           onPress: async () => {
-            try {
-              await unbanUser.mutateAsync(selectedUser.user_id)
-              Alert.alert('Success', 'User unbanned')
-              setActionModalVisible(false)
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to unban user')
+            const result = await adminService.unbanUser(selectedUser.user_id);
+            if (result.success) {
+              Alert.alert('Success', 'User unbanned');
+              setActionModalVisible(false);
+              handleSearch();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to unban user');
             }
           },
         },
       ]
-    )
-  }
+    );
+  };
 
-  const handleDeleteUser = () => {
-    if (!selectedUser) return
+  const handleUnsuspendUser = async () => {
+    if (!selectedUser) return;
+
+    Alert.alert(
+      'Confirm Unsuspend',
+      'Are you sure you want to remove suspension from this user?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unsuspend',
+          onPress: async () => {
+            const result = await adminService.unsuspendUser(selectedUser.user_id);
+            if (result.success) {
+              Alert.alert('Success', 'User suspension removed');
+              setActionModalVisible(false);
+              handleSearch();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to unsuspend user');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
 
     Alert.alert(
       'Confirm Delete',
@@ -207,18 +233,19 @@ const AdminUsersScreen: React.FC = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await deleteUser.mutateAsync(selectedUser.user_id)
-              Alert.alert('Success', 'User deleted')
-              setActionModalVisible(false)
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete user')
+            const result = await adminService.deleteUser(selectedUser.user_id);
+            if (result.success) {
+              Alert.alert('Success', 'User deleted');
+              setActionModalVisible(false);
+              handleSearch();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to delete user');
             }
           },
         },
       ]
-    )
-  }
+    );
+  };
 
   const renderUser = ({ item }: { item: UserProfile }) => (
     <TouchableOpacity style={styles.userCard} onPress={() => handleUserPress(item)}>
@@ -267,10 +294,7 @@ const AdminUsersScreen: React.FC = () => {
         </View>
       )}
     </TouchableOpacity>
-  )
-
-  const isActionLoading = warnUser.isPending || suspendUser.isPending || unsuspendUser.isPending ||
-    banUser.isPending || unbanUser.isPending || deleteUser.isPending
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -285,8 +309,8 @@ const AdminUsersScreen: React.FC = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          value={searchInput}
-          onChangeText={setSearchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
           placeholder="Search by username or email..."
           placeholderTextColor="#999"
           onSubmitEditing={handleSearch}
@@ -296,7 +320,7 @@ const AdminUsersScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {isLoading ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFA05C" />
         </View>
@@ -396,13 +420,8 @@ const AdminUsersScreen: React.FC = () => {
               <TouchableOpacity
                 style={[styles.actionButton, styles.warnButton]}
                 onPress={handleWarnUser}
-                disabled={isActionLoading}
               >
-                {warnUser.isPending ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <Text style={styles.actionButtonText}>Warn User</Text>
-                )}
+                <Text style={styles.actionButtonText}>Warn User</Text>
               </TouchableOpacity>
 
               <View style={styles.suspendSection}>
@@ -416,15 +435,11 @@ const AdminUsersScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[styles.actionButton, styles.suspendButton]}
                   onPress={handleSuspendUser}
-                  disabled={selectedUser?.is_suspended || isActionLoading}
+                  disabled={selectedUser?.is_suspended}
                 >
-                  {suspendUser.isPending ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <Text style={styles.actionButtonText}>
-                      {selectedUser?.is_suspended ? 'Already Suspended' : 'Suspend User'}
-                    </Text>
-                  )}
+                  <Text style={styles.actionButtonText}>
+                    {selectedUser?.is_suspended ? 'Already Suspended' : 'Suspend User'}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
@@ -432,13 +447,8 @@ const AdminUsersScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[styles.actionButton, styles.unsuspendButton]}
                   onPress={handleUnsuspendUser}
-                  disabled={isActionLoading}
                 >
-                  {unsuspendUser.isPending ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <Text style={styles.actionButtonText}>Remove Suspension</Text>
-                  )}
+                  <Text style={styles.actionButtonText}>Remove Suspension</Text>
                 </TouchableOpacity>
               )}
 
@@ -454,46 +464,31 @@ const AdminUsersScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[styles.actionButton, styles.unbanButton]}
                   onPress={handleUnbanUser}
-                  disabled={isActionLoading}
                 >
-                  {unbanUser.isPending ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <Text style={styles.actionButtonText}>Unban User</Text>
-                  )}
+                  <Text style={styles.actionButtonText}>Unban User</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   style={[styles.actionButton, styles.banButton]}
                   onPress={handleBanUser}
-                  disabled={isActionLoading}
                 >
-                  {banUser.isPending ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <Text style={styles.actionButtonText}>Ban User</Text>
-                  )}
+                  <Text style={styles.actionButtonText}>Ban User</Text>
                 </TouchableOpacity>
               )}
 
               <TouchableOpacity
                 style={[styles.actionButton, styles.deleteButton]}
                 onPress={handleDeleteUser}
-                disabled={isActionLoading}
               >
-                {deleteUser.isPending ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <Text style={styles.actionButtonText}>Delete User</Text>
-                )}
+                <Text style={styles.actionButtonText}>Delete User</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -725,6 +720,7 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-})
+});
 
-export default AdminUsersScreen
+export default AdminUsersScreen;
+

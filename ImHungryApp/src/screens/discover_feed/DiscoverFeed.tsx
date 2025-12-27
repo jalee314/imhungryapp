@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import RowCard, { RowCardData } from '../../components/RowCard';
 import RowCardSkeleton from '../../components/RowCardSkeleton';
 import SkeletonLoader from '../../components/SkeletonLoader';
-import { getRestaurantsWithDeals, getRestaurantsWithDealsDirect, DiscoverRestaurant } from '../../services/discoverService';
+import { useRestaurantsQuery } from '#/state/queries';
+import { DiscoverRestaurant } from '../../services/discoverService';
 import { useLocation } from '../../context/LocationContext';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -28,45 +29,20 @@ const DiscoverFeed: React.FC = () => {
   const navigation = useNavigation();
   const { currentLocation, updateLocation, selectedCoordinates } = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [restaurants, setRestaurants] = useState<DiscoverRestaurant[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
-  // Load restaurants on mount and when location changes
-  useEffect(() => {
-    const loadRestaurants = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Try the RPC function first, fallback to direct query
-        // Pass selectedCoordinates if available
-        let result = await getRestaurantsWithDeals(selectedCoordinates || undefined);
-        
-        // If RPC function fails, try direct query
-        if (!result.success && result.error?.includes('function')) {
-          console.log('RPC function not available, trying direct query...');
-          result = await getRestaurantsWithDealsDirect(selectedCoordinates || undefined);
-        }
-        
-        if (result.success) {
-          setRestaurants(result.restaurants);
-        } else {
-          setError(result.error || 'Failed to load restaurants');
-        }
-      } catch (err) {
-        console.error('Error loading restaurants:', err);
-        setError('Failed to load restaurants');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Use React Query for data fetching
+  const {
+    data: queryData,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useRestaurantsQuery({
+    coordinates: selectedCoordinates || undefined,
+  });
 
-    loadRestaurants();
-  }, [selectedCoordinates]); // Re-load when selectedCoordinates changes
-
-  // Load current location on mount and when location changes
-  // This is now handled by LocationContext, so we can remove this effect
+  // Extract restaurants from query data
+  const restaurants = queryData?.restaurants ?? [];
+  const error = queryData?.error || (queryError ? 'Failed to load restaurants' : null);
 
   // Maximum distance limit in miles
   const MAX_DISTANCE_MILES = 20;
@@ -134,26 +110,7 @@ const DiscoverFeed: React.FC = () => {
       <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" />
       <Text style={styles.errorTitle}>Unable to load restaurants</Text>
       <Text style={styles.errorSubtitle}>{error}</Text>
-      <TouchableOpacity style={styles.retryButton} onPress={() => {
-        setError(null);
-        setLoading(true);
-        // Reload restaurants
-        const loadRestaurants = async () => {
-          try {
-            const result = await getRestaurantsWithDealsDirect();
-            if (result.success) {
-              setRestaurants(result.restaurants);
-            } else {
-              setError(result.error || 'Failed to load restaurants');
-            }
-          } catch (err) {
-            setError('Failed to load restaurants');
-          } finally {
-            setLoading(false);
-          }
-        };
-        loadRestaurants();
-      }}>
+      <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
         <Text style={styles.retryButtonText}>Try Again</Text>
       </TouchableOpacity>
     </View>

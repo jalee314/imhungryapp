@@ -433,7 +433,7 @@ export const Header = {
 | `src/components/Header.tsx` | `src/components/Layout/Header.tsx` | Layout pattern |
 | `src/components/DealCardSkeleton.tsx` | `src/components/Skeleton.tsx` | Unified skeleton |
 | `src/components/RowCardSkeleton.tsx` | `src/components/Skeleton.tsx` | Unified skeleton |
-| `src/components/OptimizedImage.tsx` | `src/components/Image.tsx` | Optimized image |
+| `src/components/OptimizedImage.tsx` | `src/components/Image.tsx` | ✅ Migrated |
 | `src/components/VoteButtons.tsx` | `src/components/VoteButtons.tsx` | Keep, use ui atoms |
 | `src/components/CuisineFilter.tsx` | `src/components/CuisineFilter.tsx` | Keep, use ui atoms |
 
@@ -534,11 +534,17 @@ const { data: deals, isLoading } = useDealsQuery({ cuisineId, location });
 | `adminService.ts` | `useAdminQueries` | Admin data |
 
 ### Phase 3 Deliverables
-- [ ] React Query installed and configured
-- [ ] QueryProvider wrapping app
-- [ ] 8+ query hooks created
-- [ ] Screens refactored to use queries
-- [ ] Manual useEffect fetching eliminated
+- [x] React Query installed and configured
+- [x] QueryProvider wrapping app (in Shell)
+- [x] 8+ query hooks created (deals, profile, restaurants, favorites, admin, blocked users)
+- [x] Feed.tsx refactored to use useFeedQuery (Bluesky pattern: React Query + realtime invalidation)
+- [x] DiscoverFeed.tsx refactored to use useRestaurantsQuery
+- [x] FavoritesPage.tsx refactored to use useFavoritesPageQuery
+- [x] CommunityUploadedScreen.tsx refactored to use useFeedQuery (shares cache with Feed)
+- [x] BlockedUsersPage.tsx refactored to use useBlockedUsersQuery
+- [x] Admin query hooks created (useAdminDealsQuery, useAdminUsersQuery, useAdminReportsQuery)
+- [ ] Profile hook (useProfile) migration to React Query (pending - complex, uses ProfileCacheService)
+- [ ] Admin screens migration to use admin queries (pending)
 
 ---
 

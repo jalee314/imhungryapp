@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
 import { Monicon } from '@monicon/native';
-import OptimizedImage, { preloadImage } from './OptimizedImage';
+import { OptimizedImage, preloadImage } from './Image';
 import VoteButtons from './VoteButtons';
 import * as tokens from '#/ui/tokens';
 

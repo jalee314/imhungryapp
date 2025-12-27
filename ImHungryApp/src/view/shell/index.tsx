@@ -3,6 +3,9 @@
  * 
  * Main shell component following Bluesky's pattern.
  * This wraps the navigation and provides the main app structure.
+ * 
+ * The Shell is wrapped with QueryProvider to enable React Query
+ * throughout the app. All data fetching can now use query hooks.
  */
 
 import React from 'react';
@@ -10,6 +13,7 @@ import { View, ActivityIndicator } from 'react-native';
 
 import { atoms as a, useTheme } from '#/ui';
 import * as tokens from '#/ui/tokens';
+import { QueryProvider } from '#/state/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { useAdmin } from '../../hooks/useAdmin';
 import {
@@ -78,9 +82,11 @@ export function Shell() {
   }
 
   return (
-    <RoutesContainer>
-      {renderNavigator()}
-    </RoutesContainer>
+    <QueryProvider>
+      <RoutesContainer>
+        {renderNavigator()}
+      </RoutesContainer>
+    </QueryProvider>
   );
 }
 

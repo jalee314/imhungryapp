@@ -1,11 +1,5 @@
-/**
- * screens/admin/AdminDealsScreen.tsx
- *
- * Admin deal management screen - refactored to use React Query.
- * Uses useAdminDealsQuery + useAdminDealMutations for server state.
- */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,52 +13,61 @@ import {
   TextInput,
   ScrollView,
   Image,
-} from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import * as ImagePicker from 'expo-image-picker'
-import { Deal } from '../../services/adminService'
-import { processImageWithEdgeFunction } from '../../services/imageProcessingService'
-import { Ionicons } from '@expo/vector-icons'
-import { Monicon } from '@monicon/native'
-import { useAdminDealsQuery, useAdminDealMutations } from '../../state/queries/admin'
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { adminService, Deal } from '../../services/adminService';
+import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
+import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 
 const AdminDealsScreen: React.FC = () => {
-  const navigation = useNavigation()
-  
-  // Local UI state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchInput, setSearchInput] = useState('')
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
-  const [editModalVisible, setEditModalVisible] = useState(false)
-  const [editedTitle, setEditedTitle] = useState('')
-  const [editedDescription, setEditedDescription] = useState('')
-  const [editedImageUri, setEditedImageUri] = useState<string | null>(null)
-  const [imageChanged, setImageChanged] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
+  const navigation = useNavigation();
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedImageUri, setEditedImageUri] = useState<string | null>(null);
+  const [imageChanged, setImageChanged] = useState(false);
 
-  // React Query hooks
-  const { deals, isLoading, refetch } = useAdminDealsQuery({ searchQuery })
-  const { deleteDeal, updateDeal } = useAdminDealMutations()
+  const loadDeals = async (query?: string) => {
+    setLoading(true);
+    try {
+      const data = await adminService.getDeals(query);
+      setDeals(data);
+    } catch (error) {
+      console.error('Error loading deals:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSearch = useCallback(() => {
-    setSearchQuery(searchInput)
-  }, [searchInput])
+  useEffect(() => {
+    loadDeals();
+  }, []);
 
-  const handleDealPress = useCallback((deal: Deal) => {
-    setSelectedDeal(deal)
-    setEditedTitle(deal.title)
-    setEditedDescription(deal.description || '')
-    setEditedImageUri(deal.image_url)
-    setImageChanged(false)
-    setEditModalVisible(true)
-  }, [])
+  const handleSearch = () => {
+    loadDeals(searchQuery);
+  };
+
+  const handleDealPress = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setEditedTitle(deal.title);
+    setEditedDescription(deal.description || '');
+    setEditedImageUri(deal.image_url);
+    setImageChanged(false);
+    setEditModalVisible(true);
+  };
 
   const pickImage = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'We need camera roll permissions to upload images.')
-        return
+        Alert.alert('Permission Denied', 'We need camera roll permissions to upload images.');
+        return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -72,25 +75,25 @@ const AdminDealsScreen: React.FC = () => {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-      })
+      });
 
       if (!result.canceled && result.assets[0]) {
-        setEditedImageUri(result.assets[0].uri)
-        setImageChanged(true)
+        setEditedImageUri(result.assets[0].uri);
+        setImageChanged(true);
       }
     } catch (error) {
-      console.error('Error picking image:', error)
-      Alert.alert('Error', 'Failed to pick image')
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
     }
-  }
+  };
 
   const removeImage = () => {
-    setEditedImageUri(null)
-    setImageChanged(true)
-  }
+    setEditedImageUri(null);
+    setImageChanged(true);
+  };
 
-  const handleDeleteDeal = () => {
-    if (!selectedDeal) return
+  const handleDeleteDeal = async () => {
+    if (!selectedDeal) return;
 
     Alert.alert(
       'Confirm Delete',
@@ -101,55 +104,57 @@ const AdminDealsScreen: React.FC = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await deleteDeal.mutateAsync(selectedDeal.deal_instance_id)
-              Alert.alert('Success', 'Deal deleted')
-              setEditModalVisible(false)
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete deal')
+            const result = await adminService.deleteDeal(selectedDeal.deal_instance_id);
+            if (result.success) {
+              Alert.alert('Success', 'Deal deleted');
+              setEditModalVisible(false);
+              loadDeals(searchQuery);
+            } else {
+              Alert.alert('Error', result.error || 'Failed to delete deal');
             }
           },
         },
       ]
-    )
-  }
+    );
+  };
 
   const handleUpdateDeal = async () => {
-    if (!selectedDeal) return
+    if (!selectedDeal) return;
 
-    setIsUpdating(true)
     try {
       // Handle image upload if changed
-      let imageMetadataId: string | null | undefined = undefined
+      let imageMetadataId: string | null | undefined = undefined;
       if (imageChanged) {
         if (editedImageUri) {
           // Upload new image
-          const imageResult = await processImageWithEdgeFunction(editedImageUri, 'deal_image')
+          const imageResult = await processImageWithEdgeFunction(editedImageUri, 'deal_image');
           if (imageResult.success && imageResult.metadataId) {
-            imageMetadataId = imageResult.metadataId
+            imageMetadataId = imageResult.metadataId;
           }
         } else {
           // Remove image
-          imageMetadataId = null
+          imageMetadataId = null;
         }
       }
 
-      await updateDeal.mutateAsync({
-        dealId: selectedDeal.deal_instance_id,
+      const result = await adminService.updateDeal(selectedDeal.deal_instance_id, {
         title: editedTitle,
         description: editedDescription,
-        imageMetadataId,
-      })
+        image_metadata_id: imageMetadataId,
+      });
 
-      Alert.alert('Success', 'Deal updated')
-      setEditModalVisible(false)
-    } catch (error: any) {
-      console.error('Error updating deal:', error)
-      Alert.alert('Error', error.message || 'Failed to update deal')
-    } finally {
-      setIsUpdating(false)
+      if (result.success) {
+        Alert.alert('Success', 'Deal updated');
+        setEditModalVisible(false);
+        loadDeals(searchQuery);
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update deal');
+      }
+    } catch (error) {
+      console.error('Error updating deal:', error);
+      Alert.alert('Error', 'Failed to update deal');
     }
-  }
+  };
 
   const renderDeal = ({ item }: { item: Deal }) => (
     <TouchableOpacity style={styles.dealCard} onPress={() => handleDealPress(item)}>
@@ -174,8 +179,9 @@ const AdminDealsScreen: React.FC = () => {
           <Text style={styles.dealInfoText}>{item.category_name}</Text>
         </View>
       )}
+
     </TouchableOpacity>
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -190,8 +196,8 @@ const AdminDealsScreen: React.FC = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          value={searchInput}
-          onChangeText={setSearchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
           placeholder="Search deals by title..."
           placeholderTextColor="#999"
           onSubmitEditing={handleSearch}
@@ -201,7 +207,7 @@ const AdminDealsScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {isLoading ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFA05C" />
         </View>
@@ -275,34 +281,20 @@ const AdminDealsScreen: React.FC = () => {
               />
 
               <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.updateButton]}
-                  onPress={handleUpdateDeal}
-                  disabled={isUpdating || updateDeal.isPending}
-                >
-                  {isUpdating || updateDeal.isPending ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="save" size={20} color="#FFF" />
-                      <Text style={styles.actionButtonText}>Save Changes</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.updateButton]}
+                onPress={handleUpdateDeal}
+              >
+                <Ionicons name="save" size={20} color="#FFF" />
+                <Text style={styles.actionButtonText}>Save Changes</Text>
+              </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={handleDeleteDeal}
-                  disabled={deleteDeal.isPending}
                 >
-                  {deleteDeal.isPending ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <>
-                      <Monicon name="uil:trash-alt" size={20} color="#FFF" />
-                      <Text style={styles.actionButtonText}>Delete Deal</Text>
-                    </>
-                  )}
+                  <Monicon name="uil:trash-alt" size={20} color="#FFF" />
+                  <Text style={styles.actionButtonText}>Delete Deal</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -310,8 +302,8 @@ const AdminDealsScreen: React.FC = () => {
         </View>
       </Modal>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -399,6 +391,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFA05C',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  featuredText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   dealDate: {
     fontSize: 12,
     color: '#666',
@@ -417,6 +423,20 @@ const styles = StyleSheet.create({
   },
   dealInfoText: {
     fontSize: 14,
+    color: '#666',
+  },
+  dealStats: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 16,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
     color: '#666',
   },
   modalOverlay: {
@@ -476,6 +496,9 @@ const styles = StyleSheet.create({
   updateButton: {
     backgroundColor: '#4CAF50',
   },
+  featureButton: {
+    backgroundColor: '#FFA05C',
+  },
   deleteButton: {
     backgroundColor: '#F44336',
   },
@@ -519,6 +542,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-})
+});
 
-export default AdminDealsScreen
+export default AdminDealsScreen;
+

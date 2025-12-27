@@ -1,11 +1,4 @@
-/**
- * screens/admin/AdminReportsScreen.tsx
- *
- * Admin content moderation screen - refactored to use React Query.
- * Uses useAdminReportsQuery + useAdminReportMutations for server state.
- */
-
-import React, { useState, useCallback } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,139 +13,202 @@ import {
   ScrollView,
   Image,
   RefreshControl,
-} from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import { Report, ReportCounts } from '../../services/adminService'
-import { Ionicons } from '@expo/vector-icons'
-import { Monicon } from '@monicon/native'
-import { useAdminReportsQuery, useAdminReportMutations } from '../../state/queries/admin'
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { adminService, Report, ReportCounts } from '../../services/adminService';
+import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 
-type ReportFilter = 'pending' | 'review' | 'resolved' | 'all'
+type ReportFilter = 'pending' | 'review' | 'resolved' | 'all';
 
 const STATUS_COLORS: Record<Report['status'], string> = {
   pending: '#FFA05C',
   review: '#3F51B5',
   resolved: '#4CAF50',
-}
+};
 
 const STATUS_LABELS: Record<Report['status'], string> = {
   pending: 'Pending',
   review: 'In Review',
   resolved: 'Resolved',
-}
+};
 
 const AdminReportsScreen: React.FC = () => {
-  const navigation = useNavigation()
-  
-  // Local UI state
-  const [statusFilter, setStatusFilter] = useState<ReportFilter>('pending')
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
-  const [actionModalVisible, setActionModalVisible] = useState(false)
-  const [reasonInput, setReasonInput] = useState('')
-  const [suspensionDays, setSuspensionDays] = useState('7')
-  const [refreshing, setRefreshing] = useState(false)
+  const navigation = useNavigation();
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ReportFilter>('pending');
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [actionModalVisible, setActionModalVisible] = useState(false);
+  const [reasonInput, setReasonInput] = useState('');
+  const [suspensionDays, setSuspensionDays] = useState('7');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [reportCounts, setReportCounts] = useState<ReportCounts>({
+    total: 0,
+    pending: 0,
+    review: 0,
+    resolved: 0,
+  });
 
-  // React Query hooks
-  const { reports, counts, isLoading, refetch } = useAdminReportsQuery({ statusFilter })
-  const { updateReportStatus, dismissReport, resolveReportWithAction } = useAdminReportMutations()
+  const loadReports = async (options?: { status?: ReportFilter; showSpinner?: boolean }) => {
+    const { status = statusFilter, showSpinner = true } = options || {};
+    if (showSpinner) {
+      setLoading(true);
+    }
+    try {
+      const normalizedStatus = status === 'all' ? undefined : status;
+      const data = await adminService.getReports(normalizedStatus);
+      setReports(data);
+      return data;
+    } catch (error) {
+      console.error('Error loading reports:', error);
+      Alert.alert('Error', 'Failed to load reports.');
+      return [];
+    } finally {
+      if (showSpinner) {
+        setLoading(false);
+      }
+    }
+  };
 
-  const handleManualRefresh = useCallback(async () => {
-    setRefreshing(true)
-    await refetch()
-    setRefreshing(false)
-  }, [refetch])
+  const loadCounts = async () => {
+    try {
+      const counts = await adminService.getReportCounts();
+      setReportCounts(counts);
+    } catch (error) {
+      console.error('Error loading report counts:', error);
+    }
+  };
 
-  const handleReportPress = useCallback((report: Report) => {
-    setSelectedReport(report)
-    setActionModalVisible(true)
-  }, [])
+  useEffect(() => {
+    loadReports({ status: statusFilter });
+  }, [statusFilter]);
+
+  useEffect(() => {
+    loadCounts();
+  }, []);
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([loadReports({ showSpinner: false }), loadCounts()]);
+    setRefreshing(false);
+  };
+
+  const handleReportPress = (report: Report) => {
+    setSelectedReport(report);
+    setActionModalVisible(true);
+  };
 
   const closeActionModal = () => {
-    setActionModalVisible(false)
-    setSelectedReport(null)
-    setReasonInput('')
-    setSuspensionDays('7')
-  }
+    setActionModalVisible(false);
+    setSelectedReport(null);
+    setReasonInput('');
+    setSuspensionDays('7');
+    setActionLoading(null);
+  };
 
   const getCountForFilter = (filter: ReportFilter) => {
     if (filter === 'all') {
-      return counts.total
+      return reportCounts.total;
     }
-    return counts[filter]
-  }
+    return reportCounts[filter];
+  };
 
   const formatTimestamp = (timestamp?: string) => {
-    if (!timestamp) return '—'
-    return new Date(timestamp).toLocaleString()
-  }
+    if (!timestamp) return '—';
+    return new Date(timestamp).toLocaleString();
+  };
 
   const statusFilters: Array<{ label: string; value: ReportFilter; countKey: keyof ReportCounts }> = [
     { label: 'Pending', value: 'pending', countKey: 'pending' },
     { label: 'In Review', value: 'review', countKey: 'review' },
     { label: 'Resolved', value: 'resolved', countKey: 'resolved' },
     { label: 'All', value: 'all', countKey: 'total' },
-  ]
+  ];
 
   const handleDismiss = async () => {
-    if (!selectedReport) return
+    if (!selectedReport) return;
+    setActionLoading('dismiss');
 
     try {
-      await dismissReport.mutateAsync(selectedReport.report_id)
-      Alert.alert('Success', 'Report dismissed')
-      closeActionModal()
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to dismiss report')
+      const result = await adminService.dismissReport(selectedReport.report_id);
+      if (result.success) {
+        Alert.alert('Success', 'Report dismissed');
+        closeActionModal();
+        await loadReports({ showSpinner: false });
+        await loadCounts();
+      } else {
+        Alert.alert('Error', result.error || 'Failed to dismiss report');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to dismiss report');
+    } finally {
+      setActionLoading(null);
     }
-  }
+  };
 
   const handleAction = async (action: 'delete_deal' | 'warn_user' | 'ban_user' | 'suspend_user') => {
-    if (!selectedReport) return
+    if (!selectedReport) return;
+    setActionLoading(action);
 
     try {
-      await resolveReportWithAction.mutateAsync({
-        reportId: selectedReport.report_id,
+      const result = await adminService.resolveReportWithAction(
+        selectedReport.report_id,
         action,
-        dealId: selectedReport.deal_id,
-        userId: selectedReport.uploader_user_id,
-        reason: reasonInput || undefined,
-        suspensionDays: action === 'suspend_user' ? parseInt(suspensionDays, 10) : undefined,
-      })
-      Alert.alert('Success', `Action completed: ${action.replace('_', ' ')}`)
-      closeActionModal()
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to perform action')
+        selectedReport.deal_id,
+        selectedReport.uploader_user_id,
+        reasonInput || undefined,
+        action === 'suspend_user' ? parseInt(suspensionDays, 10) : undefined
+      );
+
+      if (result.success) {
+        Alert.alert('Success', `Action completed: ${action.replace('_', ' ')}`);
+        closeActionModal();
+        await loadReports({ showSpinner: false });
+        await loadCounts();
+      } else {
+        Alert.alert('Error', result.error || 'Failed to perform action');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to perform action');
+    } finally {
+      setActionLoading(null);
     }
-  }
+  };
 
   const handleWorkflowStatusChange = async (nextStatus: 'pending' | 'review') => {
-    if (!selectedReport) return
+    if (!selectedReport) return;
     const message =
       nextStatus === 'review'
         ? 'Report marked as in review.'
-        : 'Report moved back to pending.'
+        : 'Report moved back to pending.';
+
+    const loadingKey = `status-${nextStatus}`;
+    setActionLoading(loadingKey);
 
     try {
-      await updateReportStatus.mutateAsync({
-        reportId: selectedReport.report_id,
-        status: nextStatus,
-      })
-      Alert.alert('Success', message)
-      closeActionModal()
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update report status')
+      const result = await adminService.updateReportStatus(selectedReport.report_id, nextStatus);
+      if (result.success) {
+        Alert.alert('Success', message);
+        closeActionModal();
+        await loadReports({ showSpinner: false });
+        await loadCounts();
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update report status');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update report status');
+    } finally {
+      setActionLoading(null);
     }
-  }
-
-  const isBusy =
-    dismissReport.isPending ||
-    resolveReportWithAction.isPending ||
-    updateReportStatus.isPending
+  };
 
   const renderReport = ({ item }: { item: Report }) => {
-    const badgeColor = STATUS_COLORS[item.status]
+    const badgeColor = STATUS_COLORS[item.status];
     const actionLabel = item.resolution_action
       ? item.resolution_action.replace(/_/g, ' ')
-      : null
+      : null;
 
     return (
       <TouchableOpacity style={styles.reportCard} onPress={() => handleReportPress(item)}>
@@ -210,20 +266,20 @@ const AdminReportsScreen: React.FC = () => {
           <Text style={styles.viewButtonText}>Review Report</Text>
         </TouchableOpacity>
       </TouchableOpacity>
-    )
-  }
+    );
+  };
 
   const renderListHeader = () => {
-    const activeLabel = statusFilter === 'all' ? 'All' : STATUS_LABELS[statusFilter]
-    const activeCount = getCountForFilter(statusFilter)
+    const activeLabel = statusFilter === 'all' ? 'All' : STATUS_LABELS[statusFilter];
+    const activeCount = getCountForFilter(statusFilter);
 
     return (
       <View style={styles.listHeader}>
         <Text style={styles.sectionTitle}>Status Filters</Text>
         <View style={styles.filterContainer}>
           {statusFilters.map((option) => {
-            const isActive = statusFilter === option.value
-            const count = counts[option.countKey]
+            const isActive = statusFilter === option.value;
+            const count = reportCounts[option.countKey];
 
             return (
               <TouchableOpacity
@@ -240,15 +296,17 @@ const AdminReportsScreen: React.FC = () => {
                   </Text>
                 </View>
               </TouchableOpacity>
-            )
+            );
           })}
         </View>
         <Text style={styles.filterHelperText}>
           Showing {activeCount} {activeLabel.toLowerCase()} {activeCount === 1 ? 'report' : 'reports'}
         </Text>
       </View>
-    )
-  }
+    );
+  };
+
+  const isBusy = Boolean(actionLoading);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -262,7 +320,7 @@ const AdminReportsScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {isLoading ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFA05C" />
         </View>
@@ -431,7 +489,7 @@ const AdminReportsScreen: React.FC = () => {
                       onPress={() => handleWorkflowStatusChange('review')}
                       disabled={isBusy}
                     >
-                      {updateReportStatus.isPending ? (
+                      {actionLoading === 'status-review' ? (
                         <ActivityIndicator color="#0D47A1" />
                       ) : (
                         <Text style={styles.workflowButtonText}>Mark In Review</Text>
@@ -448,7 +506,7 @@ const AdminReportsScreen: React.FC = () => {
                       onPress={() => handleWorkflowStatusChange('pending')}
                       disabled={isBusy}
                     >
-                      {updateReportStatus.isPending ? (
+                      {actionLoading === 'status-pending' ? (
                         <ActivityIndicator color="#37474F" />
                       ) : (
                         <Text style={styles.workflowButtonSecondaryText}>Move to Pending</Text>
@@ -467,7 +525,7 @@ const AdminReportsScreen: React.FC = () => {
                   onPress={handleDismiss}
                   disabled={isBusy}
                 >
-                  {dismissReport.isPending ? (
+                  {actionLoading === 'dismiss' ? (
                     <ActivityIndicator color="#FFF" />
                   ) : (
                     <>
@@ -482,7 +540,7 @@ const AdminReportsScreen: React.FC = () => {
                   onPress={() => handleAction('delete_deal')}
                   disabled={isBusy}
                 >
-                  {resolveReportWithAction.isPending ? (
+                  {actionLoading === 'delete_deal' ? (
                     <ActivityIndicator color="#FFF" />
                   ) : (
                     <>
@@ -497,7 +555,7 @@ const AdminReportsScreen: React.FC = () => {
                   onPress={() => handleAction('warn_user')}
                   disabled={isBusy}
                 >
-                  {resolveReportWithAction.isPending ? (
+                  {actionLoading === 'warn_user' ? (
                     <ActivityIndicator color="#FFF" />
                   ) : (
                     <>
@@ -521,7 +579,7 @@ const AdminReportsScreen: React.FC = () => {
                     onPress={() => handleAction('suspend_user')}
                     disabled={isBusy}
                   >
-                    {resolveReportWithAction.isPending ? (
+                    {actionLoading === 'suspend_user' ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
                       <>
@@ -547,7 +605,7 @@ const AdminReportsScreen: React.FC = () => {
                   onPress={() => handleAction('ban_user')}
                   disabled={isBusy}
                 >
-                  {resolveReportWithAction.isPending ? (
+                  {actionLoading === 'ban_user' ? (
                     <ActivityIndicator color="#FFF" />
                   ) : (
                     <>
@@ -562,8 +620,8 @@ const AdminReportsScreen: React.FC = () => {
         </View>
       </Modal>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -995,6 +1053,7 @@ const styles = StyleSheet.create({
   modalScrollContent: {
     paddingBottom: 32,
   },
-})
+});
 
-export default AdminReportsScreen
+export default AdminReportsScreen;
+
