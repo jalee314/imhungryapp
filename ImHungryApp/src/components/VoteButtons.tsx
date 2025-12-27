@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
+import * as tokens from '#/ui/tokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -39,8 +40,8 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
       >
         <ArrowBigUp
           size={ARROW_SIZE}
-          color={isUpvoted ? "#FF8C4C" : "#000000"}
-          fill={isUpvoted ? "#FF8C4C" : "transparent"}
+          color={isUpvoted ? tokens.color.primary_600 : tokens.color.black}
+          fill={isUpvoted ? tokens.color.primary_600 : "transparent"}
         />
         <Text style={styles.voteCount}>{votes}</Text>
       </TouchableOpacity>
@@ -55,7 +56,7 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
       >
         <ArrowBigDown
           size={ARROW_SIZE}
-          color={isDownvoted ? "#9796FF" : "#000000"}
+          color={isDownvoted ? "#9796FF" : tokens.color.black}
           fill={isDownvoted ? "#9796FF" : "transparent"}
         />
       </TouchableOpacity>
@@ -67,9 +68,9 @@ const styles = StyleSheet.create({
   voteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: tokens.color.gray_300,
     borderRadius: 30,
     height: PILL_HEIGHT,
     width: PILL_WIDTH,
@@ -94,13 +95,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: scale(10),
     fontWeight: '400',
-    color: '#000000',
+    color: tokens.color.black,
     marginLeft: scale(4),
   },
   voteSeparator: {
     width: 1,
     height: scale(12),
-    backgroundColor: '#DEDEDE',
+    backgroundColor: tokens.color.gray_200,
   },
 });
 

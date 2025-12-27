@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import * as tokens from '#/ui/tokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 const cardWidth = 107; // Fixed width to match Figma design
@@ -53,11 +54,11 @@ const styles = StyleSheet.create({
   container: {
     width: cardWidth,
     height: 124, // Fixed height to match Figma design
-    backgroundColor: '#ffffff',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
     marginBottom: 16,
     borderWidth: 0.5,
-    borderColor: '#757575',
+    borderColor: tokens.color.gray_500,
     padding: 4,
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#000',
+    color: tokens.color.black,
     fontFamily: 'Inter',
     textAlign: 'center',
     marginBottom: 0,
@@ -88,14 +89,14 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 10,
-    color: '#000',
+    color: tokens.color.black,
     fontFamily: 'Inter',
     textAlign: 'center',
     lineHeight: 12,
   },
   distance: {
     fontSize: 11,
-    color: '#999',
+    color: tokens.color.gray_400,
     fontFamily: 'Inter',
     textAlign: 'center', // Add this to center the distance
     letterSpacing: 0,
@@ -103,7 +104,7 @@ const styles = StyleSheet.create({
   },
   dealCount: {
     fontSize: 11,
-    color: '#FFA05C',
+    color: tokens.color.primary_500,
     fontFamily: 'Inter',
     fontWeight: '500',
     textAlign: 'center', // Add this to center the deal count

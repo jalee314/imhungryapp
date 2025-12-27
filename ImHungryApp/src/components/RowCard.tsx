@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as tokens from '#/ui/tokens';
 
 export interface RowCardData {
   id: string;
@@ -61,7 +62,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             </View>
             
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
+              <Ionicons name="chevron-forward" size={16} color={tokens.color.gray_500} />
             </View>
           </View>
         );
@@ -88,7 +89,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             </View>
             
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#000000" />
+              <Ionicons name="chevron-forward" size={16} color={tokens.color.black} />
             </View>
           </View>
         );
@@ -110,7 +111,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             </View>
             
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#000000" />
+              <Ionicons name="chevron-forward" size={16} color={tokens.color.black} />
             </View>
           </View>
         );
@@ -133,7 +134,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
 
 const styles = StyleSheet.create({
   rowCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: tokens.color.white,
     borderRadius: 12,
     padding: 8,
     marginHorizontal: 12, // Further reduced to better match Figma design
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   titleText: {
-    color: '#000000',
+    color: tokens.color.black,
     letterSpacing: -0.35,
     lineHeight: 17,
   },
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   subtitleText: {
-    color: '#666666',
+    color: tokens.color.gray_600,
   },
   exploreSubtitle: {
     fontFamily: 'Inter',
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: tokens.color.gray_100,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 6,
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: '400',
-    color: '#888888',
+    color: tokens.color.text_tertiary,
   },
 });
 

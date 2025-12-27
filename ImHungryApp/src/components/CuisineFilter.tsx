@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import * as tokens from '#/ui/tokens';
 
 export interface CuisineFilterProps {
   filters: string[];
@@ -104,9 +105,9 @@ const styles = StyleSheet.create({
     paddingLeft: 18.5,
   },
   filterCell: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: tokens.color.gray_300,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -117,23 +118,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   selectedFilterCell: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
+    backgroundColor: tokens.color.primary_600,
+    borderColor: tokens.color.primary_600,
   },
   filterCellText: {
     fontFamily: 'Inter',
-    fontSize: 12,
+    fontSize: tokens.fontSize.xs,
     fontWeight: '400',
-    color: '#000000',
+    color: tokens.color.black,
     textAlign: 'center',
   },
   selectedFilterCellText: {
-    color: '#FFFFFF',
+    color: tokens.color.white,
   },
   selectedIndicator: {
     marginLeft: 4,
     fontSize: 10,
-    color: '#FFFFFF',
+    color: tokens.color.white,
     fontWeight: 'bold',
   },
 });

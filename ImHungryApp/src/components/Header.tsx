@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as tokens from '#/ui/tokens';
 
 interface HeaderProps {
   onLocationPress?: () => void;
@@ -24,11 +25,11 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, 
         </View>
         <TouchableOpacity onPress={onLocationPress} style={styles.locationContainer}>
           <View style={styles.locationInfo}>
-            <Ionicons name="location-sharp" size={16} color="#1D1B20" />
+            <Ionicons name="location-sharp" size={16} color={tokens.color.text_dark} />
             <Text style={styles.locationText} numberOfLines={1}>
               {currentLocation || 'Location'}
             </Text>
-            <Ionicons name="chevron-down" size={16} color="#666" />
+            <Ionicons name="chevron-down" size={16} color={tokens.color.gray_600} />
           </View>
         </TouchableOpacity>
       </View>
@@ -48,9 +49,9 @@ const styles = StyleSheet.create({
   header: {
     width: '100%',
     height: 100,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
+    borderBottomColor: tokens.color.gray_200,
     justifyContent: 'flex-end',
     paddingBottom: 4,
   },
@@ -79,8 +80,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   locationText: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_800,
     fontWeight: '500',
     maxWidth: 120,
   },
