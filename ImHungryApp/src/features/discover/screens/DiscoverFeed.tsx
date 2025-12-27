@@ -1,19 +1,27 @@
+/**
+ * DiscoverFeed.tsx
+ *
+ * Restaurant discovery screen using FlashList for performant scrolling.
+ * Follows Bluesky's performance patterns.
+ *
+ * Key features:
+ * - FlashList for better scroll performance
+ * - React Query for data management
+ * - Search filtering
+ * - Distance-based sorting
+ */
+
 import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  FlatList,
   StatusBar,
-  Image,
-  SafeAreaView,
-  ActivityIndicator,
-  RefreshControl,
   TextInput,
-  Dimensions, // Add this import
+  Dimensions,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard, { RowCardData } from '#/components/RowCard';
@@ -21,7 +29,7 @@ import RowCardSkeleton from '#/components/RowCardSkeleton';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useRestaurantsQuery } from '#/state/queries';
 import { DiscoverRestaurant } from '#/services/discoverService';
-import { useLocation } from '#/context/LocationContext';
+import { useLocation } from '#/features/discover';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -182,14 +190,13 @@ const DiscoverFeed: React.FC = () => {
       </View>
 
       <View style={styles.content}>
-        <FlatList
+        <FlashList
           data={filteredRestaurants}
           renderItem={renderRestaurantCard}
           keyExtractor={(item) => item.restaurant_id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyState}
-          numColumns={1}
         />
       </View>
     </View>

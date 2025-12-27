@@ -9,6 +9,7 @@
  * - Realtime subscription that invalidates query on changes
  * - Optimistic updates for votes/favorites
  * - Pull-to-refresh support
+ * - Image preloading for smooth scrolling
  *
  * @example
  * function FeedScreen() {
@@ -27,8 +28,9 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '../../../../lib/supabase'
-import { fetchRankedDeals, transformDealForUI, addVotesToDeals } from '../../../services/dealService'
+ import { fetchRankedDeals, transformDealForUI, addVotesToDeals } from '../../../services/dealService'
 import { calculateVoteCounts } from '../../../services/voteService'
+import { preloadFeedImages } from '../../../lib/imagePreloader'
 import type { Deal } from '../../../types/deals'
 import { dealsKeys } from './useDealsQuery'
 
@@ -120,6 +122,24 @@ export function useFeedQuery(params?: UseFeedQueryParams): UseFeedQueryResult {
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: params?.enabled ?? true,
   })
+
+  // Preload images when deals are loaded/updated
+  useEffect(() => {
+    if (deals.length > 0) {
+      // Convert deals to preloadable format and preload in background
+      const preloadableItems = deals.map((deal) => ({
+        imageUrl: typeof deal.image === 'object' ? deal.image?.uri : undefined,
+        imageVariants: deal.imageVariants,
+        userProfilePhoto: deal.userProfilePhoto,
+      }))
+      
+      preloadFeedImages(preloadableItems, {
+        batchSize: 5,
+        batchDelay: 50,
+        preferredVariant: 'medium',
+      })
+    }
+  }, [deals])
 
   // Setup realtime subscriptions
   useEffect(() => {

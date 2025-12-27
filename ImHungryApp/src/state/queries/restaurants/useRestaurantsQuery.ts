@@ -3,6 +3,7 @@
  *
  * React Query hooks for fetching restaurant data.
  * Wraps discoverService for the discover feed.
+ * Includes image preloading for smooth scrolling.
  *
  * @example
  * function DiscoverScreen() {
@@ -11,12 +12,14 @@
  * }
  */
 
+import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getRestaurantsWithDeals,
   type DiscoverResult,
   type DiscoverRestaurant,
 } from '#/services/discoverService'
+import { preloadFeedImages } from '#/lib/imagePreloader'
 
 // ==========================================
 // Query Keys
@@ -77,7 +80,7 @@ export function useRestaurantsQuery(params?: RestaurantsQueryParams) {
     ? restaurantsKeys.discoverAt(params.coordinates)
     : restaurantsKeys.discover()
 
-  return useQuery({
+  const query = useQuery({
     queryKey,
     queryFn: () => getRestaurantsWithDeals(params?.coordinates),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -87,6 +90,19 @@ export function useRestaurantsQuery(params?: RestaurantsQueryParams) {
       error: data.error,
     }),
   })
+
+  // Preload images when restaurants are loaded
+  useEffect(() => {
+    const restaurants = query.data?.restaurants
+    if (restaurants && restaurants.length > 0) {
+      const preloadableItems = restaurants.map((r) => ({
+        imageUrl: r.logo_image,
+      }))
+      preloadFeedImages(preloadableItems, { batchSize: 5, batchDelay: 50 })
+    }
+  }, [query.data?.restaurants])
+
+  return query
 }
 
 /**

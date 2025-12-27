@@ -1,8 +1,9 @@
 /**
  * FavoritesPage.tsx
  *
- * Favorites screen using React Query for data management.
+ * Favorites screen using React Query and FlashList for performant scrolling.
  * Shows favorited deals and restaurants with tabs.
+ * Follows Bluesky's performance patterns.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -10,10 +11,10 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard from '#/components/RowCard';
@@ -21,7 +22,7 @@ import RowCardSkeleton from '#/components/RowCardSkeleton';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useFavoritesPageQuery } from '#/state/queries';
 import { useFavorites } from '../hooks/useFavorites';
-import { FavoriteDeal, FavoriteRestaurant } from '#/services/favoritesService';
+import type { FavoriteDeal, FavoriteRestaurant } from '#/services/favoritesService';
 
 const FavoritesPage: React.FC = () => {
   const navigation = useNavigation();
@@ -160,9 +161,8 @@ const FavoritesPage: React.FC = () => {
     }
   }, [unfavoritingIds, markAsUnfavorited, removeRestaurantOptimistic, removeDealOptimistic, unfavoriteRestaurant, unfavoriteDeal]);
 
-  const renderRestaurantCard = (restaurant: FavoriteRestaurant) => (
+  const renderRestaurantCard = ({ item: restaurant }: { item: FavoriteRestaurant }) => (
     <RowCard
-      key={restaurant.id}
       data={{
         id: restaurant.id,
         title: restaurant.name,
@@ -174,9 +174,8 @@ const FavoritesPage: React.FC = () => {
     />
   );
 
-  const renderDealCard = (deal: FavoriteDeal) => (
+  const renderDealCard = ({ item: deal }: { item: FavoriteDeal }) => (
     <RowCard
-      key={deal.id}
       data={{
         id: deal.id,
         title: deal.title,
@@ -258,28 +257,34 @@ const FavoritesPage: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-        }
-      >
+      {/* Content - FlashList for performant scrolling */}
+      <View style={styles.content}>
         {activeTab === 'restaurants' ? (
-          restaurants.length > 0 ? (
-            restaurants.map(renderRestaurantCard)
-          ) : (
-            renderEmptyState()
-          )
+          <FlashList
+            data={restaurants}
+            renderItem={renderRestaurantCard}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.contentContainer}
+            ListEmptyComponent={renderEmptyState}
+            refreshControl={
+              <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+            }
+          />
         ) : (
-          deals.length > 0 ? (
-            deals.map(renderDealCard)
-          ) : (
-            renderEmptyState()
-          )
+          <FlashList
+            data={deals}
+            renderItem={renderDealCard}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.contentContainer}
+            ListEmptyComponent={renderEmptyState}
+            refreshControl={
+              <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+            }
+          />
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 };

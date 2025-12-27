@@ -9,6 +9,7 @@
  * - Realtime subscription for instant updates
  * - Optimistic unfavorite with rollback
  * - Pull-to-refresh support
+ * - Image preloading for smooth scrolling
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react'
@@ -24,6 +25,7 @@ import {
   FavoriteRestaurant,
 } from '../../../services/favoritesService'
 import { toggleFavorite } from '../../../services/voteService'
+import { preloadFeedImages } from '../../../lib/imagePreloader'
 
 // ==========================================
 // Query Keys
@@ -99,6 +101,26 @@ export function useFavoritesPageQuery(): UseFavoritesPageQueryResult {
     queryFn: fetchFavoriteRestaurants,
     staleTime: 2 * 60 * 1000, // 2 minutes
   })
+
+  // Preload images when favorites are loaded
+  useEffect(() => {
+    if (deals.length > 0) {
+      const preloadableItems = deals.map((deal) => ({
+        imageUrl: deal.imageUrl,
+        userProfilePhoto: deal.userProfilePhoto,
+      }))
+      preloadFeedImages(preloadableItems, { batchSize: 5, batchDelay: 50 })
+    }
+  }, [deals])
+
+  useEffect(() => {
+    if (restaurants.length > 0) {
+      const preloadableItems = restaurants.map((r) => ({
+        imageUrl: r.imageUrl,
+      }))
+      preloadFeedImages(preloadableItems, { batchSize: 5, batchDelay: 50 })
+    }
+  }, [restaurants])
 
   // ==========================================
   // Realtime Subscription

@@ -687,22 +687,25 @@ npm install @shopify/flash-list
 ```
 
 #### 5.2 FlashList Migration Points
-- `src/view/screens/Home.tsx` - Main feed
-- `src/view/screens/Discover.tsx` - Discover feed
-- `src/view/screens/Favorites.tsx` - Favorites list
-- `src/screens/Profile/ProfileScreen.tsx` - User posts list
+- `src/features/deals/screens/Feed.tsx` - Main feed (horizontal list)
+- `src/features/discover/screens/DiscoverFeed.tsx` - Discover feed
+- `src/features/profile/screens/FavoritesPage.tsx` - Favorites list
+- `src/features/deals/screens/CommunityUploadedScreen.tsx` - Featured deals (2-column grid)
 
 #### 5.3 Image Optimization
-Leverage existing `imageCacheService.ts`:
-- Integrate with `src/components/Image.tsx`
-- Add preloading for feed images
-- Implement progressive loading
+Created `src/lib/imagePreloader.ts`:
+- Batch preloading for feed images
+- Priority-based loading (visible items first)
+- Memory-efficient with preload tracking
+- Integrated into React Query hooks
 
 ### Phase 5 Deliverables
-- [ ] FlashList installed
-- [ ] 4+ lists converted to FlashList
-- [ ] Image caching improved
-- [ ] Measurable scroll performance improvement
+- [x] FlashList installed (@shopify/flash-list v2.2.0)
+- [x] 4 lists converted to FlashList (Feed horizontal, DiscoverFeed, FavoritesPage, CommunityUploaded)
+- [x] Image preloading utility created (`src/lib/imagePreloader.ts`)
+- [x] Image preloading integrated into useFeedQuery, useFavoritesPageQuery, useRestaurantsQuery
+
+> **Note on FlashList v2:** The `estimatedItemSize` prop has been removed in v2.2.0. FlashList now auto-calculates item sizes. For horizontal lists, a wrapper View with explicit height is still required.
 
 ---
 

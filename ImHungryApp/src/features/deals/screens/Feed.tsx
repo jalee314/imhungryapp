@@ -2,9 +2,11 @@
  * Feed.tsx
  *
  * Main deals feed screen using React Query (Bluesky pattern).
+ * Uses FlashList for performant horizontal scrolling.
  * 
  * Key changes from previous implementation:
  * - Uses useFeedQuery hook for data fetching + realtime
+ * - FlashList for better scroll performance
  * - No more manual useState for deals array
  * - No more dealCacheService subscription
  * - Optimistic updates via queryClient.setQueryData
@@ -18,10 +20,21 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  FlatList,
   StatusBar,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
+
+// Calculate horizontal card dimensions to match DealCard.tsx
+const { width: screenWidth } = Dimensions.get('window');
+const BASE_WIDTH = 393;
+const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
+const HORIZONTAL_CARD_PADDING = scale(10);
+const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - scale(20)) / 1.32;
+const HORIZONTAL_IMAGE_WIDTH = HORIZONTAL_CARD_WIDTH - scale(16);
+const HORIZONTAL_IMAGE_HEIGHT = HORIZONTAL_IMAGE_WIDTH * 0.64;
+const HORIZONTAL_CARD_HEIGHT = HORIZONTAL_IMAGE_HEIGHT + scale(113);
+import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import DealCard, { Deal } from '#/components/DealCard';
@@ -33,7 +46,7 @@ import { logClick } from '#/services/interactionService';
 import { useFeedQuery } from '#/state/queries';
 import { useDealUpdate } from '#/features/deals/hooks/useDealUpdate';
 import { useDataCache } from '#/hooks/useDataCache';
-import { useLocation } from '#/context/LocationContext';
+import { useLocation } from '#/features/discover';
 import { useFavorites } from '#/features/profile/hooks/useFavorites';
 
 const Feed: React.FC = () => {
@@ -220,15 +233,17 @@ const Feed: React.FC = () => {
         <SkeletonLoader width={140} height={20} borderRadius={4} />
         <SkeletonLoader width={30} height={30} borderRadius={15} />
       </View>
-      <FlatList
-        data={[1, 2, 3]}
-        renderItem={() => <DealCardSkeleton variant="horizontal" />}
-        keyExtractor={(item) => item.toString()}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.communityList}
-        ItemSeparatorComponent={renderItemSeparator}
-      />
+      <View style={styles.skeletonListWrapper}>
+        <FlashList
+          data={[1, 2, 3]}
+          renderItem={() => <DealCardSkeleton variant="horizontal" />}
+          keyExtractor={(item) => item.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.communityList}
+          ItemSeparatorComponent={renderItemSeparator}
+        />
+      </View>
       <View style={styles.skeletonSeparator} />
 
       <View style={styles.sectionHeader}>
@@ -333,15 +348,17 @@ const Feed: React.FC = () => {
                 <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={communityDeals}
-              renderItem={renderCommunityDeal}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.communityList}
-              ItemSeparatorComponent={renderItemSeparator}
-            />
+            <View style={styles.communityListWrapper}>
+              <FlashList
+                data={communityDeals}
+                renderItem={renderCommunityDeal}
+                keyExtractor={(item) => item.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.communityList}
+                ItemSeparatorComponent={renderItemSeparator}
+              />
+            </View>
           </>
         )}
 
@@ -431,6 +448,12 @@ const styles = StyleSheet.create({
   communityList: {
     paddingLeft: 10.5,
     paddingRight: 10,
+  },
+  communityListWrapper: {
+    height: HORIZONTAL_CARD_HEIGHT, // Match actual card height for FlashList
+  },
+  skeletonListWrapper: {
+    height: HORIZONTAL_CARD_HEIGHT, // Match the community list height
   },
   sectionSeparator: {
     height: 0.5,

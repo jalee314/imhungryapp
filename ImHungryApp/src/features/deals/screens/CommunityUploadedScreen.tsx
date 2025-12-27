@@ -1,8 +1,9 @@
 /**
  * CommunityUploadedScreen.tsx
  *
- * Featured deals screen using React Query for data management.
- * Shows all community uploaded deals in a grid layout.
+ * Featured deals screen using React Query and FlashList for performant scrolling.
+ * Shows all community uploaded deals in a 2-column grid layout.
+ * Follows Bluesky's performance patterns.
  */
 
 import React, { useCallback } from 'react';
@@ -10,11 +11,11 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
   RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DealCard, { Deal } from '#/components/DealCard';
@@ -147,11 +148,24 @@ const CommunityUploadedScreen: React.FC = () => {
     }
   }, [deals, navigation]);
 
+  const renderDealCard = useCallback(({ item: deal, index }: { item: Deal; index: number }) => (
+    <View style={[styles.gridItem, index % 2 === 0 ? styles.leftCard : styles.rightCard]}>
+      <DealCard
+        deal={deal}
+        variant="vertical"
+        onUpvote={handleUpvote}
+        onDownvote={handleDownvote}
+        onFavorite={handleFavorite}
+        onPress={handleDealPress}
+      />
+    </View>
+  ), [handleUpvote, handleDownvote, handleFavorite, handleDealPress]);
+
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
       <View style={styles.dealsGrid}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((item, index) => (
-          <View key={item} style={[index % 2 === 0 ? styles.leftCard : styles.rightCard]}>
+          <View key={item} style={[styles.gridItem, index % 2 === 0 ? styles.leftCard : styles.rightCard]}>
             <DealCardSkeleton variant="vertical" />
           </View>
         ))}
@@ -192,42 +206,31 @@ const CommunityUploadedScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#FF8C4C']}
-            tintColor="#FF8C4C"
-          />
-        }
-      >
-        {loading && deals.length === 0 ? (
-          renderLoadingState()
-        ) : error ? (
-          renderErrorState()
-        ) : deals.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <View style={styles.dealsGrid}>
-            {deals.map((deal, index) => (
-              <View key={deal.id} style={[index % 2 === 0 ? styles.leftCard : styles.rightCard]}>
-                <DealCard
-                  deal={deal}
-                  variant="vertical"
-                  onUpvote={handleUpvote}
-                  onDownvote={handleDownvote}
-                  onFavorite={handleFavorite}
-                  onPress={handleDealPress}
-                />
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+      {/* Main Content - FlashList for performant scrolling */}
+      {loading && deals.length === 0 ? (
+        renderLoadingState()
+      ) : error ? (
+        renderErrorState()
+      ) : deals.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <FlashList
+          data={deals}
+          renderItem={renderDealCard}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#FF8C4C']}
+              tintColor="#FF8C4C"
+            />
+          }
+        />
+      )}
     </View>
   );
 };
@@ -270,14 +273,14 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
-  content: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   contentContainer: {
     paddingHorizontal: 10,
     paddingTop: 8,
-    paddingBottom: 0,
+    paddingBottom: 100,
+  },
+  gridItem: {
+    flex: 1,
+    maxWidth: '50%',
   },
   dealsGrid: {
     flexDirection: 'row',
@@ -295,6 +298,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
+    paddingHorizontal: 10,
+    paddingTop: 8,
   },
   errorContainer: {
     flex: 1,
