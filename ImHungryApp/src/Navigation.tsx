@@ -11,49 +11,57 @@ import { createNativeStackNavigator, NativeStackNavigatorProps } from '@react-na
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import * as Linking from 'expo-linking';
 
-// Screen imports - Onboarding
-import LandingScreen from './screens/onboarding/LandingScreen';
-import SignUp from './screens/onboarding/SignUp';
-import LogIn from './screens/onboarding/LogIn';
-import ForgotPassword from './screens/onboarding/ForgotPassword';
-import ResetPassword from './screens/onboarding/ResetPassword';
-import UsernameScreen from './screens/onboarding/UsernameScreen';
-import ProfilePhoto from './screens/onboarding/ProfilePhoto';
-import LocationPermissions from './screens/onboarding/LocationPermissions';
-import InstantNotifications from './screens/onboarding/InstantNotifications';
-import CuisinePreferences from './screens/onboarding/CuisinePreferences';
+// Screen imports - Auth/Onboarding (from features/auth)
+import {
+  LandingScreen,
+  SignUp,
+  LogIn,
+  ForgotPassword,
+  ResetPassword,
+  UsernameScreen,
+  ProfilePhoto,
+  LocationPermissions,
+  InstantNotifications,
+  CuisinePreferences,
+  AuthGuard,
+} from '#/features/auth';
 
-// Screen imports - Main App
-import FeedTabNavigator from './components/FeedTabNavigator';
-import FavoritesPage from './screens/favorites/FavoritesPage';
-import ProfilePage from './screens/profile/ProfilePage';
+// Screen imports - Deals (from features/deals)
+import {
+  DealDetailScreen,
+  CommunityUploadedScreen,
+  ReportContentScreen,
+  BlockUserScreen,
+  FeedTabNavigator,
+} from '#/features/deals';
 
-// Screen imports - Profile/Settings
-import ProfileEdit from './screens/profile/ProfileEdit';
-import BlockedUsersPage from './screens/profile/BlockedUsersPage';
-import ContactUsPage from './screens/profile/ContactUsPage';
-import FAQPage from './screens/profile/FAQPage';
-import TermsConditionsPage from './screens/profile/TermsConditionsPage';
-import PrivacyPolicyPage from './screens/profile/PrivacyPolicyPage';
-import CuisineEdit from './screens/profile/CuisineEdit';
+// Screen imports - Discover (from features/discover)
+import { RestaurantDetailScreen } from '#/features/discover';
 
-// Screen imports - Deal/Restaurant Detail
-import RestaurantDetailScreen from './screens/discover_feed/RestaurantDetailScreen';
-import CommunityUploadedScreen from './screens/deal_feed/CommunityUploadedScreen';
-import DealDetailScreen from './screens/deal_feed/DealDetailScreen';
-import ReportContentScreen from './screens/deal_feed/ReportContentScreen';
-import BlockUserScreen from './screens/deal_feed/BlockUserScreen';
+// Screen imports - Profile (from features/profile)
+import {
+  ProfilePage,
+  ProfileEdit,
+  BlockedUsersPage,
+  ContactUsPage,
+  FAQPage,
+  TermsConditionsPage,
+  PrivacyPolicyPage,
+  CuisineEdit,
+  FavoritesPage,
+} from '#/features/profile';
 
-// Screen imports - Admin
-import AdminLoginScreen from './screens/admin/AdminLoginScreen';
-import AdminDashboardScreen from './screens/admin/AdminDashboardScreen';
-import AdminReportsScreen from './screens/admin/AdminReportsScreen';
-import AdminDealsScreen from './screens/admin/AdminDealsScreen';
-import AdminUsersScreen from './screens/admin/AdminUsersScreen';
-import AdminMassUploadScreen from './screens/admin/AdminMassUploadScreen';
+// Screen imports - Admin (from features/admin)
+import {
+  AdminLoginScreen,
+  AdminDashboardScreen,
+  AdminReportsScreen,
+  AdminDealsScreen,
+  AdminUsersScreen,
+  AdminMassUploadScreen,
+} from '#/features/admin';
 
 // Components
-import AuthGuard from './components/AuthGuard';
 import { TabBar } from './view/shell/TabBar';
 
 // ==========================================

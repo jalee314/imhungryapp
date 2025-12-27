@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { useAuth } from '#/features/auth';
+import { useAuth } from '../hooks/useAuth';
 
 interface AuthGuardProps {
   children: ReactNode;

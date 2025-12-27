@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'rea
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
-import { useAuth } from '../hooks/useAuth';
-import DealCreationScreen from '../screens/contribution/DealCreationScreen';
+import { useAuth } from '#/features/auth';
+import { DealCreationScreen } from '#/features/contribution';
 
 const { width: screenWidth } = Dimensions.get('window');
 

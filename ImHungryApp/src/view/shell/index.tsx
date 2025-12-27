@@ -14,14 +14,14 @@ import { View, ActivityIndicator } from 'react-native';
 import { atoms as a, useTheme } from '#/ui';
 import * as tokens from '#/ui/tokens';
 import { QueryProvider } from '#/state/queries';
-import { useAuth } from '../../hooks/useAuth';
-import { useAdmin } from '../../hooks/useAdmin';
+import { useAuth } from '#/features/auth';
+import { useAdmin } from '#/features/admin';
 import {
   RoutesContainer,
   OnboardingNavigator,
   AppNavigator,
   AdminNavigator,
-} from '../../Navigation';
+} from '#/Navigation';
 
 /**
  * Loading screen displayed during auth state resolution

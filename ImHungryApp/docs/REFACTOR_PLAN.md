@@ -665,10 +665,12 @@ src/features/admin/
 ```
 
 ### Phase 4 Deliverables
-- [ ] `src/screens/` reorganized with grouped folders
-- [ ] `src/view/com/` created for shared components
-- [ ] Screen imports updated in Navigation.tsx
-- [ ] Clean separation between screens and view components
+- [x] `src/features/` created with feature modules (auth, deals, discover, profile, admin, contribution)
+- [x] `src/view/com/` created for shared components (cards/)
+- [x] Screen imports updated in Navigation.tsx to use feature paths
+- [x] Clean separation between screens and view components
+- [x] Feature index files created for clean exports
+- [x] Hooks and stores organized within feature modules
 
 ---
 

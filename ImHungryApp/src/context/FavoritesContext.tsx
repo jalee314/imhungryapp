@@ -1,7 +1,7 @@
 // Deprecated: FavoritesContext has been replaced by Zustand store.
 // This shim ensures any lingering imports won't break during the refactor.
 import React from 'react';
-export { useFavorites } from '../hooks/useFavorites';
+export { useFavorites } from '#/features/profile';
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (typeof __DEV__ !== 'undefined' && __DEV__) {

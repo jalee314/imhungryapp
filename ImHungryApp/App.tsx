@@ -22,11 +22,13 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 
-// Store initialization hooks
-import { useInitializeAuth } from './src/stores/AuthStore';
+// Store initialization hooks (from features)
+import { useInitializeAuth } from '#/features/auth';
+import { useInitializeAdmin } from '#/features/admin';
+import { useInitializeLocation } from '#/features/discover';
+
+// Shared stores (not feature-specific)
 import { useInitializeDataCache } from './src/stores/DataCacheStore';
-import { useInitializeLocation } from './src/stores/LocationStore';
-import { useInitializeAdmin } from './src/stores/AdminStore';
 
 // UI System
 import { ThemeProvider } from './src/ui';
