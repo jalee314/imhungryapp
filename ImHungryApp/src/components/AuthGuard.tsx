@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuth } from '#/features/auth';
+import { tokens } from '#/ui';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -10,8 +11,8 @@ interface AuthGuardProps {
 export const AuthGuard: React.FC<AuthGuardProps> = ({ 
   children, 
   fallback = (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
-      <ActivityIndicator size="large" color="#FFA05C" />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: tokens.color.primary_100 }}>
+      <ActivityIndicator size="large" color={tokens.color.primary_500} />
     </View>
   )
 }) => {

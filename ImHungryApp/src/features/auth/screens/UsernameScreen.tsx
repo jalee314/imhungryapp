@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { isUsernameAvailable } from '#/services/onboardingService';
+import { atoms as a, tokens } from '#/ui';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -103,7 +104,7 @@ export default function UsernameScreen() {
   };
 
   return (
-    <View style = {{flex:1, backgroundColor: 'white'}}>
+    <View style={[a.flex_1, { backgroundColor: tokens.color.white }]}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
@@ -122,19 +123,19 @@ export default function UsernameScreen() {
                     value={displayUsername}
                     onChangeText={handleUsernameChange}
                     placeholder="@ImHungri"
-                    placeholderTextColor="#636363"
+                    placeholderTextColor={tokens.color.gray_600}
 
                     underlineColor="transparent"
                     activeUnderlineColor="transparent"
                     style={styles.usernameInput}
 
-                    contentStyle={{ color: '#333' }} 
+                    contentStyle={{ color: tokens.color.gray_800 }} 
                     theme={{
                         colors: {
-                        onSurface: '#333',          
-                        onSurfaceVariant: '#636363',
-                        background: 'white',
-                        surface: 'white',
+                        onSurface: tokens.color.gray_800,          
+                        onSurfaceVariant: tokens.color.gray_600,
+                        background: tokens.color.white,
+                        surface: tokens.color.white,
                         },
                     }}
 
@@ -162,32 +163,32 @@ export default function UsernameScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 ,backgroundColor: 'white'},
+  container: { flex: 1, backgroundColor: tokens.color.white },
   flex1: { flex: 1 },
-  pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
+  pagePad: { flex: 1, paddingHorizontal: tokens.space._2xl, paddingVertical: tokens.space.xl },
   
   headerContainer: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: 40,
+    marginBottom: tokens.space._4xl,
     height: 44
   },
   
   mainContainer: { flex: 1, alignItems: 'flex-start', width: '100%' },
 
-  backButton: { paddingVertical: 8, paddingHorizontal: 4, width: 44 },
+  backButton: { paddingVertical: tokens.space.sm, paddingHorizontal: tokens.space.xs, width: 44 },
 
   titleSection: { 
-    marginBottom: 40,
+    marginBottom: tokens.space._4xl,
     maxWidth: 343,
     alignItems: 'center',
     alignSelf: 'center'
   },
   usernameTitle: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
+    fontSize: tokens.fontSize._2xl, 
+    color: tokens.color.black, 
+    fontWeight: tokens.fontWeight.bold, 
     textAlign: 'center',
     fontFamily: 'Inter-Bold'
   },
@@ -195,12 +196,12 @@ const styles = StyleSheet.create({
   inputContainer: { width: '100%', alignItems: 'center', marginBottom: 30 },
   usernameInput: {
     backgroundColor: 'transparent',
-    fontSize: 32,
+    fontSize: tokens.fontSize._4xl,
     textAlign: 'center',
     paddingVertical: 0,
     paddingHorizontal: 0,
     width: '100%',
-    marginTop: 40,
+    marginTop: tokens.space._4xl,
     
   },
   formBlock: {
@@ -221,18 +222,18 @@ const styles = StyleSheet.create({
     width: '100%', 
     maxWidth: 343,
     height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
+    backgroundColor: tokens.color.primary_600, 
+    borderRadius: tokens.radius.xl, 
     alignItems: 'center', 
     justifyContent: 'center'
   },
   continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+    color: tokens.color.white, 
+    fontSize: tokens.fontSize.md, 
+    fontWeight: tokens.fontWeight.semibold 
   },
   errorText: {
-    color: 'red',
+    color: tokens.color.error_500,
     textAlign: 'center',
     marginTop: 6,
   },

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useDataCache } from '#/hooks/useDataCache';
+import { tokens } from '#/ui';
 
 export default function CuisineEdit() {
   const navigation = useNavigation();
@@ -95,20 +96,20 @@ export default function CuisineEdit() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: tokens.space.xl,
+    paddingVertical: tokens.space.md,
+    backgroundColor: tokens.color.white,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000000',
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.bold,
+    color: tokens.color.black,
     fontFamily: 'Inter',
   },
   headerSpacer: {
@@ -116,13 +117,13 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingHorizontal: tokens.space._2xl,
+    paddingTop: tokens.space.xl,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_600,
+    marginBottom: tokens.space._2xl,
     textAlign: 'center',
     fontFamily: 'Inter',
   },
@@ -134,30 +135,30 @@ const styles = StyleSheet.create({
   cuisineButton: {
     width: '48%',
     height: 48,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
+    backgroundColor: tokens.color.gray_100,
+    borderRadius: tokens.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: tokens.space.md,
   },
   cuisineButtonSelected: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
+    backgroundColor: tokens.color.primary_600,
+    borderColor: tokens.color.primary_600,
   },
   cuisineButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '500',
+    color: tokens.color.black,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.medium,
     fontFamily: 'Inter',
   },
   cuisineButtonTextSelected: {
-    color: '#FFFFFF',
+    color: tokens.color.white,
   },
   skeletonButton: {
     width: '48%',
     height: 48,
-    backgroundColor: '#E1E9EE',
-    borderRadius: 12,
-    marginBottom: 12,
+    backgroundColor: tokens.color.gray_200,
+    borderRadius: tokens.radius.md,
+    marginBottom: tokens.space.md,
   },
 });

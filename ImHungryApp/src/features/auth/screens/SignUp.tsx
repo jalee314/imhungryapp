@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { checkPhoneExists } from '#/services/userService';
 import { useAuth } from '../hooks/useAuth';
+import { atoms as a, useTheme, tokens } from '#/ui';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -161,7 +161,7 @@ export default function SignUpScreen() {
   const handlePrivacyPress = () => {};
 
   return (
-      <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <View style={[a.flex_1, { backgroundColor: tokens.color.white }]}>
         <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -194,14 +194,14 @@ export default function SignUpScreen() {
                       value={(formData as any)[cfg.field]}
                       onChangeText={t => handleInputChange(cfg.field, t)}
                       placeholder={cfg.placeholder}
-                      outlineColor="#FFA05C"
-                      activeOutlineColor="#FFA05C"
-                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                      outlineColor={tokens.color.primary_500}
+                      activeOutlineColor={tokens.color.primary_500}
+                      style={[styles.textInputStyle, { backgroundColor: tokens.color.white }]}
                       theme={{
-                        roundness: 8,
+                        roundness: tokens.radius.sm,
                         colors: {
-                          background: 'white',   // Paper uses this to paint the notch
-                          outline: '#FFA05C',
+                          background: tokens.color.white,
+                          outline: tokens.color.primary_500,
                         },
                       }}
                       keyboardType={cfg.keyboardType}
@@ -218,7 +218,7 @@ export default function SignUpScreen() {
                             <Ionicons
                               name={showPassword ? 'eye-off' : 'eye'}
                               size={20}
-                              color="#666"
+                              color={tokens.color.gray_600}
                               style={{ opacity: isPasswordFocused ? 1 : 0 }}
                             />
                           )}
@@ -259,8 +259,8 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
-  container: { flex: 1, backgroundColor: 'white' },
+  // Base container with theme background
+  container: { flex: 1, backgroundColor: tokens.color.white },
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 }, // responsive padding applied at runtime
@@ -273,23 +273,23 @@ const styles = StyleSheet.create({
 
   loginLink: { alignSelf: 'flex-end' },
   loginText: { 
-    fontSize: 16, 
-    color: '#404040', 
-    fontWeight: '700',
+    fontSize: tokens.fontSize.md, 
+    color: tokens.color.gray_700, 
+    fontWeight: tokens.fontWeight.bold,
     fontFamily: 'Inter-Bold'
   },
 
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle: { 
-    fontSize: 18, 
-    color: '#181619', 
+    fontSize: tokens.fontSize.lg, 
+    color: tokens.color.text_primary, 
     fontFamily: 'Inter-Bold',
-    fontWeight: '700',
+    fontWeight: tokens.fontWeight.bold,
     textAlign: 'left'
   },
   welcomeSubtitle: { 
-    fontSize: 16, 
-    color: '#181619', 
+    fontSize: tokens.fontSize.md, 
+    color: tokens.color.text_primary, 
     lineHeight: 24, 
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
@@ -298,12 +298,12 @@ const styles = StyleSheet.create({
   formContainer: { width: '100%' },
   paperInput: { 
     // Only spacing, no height
-  }, // field bg; spacing added responsively
+  },
   
   textInputStyle: {
-    backgroundColor: 'white',
+    backgroundColor: tokens.color.white,
     minHeight: 56,
-    fontSize: 16,
+    fontSize: tokens.fontSize.md,
     lineHeight: 22,
     paddingVertical: 0,
   },
@@ -311,38 +311,38 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     height: 50,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 25,
+    backgroundColor: tokens.color.primary_600,
+    borderRadius: tokens.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '400',
+    color: tokens.color.white, 
+    fontSize: tokens.fontSize.md, 
+    fontWeight: tokens.fontWeight.normal,
     fontFamily: 'Inter-Regular',
     lineHeight: 24 
   },
 
   legalContainer: { alignItems: 'center' },
   legalText: { 
-    fontSize: 12, 
-    color: '#181619', 
+    fontSize: tokens.fontSize.xs, 
+    color: tokens.color.text_primary, 
     textAlign: 'left', 
     lineHeight: 16,
     fontFamily: 'Inter-Medium',
-    fontWeight: '500'
+    fontWeight: tokens.fontWeight.medium
   },
   legalLink: { 
-    color: '#FFA05C', 
-    fontWeight: '600',
+    color: tokens.color.primary_500, 
+    fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter-SemiBold'
   },
   errorText: {
-    color: 'red',
+    color: tokens.color.error_500,
     alignSelf: 'flex-start',
-    marginLeft: 12,
-    marginTop: 4,    
-    marginBottom: -12,
+    marginLeft: tokens.space.md,
+    marginTop: tokens.space.xs,    
+    marginBottom: -tokens.space.md,
   }
 });

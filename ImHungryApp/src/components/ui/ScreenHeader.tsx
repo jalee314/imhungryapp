@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { tokens } from '#/ui';
 
 type RightConfig = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -64,9 +65,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFF',
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
+    backgroundColor: tokens.color.white,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
@@ -82,13 +83,13 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: tokens.space.sm,
     alignItems: 'center',
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: tokens.fontSize.lg,
+    fontWeight: tokens.fontWeight.bold,
+    color: tokens.color.black,
   },
 });
 

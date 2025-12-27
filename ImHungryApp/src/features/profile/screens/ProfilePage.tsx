@@ -8,6 +8,7 @@ import DealCard from '#/components/DealCard';
 import DealCardSkeleton from '#/components/DealCardSkeleton';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useProfile } from '../hooks/useProfile';
+import { tokens } from '#/ui';
 
 interface ProfilePageProps {}
 
@@ -414,7 +415,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: tokens.color.white,
   },
   scrollView: {
     flex: 1,
@@ -424,43 +425,43 @@ const styles = StyleSheet.create({
   },
   
   userProfileContainer: {
-    paddingVertical: 16,
+    paddingVertical: tokens.space.lg,
     paddingHorizontal: 17,
-    backgroundColor: '#fff',
+    backgroundColor: tokens.color.white,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#D8D8D8',
+    borderBottomColor: tokens.color.gray_300,
   },
   
   backButtonContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: tokens.space.lg,
   },
   backButton: {
-    padding: 4,
+    padding: tokens.space.xs,
   },
   
   actionButtonsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 4,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    gap: tokens.space.xs,
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F5F5F5', // Changed from '#fff' to grey
+    backgroundColor: tokens.color.gray_100,
   },
   
   extraSpacing: {
-    width: 20,
+    width: tokens.space.xl,
   },
   
   contentArea: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: tokens.color.gray_100,
     flex: 1,
     paddingTop: 0,
   },
   
   header: {
     flexDirection: 'row',
-    paddingTop: 16,
+    paddingTop: tokens.space.lg,
     paddingBottom: 0,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
   leftSection: {
     flex: 1,
     flexDirection: 'column',
-    gap: 24,
+    gap: tokens.space._2xl,
     justifyContent: 'center',
     alignSelf: 'stretch',
   },
@@ -480,30 +481,30 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
+    gap: tokens.space.sm,
   },
   userName: {
-    fontSize: 24,
+    fontSize: tokens.fontSize._2xl,
     fontWeight: '800',
-    color: '#000',
+    color: tokens.color.black,
     letterSpacing: 0.48,
     lineHeight: 24,
     marginTop: -1,
   },
   editButton: {
-    padding: 4,
+    padding: tokens.space.xs,
   },
   joinDate: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000',
+    fontSize: tokens.fontSize.xs,
+    fontWeight: tokens.fontWeight.normal,
+    color: tokens.color.black,
     letterSpacing: 0.36,
     lineHeight: 20,
   },
   location: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000',
+    fontSize: tokens.fontSize.xs,
+    fontWeight: tokens.fontWeight.normal,
+    color: tokens.color.black,
     letterSpacing: 0.36,
     lineHeight: 15,
   },
@@ -515,9 +516,9 @@ const styles = StyleSheet.create({
   profilePhoto: {
     width: 85,
     height: 85,
-    borderRadius: 50,
+    borderRadius: tokens.space._5xl,
     borderWidth: 2,
-    borderColor: '#FFA05C',
+    borderColor: tokens.color.primary_500,
   },
 
   statsContainer: {
@@ -530,94 +531,94 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFA05C',
+    fontSize: tokens.fontSize._2xl,
+    fontWeight: tokens.fontWeight.bold,
+    color: tokens.color.primary_500,
     marginRight: 10,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#000',
+    fontSize: tokens.fontSize.xs,
+    color: tokens.color.black,
     textAlign: 'center',
   },
 
   actionButton: {
-    borderRadius: 20,
-    backgroundColor: '#fff',
+    borderRadius: tokens.space.xl,
+    backgroundColor: tokens.color.white,
     borderWidth: 1,
-    borderColor: '#fff',
+    borderColor: tokens.color.white,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
   },
   shareActionButton: {
     borderRadius: 30,
-    backgroundColor: '#fff',
+    backgroundColor: tokens.color.white,
     borderWidth: 1,
-    borderColor: '#fff',
+    borderColor: tokens.color.white,
     alignItems: 'center',
     justifyContent: 'center',
     width: 40,
     height: 32,
   },
   activeButton: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
+    backgroundColor: tokens.color.primary_600,
+    borderColor: tokens.color.primary_600,
   },
   actionButtonText: {
-    fontSize: 14,
-    color: '#000',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.black,
   },
   activeButtonText: {
-    color: '#000',
+    color: tokens.color.black,
   },
   shareButtonIcon: {
-    color: '#000',
+    color: tokens.color.black,
   },
 
   textContainer: {
     position: 'absolute',
     top: '50%',
-    left: 20,
-    right: 20,
+    left: tokens.space.xl,
+    right: tokens.space.xl,
     transform: [{ translateY: -50 }],
-    padding: 16,
+    padding: tokens.space.lg,
   },
   
   contentText: {
-    fontSize: 16,
+    fontSize: tokens.fontSize.md,
     color: '#333',
     textAlign: 'center',
     lineHeight: 24,
   },
   
   settingsList: {
-    backgroundColor: '#fff',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
     overflow: 'hidden',
-    marginHorizontal: 16,
-    marginTop: 16,
+    marginHorizontal: tokens.space.lg,
+    marginTop: tokens.space.lg,
     marginBottom: 100,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: tokens.space.lg,
+    paddingHorizontal: tokens.space.xl,
     // borderBottomWidth: 1, // This was creating the separator
   },
   settingText: {
     flex: 1,
-    fontSize: 16,
-    color: '#000',
-    fontWeight: '500',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.medium,
     marginLeft: 10,
   },
   settingArrow: {
-    fontSize: 20,
-    color: '#000000',
-    fontWeight: 'bold',
+    fontSize: tokens.fontSize.xl,
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.bold,
   },
 
   // Modal styles
@@ -627,44 +628,44 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalViewContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: tokens.space.lg,
     paddingBottom: 90,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
-    marginBottom: 8,
+    marginBottom: tokens.space.sm,
   },
   modalOption: {
-    paddingVertical: 16,
+    paddingVertical: tokens.space.lg,
     alignItems: 'center',
   },
   modalOptionText: {
     fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.medium,
+    color: tokens.color.black,
   },
   deleteText: {
     color: 'red',
   },
   cancelButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
-    paddingVertical: 16,
+    paddingVertical: tokens.space.lg,
     alignItems: 'center',
   },
   cancelText: {
     fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.medium,
+    color: tokens.color.black,
   },
 
   // Skeleton styles
   skeleton: {
     backgroundColor: '#E1E9EE',
-    borderRadius: 4,
+    borderRadius: tokens.space.xs,
   },
   skeletonUsername: {
     width: 150,
@@ -674,18 +675,18 @@ const styles = StyleSheet.create({
   skeletonEditButton: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    marginLeft: 8,
+    borderRadius: tokens.space.md,
+    marginLeft: tokens.space.sm,
   },
   skeletonJoinDate: {
     width: 120,
     height: 14,
-    marginBottom: 4,
+    marginBottom: tokens.space.xs,
   },
   skeletonLocation: {
     width: 100,
     height: 14,
-    marginBottom: 8,
+    marginBottom: tokens.space.sm,
   },
   skeletonStatNumber: {
     width: 30,
@@ -704,13 +705,13 @@ const styles = StyleSheet.create({
   },
   skeletonButton: {
     height: 35,
-    borderRadius: 20,
+    borderRadius: tokens.space.xl,
     width: 80,
   },
   skeletonShareButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: tokens.space.xl,
   },
   skeletonBottomNav: {
     position: 'absolute',
@@ -718,7 +719,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: tokens.color.white,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     paddingVertical: 6,
@@ -739,9 +740,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    marginTop: tokens.space.lg,
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.gray_500,
   },
   postsContainer: {
     flex: 1,
@@ -753,18 +754,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    paddingTop: 8,
+    paddingTop: tokens.space.sm,
     paddingBottom: 100,
     paddingLeft: 10,
     paddingRight: 10,
     width: '100%',
   },
   leftCard: {
-    marginBottom: 4,
+    marginBottom: tokens.space.xs,
     marginRight: 2,
   },
   rightCard: {
-    marginBottom: 4,
+    marginBottom: tokens.space.xs,
     marginLeft: 2,
   },
   emptyContainer: {
@@ -772,22 +773,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
-    paddingHorizontal: 40,
+    paddingHorizontal: tokens.space._4xl,
     width: '100%',
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: tokens.fontSize.lg,
+    fontWeight: tokens.fontWeight.semibold,
+    color: tokens.color.gray_500,
+    marginTop: tokens.space.lg,
+    marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
     textAlign: 'center',
     width: '100%',
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_400,
     textAlign: 'center',
     fontFamily: 'Inter',
     width: '100%',
@@ -799,22 +800,22 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
 },
   errorText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.gray_500,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: tokens.space.lg,
     fontFamily: 'Inter',
   },
   retryButton: {
-    backgroundColor: '#FFA05C',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: tokens.color.primary_500,
+    paddingHorizontal: tokens.space._2xl,
+    paddingVertical: tokens.space.md,
+    borderRadius: tokens.space.sm,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: tokens.color.white,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter',
   },
   verticalInteractions: {
@@ -827,32 +828,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F0F0F0',
     borderRadius: 15,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: tokens.space.xs,
   },
   verticalVoteButton: {
-    padding: 4,
+    padding: tokens.space.xs,
   },
   upvoted: {
-    backgroundColor: '#FFA05C',
+    backgroundColor: tokens.color.primary_500,
   },
   downvoted: {
-    backgroundColor: '#FFA05C',
+    backgroundColor: tokens.color.primary_500,
   },
   verticalVoteCount: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#000',
-    marginHorizontal: 8,
+    fontSize: tokens.fontSize.xs,
+    fontWeight: tokens.fontWeight.bold,
+    color: tokens.color.black,
+    marginHorizontal: tokens.space.sm,
   },
   verticalVoteSeparator: {
     width: 1,
     height: 12,
-    backgroundColor: '#000',
-    marginHorizontal: 8,
+    backgroundColor: tokens.color.black,
+    marginHorizontal: tokens.space.sm,
   },
   verticalFavoriteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
@@ -862,10 +863,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   favorited: {
-    backgroundColor: '#FF8C4C',
+    backgroundColor: tokens.color.primary_600,
   },
   verticalDeleteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,

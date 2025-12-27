@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDataCache } from '#/hooks/useDataCache';
 import { useAuth } from '../hooks/useAuth';
+import { atoms as a, tokens } from '#/ui';
 
 export default function CuisinePreferencesScreen() {
   const navigation = useNavigation();
@@ -100,7 +101,7 @@ export default function CuisinePreferencesScreen() {
   const availableCuisines = cuisines.map(c => c.name);
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={[a.flex_1, { backgroundColor: tokens.color.white }]}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -181,14 +182,14 @@ export default function CuisinePreferencesScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: 'white' 
+    backgroundColor: tokens.color.white 
   },
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { 
     flex: 1, 
-    paddingHorizontal: 24, 
-    paddingVertical: 20 
+    paddingHorizontal: tokens.space._2xl, 
+    paddingVertical: tokens.space.xl 
   },
 
   headerContainer: { 
@@ -198,18 +199,18 @@ const styles = StyleSheet.create({
     height: 44
   },
 
-  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
+  backButton: { paddingVertical: tokens.space.sm, paddingHorizontal: tokens.space.xs },
   backButtonText: { 
-    fontSize: 20, 
-    color: '#000', 
-    fontWeight: '500' 
+    fontSize: tokens.fontSize.xl, 
+    color: tokens.color.black, 
+    fontWeight: tokens.fontWeight.medium 
   },
 
-  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  skipLink: { paddingVertical: tokens.space.sm, paddingHorizontal: tokens.space.xs },
   skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
-    fontWeight: '400',
+    fontSize: tokens.fontSize.md, 
+    color: tokens.color.gray_700, 
+    fontWeight: tokens.fontWeight.normal,
     fontFamily: 'Inter-Regular'
   },
 
@@ -220,27 +221,27 @@ const styles = StyleSheet.create({
   },
 
   titleSection: { 
-    marginBottom: 10,
+    marginBottom: tokens.space.sm,
     maxWidth: 343,
     alignItems: 'flex-start'
   },
   title: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
+    fontSize: tokens.fontSize._2xl, 
+    color: tokens.color.black, 
+    fontWeight: tokens.fontWeight.bold, 
     marginBottom: 15,
     fontFamily: 'Inter-Bold',
     textAlign: 'left',
-    marginLeft: 20  ,
+    marginLeft: tokens.space.xl,
   },
   subtitle: { 
-    fontSize: 16, 
-    color: '#404040', 
+    fontSize: tokens.fontSize.md, 
+    color: tokens.color.gray_700, 
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left',
-    marginBottom: 12,
-    marginLeft: 20,
+    marginBottom: tokens.space.md,
+    marginLeft: tokens.space.xl,
   },
 
   cuisineGrid: {
@@ -249,35 +250,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     maxWidth: 350,
-    marginBottom: 20, 
+    marginBottom: tokens.space.xl, 
     alignSelf: 'center',
   },
   cuisineButton: {
     width: '49%',
     height: 45,
-    backgroundColor: '#eaeaea',
+    backgroundColor: tokens.color.gray_200,
     borderWidth: 1,
-    borderColor: '#ffffff',
-    borderRadius: 12,
+    borderColor: tokens.color.white,
+    borderRadius: tokens.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-    paddingHorizontal: 8,
+    marginBottom: tokens.space.md,
+    paddingHorizontal: tokens.space.sm,
   },
   cuisineButtonSelected: {
-    backgroundColor: '#FF8C4C',
+    backgroundColor: tokens.color.primary_600,
     borderWidth: 1,
-    borderColor: '#ffffff',
+    borderColor: tokens.color.white,
   },
   cuisineButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '400',
+    color: tokens.color.black,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.normal,
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },
   cuisineButtonTextSelected: {
-    color: '#000',
+    color: tokens.color.black,
   },
   spacer: { flex: 1 },
 
@@ -291,21 +292,21 @@ const styles = StyleSheet.create({
     width: '100%', 
     maxWidth: 343,
     height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
+    backgroundColor: tokens.color.primary_600, 
+    borderRadius: tokens.radius.xl, 
     alignItems: 'center', 
     justifyContent: 'center'
   },
   continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+    color: tokens.color.white, 
+    fontSize: tokens.fontSize.md, 
+    fontWeight: tokens.fontWeight.semibold 
   },
   skeletonButton: {
     width: '48%',
     height: 40,
-    backgroundColor: '#E1E9EE',
-    borderRadius: 12,
-    marginBottom: 8,
+    backgroundColor: tokens.color.gray_200,
+    borderRadius: tokens.radius.md,
+    marginBottom: tokens.space.sm,
   },
 });

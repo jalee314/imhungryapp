@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { tokens } from '#/ui';
 
 const ContactUsPage = () => {
   const navigation = useNavigation();
@@ -61,20 +62,20 @@ const ContactUsPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: tokens.space.xl,
+    paddingVertical: tokens.space.xl,
   },
   titleText: {
     fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    color: '#000000',
+    fontWeight: tokens.fontWeight.bold,
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
     flex: 1,
     textAlign: 'center',
   },
@@ -88,41 +89,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 25,
-    paddingTop: 25,
+    paddingHorizontal: tokens.space.xl,
+    paddingBottom: tokens.space._2xl,
+    paddingTop: tokens.space._2xl,
   },
   labelText: {
     fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 16,
-    color: '#000000',
+    fontWeight: tokens.fontWeight.normal,
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
   },
   emailText: {
     fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 14,
-    color: '#000000',
+    fontWeight: tokens.fontWeight.normal,
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.black,
   },
   linkContainer: {
     alignItems: 'center',
   },
   linkText: {
     fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 14,
-    color: '#000000',
+    fontWeight: tokens.fontWeight.normal,
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.black,
   },
   underline: {
     height: 1,
-    backgroundColor: '#000000',
+    backgroundColor: tokens.color.black,
     width: '100%',
     marginTop: 2,
   },
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 20,
+    backgroundColor: tokens.color.gray_200,
+    marginHorizontal: tokens.space.xl,
   },
 
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { tokens } from '#/ui';
 
 interface ModalHeaderProps {
   title: string | React.ReactNode;
@@ -54,28 +55,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
     borderBottomWidth: 1,
     borderBottomColor: '#EAEAEA',
   },
   headerText: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: tokens.fontWeight.semibold,
+    color: tokens.color.black,
   },
   titleContainer: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: tokens.space.sm,
   },
   doneText: {
-    color: '#FF8C4C',
-    fontWeight: '700',
+    color: tokens.color.primary_600,
+    fontWeight: tokens.fontWeight.bold,
   },
   doneDisabled: {
     opacity: 0.5,

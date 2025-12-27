@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
+import { tokens } from '#/ui';
 
 interface SkeletonLoaderProps {
   width?: number | string;

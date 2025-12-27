@@ -15,6 +15,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { reportService } from '#/services/reportService';
 import { getFullUserProfile } from '#/services/userService';
 import { getDealUploaderId } from '#/services/dealService';
+import { tokens } from '#/ui';
 
 type ReportContentRouteProp = RouteProp<{ ReportContent: { dealId: string; uploaderUserId: string } }, 'ReportContent'>;
 
@@ -197,64 +198,64 @@ const ReportContentScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 22,
-    paddingVertical: 12,
-    marginBottom: 10,
+    paddingVertical: tokens.space.md,
+    marginBottom: tokens.space.sm,
   },
   headerButtonText: {
-    fontSize: 16,
-    color: '#000000',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
     fontFamily: 'Inter',
   },
   headerTitle: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '700',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.bold,
     fontFamily: 'Inter',
   },
   submitButtonText: {
-    fontSize: 16,
-    color: '#FF8C4C',
-    fontWeight: '700',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.primary_600,
+    fontWeight: tokens.fontWeight.bold,
     fontFamily: 'Inter',
   },
   content: {
     flex: 1,
   },
   optionsContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   optionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: tokens.space._2xl,
+    paddingHorizontal: tokens.space.xl,
+    backgroundColor: tokens.color.white,
   },
   optionText: {
     fontFamily: 'Inter',
-    fontSize: 14,
-    color: '#000000',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.black,
     flex: 1,
     paddingLeft: 2,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#C1C1C1',
-    marginHorizontal: 10,
+    marginHorizontal: tokens.space.sm,
   },
   checkmark: {
     width: 24,
     height: 24,
-    borderRadius: 4,
-    backgroundColor: '#FFA05C',
+    borderRadius: tokens.radius.xs,
+    backgroundColor: tokens.color.primary_500,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -263,27 +264,27 @@ const styles = StyleSheet.create({
     height: 24,
   },
   detailsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
+    paddingHorizontal: tokens.space.xl,
+    paddingTop: tokens.space.lg,
+    paddingBottom: tokens.space._3xl,
   },
   textInput: {
     borderWidth: 1,
     borderColor: '#CCCCCC',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 12,
-    color: '#000000',
+    borderRadius: tokens.radius.sm,
+    padding: tokens.space.md,
+    fontSize: tokens.fontSize.xs,
+    color: tokens.color.black,
     minHeight: 128,
     textAlignVertical: 'top',
     fontFamily: 'Inter',
     lineHeight: 18,
   },
   characterCount: {
-    fontSize: 12,
-    color: '#999999',
+    fontSize: tokens.fontSize.xs,
+    color: tokens.color.gray_400,
     textAlign: 'right',
-    marginTop: 8,
+    marginTop: tokens.space.sm,
     fontFamily: 'Inter',
   },
 });

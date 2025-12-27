@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { tokens } from '#/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 // Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (4px), then divide by 2
@@ -95,10 +96,10 @@ const styles = StyleSheet.create({
   
   // Horizontal Card Styles (matching DealCard dimensions exactly)
   horizontalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: tokens.space.md,
+    paddingHorizontal: tokens.space.sm,
     alignItems: 'flex-start',
     width: HORIZONTAL_CARD_WIDTH,
     height: 280,
@@ -107,12 +108,12 @@ const styles = StyleSheet.create({
   horizontalImage: {
     width: 260,
     height: 167,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: tokens.radius.sm,
+    marginBottom: tokens.space.sm,
   },
   horizontalTitleContainer: {
     width: '100%',
-    marginBottom: 8,
+    marginBottom: tokens.space.sm,
     height: 30,
     justifyContent: 'flex-start',
   },
@@ -120,13 +121,13 @@ const styles = StyleSheet.create({
     width: '90%',
     height: 12,
     borderRadius: 6,
-    marginBottom: 4,
+    marginBottom: tokens.space.xs,
   },
   horizontalDetailsSkeleton: {
     width: '100%',
     height: 24,
-    borderRadius: 4,
-    marginBottom: 8,
+    borderRadius: tokens.radius.xs,
+    marginBottom: tokens.space.sm,
   },
   horizontalInteractions: {
     flexDirection: 'row',
@@ -147,9 +148,9 @@ const styles = StyleSheet.create({
 
   // Vertical Card Styles (matching DealCard dimensions exactly)
   verticalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 8,
+    backgroundColor: tokens.color.white,
+    borderRadius: tokens.radius.lg,
+    padding: tokens.space.sm,
     alignItems: 'flex-start',
     width: VERTICAL_CARD_WIDTH,
     justifyContent: 'flex-start',
@@ -157,20 +158,20 @@ const styles = StyleSheet.create({
   verticalImage: {
     width: '100%',
     height: 175,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: tokens.radius.sm,
+    marginBottom: tokens.space.sm,
   },
   verticalTitleSkeleton: {
     width: VERTICAL_CARD_WIDTH - 24,
     height: 30,
-    borderRadius: 4,
-    marginBottom: 8,
+    borderRadius: tokens.radius.xs,
+    marginBottom: tokens.space.sm,
   },
   verticalDetailsSkeleton: {
     width: VERTICAL_CARD_WIDTH - 24,
     height: 24,
-    borderRadius: 4,
-    marginBottom: 8,
+    borderRadius: tokens.radius.xs,
+    marginBottom: tokens.space.sm,
   },
   verticalInteractions: {
     flexDirection: 'row',

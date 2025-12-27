@@ -24,6 +24,7 @@ import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavo
 import { Deal } from '#/components/DealCard';
 import { logClick } from '#/services/interactionService';
 import { useFavorites } from '#/features/profile/hooks/useFavorites';
+import { tokens } from '#/ui';
 
 type RestaurantDetailRouteProp = RouteProp<{ 
   RestaurantDetail: { 
@@ -536,18 +537,18 @@ const RestaurantDetailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   header: {
     flexDirection: 'column',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderBottomWidth: 0.5,
     borderBottomColor: '#D7D7D7',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.lg,
   },
   headerTop: {
-    marginBottom: 12,
+    marginBottom: tokens.space.md,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -559,43 +560,43 @@ const styles = StyleSheet.create({
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: tokens.space.lg,
   },
   directionsButton: {
     backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: 30,
-    paddingHorizontal: 24,
-    paddingVertical: 8,
+    borderRadius: tokens.radius.full,
+    paddingHorizontal: tokens.space._2xl,
+    paddingVertical: tokens.space.sm,
   },
   directionsButtonText: {
-    color: '#000000',
-    fontWeight: '400',
-    fontSize: 14,
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.normal,
+    fontSize: tokens.fontSize.sm,
     fontFamily: 'Inter-Regular',
     lineHeight: 15,
     textAlign: 'center',
   },
   restaurantInfoSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.lg,
+    backgroundColor: tokens.color.white,
   },
   restaurantHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: tokens.space.xs,
   },
   restaurantName: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: tokens.fontSize._2xl,
+    fontWeight: tokens.fontWeight.semibold,
+    color: tokens.color.black,
     fontFamily: 'Inter',
     lineHeight: 24,
   },
   heartButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 30,
+    backgroundColor: tokens.color.white,
+    borderRadius: tokens.radius.full,
     width: 40,
     height: 28,
     justifyContent: 'center',
@@ -608,33 +609,33 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   restaurantDetails: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000000',
+    fontSize: tokens.fontSize.xs,
+    fontWeight: tokens.fontWeight.normal,
+    color: tokens.color.black,
     fontFamily: 'Inter',
     lineHeight: 20,
   },
   cuisineText: {
-    color: '#000000',
+    color: tokens.color.black,
   },
   distanceText: {
-    color: '#000000',
+    color: tokens.color.black,
   },
   separator: {
-    color: '#000000',
-    fontWeight: '300',
-    marginHorizontal: 4,
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.light,
+    marginHorizontal: tokens.space.xs,
   },
   addressText: {
-    color: '#000000',
-    marginLeft: 4,
+    color: tokens.color.black,
+    marginLeft: tokens.space.xs,
   },
   dealsContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   dealsList: {
-    paddingVertical: 8,
+    paddingVertical: tokens.space.sm,
     paddingBottom: 64,
   },
   loadingContainer: {
@@ -643,42 +644,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666666',
+    marginTop: tokens.space.md,
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.gray_600,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: tokens.space.xl,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: tokens.fontSize.md,
     color: '#FF4444',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: tokens.space.lg,
   },
   retryButton: {
-    backgroundColor: '#FF8C4C',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: tokens.color.primary_600,
+    paddingHorizontal: tokens.space.xl,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.sm,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: tokens.color.white,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.semibold,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: tokens.space.xl,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#666666',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.gray_600,
     textAlign: 'center',
   },
 });

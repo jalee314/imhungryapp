@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { tokens } from '#/ui';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -126,63 +127,63 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: tokens.space.lg,
     borderBottomWidth: 1,
     borderBottomColor: '#EAEAEA',
   },
   calendarHeaderText: {
     fontSize: 17,
-    color: '#000000',
+    color: tokens.color.black,
   },
   calendarHeaderTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: tokens.fontWeight.semibold,
   },
   selectedDateContainer: {
-    padding: 16,
+    padding: tokens.space.lg,
     alignItems: 'flex-start',
   },
   selectedDatePill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FF8C4C30',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 8,
+    borderRadius: tokens.space.xl,
+    paddingVertical: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+    gap: tokens.space.sm,
   },
   selectedDateText: {
-    fontSize: 14,
+    fontSize: tokens.fontSize.sm,
     color: '#333',
   },
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#C1C1C1',
-    marginVertical: 16,
-    marginHorizontal: 16,
+    marginVertical: tokens.space.lg,
+    marginHorizontal: tokens.space.lg,
   },
   noExpirationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
   },
   noExpirationText: {
-    fontSize: 12,
-    color: '#000000',
+    fontSize: tokens.fontSize.xs,
+    color: tokens.color.black,
   },
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: 4,
+    borderRadius: tokens.space.xs,
     borderWidth: 1,
     borderColor: '#C1C1C1',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxActive: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
+    backgroundColor: tokens.color.primary_600,
+    borderColor: tokens.color.primary_600,
   }
 });

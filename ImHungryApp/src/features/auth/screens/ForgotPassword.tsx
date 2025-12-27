@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { sendPasswordResetEmail } from '#/services/authService';
+import { atoms as a, tokens } from '#/ui';
 
 export default function ForgotPasswordScreen() {
   
@@ -67,14 +67,14 @@ export default function ForgotPasswordScreen() {
   const handlePrivacyPress = () => {};
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={[a.flex_1, { backgroundColor: tokens.color.white }]}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
           <View style={[styles.pagePad, responsive.pagePad]}>
             <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color={tokens.color.black} />
             </TouchableOpacity>
 
             <View style={styles.mainContainer}>
@@ -97,13 +97,13 @@ export default function ForgotPasswordScreen() {
                       if (successMessage) setSuccessMessage('');
                     }}
                     placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                    outlineColor={tokens.color.primary_600}
+                    activeOutlineColor={tokens.color.primary_600}
+                    style={[styles.textInputStyle, { backgroundColor: tokens.color.white }]}
                     theme={{
-                      roundness: 12,
+                      roundness: tokens.radius.md,
                       colors: {
-                        background: 'white',
+                        background: tokens.color.white,
                       },
                     }}
                     keyboardType="email-address"
@@ -145,38 +145,38 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: tokens.color.white },
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 },
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
   backButton: { alignSelf: 'flex-start' },
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: { fontSize: 20, color: '#000', fontFamily: 'Inter-Bold' },
-  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Inter-Regular' },
+  welcomeTitle: { fontSize: tokens.fontSize.xl, color: tokens.color.black, fontFamily: 'Inter-Bold' },
+  welcomeSubtitle: { fontSize: tokens.fontSize.md, color: tokens.color.black, lineHeight: 24, fontFamily: 'Inter-Regular' },
   formContainer: { width: '100%' },
-  paperInput: { backgroundColor: 'white' },
+  paperInput: { backgroundColor: tokens.color.white },
   textInputStyle: {
-    backgroundColor: 'white',
+    backgroundColor: tokens.color.white,
     minHeight: 56,
-    fontSize: 16,
+    fontSize: tokens.fontSize.md,
     lineHeight: 22,
     paddingVertical: 0,
   },
   resetButton: {
     width: '100%',
     height: 44,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 22,
+    backgroundColor: tokens.color.primary_600,
+    borderRadius: tokens.radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  resetButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  resetButtonText: { color: tokens.color.white, fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.semibold },
   legalContainer: { alignItems: 'center' },
-  legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
-  legalLink: { color: '#FF9800', fontWeight: '500' },
+  legalText: { fontSize: tokens.fontSize.sm, color: tokens.color.black, textAlign: 'center', lineHeight: 20 },
+  legalLink: { color: tokens.color.warning_500, fontWeight: tokens.fontWeight.medium },
   successText: {
-    marginTop: 10,
-    color: '#2E7D32', // A shade of green
+    marginTop: tokens.space.sm,
+    color: tokens.color.success_600,
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },

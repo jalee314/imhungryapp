@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { tokens } from '#/ui';
 import Header from './Header';
 import LocationModal from './LocationModal';
 import { useLocation, DiscoverFeed } from '#/features/discover';
@@ -70,7 +71,7 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   screenContainer: {
     flex: 1,

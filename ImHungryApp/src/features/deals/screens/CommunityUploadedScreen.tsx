@@ -25,6 +25,7 @@ import { logClick } from '#/services/interactionService';
 import { useFeedQuery } from '#/state/queries';
 import { useDealUpdate } from '../hooks/useDealUpdate';
 import { useFavorites } from '#/features/profile/hooks/useFavorites';
+import { tokens } from '#/ui';
 
 const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -225,8 +226,8 @@ const CommunityUploadedScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#FF8C4C']}
-              tintColor="#FF8C4C"
+              colors={[tokens.color.primary_600]}
+              tintColor={tokens.color.primary_600}
             />
           }
         />
@@ -238,21 +239,21 @@ const CommunityUploadedScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   headerBackground: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     height: 100,
     justifyContent: 'flex-end',
     borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
+    borderBottomColor: tokens.color.gray_200,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingBottom: 10,
+    paddingHorizontal: tokens.space.sm,
+    paddingBottom: tokens.space.sm,
   },
   backButton: {
     width: 40,
@@ -262,20 +263,20 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: 'Inter',
-    fontSize: 20,
-    color: '#000000',
+    fontSize: tokens.fontSize.xl,
+    color: tokens.color.black,
     textAlign: 'center',
   },
   headerTitleBold: {
     fontFamily: 'Inter',
-    fontWeight: '700',
+    fontWeight: tokens.fontWeight.bold,
   },
   headerSpacer: {
     width: 40,
   },
   contentContainer: {
-    paddingHorizontal: 10,
-    paddingTop: 8,
+    paddingHorizontal: tokens.space.sm,
+    paddingTop: tokens.space.sm,
     paddingBottom: 100,
   },
   gridItem: {
@@ -289,60 +290,60 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   leftCard: {
-    marginBottom: 4,
-    marginRight: 2,
+    marginBottom: tokens.space.xs,
+    marginRight: tokens.space._2xs,
   },
   rightCard: {
-    marginBottom: 4,
-    marginLeft: 2,
+    marginBottom: tokens.space.xs,
+    marginLeft: tokens.space._2xs,
   },
   loadingContainer: {
     flex: 1,
-    paddingHorizontal: 10,
-    paddingTop: 8,
+    paddingHorizontal: tokens.space.sm,
+    paddingTop: tokens.space.sm,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    paddingVertical: tokens.space._5xl,
   },
   errorText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.gray_600,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: tokens.space.lg,
     fontFamily: 'Inter',
   },
   retryButton: {
-    backgroundColor: '#FFA05C',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: tokens.color.primary_500,
+    paddingHorizontal: tokens.space._2xl,
+    paddingVertical: tokens.space.md,
+    borderRadius: tokens.radius.sm,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: tokens.color.white,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    paddingVertical: tokens.space._5xl,
   },
   emptyText: {
-    fontSize: 18,
-    color: '#666',
+    fontSize: tokens.fontSize.lg,
+    color: tokens.color.gray_600,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
-    fontWeight: '600',
+    fontWeight: tokens.fontWeight.semibold,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_400,
     textAlign: 'center',
     fontFamily: 'Inter',
   },

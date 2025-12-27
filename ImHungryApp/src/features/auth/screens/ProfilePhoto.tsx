@@ -6,6 +6,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import { atoms as a, tokens } from '#/ui';
 
 export default function ProfilePhotoScreen() {
   const navigation = useNavigation();
@@ -143,7 +144,7 @@ export default function ProfilePhotoScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={[a.flex_1, { backgroundColor: tokens.color.white }]}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -206,36 +207,36 @@ export default function ProfilePhotoScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: 'white' 
+    backgroundColor: tokens.color.white 
   },
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { 
     flex: 1, 
-    paddingHorizontal: 24, 
-    paddingVertical: 20 
+    paddingHorizontal: tokens.space._2xl, 
+    paddingVertical: tokens.space.xl 
   },
 
   headerContainer: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: 40,
+    marginBottom: tokens.space._4xl,
     height: 44
   },
 
-  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
+  backButton: { paddingVertical: tokens.space.sm, paddingHorizontal: tokens.space.xs },
   backButtonText: { 
-    fontSize: 20, 
-    color: '#000', 
-    fontWeight: '500' 
+    fontSize: tokens.fontSize.xl, 
+    color: tokens.color.black, 
+    fontWeight: tokens.fontWeight.medium 
   },
 
-  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  skipLink: { paddingVertical: tokens.space.sm, paddingHorizontal: tokens.space.xs },
   skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
-    fontWeight: '400',
+    fontSize: tokens.fontSize.md, 
+    color: tokens.color.gray_700, 
+    fontWeight: tokens.fontWeight.normal,
     fontFamily: 'Inter-Regular'
   },
 
@@ -247,20 +248,20 @@ const styles = StyleSheet.create({
 
   titleSection: { 
     alignItems: 'flex-start',
-    marginBottom: 40,
+    marginBottom: tokens.space._4xl,
     maxWidth: 343
   },
   title: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
+    fontSize: tokens.fontSize._2xl, 
+    color: tokens.color.black, 
+    fontWeight: tokens.fontWeight.bold, 
     marginBottom: 25,
     fontFamily: 'Inter-Bold',
     textAlign: 'left'
   },
   subtitle: { 
-    fontSize: 16, 
-    color: '#404040', 
+    fontSize: tokens.fontSize.md, 
+    color: tokens.color.gray_700, 
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
@@ -268,20 +269,20 @@ const styles = StyleSheet.create({
 
   photoSection: { 
     alignItems: 'center', 
-    marginBottom: 40,
+    marginBottom: tokens.space._4xl,
     alignSelf: 'center'
   },
   photoInfo: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#666',
+    marginTop: tokens.space.md,
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_600,
     fontFamily: 'Inter-Regular'
   },
   photoPlaceholder: {
     width: 200,
     height: 200,
-    borderRadius: 100,
-    backgroundColor: '#000',
+    borderRadius: tokens.radius.full,
+    backgroundColor: tokens.color.black,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
@@ -312,14 +313,14 @@ const styles = StyleSheet.create({
     width: '100%', 
     maxWidth: 343,
     height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
+    backgroundColor: tokens.color.primary_600, 
+    borderRadius: tokens.radius.xl, 
     alignItems: 'center', 
     justifyContent: 'center'
   },
   continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+    color: tokens.color.white, 
+    fontSize: tokens.fontSize.md, 
+    fontWeight: tokens.fontWeight.semibold 
   },
 });

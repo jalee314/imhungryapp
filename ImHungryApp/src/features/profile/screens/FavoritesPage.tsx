@@ -22,6 +22,7 @@ import RowCardSkeleton from '#/components/RowCardSkeleton';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useFavoritesPageQuery } from '#/state/queries';
 import { useFavorites } from '../hooks/useFavorites';
+import { tokens } from '#/ui';
 import type { FavoriteDeal, FavoriteRestaurant } from '#/services/favoritesService';
 
 const FavoritesPage: React.FC = () => {
@@ -292,83 +293,83 @@ const FavoritesPage: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: tokens.color.white,
   },
   contentContainer: {
     paddingBottom: 100,
   },
   header: {
-    backgroundColor: '#ffffff',
+    backgroundColor: tokens.color.white,
     height: 100,
     justifyContent: 'flex-end',
-    paddingBottom: 10,
-    paddingHorizontal: 16,
+    paddingBottom: tokens.space.sm,
+    paddingHorizontal: tokens.space.lg,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
+    borderBottomColor: tokens.color.gray_200,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: tokens.fontSize._2xl,
+    fontWeight: tokens.fontWeight.semibold,
+    color: tokens.color.black,
     fontFamily: 'Inter',
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    gap: 4,
+    backgroundColor: tokens.color.white,
+    paddingHorizontal: tokens.space.xl,
+    paddingVertical: tokens.space.sm,
+    gap: tokens.space.xs,
   },
   tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.xl,
     borderWidth: 1,
-    borderColor: '#d7d7d7',
-    backgroundColor: '#ffffff',
+    borderColor: tokens.color.gray_200,
+    backgroundColor: tokens.color.white,
   },
   activeTab: {
-    backgroundColor: '#ff8c4c',
-    borderColor: '#ff8c4c',
+    backgroundColor: tokens.color.primary_600,
+    borderColor: tokens.color.primary_600,
   },
   tabText: {
-    fontSize: 14,
-    color: '#000000',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.black,
     fontFamily: 'Inter',
     textAlign: 'center',
   },
   activeTabText: {
-    color: '#000000',
+    color: tokens.color.black,
   },
   content: {
     flex: 1,
-    paddingTop: 8,
+    paddingTop: tokens.space.sm,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: tokens.space._4xl,
     paddingVertical: 60,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: tokens.fontSize.lg,
+    fontWeight: tokens.fontWeight.semibold,
+    color: tokens.color.text_primary,
+    marginTop: tokens.space.lg,
+    marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_600,
     textAlign: 'center',
     lineHeight: 20,
     fontFamily: 'Inter',
   },
   skeletonContainer: {
-    paddingTop: 4,
+    paddingTop: tokens.space.xs,
   },
 });
 

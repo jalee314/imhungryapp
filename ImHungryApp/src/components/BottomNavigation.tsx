@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { tokens } from '#/ui';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
@@ -220,15 +221,15 @@ const styles = StyleSheet.create({
   },
   navLabel: {
     fontSize: scale(12),
-    color: '#757575',
-    fontWeight: '400',
+    color: tokens.color.gray_500,
+    fontWeight: tokens.fontWeight.normal,
     marginTop: scale(4),
     textAlign: 'center',
     width: '100%',
   },
   activeNavLabel: {
-    color: '#000000',
-    fontWeight: '400',
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.normal,
   },
   navProfilePhoto: {
     width: PROFILE_SIZE,
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   activeNavProfilePhoto: {
-    borderColor: '#000000',
+    borderColor: tokens.color.black,
   },
   navProfilePlaceholder: {
     width: PROFILE_SIZE,
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
   },
   navPlaceholderText: {
     fontSize: scale(12),
-    color: '#999',
+    color: tokens.color.gray_400,
   },
 });
 

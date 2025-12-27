@@ -11,6 +11,7 @@
  * - No more dealCacheService subscription
  * - Optimistic updates via queryClient.setQueryData
  * - Cleaner separation of concerns
+ * - Uses design tokens for consistent styling
  */
 
 import React, { useState, useCallback } from 'react';
@@ -24,6 +25,7 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
+import { tokens } from '#/ui';
 
 // Calculate horizontal card dimensions to match DealCard.tsx
 const { width: screenWidth } = Dimensions.get('window');
@@ -401,8 +403,8 @@ const Feed: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#FF8C4C']}
-            tintColor="#FF8C4C"
+            colors={[tokens.color.primary_600]}
+            tintColor={tokens.color.primary_600}
           />
         }
       >
@@ -415,31 +417,31 @@ const Feed: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   content: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingTop: 4,
+    backgroundColor: tokens.color.white,
+    paddingTop: tokens.space.xs,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingLeft: 16,
-    paddingRight: 10,
+    paddingTop: tokens.space.xs,
+    paddingBottom: tokens.space.xs,
+    paddingLeft: tokens.space.lg,
+    paddingRight: tokens.space.sm,
   },
   sectionTitle: {
     fontFamily: 'Inter',
-    fontWeight: '700',
+    fontWeight: tokens.fontWeight.bold,
     fontSize: 17,
-    color: '#000000',
+    color: tokens.color.black,
   },
   seeAllButton: {
-    backgroundColor: '#F1F1F1',
-    borderRadius: 50,
+    backgroundColor: tokens.color.gray_100,
+    borderRadius: tokens.radius.full,
     width: 30,
     height: 30,
     justifyContent: 'center',
@@ -447,7 +449,7 @@ const styles = StyleSheet.create({
   },
   communityList: {
     paddingLeft: 10.5,
-    paddingRight: 10,
+    paddingRight: tokens.space.sm,
   },
   communityListWrapper: {
     height: HORIZONTAL_CARD_HEIGHT, // Match actual card height for FlashList
@@ -457,95 +459,95 @@ const styles = StyleSheet.create({
   },
   sectionSeparator: {
     height: 0.5,
-    backgroundColor: '#DEDEDE',
-    marginHorizontal: -20,
+    backgroundColor: tokens.color.gray_200,
+    marginHorizontal: -tokens.space.xl,
     width: '110%',
-    marginBottom: 4,
+    marginBottom: tokens.space.xs,
   },
   dealsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    paddingLeft: 10,
-    paddingRight: 10,
+    paddingLeft: tokens.space.sm,
+    paddingRight: tokens.space.sm,
     paddingBottom: 100,
   },
   leftCard: {
     marginBottom: 0,
-    marginRight: 2,
+    marginRight: tokens.space._2xs,
   },
   rightCard: {
     marginTop: 0,
-    marginLeft: 2,
+    marginLeft: tokens.space._2xs,
   },
   loadingContainer: {
     flex: 1,
     paddingBottom: 0,
   },
   filterSkeletonContainer: {
-    marginTop: 4,
-    marginBottom: 10,
+    marginTop: tokens.space.xs,
+    marginBottom: tokens.space.sm,
   },
   filterSkeletonList: {
     paddingLeft: 18.5,
-    gap: 4,
+    gap: tokens.space.xs,
   },
   filterSkeletonItem: {
-    marginRight: 4,
+    marginRight: tokens.space.xs,
   },
   skeletonSeparator: {
     height: 0.5,
-    marginVertical: 8,
+    marginVertical: tokens.space.sm,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    paddingVertical: tokens.space._5xl,
   },
   errorText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.gray_600,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: tokens.space.lg,
     fontFamily: 'Inter',
   },
   retryButton: {
-    backgroundColor: '#FFA05C',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: tokens.color.primary_500,
+    paddingHorizontal: tokens.space._2xl,
+    paddingVertical: tokens.space.md,
+    borderRadius: tokens.radius.sm,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: tokens.color.white,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    paddingVertical: tokens.space._5xl,
     minHeight: 300,
   },
   emptyIcon: {
-    marginBottom: 16,
+    marginBottom: tokens.space.lg,
   },
   emptyText: {
-    fontSize: 18,
-    color: '#666',
+    fontSize: tokens.fontSize.lg,
+    color: tokens.color.gray_600,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
-    fontWeight: '600',
+    fontWeight: tokens.fontWeight.semibold,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_400,
     textAlign: 'center',
     fontFamily: 'Inter',
-    paddingHorizontal: 20,
+    paddingHorizontal: tokens.space.xl,
   },
 });
 

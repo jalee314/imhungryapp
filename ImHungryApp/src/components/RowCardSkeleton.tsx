@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
+import { tokens } from '#/ui';
 
 const RowCardSkeleton: React.FC = () => {
   const shimmerAnimation = useRef(new Animated.Value(0)).current;
@@ -57,46 +58,46 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
   },
   rowCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 8,
-    marginHorizontal: 12,
-    marginVertical: 4,
+    backgroundColor: tokens.color.white,
+    borderRadius: tokens.radius.md,
+    padding: tokens.space.sm,
+    marginHorizontal: tokens.space.md,
+    marginVertical: tokens.space.xs,
     height: 86,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: tokens.space.lg,
     width: '100%',
     height: '100%',
   },
   imageSkeleton: {
     width: 70,
     height: 70,
-    borderRadius: 8,
+    borderRadius: tokens.radius.sm,
   },
   textFrame: {
     flex: 1,
     flexDirection: 'column',
-    gap: 8,
+    gap: tokens.space.sm,
     justifyContent: 'center',
-    paddingRight: 8,
+    paddingRight: tokens.space.sm,
   },
   titleSkeleton: {
     width: '80%',
     height: 14,
-    borderRadius: 4,
+    borderRadius: tokens.radius.xs,
   },
   subtitleSkeleton: {
     width: '60%',
     height: 12,
-    borderRadius: 4,
+    borderRadius: tokens.radius.xs,
   },
   arrowSkeleton: {
     width: 16,
     height: 16,
-    borderRadius: 8,
+    borderRadius: tokens.radius.sm,
   },
 });
 

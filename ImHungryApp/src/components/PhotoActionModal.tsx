@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { tokens } from '#/ui';
 
 interface PhotoActionModalProps {
   visible: boolean;
@@ -62,39 +63,39 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: tokens.space.lg,
     paddingBottom: 90, // Position above bottom navigation
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
-    marginBottom: 8,
+    marginBottom: tokens.space.sm,
   },
   option: {
-    paddingVertical: 16,
+    paddingVertical: tokens.space.lg,
     alignItems: 'center',
   },
   optionText: {
     fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#000000',
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.normal,
+    color: tokens.color.black,
   },
   divider: {
     height: 1,
     backgroundColor: '#E0E0E0',
   },
   cancelButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
-    paddingVertical: 16,
+    paddingVertical: tokens.space.lg,
     alignItems: 'center',
   },
   cancelText: {
     fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#000000',
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.normal,
+    color: tokens.color.black,
   },
 });
 

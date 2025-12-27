@@ -30,6 +30,7 @@ import SkeletonLoader from '#/components/SkeletonLoader';
 import { useRestaurantsQuery } from '#/state/queries';
 import { DiscoverRestaurant } from '#/services/discoverService';
 import { useLocation } from '#/features/discover';
+import { tokens } from '#/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -206,11 +207,11 @@ const DiscoverFeed: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -218,10 +219,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffffed',
     borderWidth: 0.5,
     borderColor: '#d7d7d7',
-    borderRadius: 30,
-    paddingHorizontal: 16,
+    borderRadius: tokens.radius.full,
+    paddingHorizontal: tokens.space.lg,
     height: 35,
-    gap: 16,
+    gap: tokens.space.lg,
     elevation: 2,
   },
   searchInputContainerFocused: {
@@ -233,60 +234,60 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: 'rgba(60, 60, 67, 0.6)',
     fontFamily: 'Inter',
-    fontWeight: '400',
+    fontWeight: tokens.fontWeight.normal,
     letterSpacing: -0.41,
     lineHeight: 22,
     padding: 0,
   },
   clearButton: {
-    padding: 4,
+    padding: tokens.space.xs,
   },
   content: {
     flex: 1,
-    paddingBottom: 0, // Remove extra padding since MainAppLayout handles this
+    paddingBottom: 0,
   },
   listContainer: {
-    paddingBottom: 100, // Remove extra padding
-    paddingHorizontal: 0, // Remove horizontal padding to let cards control their own spacing
+    paddingBottom: 100,
+    paddingHorizontal: 0,
   },
   loadingContainer: {
     flex: 1,
-    paddingTop: 4,
+    paddingTop: tokens.space.xs,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
-    paddingHorizontal: 40,
+    paddingHorizontal: tokens.space._4xl,
   },
   errorTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: tokens.fontSize.lg,
+    fontWeight: tokens.fontWeight.semibold,
     color: '#333',
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: tokens.space.lg,
+    marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
     textAlign: 'center',
   },
   errorSubtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_600,
     fontFamily: 'Inter',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 24,
+    marginBottom: tokens.space._2xl,
   },
   retryButton: {
-    backgroundColor: '#FFA05C',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: tokens.color.primary_500,
+    paddingHorizontal: tokens.space._2xl,
+    paddingVertical: tokens.space.md,
+    borderRadius: tokens.radius.sm,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: tokens.color.white,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter',
   },
   emptyContainer: {
@@ -294,20 +295,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
-    paddingHorizontal: 40,
+    paddingHorizontal: tokens.space._4xl,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: tokens.fontSize.lg,
+    fontWeight: tokens.fontWeight.semibold,
+    color: tokens.color.gray_600,
+    marginTop: tokens.space.lg,
+    marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.gray_400,
     fontFamily: 'Inter',
     textAlign: 'center',
     lineHeight: 20,

@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
+import { atoms as a, useTheme, tokens } from '#/ui';
 
 export default function LogInScreen() {
   const navigation = useNavigation();
@@ -99,7 +99,7 @@ export default function LogInScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={[a.flex_1, { backgroundColor: tokens.color.white }]}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -111,7 +111,7 @@ export default function LogInScreen() {
             showsVerticalScrollIndicator={false}
           >
             <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color={tokens.color.black} />
             </TouchableOpacity>
   
             <View style={styles.mainContainer}>
@@ -133,13 +133,13 @@ export default function LogInScreen() {
                     value={formData.email}
                     onChangeText={t => handleInputChange('email', t)}
                     placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                    outlineColor={tokens.color.primary_600}
+                    activeOutlineColor={tokens.color.primary_600}
+                    style={[styles.textInputStyle, { backgroundColor: tokens.color.white }]}
                     theme={{
-                      roundness: 8,
+                      roundness: tokens.radius.sm,
                       colors: {
-                        background: 'white',
+                        background: tokens.color.white,
                       },
                     }}
                     keyboardType="email-address"
@@ -157,13 +157,13 @@ export default function LogInScreen() {
                     value={formData.password}
                     onChangeText={t => handleInputChange('password', t)}
                     placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                    outlineColor={tokens.color.primary_600}
+                    activeOutlineColor={tokens.color.primary_600}
+                    style={[styles.textInputStyle, { backgroundColor: tokens.color.white }]}
                     theme={{
-                      roundness: 8,
+                      roundness: tokens.radius.sm,
                       colors: {
-                        background: 'white',
+                        background: tokens.color.white,
                       },
                     }}
                     keyboardType="default"
@@ -208,8 +208,8 @@ export default function LogInScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
-  container: { flex: 1, backgroundColor: 'white' },
+  // Base container with theme background
+  container: { flex: 1, backgroundColor: tokens.color.white },
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 }, // responsive padding applied at runtime
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   mainContainer: {
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 50,
+    paddingTop: tokens.space._5xl,
   }, 
 
   backButton: { 
@@ -228,15 +228,15 @@ const styles = StyleSheet.create({
 
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle: {
-    fontSize: 18,
-    color: '#181619',
+    fontSize: tokens.fontSize.lg,
+    color: tokens.color.text_primary,
     fontFamily: 'Inter-Bold',
-    fontWeight: '700',
+    fontWeight: tokens.fontWeight.bold,
     textAlign: 'left'
   },
   welcomeSubtitle: {
-    fontSize: 16,
-    color: '#181619',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.text_primary,
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
@@ -250,41 +250,41 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     height: 44,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 22,
+    backgroundColor: tokens.color.primary_600,
+    borderRadius: tokens.radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '400',
+    color: tokens.color.white,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.normal,
     fontFamily: 'Inter-Regular',
     lineHeight: 24
   },
 
-  forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
+  forgotPasswordContainer: { alignSelf: 'center', marginTop: tokens.space.lg },
   forgotPasswordText: {
-    fontSize: 14,
-    color: '#000',
-    fontWeight: '500',
+    fontSize: tokens.fontSize.sm,
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.medium,
     textDecorationLine: 'underline'
   },
 
   legalContainer: { alignItems: 'center' },
   legalText: {
-    fontSize: 12,
-    color: '#181619',
+    fontSize: tokens.fontSize.xs,
+    color: tokens.color.text_primary,
     textAlign: 'left',
     lineHeight: 16,
     fontFamily: 'Inter-Medium',
-    fontWeight: '500'
+    fontWeight: tokens.fontWeight.medium
   },
-  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Inter-SemiBold' },
+  legalLink: { color: tokens.color.primary_500, fontWeight: tokens.fontWeight.semibold, fontFamily: 'Inter-SemiBold' },
   textInputStyle: {
-    backgroundColor: 'white',
+    backgroundColor: tokens.color.white,
     minHeight: 56,
-    fontSize: 16,
+    fontSize: tokens.fontSize.md,
     lineHeight: 22,
     paddingVertical: 0,
   },

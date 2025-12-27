@@ -12,6 +12,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import { tokens } from '#/ui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
@@ -359,29 +360,29 @@ const LocationModal: React.FC<LocationModalProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: tokens.space.xl,
     paddingVertical: 15,
     borderBottomWidth: 0.5,
     borderBottomColor: '#DEDEDE',
   },
   headerButtonText: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: tokens.fontWeight.semibold,
+    color: tokens.color.black,
   },
   doneButton: {
-    color: '#FF8C4C',
-    fontWeight: '600',
+    color: tokens.color.primary_600,
+    fontWeight: tokens.fontWeight.semibold,
   },
   doneButtonDisabled: {
     color: 'rgba(255, 140, 76, 0.5)',
@@ -391,40 +392,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F2F2F7',
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginHorizontal: 16,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+    marginHorizontal: tokens.space.lg,
     marginVertical: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 17,
-    color: '#000',
-    marginLeft: 8,
+    color: tokens.color.black,
+    marginLeft: tokens.space.sm,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: tokens.space.lg,
   },
   locationItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 15,
-    paddingHorizontal: 4,
+    paddingHorizontal: tokens.space.xs,
   },
   locationTextContainer: {
     flex: 1,
   },
   locationText: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
   },
   checkmark: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FF8C4C',
+    backgroundColor: tokens.color.primary_600,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -435,7 +436,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 0.5,
     backgroundColor: '#C6C6C8',
-    marginLeft: 4,
+    marginLeft: tokens.space.xs,
   },
   loadingContainer: {
     flex: 1,
@@ -443,7 +444,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContentContainer: {
-    paddingBottom: 20,
+    paddingBottom: tokens.space.xl,
   },
 });
 

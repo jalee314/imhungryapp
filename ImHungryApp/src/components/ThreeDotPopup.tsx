@@ -8,6 +8,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { tokens } from '#/ui';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -95,13 +96,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   popupContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.color.white,
     borderRadius: 10,
     width: 369,
-    paddingVertical: 8,
+    paddingVertical: tokens.space.sm,
     flexDirection: 'column',
-    gap: 8,
-    shadowColor: '#000',
+    gap: tokens.space.sm,
+    shadowColor: tokens.color.black,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -114,15 +115,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: tokens.space.lg,
     paddingVertical: 2,
     height: 40,
-    gap: 16,
+    gap: tokens.space.lg,
   },
   popupItemText: {
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '400',
+    fontSize: tokens.fontSize.xs,
+    color: tokens.color.black,
+    fontWeight: tokens.fontWeight.normal,
     flex: 1,
   },
   popupDivider: {

@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { tokens } from '#/ui';
 import { useNavigation } from '@react-navigation/native';
 import { adminService } from '#/services/adminService';
 import { useAdmin } from '../hooks/useAdmin';
@@ -126,15 +127,15 @@ const AdminLoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: tokens.color.gray_100,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFF',
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.lg,
+    backgroundColor: tokens.color.white,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
@@ -142,61 +143,61 @@ const styles = StyleSheet.create({
     width: 40,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: tokens.fontSize.lg,
+    fontWeight: tokens.fontWeight.bold,
+    color: tokens.color.black,
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingHorizontal: tokens.space._2xl,
+    paddingTop: tokens.space._4xl,
   },
   lockIcon: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: tokens.space._2xl,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: tokens.fontSize.md,
     textAlign: 'center',
-    color: '#666',
-    marginBottom: 32,
+    color: tokens.color.gray_500,
+    marginBottom: tokens.space._3xl,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: tokens.space.xl,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: tokens.fontSize.sm,
+    fontWeight: tokens.fontWeight.semibold,
     color: '#333',
-    marginBottom: 8,
+    marginBottom: tokens.space.sm,
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: tokens.color.white,
     borderWidth: 1,
     borderColor: '#DDD',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#000',
+    borderRadius: tokens.space.sm,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
+    fontSize: tokens.fontSize.md,
+    color: tokens.color.black,
   },
   loginButton: {
-    backgroundColor: '#FFA05C',
-    borderRadius: 8,
-    paddingVertical: 16,
+    backgroundColor: tokens.color.primary_500,
+    borderRadius: tokens.space.sm,
+    paddingVertical: tokens.space.lg,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: tokens.space.xl,
   },
   loginButtonDisabled: {
     opacity: 0.6,
   },
   loginButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
+    color: tokens.color.white,
+    fontSize: tokens.fontSize.md,
+    fontWeight: tokens.fontWeight.bold,
   },
 });
 
