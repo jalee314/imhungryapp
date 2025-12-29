@@ -2,12 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as tokens from '#/ui/tokens';
-
-interface HeaderProps {
-  onLocationPress?: () => void;
-  currentLocation?: string;
-  paddingHorizontal?: number;
-}
+import { HeaderProps } from '#/types';
 
 const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, paddingHorizontal }) => {
   // Calculate dynamic padding based on screen width
@@ -18,7 +13,7 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, 
       <View style={[styles.headerBottomFrame, { paddingHorizontal: dynamicPadding }]}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('../../img/logo/hungri_logo.png')}
+            source={require('../../../../img/logo/hungri_logo.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />

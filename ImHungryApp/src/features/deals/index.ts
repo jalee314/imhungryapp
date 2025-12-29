@@ -21,6 +21,9 @@ export { default as BlockUserScreen } from './screens/BlockUserScreen';
 // Components
 export { default as FeedTabNavigator } from './components/FeedTabNavigator';
 export { default as ThreeDotPopup } from './components/ThreeDotPopup';
+export { default as CuisineFilter } from './components/CuisineFilter';
+export { default as VoteButtons } from './components/VoteButtons';
+export { default as Header } from './components/Header';
 
 // Hooks
 export { useDealUpdate } from './hooks/useDealUpdate';

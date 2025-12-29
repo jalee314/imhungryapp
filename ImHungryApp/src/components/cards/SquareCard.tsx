@@ -36,6 +36,10 @@ import {
 import { atoms as a } from '#/ui'
 import * as tokens from '#/ui/tokens'
 import { Card, CardBody, CardImage } from './Card'
+import { SquareCardData } from '#/types'
+
+// Re-export for backward compatibility
+export type { SquareCardData } from '#/types'
 
 // ==========================================
 // Constants
@@ -44,19 +48,6 @@ import { Card, CardBody, CardImage } from './Card'
 const CARD_WIDTH = 107
 const CARD_HEIGHT = 124
 const IMAGE_SIZE = 80
-
-// ==========================================
-// Types
-// ==========================================
-
-export interface SquareCardData {
-  id: string
-  title: string
-  subtitle: string
-  image: string | ImageSourcePropType
-  distance?: string
-  dealCount?: number
-}
 
 // ==========================================
 // Square Image Component

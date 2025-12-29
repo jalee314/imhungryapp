@@ -104,19 +104,12 @@ export interface RestaurantFavoriteResult {
 // Location Types
 // ==========================================
 
-export interface LocationItem {
-  id: string;
-  name: string;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-}
+// Note: LocationItem is defined in components.ts to match actual component usage
 
 export interface LocationContextType {
-  currentLocation: LocationItem | null;
-  setCurrentLocation: (location: LocationItem) => void;
-  searchLocation: (query: string) => Promise<LocationItem[]>;
+  currentLocation: any | null;
+  setCurrentLocation: (location: any) => void;
+  searchLocation: (query: string) => Promise<any[]>;
   resetToUserLocation: () => Promise<void>;
 }
 

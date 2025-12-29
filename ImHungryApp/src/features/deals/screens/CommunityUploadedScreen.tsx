@@ -18,8 +18,9 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import DealCard, { Deal } from '#/components/cards/DealCard';
-import DealCardSkeleton from '#/components/DealCardSkeleton';
+import DealCard from '#/components/cards/DealCard';
+import { DealCardSkeleton } from '#/components/cards';
+import { Deal } from '#/types';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '#/services/voteService';
 import { logClick } from '#/services/interactionService';
 import { useFeedQuery } from '#/state/queries';

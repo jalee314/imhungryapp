@@ -45,7 +45,8 @@ import { atoms as a, useTheme, ViewStyleProp } from '#/ui'
 import * as tokens from '#/ui/tokens'
 import { Card, CardBody, CardFooter, CardImage } from './Card'
 import { OptimizedImage, preloadImage } from '../Image'
-import VoteButtons from '../VoteButtons'
+import { VoteButtons } from '#/features/deals'
+import { Deal } from '#/types'
 
 // ==========================================
 // Constants
@@ -70,35 +71,11 @@ const HORIZONTAL_IMAGE_HEIGHT = HORIZONTAL_IMAGE_WIDTH * 0.64
 const VERTICAL_IMAGE_SIZE = VERTICAL_CARD_WIDTH - scale(16)
 
 // ==========================================
-// Types
+// Types - Re-exported from centralized types
 // ==========================================
 
-export interface Deal {
-  id: string
-  title: string
-  restaurant: string
-  details: string
-  image: string | any
-  imageVariants?: any
-  votes: number
-  isUpvoted: boolean
-  isDownvoted: boolean
-  isFavorited: boolean
-  cuisine?: string
-  cuisineId?: string
-  dealType?: string
-  timeAgo: string
-  author?: string
-  milesAway?: string
-  userId?: string
-  userDisplayName?: string
-  userProfilePhoto?: string
-  userCity?: string
-  userState?: string
-  restaurantAddress?: string
-  isAnonymous?: boolean
-  expirationDate?: string | null
-}
+// Deal type is imported from '#/types' for centralized type management
+export type { Deal } from '#/types'
 
 interface DealCardProps {
   deal: Deal

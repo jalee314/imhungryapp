@@ -18,7 +18,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import RowCard from '#/components/cards/RowCard';
-import RowCardSkeleton from '#/components/RowCardSkeleton';
+import { RowCardSkeleton } from '#/components/cards';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useFavoritesPageQuery } from '#/state/queries';
 import { useFavorites } from '../hooks/useFavorites';

@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { atoms as a } from '#/ui';
-import Header from './Header';
-import LocationModal from './LocationModal';
-import { useLocation, DiscoverFeed } from '#/features/discover';
+import { Header } from '#/features/deals';
+import { LocationModal, useLocation, DiscoverFeed } from '#/features/discover';
 import { Feed } from '#/features/deals';
 
 interface FeedTabNavigatorProps {

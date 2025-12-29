@@ -19,16 +19,15 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
-import { Deal } from '#/components/cards/DealCard';
-import ThreeDotPopup from '#/components/ThreeDotPopup';
-import VoteButtons from '#/components/VoteButtons';
+import { Deal } from '#/types';
+import { ThreeDotPopup, VoteButtons } from '#/features/deals';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '#/services/voteService';
 import { useDealUpdate } from '../hooks/useDealUpdate';
 import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '#/services/interactionService';
 import { useFavorites } from '#/features/profile/hooks/useFavorites';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { OptimizedImage } from '#/components/Image';
-import MapSelectionModal from '#/components/MapSelectionModal';
+import { MapSelectionModal } from '#/features/discover';
 import { supabase } from '#/../lib/supabase';
 import { tokens, atoms as a } from '#/ui';
 

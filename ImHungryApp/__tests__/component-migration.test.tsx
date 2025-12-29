@@ -64,7 +64,7 @@ describe('DealCard Component Migration', () => {
   let DealCard: any;
   
   beforeAll(() => {
-    DealCard = require('../src/components/DealCard').default;
+    DealCard = require('../src/components/cards/DealCard').default;
   });
 
   const mockDeal = {
@@ -102,7 +102,7 @@ describe('DealCard Component Migration', () => {
   it('should use tokens for styling (verified via import)', () => {
     // Verify the component imports tokens
     const dealCardSource = require('fs').readFileSync(
-      require.resolve('../src/components/DealCard'),
+      require.resolve('../src/components/cards/DealCard'),
       'utf-8'
     );
     expect(dealCardSource).toContain("import * as tokens from '#/ui/tokens'");
@@ -116,7 +116,7 @@ describe('RowCard Component Migration', () => {
   let RowCard: any;
 
   beforeAll(() => {
-    RowCard = require('../src/components/RowCard').default;
+    RowCard = require('../src/components/cards/RowCard').default;
   });
 
   const mockData = {
@@ -151,7 +151,7 @@ describe('RowCard Component Migration', () => {
 
   it('should use tokens for styling (verified via import)', () => {
     const rowCardSource = require('fs').readFileSync(
-      require.resolve('../src/components/RowCard'),
+      require.resolve('../src/components/cards/RowCard'),
       'utf-8'
     );
     expect(rowCardSource).toContain("import * as tokens from '#/ui/tokens'");
@@ -164,7 +164,7 @@ describe('SquareCard Component Migration', () => {
   let SquareCard: any;
 
   beforeAll(() => {
-    SquareCard = require('../src/components/SquareCard').default;
+    SquareCard = require('../src/components/cards/SquareCard').default;
   });
 
   const mockData = {
@@ -183,7 +183,7 @@ describe('SquareCard Component Migration', () => {
 
   it('should use tokens for styling (verified via import)', () => {
     const squareCardSource = require('fs').readFileSync(
-      require.resolve('../src/components/SquareCard'),
+      require.resolve('../src/components/cards/SquareCard'),
       'utf-8'
     );
     expect(squareCardSource).toContain("import * as tokens from '#/ui/tokens'");
@@ -197,7 +197,7 @@ describe('Header Component Migration', () => {
   let Header: any;
 
   beforeAll(() => {
-    Header = require('../src/components/Header').default;
+    Header = require('../src/features/deals/components/Header').default;
   });
 
   it('should render without crashing', () => {
@@ -207,7 +207,7 @@ describe('Header Component Migration', () => {
 
   it('should use tokens for styling (verified via import)', () => {
     const headerSource = require('fs').readFileSync(
-      require.resolve('../src/components/Header'),
+      require.resolve('../src/features/deals/components/Header'),
       'utf-8'
     );
     expect(headerSource).toContain("import * as tokens from '#/ui/tokens'");
@@ -219,7 +219,7 @@ describe('VoteButtons Component Migration', () => {
   let VoteButtons: any;
 
   beforeAll(() => {
-    VoteButtons = require('../src/components/VoteButtons').default;
+    VoteButtons = require('../src/features/deals/components/VoteButtons').default;
   });
 
   it('should render without crashing', () => {
@@ -237,7 +237,7 @@ describe('VoteButtons Component Migration', () => {
 
   it('should use tokens for styling (verified via import)', () => {
     const voteButtonsSource = require('fs').readFileSync(
-      require.resolve('../src/components/VoteButtons'),
+      require.resolve('../src/features/deals/components/VoteButtons'),
       'utf-8'
     );
     expect(voteButtonsSource).toContain("import * as tokens from '#/ui/tokens'");
@@ -249,7 +249,7 @@ describe('VoteButtons Component Migration', () => {
 describe('CuisineFilter Component Migration', () => {
   it('should use tokens for styling (verified via import)', () => {
     const cuisineFilterSource = require('fs').readFileSync(
-      require.resolve('../src/components/CuisineFilter'),
+      require.resolve('../src/features/deals/components/CuisineFilter'),
       'utf-8'
     );
     expect(cuisineFilterSource).toContain("import * as tokens from '#/ui/tokens'");

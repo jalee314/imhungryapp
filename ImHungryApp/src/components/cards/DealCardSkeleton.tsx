@@ -1,3 +1,12 @@
+/**
+ * DealCardSkeleton.tsx
+ *
+ * Skeleton loading state for DealCard component.
+ * Matches the exact dimensions and layout of DealCard.
+ *
+ * @module components/cards/DealCardSkeleton
+ */
+
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { tokens, atoms as a } from '#/ui';
@@ -12,7 +21,7 @@ const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
 const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.32;
 
-interface DealCardSkeletonProps {
+export interface DealCardSkeletonProps {
   variant?: 'horizontal' | 'vertical';
 }
 
@@ -96,96 +105,96 @@ const styles = StyleSheet.create({
   
   // Horizontal Card Styles (matching DealCard dimensions exactly)
   horizontalCard: {
-    ...a.bg_white,
-    ...a.rounded_md,
-    ...a.py_md,
-    ...a.px_sm,
-    ...a.align_start,
-    ...a.justify_center,
+    backgroundColor: tokens.color.white,
+    borderRadius: tokens.radius.md,
+    paddingVertical: tokens.space.md,
+    paddingHorizontal: tokens.space.sm,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
     width: HORIZONTAL_CARD_WIDTH,
     height: 280,
   },
   horizontalImage: {
-    ...a.rounded_sm,
-    ...a.mb_sm,
+    borderRadius: tokens.radius.sm,
+    marginBottom: tokens.space.sm,
     width: 260,
     height: 167,
   },
   horizontalTitleContainer: {
-    ...a.w_full,
-    ...a.mb_sm,
-    ...a.justify_start,
+    width: '100%',
+    marginBottom: tokens.space.sm,
+    justifyContent: 'flex-start',
     height: 30,
   },
   horizontalTitleSkeleton: {
-    ...a.mb_xs,
+    marginBottom: tokens.space.xs,
     width: '90%',
     height: 12,
     borderRadius: 6,
   },
   horizontalDetailsSkeleton: {
-    ...a.w_full,
-    ...a.rounded_xs,
-    ...a.mb_sm,
+    width: '100%',
+    borderRadius: tokens.radius.xs,
+    marginBottom: tokens.space.sm,
     height: 24,
   },
   horizontalInteractions: {
-    ...a.flex_row,
-    ...a.justify_between,
-    ...a.align_center,
-    ...a.w_full,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
   },
   horizontalVoteContainerSkeleton: {
-    ...a.rounded_full,
+    borderRadius: 999,
     width: 80,
     height: 28,
   },
   horizontalFavoriteSkeleton: {
-    ...a.rounded_full,
+    borderRadius: 999,
     width: 62,
     height: 28,
   },
 
   // Vertical Card Styles (matching DealCard dimensions exactly)
   verticalCard: {
-    ...a.bg_white,
-    ...a.rounded_lg,
-    ...a.p_sm,
-    ...a.align_start,
-    ...a.justify_start,
+    backgroundColor: tokens.color.white,
+    borderRadius: tokens.radius.lg,
+    padding: tokens.space.sm,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
     width: VERTICAL_CARD_WIDTH,
   },
   verticalImage: {
-    ...a.w_full,
-    ...a.rounded_sm,
-    ...a.mb_sm,
+    width: '100%',
+    borderRadius: tokens.radius.sm,
+    marginBottom: tokens.space.sm,
     height: 175,
   },
   verticalTitleSkeleton: {
-    ...a.rounded_xs,
-    ...a.mb_sm,
+    borderRadius: tokens.radius.xs,
+    marginBottom: tokens.space.sm,
     width: VERTICAL_CARD_WIDTH - 24,
     height: 30,
   },
   verticalDetailsSkeleton: {
-    ...a.rounded_xs,
-    ...a.mb_sm,
+    borderRadius: tokens.radius.xs,
+    marginBottom: tokens.space.sm,
     width: VERTICAL_CARD_WIDTH - 24,
     height: 24,
   },
   verticalInteractions: {
-    ...a.flex_row,
-    ...a.justify_between,
-    ...a.align_center,
-    ...a.w_full,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
   },
   verticalVoteContainerSkeleton: {
-    ...a.rounded_full,
+    borderRadius: 999,
     width: 70,
     height: 28,
   },
   verticalFavoriteSkeleton: {
-    ...a.rounded_full,
+    borderRadius: 999,
     width: 40,
     height: 28,
   },

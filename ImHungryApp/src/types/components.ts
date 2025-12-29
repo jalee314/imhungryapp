@@ -3,8 +3,23 @@
 // ==========================================
 
 import React from 'react';
+import { ImageSourcePropType, ViewStyle, ImageStyle, TextStyle } from 'react-native';
 import { Deal } from './deals';
-import { ImageVariants, LocationItem } from './common';
+import { ImageVariants } from './common';
+
+// ==========================================
+// Location Types (used in components)
+// ==========================================
+
+export interface LocationItem {
+  id: string;
+  city: string;
+  state: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
 
 // ==========================================
 // Card Component Props
@@ -26,7 +41,7 @@ export interface SquareCardData {
   id: string;
   title: string;
   subtitle: string;
-  image: string | any;
+  image: string | ImageSourcePropType;
   distance?: string;
   dealCount?: number;
 }
@@ -40,7 +55,7 @@ export interface RowCardData {
   id: string;
   title: string;
   subtitle: string;
-  image: string | any;
+  image: string | ImageSourcePropType;
   distance?: string;
   dealCount?: number;
   views?: number;
@@ -51,12 +66,14 @@ export interface RowCardData {
   userDisplayName?: string;
 }
 
+export type RowCardVariant = 'explore-deal-card' | 'rest-deal' | 'favorites-deal-card';
+
 export interface RowCardProps {
   data: RowCardData;
-  variant: 'explore-deal-card' | 'rest-deal' | 'favorites-deal-card';
+  variant: RowCardVariant;
   onPress?: (id: string) => void;
   onUserPress?: (userId: string) => void;
-  style?: any;
+  style?: ViewStyle;
 }
 
 // ==========================================
@@ -64,14 +81,20 @@ export interface RowCardProps {
 // ==========================================
 
 export interface CuisineFilterProps {
-  selectedCuisine: string | null;
-  onSelectCuisine: (cuisineId: string | null) => void;
+  filters: string[];
+  selectedFilter?: string;
+  selectedFilters?: string[];
+  multiSelect?: boolean;
+  onFilterSelect: (filter: string) => void;
+  onFiltersSelect?: (filters: string[]) => void;
+  style?: ViewStyle;
+  showAllOption?: boolean;
 }
 
 export interface HeaderProps {
-  title: string;
-  showBackButton?: boolean;
-  onBackPress?: () => void;
+  onLocationPress?: () => void;
+  currentLocation?: string;
+  paddingHorizontal?: number;
 }
 
 export interface DealCardSkeletonProps {
@@ -82,19 +105,22 @@ export interface SkeletonLoaderProps {
   width?: number | string;
   height?: number | string;
   borderRadius?: number;
-  style?: any;
+  style?: ViewStyle;
 }
 
 export interface ThreeDotPopupProps {
   visible: boolean;
   onClose: () => void;
-  options: Array<{
-    label: string;
-    onPress: () => void;
-    icon?: string;
-    danger?: boolean;
-  }>;
-  anchorPosition?: { x: number; y: number };
+  onReport: () => void;
+  onBlock: () => void;
+}
+
+export interface VoteButtonsProps {
+  votes: number;
+  isUpvoted: boolean;
+  isDownvoted: boolean;
+  onUpvote: () => void;
+  onDownvote: () => void;
 }
 
 // ==========================================
@@ -104,20 +130,20 @@ export interface ThreeDotPopupProps {
 export interface CalendarModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelectDate: (date: string) => void;
+  onDateSelect: (date: string) => void;
 }
 
 export interface PhotoActionModalProps {
   visible: boolean;
   onClose: () => void;
   onTakePhoto: () => void;
-  onChooseFromGallery: () => void;
+  onSelectFromGallery: () => void;
 }
 
 export interface ListItem {
   id: string;
   name: string;
-  icon?: string;
+  image?: string;
 }
 
 export interface ListSelectionModalProps {
@@ -125,15 +151,26 @@ export interface ListSelectionModalProps {
   onClose: () => void;
   items: ListItem[];
   selectedItem: string | null;
-  onSelectItem: (itemId: string) => void;
-  title?: string;
+  onSelectItem: (item: ListItem) => void;
+  title: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
 }
 
 export interface LocationModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelectLocation: (location: LocationItem) => void;
-  currentLocation: LocationItem | null;
+  onLocationUpdate: (location: LocationItem) => void;
+}
+
+export interface MapSelectionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  restaurantName: string;
+  restaurantAddress: string;
+  restaurantLat?: number;
+  restaurantLng?: number;
 }
 
 // ==========================================

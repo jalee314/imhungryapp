@@ -24,8 +24,9 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import RowCard, { RowCardData } from '#/components/cards/RowCard';
-import RowCardSkeleton from '#/components/RowCardSkeleton';
+import RowCard from '#/components/cards/RowCard';
+import { RowCardData } from '#/types';
+import { RowCardSkeleton } from '#/components/cards';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useRestaurantsQuery } from '#/state/queries';
 import { DiscoverRestaurant } from '#/services/discoverService';

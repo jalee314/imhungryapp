@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Header from '#/components/Header';
-import LocationModal from '#/components/LocationModal';
+import { Header } from '#/features/deals';
+import { LocationModal } from '#/features/discover';
 import { useLocation } from '#/features/discover';
 import Feed from '#/features/deals/screens/Feed';
 import DiscoverFeed from '#/features/discover/screens/DiscoverFeed';

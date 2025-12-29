@@ -1,17 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ViewStyle } from 'react-native';
 import * as tokens from '#/ui/tokens';
-
-export interface CuisineFilterProps {
-  filters: string[];
-  selectedFilter?: string;
-  selectedFilters?: string[]; // For multi-select support
-  multiSelect?: boolean;
-  onFilterSelect: (filter: string) => void;
-  onFiltersSelect?: (filters: string[]) => void; // For multi-select
-  style?: any;
-  showAllOption?: boolean;
-}
+import { CuisineFilterProps } from '#/types';
 
 const CuisineFilter: React.FC<CuisineFilterProps> = ({
   filters,
@@ -138,4 +128,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
 export default CuisineFilter;

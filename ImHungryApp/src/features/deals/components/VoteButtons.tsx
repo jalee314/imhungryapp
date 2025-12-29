@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 import * as tokens from '#/ui/tokens';
+import { VoteButtonsProps } from '#/types';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -14,14 +15,6 @@ const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
 const PILL_WIDTH = scale(85);
 const PILL_HEIGHT = scale(28);
 const ARROW_SIZE = Math.round(scale(18));
-
-interface VoteButtonsProps {
-  votes: number;
-  isUpvoted: boolean;
-  isDownvoted: boolean;
-  onUpvote: () => void;
-  onDownvote: () => void;
-}
 
 const VoteButtons: React.FC<VoteButtonsProps> = ({
   votes,

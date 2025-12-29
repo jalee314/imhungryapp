@@ -34,6 +34,13 @@ export { default as SquareCard, SquareCardData } from './SquareCard'
 export * as SquareCardComponents from './SquareCard'
 
 // ==========================================
+// Skeleton Components
+// ==========================================
+
+export { default as DealCardSkeleton } from './DealCardSkeleton'
+export { default as RowCardSkeleton } from './RowCardSkeleton'
+
+// ==========================================
 // Base Card Building Blocks
 // ==========================================
 

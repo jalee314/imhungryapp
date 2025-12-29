@@ -40,27 +40,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { atoms as a, ViewStyleProp } from '#/ui'
 import * as tokens from '#/ui/tokens'
 import { Card, CardHeader, CardBody } from './Card'
+import { RowCardData, RowCardVariant } from '#/types'
 
-// ==========================================
-// Types
-// ==========================================
-
-export interface RowCardData {
-  id: string
-  title: string
-  subtitle: string
-  image: string | ImageSourcePropType
-  distance?: string
-  dealCount?: number
-  views?: number
-  postedDate?: string
-  expiresIn?: string
-  userId?: string
-  userProfilePhoto?: string
-  userDisplayName?: string
-}
-
-type RowCardVariant = 'explore-deal-card' | 'rest-deal' | 'favorites-deal-card'
+// Re-export for backward compatibility
+export type { RowCardData } from '#/types'
 
 // ==========================================
 // Row Image Component

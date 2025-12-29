@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import { Deal } from '#/components/cards/DealCard';
+import { Deal } from '#/types';
 
 export const feedService = {
   // Fetch deals with uploader user information
@@ -53,7 +53,6 @@ export const feedService = {
           timeAgo: '1h ago', // You'll need to calculate this
           author: user?.display_name || 'Anonymous',
           milesAway: '2mi', // You'll need to calculate this
-          uploaderUserId: deal.deal_template.user_id, // This is the key field!
           userProfilePhoto: photoUrl,
           userDisplayName: user?.display_name || 'Anonymous',
         };
@@ -98,16 +97,17 @@ export const feedService = {
         return null;
       }
 
-      const user = data.deal_template.user;
+      const dealData = data as any;
+      const user = dealData.deal_template.user;
       const variants = user?.image_metadata?.variants as any;
       const photoUrl = variants?.thumbnail || null;
 
       return {
-        id: data.deal_id.toString(),
-        title: data.deal_template.title,
-        restaurant: data.deal_template.restaurant.name,
-        details: data.deal_template.description || '',
-        image: data.deal_template.image_url || require('../../img/default-rest.png'),
+        id: dealData.deal_id.toString(),
+        title: dealData.deal_template.title,
+        restaurant: dealData.deal_template.restaurant.name,
+        details: dealData.deal_template.description || '',
+        image: dealData.deal_template.image_url || require('../../img/default-rest.png'),
         votes: 0,
         isUpvoted: false,
         isDownvoted: false,
@@ -115,7 +115,6 @@ export const feedService = {
         timeAgo: '1h ago',
         author: user?.display_name || 'Anonymous',
         milesAway: '2mi',
-        uploaderUserId: data.deal_template.user_id,
         userProfilePhoto: photoUrl,
         userDisplayName: user?.display_name || 'Anonymous',
       };

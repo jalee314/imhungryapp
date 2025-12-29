@@ -16,6 +16,7 @@ export { default as RestaurantDetailScreen } from './screens/RestaurantDetailScr
 
 // Components
 export { default as MapSelectionModal } from './components/MapSelectionModal';
+export { default as LocationModal } from './components/LocationModal';
 
 // Hooks
 export { useLocation } from './hooks/useLocation';

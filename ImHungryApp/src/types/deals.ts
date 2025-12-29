@@ -27,8 +27,11 @@ export interface Deal {
   userId?: string;
   userDisplayName?: string;
   userProfilePhoto?: string;
+  userCity?: string;
+  userState?: string;
   restaurantAddress?: string;
   isAnonymous?: boolean;
+  expirationDate?: string | null;
 }
 
 /**

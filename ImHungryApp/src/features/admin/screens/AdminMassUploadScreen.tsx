@@ -21,7 +21,7 @@ import { useDataCache } from '#/hooks/useDataCache';
 import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '#/services/restaurantService';
 import { processImageWithEdgeFunction } from '#/services/imageProcessingService';
 import { supabase } from '#/../lib/supabase';
-import ListSelectionModal from '#/components/ListSelectionModal';
+import { ListSelectionModal } from '#/features/contribution';
 
 // --- Debounce Helper Function ---
 function debounce<T extends (...args: any[]) => any>(

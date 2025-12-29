@@ -5,7 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Monicon } from '@monicon/native';
 import DealCard from '#/components/cards/DealCard';
-import DealCardSkeleton from '#/components/DealCardSkeleton';
+import { DealCardSkeleton } from '#/components/cards';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useProfile } from '../hooks/useProfile';
 import { tokens, atoms as a } from '#/ui';

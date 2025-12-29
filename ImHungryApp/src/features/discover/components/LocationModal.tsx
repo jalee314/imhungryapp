@@ -15,17 +15,8 @@ import {
 import { tokens, atoms as a } from '#/ui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
-
-interface LocationItem {
-  id: string;
-  city: string;
-  state: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-}
+import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '#/services/locationService';
+import { LocationItem } from '#/types';
 
 interface LocationModalProps {
   visible: boolean;
