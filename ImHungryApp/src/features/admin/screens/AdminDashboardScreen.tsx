@@ -10,7 +10,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { useNavigation } from '@react-navigation/native';
 import { adminService, AppAnalytics } from '#/services/adminService';
 import { useAdmin } from '../hooks/useAdmin';
@@ -218,52 +218,52 @@ const AdminDashboardScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.gray_100,
+    ...a.flex_1,
+    ...a.bg_gray_100,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.lg,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   signOutButton: {
     width: 40,
-    alignItems: 'flex-end',
+    ...a.align_end,
   },
   headerTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   placeholder: {
     width: 40,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
   },
   content: {
-    flex: 1,
+    ...a.flex_1,
   },
   statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    ...a.flex_row,
+    ...a.flex_wrap,
     padding: tokens.space.md,
     gap: tokens.space.md,
   },
   statCard: {
-    flex: 1,
+    ...a.flex_1,
     minWidth: '45%',
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: tokens.space.md,
     padding: tokens.space.lg,
-    alignItems: 'center',
+    ...a.align_center,
     shadowColor: tokens.color.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -273,27 +273,27 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 28,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginTop: tokens.space.sm,
   },
   statLabel: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginTop: tokens.space.xs,
   },
   statSubtext: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_400,
+    ...a.text_gray_400,
     marginTop: 2,
   },
   emptyText: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_400,
-    textAlign: 'center',
+    ...a.text_gray_400,
+    ...a.text_center,
     paddingVertical: tokens.space.xl,
   },
   section: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     marginHorizontal: tokens.space.md,
     marginBottom: tokens.space.md,
     borderRadius: tokens.space.md,
@@ -307,33 +307,33 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.lg,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.align_center,
     paddingVertical: tokens.space.md,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
   actionTextContainer: {
-    flex: 1,
+    ...a.flex_1,
     marginLeft: tokens.space.md,
   },
   actionTitle: {
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   actionSubtitle: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginTop: 2,
   },
   listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.align_center,
     paddingVertical: tokens.space.md,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
@@ -342,27 +342,27 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: tokens.color.primary_500,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.bg_primary_500,
+    ...a.justify_center,
+    ...a.align_center,
   },
   rankText: {
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.white,
+    ...a.text_white,
   },
   listItemContent: {
-    flex: 1,
+    ...a.flex_1,
     marginLeft: tokens.space.md,
   },
   listItemTitle: {
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   listItemSubtitle: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginTop: 2,
   },
 });

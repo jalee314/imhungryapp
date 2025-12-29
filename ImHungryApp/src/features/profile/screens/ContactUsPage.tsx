@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 const ContactUsPage = () => {
   const navigation = useNavigation();
@@ -61,13 +61,13 @@ const ContactUsPage = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.xl,
   },
@@ -75,20 +75,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
-    flex: 1,
-    textAlign: 'center',
+    ...a.text_black,
+    ...a.flex_1,
+    ...a.text_center,
   },
   placeholder: {
     width: 24,
   },
   content: {
-    flex: 1,    
+    ...a.flex_1,    
   },
   contactItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingHorizontal: tokens.space.xl,
     paddingBottom: tokens.space._2xl,
     paddingTop: tokens.space._2xl,
@@ -97,32 +97,32 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   emailText: {
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   linkContainer: {
-    alignItems: 'center',
+    ...a.items_center,
   },
   linkText: {
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   underline: {
     height: 1,
-    backgroundColor: tokens.color.black,
-    width: '100%',
+    ...a.bg_black,
+    ...a.w_full,
     marginTop: 2,
   },
   separator: {
     height: 1,
-    backgroundColor: tokens.color.gray_200,
+    ...a.bg_gray_200,
     marginHorizontal: tokens.space.xl,
   },
 

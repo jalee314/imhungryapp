@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import * as tokens from '#/ui/tokens';
+import { tokens, atoms as a } from '#/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 const cardWidth = 107; // Fixed width to match Figma design
@@ -54,60 +54,60 @@ const styles = StyleSheet.create({
   container: {
     width: cardWidth,
     height: 124, // Fixed height to match Figma design
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: 10,
     marginBottom: 16,
     borderWidth: 0.5,
-    borderColor: tokens.color.gray_500,
+    ...a.border_gray_500,
     padding: 4,
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.justify_between,
+    ...a.items_center,
   },
   imageContainer: {
     width: 80,
     height: 80,
     borderRadius: 8,
-    overflow: 'hidden',
+    ...a.overflow_hidden,
   },
   image: {
-    width: '100%',
+    ...a.w_full,
     height: '100%',
     resizeMode: 'cover',
   },
   contentContainer: {
-    width: '100%',
-    alignItems: 'center',
+    ...a.w_full,
+    ...a.items_center,
   },
   title: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
     marginBottom: 0,
     lineHeight: 14,
   },
   subtitle: {
     fontSize: 10,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
     lineHeight: 12,
   },
   distance: {
     fontSize: 11,
-    color: tokens.color.gray_400,
+    ...a.text_gray_400,
     fontFamily: 'Inter',
-    textAlign: 'center', // Add this to center the distance
+    ...a.text_center,
     letterSpacing: 0,
     lineHeight: 14,
   },
   dealCount: {
     fontSize: 11,
-    color: tokens.color.primary_500,
+    ...a.text_primary_500,
     fontFamily: 'Inter',
     fontWeight: '500',
-    textAlign: 'center', // Add this to center the deal count
+    ...a.text_center,
     letterSpacing: 0,
     lineHeight: 14,
   },

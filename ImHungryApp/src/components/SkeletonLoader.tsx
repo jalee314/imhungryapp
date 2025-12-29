@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 interface SkeletonLoaderProps {
   width?: number | string;
@@ -12,7 +12,7 @@ interface SkeletonLoaderProps {
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   width = '100%',
   height = 20,
-  borderRadius = 4,
+  borderRadius = tokens.radius.xs,
   style
 }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -60,7 +60,7 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E0E0E0',
+    ...a.bg_gray_200,
   },
 });
 

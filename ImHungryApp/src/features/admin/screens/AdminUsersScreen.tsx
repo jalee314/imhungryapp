@@ -18,7 +18,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native'
-import { tokens } from '#/ui'
+import { tokens, atoms as a } from '#/ui'
 import { useNavigation } from '@react-navigation/native'
 import { UserProfile } from '#/services/adminService'
 import { Ionicons } from '@expo/vector-icons'
@@ -498,16 +498,16 @@ const AdminUsersScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.gray_100,
+    ...a.flex_1,
+    ...a.bg_gray_100,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.lg,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
@@ -520,53 +520,53 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   searchContainer: {
-    flexDirection: 'row',
+    ...a.flex_row,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
     gap: tokens.space.sm,
   },
   searchInput: {
-    flex: 1,
-    backgroundColor: tokens.color.gray_100,
+    ...a.flex_1,
+    ...a.bg_gray_100,
     borderRadius: tokens.space.sm,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
     fontSize: tokens.fontSize.sm,
   },
   searchButton: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
     width: 40,
     height: 40,
     borderRadius: tokens.space.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.align_center,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
   },
   emptyText: {
     fontSize: tokens.fontSize.lg,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginTop: tokens.space.lg,
   },
   listContent: {
     padding: tokens.space.md,
   },
   userCard: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: tokens.space.md,
     padding: tokens.space.lg,
     marginBottom: tokens.space.md,
@@ -577,20 +577,20 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   userHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    ...a.flex_row,
+    ...a.justify_between,
     alignItems: 'flex-start',
     marginBottom: tokens.space.md,
   },
   userName: {
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.xs,
   },
   userEmail: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
   },
   badges: {
     flexDirection: 'column',
@@ -611,64 +611,64 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF5722',
   },
   badgeText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: 10,
     fontWeight: tokens.fontWeight.bold,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.align_center,
     marginBottom: tokens.space.xs,
     gap: 6,
   },
   userInfoText: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
   },
   modalOverlay: {
-    flex: 1,
+    ...a.flex_1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    ...a.justify_end,
   },
   modalContent: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderTopLeftRadius: tokens.space.xl,
     borderTopRightRadius: tokens.space.xl,
     padding: tokens.space.xl,
     maxHeight: '80%',
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
     marginBottom: tokens.space.xl,
   },
   modalTitle: {
     fontSize: tokens.fontSize.xl,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   userDetails: {
     marginBottom: tokens.space.xl,
   },
   detailLabel: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginTop: tokens.space.md,
     marginBottom: tokens.space.xs,
   },
   detailValue: {
     fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   manageButton: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
     paddingVertical: tokens.space.md,
     borderRadius: tokens.space.sm,
-    alignItems: 'center',
+    ...a.align_center,
   },
   manageButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.semibold,
   },
@@ -678,20 +678,20 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingVertical: tokens.space.md,
     borderRadius: tokens.space.sm,
-    alignItems: 'center',
+    ...a.align_center,
   },
   warnButton: {
     backgroundColor: '#FF9800',
   },
   suspendButton: {
     backgroundColor: '#FF5722',
-    flex: 1,
+    ...a.flex_1,
   },
   unsuspendButton: {
     backgroundColor: '#4CAF50',
   },
   banButton: {
-    backgroundColor: tokens.color.black,
+    ...a.bg_black,
   },
   unbanButton: {
     backgroundColor: '#4CAF50',
@@ -700,12 +700,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336',
   },
   actionButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.semibold,
   },
   suspendSection: {
-    flexDirection: 'row',
+    ...a.flex_row,
     gap: tokens.space.md,
   },
   daysInput: {
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.md,
     width: 80,
-    textAlign: 'center',
+    ...a.text_center,
   },
   reasonInput: {
     borderWidth: 1,

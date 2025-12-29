@@ -12,7 +12,7 @@ import {
     Animated,
     Dimensions,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
@@ -376,30 +376,30 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
 
 const styles = StyleSheet.create({
   animatedContainer: {
-    flex: 1,
+    ...a.flex_1,
   },
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   topButtonRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.w_full,
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     marginBottom: tokens.space.sm,
     paddingHorizontal: tokens.space.md,
   },
   backButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
     borderRadius: tokens.space.xl,
   },
   nextButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: tokens.space.sm,
     paddingHorizontal: tokens.space.lg,
     backgroundColor: 'rgba(255, 140, 76, 0.8)',
@@ -413,43 +413,43 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   scrollContainer: {
     paddingHorizontal: tokens.space._2xl,
     paddingTop: tokens.space.lg,
   },
   card: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: 10,
     paddingVertical: tokens.space.lg,
   },
   restaurantWrapper: {
     alignSelf: 'stretch',
-    alignItems: 'flex-start',
+    ...a.items_start,
     justifyContent: 'space-around',
   },
   restaurantName: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     lineHeight: 20,
     marginBottom: tokens.space.sm,
   },
   locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     marginBottom: tokens.space.xs,
   },
   validUntilRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     marginBottom: tokens.space.xs,
   },
   categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
   },
   infoText: {
     fontFamily: 'Inter',
@@ -460,24 +460,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   bulletText: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.light,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   separator: {
     alignSelf: 'stretch',
     height: 0.5,
     backgroundColor: '#DEDEDE',
-    width: '100%',
+    ...a.w_full,
     marginVertical: tokens.space.sm,
   },
   dealTitle: {
     alignSelf: 'stretch',
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.lg,
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.lg,
   },
   dealImage: {
-    width: '100%',
+    ...a.w_full,
     backgroundColor: '#EFEFEF',
     borderRadius: tokens.space.sm,
     alignSelf: 'center',
@@ -495,37 +495,37 @@ const styles = StyleSheet.create({
   },
   // Matches DealDetailScreen.actionButtonsContainer exactly
   actionButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     marginBottom: tokens.space.sm,
   },
   // Matches VoteButtons.voteContainer exactly
   voteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.color.white,
+    ...a.flex_row,
+    ...a.items_center,
+    ...a.bg_white,
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
     height: PILL_HEIGHT,
     width: PILL_WIDTH,
-    overflow: 'hidden',
+    ...a.overflow_hidden,
   },
   // Matches VoteButtons.upvoteArea exactly
   upvoteArea: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.flex_1,
+    ...a.flex_row,
+    ...a.items_center,
+    ...a.justify_center,
     height: '100%',
     paddingLeft: scale(8),
     paddingRight: scale(2),
   },
   // Matches VoteButtons.downvoteArea exactly
   downvoteArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.items_center,
+    ...a.justify_center,
     height: '100%',
     paddingHorizontal: scale(10),
   },
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: scale(10),
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
     marginLeft: scale(4),
   },
   // Matches VoteButtons.voteSeparator exactly
@@ -545,19 +545,19 @@ const styles = StyleSheet.create({
   },
   // Matches DealDetailScreen.rightActions exactly
   rightActions: {
-    flexDirection: 'row',
+    ...a.flex_row,
     gap: tokens.space.xs,
   },
   // Matches DealDetailScreen.actionButton exactly
   actionButton: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
     width: 40,
     height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   detailsSection: {
     alignSelf: 'stretch',
@@ -567,19 +567,19 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.lg,
     lineHeight: 20,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: 10,
   },
   detailsContent: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
     lineHeight: 18,
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.normal,
   },
   sharedByComponent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     gap: tokens.space.sm,
     paddingVertical: tokens.space.lg,
   },
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     borderRadius: 29,
   },
   sharedByText: {
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     fontSize: 10,
     fontWeight: tokens.fontWeight.normal,
@@ -609,25 +609,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   imageViewerContainer: {
-    flex: 1,
+    ...a.flex_1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   imageViewerCloseButton: {
-    position: 'absolute',
+    ...a.absolute,
     top: 60,
     right: tokens.space.xl,
     zIndex: 1,
   },
   scrollView: {
-    flex: 1,
-    width: '100%',
+    ...a.flex_1,
+    ...a.w_full,
   },
   scrollViewContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   fullScreenImage: {
     width: Dimensions.get('window').width,
@@ -635,15 +635,15 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   modalImageLoader: {
-    position: 'absolute',
+    ...a.absolute,
   },
   modalErrorContainer: {
-      position: 'absolute',
-      justifyContent: 'center',
-      alignItems: 'center',
+      ...a.absolute,
+      ...a.justify_center,
+      ...a.items_center,
   },
   modalErrorText: {
-      color: tokens.color.white,
+      ...a.text_white,
       fontSize: tokens.fontSize.md,
   },
 });

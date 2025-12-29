@@ -1,0 +1,3290 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DealCard Snapshots Default (Vertical) Variant renders basic deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "width": 184.5,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 168.5,
+          "marginBottom": 8,
+          "width": 168.5,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <Text
+      ellipsizeMode="tail"
+      numberOfLines={2}
+      style={
+        [
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "lineHeight": 15,
+            "textAlign": "left",
+          },
+          {
+            "width": 160.5,
+          },
+        ]
+      }
+    >
+      Buy One Get One Free Pizza
+    </Text>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": 160.5,
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Italian • 2h ago • 1.5mi away
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            42
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "width": 40,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#000000"
+          name="mdi:heart-outline"
+          size={19}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`DealCard Snapshots Default (Vertical) Variant renders deal with delete button correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "width": 184.5,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 168.5,
+          "marginBottom": 8,
+          "width": 168.5,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <Text
+      ellipsizeMode="tail"
+      numberOfLines={2}
+      style={
+        [
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "lineHeight": 15,
+            "textAlign": "left",
+          },
+          {
+            "width": 160.5,
+          },
+        ]
+      }
+    >
+      Buy One Get One Free Pizza
+    </Text>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": 160.5,
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Italian • 2h ago • 1.5mi away
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            42
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "width": 40,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#000000"
+          name="uil:trash-alt"
+          size={16}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`DealCard Snapshots Default (Vertical) Variant renders deal with hidden author correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "width": 184.5,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 168.5,
+          "marginBottom": 8,
+          "width": 168.5,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <Text
+      ellipsizeMode="tail"
+      numberOfLines={2}
+      style={
+        [
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "lineHeight": 15,
+            "textAlign": "left",
+          },
+          {
+            "width": 160.5,
+          },
+        ]
+      }
+    >
+      Buy One Get One Free Pizza
+    </Text>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": 160.5,
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Italian • 2h ago • 1.5mi away
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            42
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "width": 40,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#000000"
+          name="mdi:heart-outline"
+          size={19}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`DealCard Snapshots Default (Vertical) Variant renders favorited deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "width": 184.5,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 168.5,
+          "marginBottom": 8,
+          "width": 168.5,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <Text
+      ellipsizeMode="tail"
+      numberOfLines={2}
+      style={
+        [
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "lineHeight": 15,
+            "textAlign": "left",
+          },
+          {
+            "width": 160.5,
+          },
+        ]
+      }
+    >
+      Buy One Get One Free Pizza
+    </Text>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": 160.5,
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Italian • 2h ago • 1.5mi away
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            42
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "width": 40,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#FF1E00"
+          name="mdi:heart"
+          size={19}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`DealCard Snapshots Default (Vertical) Variant renders upvoted deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "width": 184.5,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 168.5,
+          "marginBottom": 8,
+          "width": 168.5,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <Text
+      ellipsizeMode="tail"
+      numberOfLines={2}
+      style={
+        [
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "lineHeight": 15,
+            "textAlign": "left",
+          },
+          {
+            "width": 160.5,
+          },
+        ]
+      }
+    >
+      Buy One Get One Free Pizza
+    </Text>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": 160.5,
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Italian • 2h ago • 1.5mi away
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#FF8C4C"
+            fill="#FF8C4C"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            100
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "width": 40,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#000000"
+          name="mdi:heart-outline"
+          size={19}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`DealCard Snapshots Horizontal Variant renders basic horizontal deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "height": 278.76,
+        "paddingHorizontal": 8,
+        "paddingVertical": 12,
+        "width": 275,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1.7777777777777777,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 165.76,
+          "marginBottom": 8,
+          "width": 259,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "height": 20,
+          "justifyContent": "flex-start",
+          "width": "100%",
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={2}
+        style={
+          [
+            {
+              "color": "#000000",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600",
+              "lineHeight": 15,
+              "textAlign": "left",
+            },
+            {
+              "height": 30,
+              "width": "100%",
+            },
+          ]
+        }
+      >
+        Buy One Get One Free Pizza
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": "100%",
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        1.5mi away • 2h ago • By FoodLover123
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            42
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "paddingHorizontal": 12,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#000000"
+          name="mdi:heart-outline"
+          size={19}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`DealCard Snapshots Horizontal Variant renders favorited horizontal deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "height": 278.76,
+        "paddingHorizontal": 8,
+        "paddingVertical": 12,
+        "width": 275,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1.7777777777777777,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 165.76,
+          "marginBottom": 8,
+          "width": 259,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "height": 20,
+          "justifyContent": "flex-start",
+          "width": "100%",
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={2}
+        style={
+          [
+            {
+              "color": "#000000",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600",
+              "lineHeight": 15,
+              "textAlign": "left",
+            },
+            {
+              "height": 30,
+              "width": "100%",
+            },
+          ]
+        }
+      >
+        Buy One Get One Free Pizza
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": "100%",
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        1.5mi away • 2h ago • By FoodLover123
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            42
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "paddingHorizontal": 12,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#FF1E00"
+          name="mdi:heart"
+          size={19}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`DealCard Snapshots Horizontal Variant renders upvoted horizontal deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      {
+        "height": 278.76,
+        "paddingHorizontal": 8,
+        "paddingVertical": 12,
+        "width": 275,
+      },
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1.7777777777777777,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 165.76,
+          "marginBottom": 8,
+          "width": 259,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/pizza.jpg",
+        }
+      }
+      style={
+        {
+          "height": "100%",
+          "width": "100%",
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        {
+          "gap": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "height": 20,
+          "justifyContent": "flex-start",
+          "width": "100%",
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={2}
+        style={
+          [
+            {
+              "color": "#000000",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600",
+              "lineHeight": 15,
+              "textAlign": "left",
+            },
+            {
+              "height": 30,
+              "width": "100%",
+            },
+          ]
+        }
+      >
+        Buy One Get One Free Pizza
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "marginBottom": 8,
+          "width": "100%",
+        }
+      }
+    >
+      <Text
+        ellipsizeMode="tail"
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        Pizza Palace
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#757575",
+            "fontFamily": "Inter",
+            "fontSize": 10,
+            "fontWeight": "400",
+            "lineHeight": 12,
+            "textAlign": "left",
+            "width": "100%",
+          }
+        }
+      >
+        1.5mi away • 2h ago • By FoodLover123
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "marginTop": 8,
+        },
+        {
+          "marginTop": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flexDirection": "row",
+          },
+          {
+            "justifyContent": "space-between",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "width": "100%",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 28,
+            "overflow": "hidden",
+            "width": 85,
+          }
+        }
+      >
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 8,
+              "paddingRight": 2,
+            }
+          }
+        >
+          <ArrowBigUp
+            color="#FF8C4C"
+            fill="#FF8C4C"
+            size={18}
+          />
+          <Text
+            style={
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 10,
+                "fontWeight": "400",
+                "marginLeft": 4,
+              }
+            }
+          >
+            100
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 12,
+              "width": 1,
+            }
+          }
+        />
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 10,
+            }
+          }
+        >
+          <ArrowBigDown
+            color="#000000"
+            fill="transparent"
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+      <Pressable
+        onPress={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#D7D7D7",
+              "borderRadius": 30,
+              "borderWidth": 1,
+              "height": 28,
+              "justifyContent": "center",
+            },
+            {
+              "paddingHorizontal": 12,
+            },
+          ]
+        }
+      >
+        <Monicon
+          color="#000000"
+          name="mdi:heart-outline"
+          size={19}
+        />
+      </Pressable>
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`RowCard Snapshots ExploreDeal Variant renders basic explore deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      [
+        {
+          "height": 96,
+          "marginHorizontal": 12,
+          "marginVertical": 4,
+        },
+        undefined,
+      ],
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "gap": 8,
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "height": "100%",
+          "marginBottom": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+        ]
+      }
+    >
+      <Image
+        source={
+          {
+            "uri": "https://example.com/tacos.jpg",
+          }
+        }
+        style={
+          [
+            {
+              "borderRadius": 8,
+              "height": 80,
+              "width": 80,
+            },
+            undefined,
+          ]
+        }
+      />
+    </View>
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "flexDirection": "column",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "gap": 4,
+            "height": 76,
+            "paddingRight": 8,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text
+        numberOfLines={2}
+        style={
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 14,
+            "fontWeight": "600",
+            "letterSpacing": -0.35,
+            "lineHeight": 17,
+          }
+        }
+      >
+        Taco Tuesday Special
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#666666",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 16,
+          }
+        }
+      >
+        Posted 
+        3d ago
+         • 
+        2d left
+         • 
+        150
+         views
+      </Text>
+    </View>
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "alignSelf": "stretch",
+          },
+          {
+            "minWidth": 20,
+            "padding": 6,
+            "paddingLeft": 5,
+          },
+        ]
+      }
+    >
+      <Ionicons
+        color="#757575"
+        name="chevron-forward"
+        size={16}
+      />
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`RowCard Snapshots ExploreDeal Variant renders explore deal with user info correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      [
+        {
+          "height": 96,
+          "marginHorizontal": 12,
+          "marginVertical": 4,
+        },
+        undefined,
+      ],
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "gap": 8,
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "height": "100%",
+          "marginBottom": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+        ]
+      }
+    >
+      <Image
+        source={
+          {
+            "uri": "https://example.com/tacos.jpg",
+          }
+        }
+        style={
+          [
+            {
+              "borderRadius": 8,
+              "height": 80,
+              "width": 80,
+            },
+            undefined,
+          ]
+        }
+      />
+    </View>
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "flexDirection": "column",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "gap": 4,
+            "height": 76,
+            "paddingRight": 8,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text
+        numberOfLines={2}
+        style={
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 14,
+            "fontWeight": "600",
+            "letterSpacing": -0.35,
+            "lineHeight": 17,
+          }
+        }
+      >
+        Taco Tuesday Special
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#666666",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 16,
+          }
+        }
+      >
+        Posted 
+        3d ago
+         • 
+        2d left
+         • 
+        150
+         views
+      </Text>
+    </View>
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "alignSelf": "stretch",
+          },
+          {
+            "minWidth": 20,
+            "padding": 6,
+            "paddingLeft": 5,
+          },
+        ]
+      }
+    >
+      <Ionicons
+        color="#757575"
+        name="chevron-forward"
+        size={16}
+      />
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`RowCard Snapshots FavoritesDeal Variant renders basic favorites deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      [
+        {
+          "height": 96,
+          "marginHorizontal": 12,
+          "marginVertical": 4,
+        },
+        undefined,
+      ],
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "gap": 8,
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "height": "100%",
+          "marginBottom": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+        ]
+      }
+    >
+      <Image
+        source={
+          {
+            "uri": "https://example.com/tacos.jpg",
+          }
+        }
+        style={
+          [
+            {
+              "borderRadius": 8,
+              "height": 80,
+              "width": 80,
+            },
+            undefined,
+          ]
+        }
+      />
+    </View>
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "flexDirection": "column",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "gap": 4,
+            "height": 76,
+            "paddingRight": 8,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text
+        numberOfLines={2}
+        style={
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 14,
+            "fontWeight": "600",
+            "letterSpacing": -0.35,
+            "lineHeight": 17,
+          }
+        }
+      >
+        Taco Tuesday Special
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#666666",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 16,
+          }
+        }
+      >
+        $2 Tacos all day
+      </Text>
+    </View>
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "alignSelf": "stretch",
+          },
+          {
+            "minWidth": 20,
+            "padding": 6,
+            "paddingLeft": 5,
+          },
+        ]
+      }
+    >
+      <Ionicons
+        color="#000000"
+        name="chevron-forward"
+        size={16}
+      />
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`RowCard Snapshots RestaurantDeal Variant renders basic restaurant deal correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {
+        "padding": 8,
+      },
+      false,
+      [
+        {
+          "height": 96,
+          "marginHorizontal": 12,
+          "marginVertical": 4,
+        },
+        undefined,
+      ],
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flexDirection": "row",
+        },
+        {
+          "alignItems": "center",
+        },
+        {
+          "gap": 8,
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "height": "100%",
+          "marginBottom": 0,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+        ]
+      }
+    >
+      <Image
+        source={
+          {
+            "uri": "https://example.com/tacos.jpg",
+          }
+        }
+        style={
+          [
+            {
+              "borderRadius": 8,
+              "height": 80,
+              "width": 80,
+            },
+            undefined,
+          ]
+        }
+      />
+    </View>
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "flexDirection": "column",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "gap": 4,
+            "height": 76,
+            "paddingRight": 8,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text
+        numberOfLines={2}
+        style={
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 14,
+            "fontWeight": "600",
+            "letterSpacing": -0.35,
+            "lineHeight": 17,
+          }
+        }
+      >
+        Taco Tuesday Special
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={
+          {
+            "color": "#666666",
+            "fontFamily": "Inter",
+            "fontSize": 12,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 16,
+          }
+        }
+      >
+        0.8mi
+         • 
+        5
+         Deals
+      </Text>
+    </View>
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+          },
+          {
+            "justifyContent": "center",
+          },
+          {
+            "alignSelf": "stretch",
+          },
+          {
+            "minWidth": 20,
+            "padding": 6,
+            "paddingLeft": 5,
+          },
+        ]
+      }
+    >
+      <Ionicons
+        color="#000000"
+        name="chevron-forward"
+        size={16}
+      />
+    </View>
+  </View>
+</Pressable>
+`;
+
+exports[`SquareCard Snapshots Default Variant renders basic square card correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {},
+      false,
+      [
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "borderColor": "#757575",
+          "borderWidth": 0.5,
+          "height": 124,
+          "marginBottom": 16,
+          "padding": 4,
+          "width": 107,
+        },
+        undefined,
+      ],
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 80,
+          "marginBottom": 0,
+          "width": 80,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/burger.jpg",
+        }
+      }
+      style={
+        [
+          {
+            "height": "100%",
+            "resizeMode": "cover",
+            "width": "100%",
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        [
+          {
+            "width": "100%",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "gap": 0,
+          },
+        ],
+      ]
+    }
+  >
+    <Text
+      numberOfLines={2}
+      style={
+        {
+          "color": "#000000",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "bold",
+          "lineHeight": 14,
+          "marginBottom": 0,
+          "textAlign": "center",
+        }
+      }
+    >
+      Burger Barn
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#000000",
+          "fontFamily": "Inter",
+          "fontSize": 10,
+          "lineHeight": 12,
+          "textAlign": "center",
+        }
+      }
+    >
+      2.1mi • 3 Deals
+    </Text>
+  </View>
+</Pressable>
+`;
+
+exports[`SquareCard Snapshots Default Variant renders square card with different data correctly 1`] = `
+<Pressable
+  onPress={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#FFFFFF",
+      },
+      {
+        "borderRadius": 16,
+      },
+      {
+        "overflow": "hidden",
+      },
+      {},
+      false,
+      [
+        {
+          "alignItems": "center",
+        },
+        {
+          "justifyContent": "space-between",
+        },
+        {
+          "borderColor": "#757575",
+          "borderWidth": 0.5,
+          "height": 124,
+          "marginBottom": 16,
+          "padding": 4,
+          "width": 107,
+        },
+        undefined,
+      ],
+      false,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "width": "100%",
+        },
+        {
+          "borderRadius": 12,
+        },
+        {
+          "overflow": "hidden",
+        },
+        {
+          "marginBottom": 8,
+        },
+        {
+          "aspectRatio": 1,
+        },
+        {
+          "aspectRatio": undefined,
+          "height": 80,
+          "marginBottom": 0,
+          "width": 80,
+        },
+      ]
+    }
+  >
+    <Image
+      source={
+        {
+          "uri": "https://example.com/sushi.jpg",
+        }
+      }
+      style={
+        [
+          {
+            "height": "100%",
+            "resizeMode": "cover",
+            "width": "100%",
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>
+  <View
+    style={
+      [
+        {
+          "gap": 4,
+        },
+        [
+          {
+            "width": "100%",
+          },
+          {
+            "alignItems": "center",
+          },
+          {
+            "gap": 0,
+          },
+        ],
+      ]
+    }
+  >
+    <Text
+      numberOfLines={2}
+      style={
+        {
+          "color": "#000000",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "bold",
+          "lineHeight": 14,
+          "marginBottom": 0,
+          "textAlign": "center",
+        }
+      }
+    >
+      Sushi Station
+    </Text>
+    <Text
+      numberOfLines={1}
+      style={
+        {
+          "color": "#000000",
+          "fontFamily": "Inter",
+          "fontSize": 10,
+          "lineHeight": 12,
+          "textAlign": "center",
+        }
+      }
+    >
+      0.5mi • 10 Deals
+    </Text>
+  </View>
+</Pressable>
+`;

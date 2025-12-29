@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useDataCache } from '#/hooks/useDataCache';
 import { useProfileEdit } from '../hooks/useProfileEdit';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 interface ProfileEditProps {
   route?: {
@@ -143,34 +143,34 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...a.flex_row,
+    ...a.items_center,
+    ...a.justify_between,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.md,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
   },
   headerTitle: {
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
   },
   saveText: {
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.primary_600,
+    ...a.text_primary_600,
     fontFamily: 'Inter',
   },
   saveTextDisabled: {
     opacity: 0.5,
   },
   scrollView: {
-    flex: 1,
+    ...a.flex_1,
   },
   content: {
     paddingHorizontal: tokens.space.lg,
@@ -183,22 +183,22 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
     letterSpacing: 0.3,
     marginLeft: tokens.space.lg,
     marginBottom: tokens.space.md,
     fontFamily: 'Inter',
   },
   groupedContainer: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
-    borderColor: tokens.color.gray_200,
-    borderRadius: tokens.radius.lg,
-    overflow: 'hidden',
+    ...a.border_gray_200,
+    ...a.rounded_lg,
+    ...a.overflow_hidden,
   },
   fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     paddingHorizontal: tokens.space.lg,
     minHeight: 52,
     paddingVertical: tokens.space.sm,
@@ -206,46 +206,46 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
     width: 100,
     letterSpacing: -0.31,
     fontFamily: 'Inter',
   },
   fieldInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    ...a.flex_1,
+    ...a.flex_row,
+    ...a.items_center,
+    ...a.justify_end,
   },
   fieldInput: {
-    flex: 1,
+    ...a.flex_1,
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.gray_600,
-    textAlign: 'right',
+    ...a.text_gray_600,
+    ...a.text_right,
     paddingVertical: tokens.space.xs,
     letterSpacing: -0.31,
     fontFamily: 'Inter',
   },
   divider: {
     height: 1,
-    backgroundColor: tokens.color.gray_200,
+    ...a.bg_gray_200,
     marginLeft: tokens.space.lg,
   },
   cuisineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: 15,
   },
   cuisineContent: {
-    flex: 1,
+    ...a.flex_1,
     gap: 2,
   },
   cuisineText: {
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.gray_600,
+    ...a.text_gray_600,
     letterSpacing: -0.15,
     lineHeight: 20,
     fontFamily: 'Inter',

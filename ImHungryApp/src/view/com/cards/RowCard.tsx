@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as tokens from '#/ui/tokens';
+import { tokens, atoms as a } from '#/ui';
 
 export interface RowCardData {
   id: string;
@@ -134,22 +134,22 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
 
 const styles = StyleSheet.create({
   rowCard: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: 12,
     padding: 8,
     marginHorizontal: 12, // Further reduced to better match Figma design
     marginVertical: 4,
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     gap: 16,
     paddingHorizontal: 0, // Remove padding to let content span full width
-    width: '100%',
+    ...a.w_full,
   },
   frame: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.items_center,
+    ...a.justify_center,
   },
   image: {
     width: 80,
@@ -157,17 +157,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   textFrame: {
-    flex: 1,
+    ...a.flex_1,
     flexDirection: 'column',
     gap: 4,
     height: 76,
-    justifyContent: 'center',
+    ...a.justify_center,
     paddingRight: 8, // Add padding to prevent text from touching arrow
   },
   favoritesTextFrame: {
-    flex: 1,
+    ...a.flex_1,
     flexDirection: 'column',
-    justifyContent: 'center',
+    ...a.justify_center,
     gap: 4,
     paddingRight: 8,
   },
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   titleText: {
-    color: tokens.color.black,
+    ...a.text_black,
     letterSpacing: -0.35,
     lineHeight: 17,
   },
@@ -222,8 +222,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   arrow: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.items_center,
+    ...a.justify_center,
     padding: 6,
     paddingLeft: 5, // Match Anima CSS padding
     alignSelf: 'stretch',
@@ -258,16 +258,16 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: tokens.color.gray_100,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.bg_gray_100,
+    ...a.justify_center,
+    ...a.items_center,
     marginRight: 6,
   },
   userProfileText: {
     fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: '400',
-    color: tokens.color.text_tertiary,
+    color: tokens.color.gray_500,
   },
 });
 

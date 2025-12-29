@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -124,66 +124,66 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
 
 const styles = StyleSheet.create({
   calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: tokens.space.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
+    ...a.p_lg,
+    ...a.border_b,
+    borderBottomColor: tokens.color.gray_200,
   },
   calendarHeaderText: {
     fontSize: 17,
     color: tokens.color.black,
   },
   calendarHeaderTitle: {
+    ...a.font_semibold,
     fontSize: 17,
-    fontWeight: tokens.fontWeight.semibold,
   },
   selectedDateContainer: {
-    padding: tokens.space.lg,
-    alignItems: 'flex-start',
+    ...a.p_lg,
+    ...a.align_start,
   },
   selectedDatePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.align_center,
+    ...a.py_sm,
+    ...a.px_md,
+    ...a.gap_sm,
     backgroundColor: '#FF8C4C30',
-    borderRadius: tokens.space.xl,
-    paddingVertical: tokens.space.sm,
-    paddingHorizontal: tokens.space.md,
-    gap: tokens.space.sm,
+    borderRadius: tokens.radius.xl,
   },
   selectedDateText: {
-    fontSize: tokens.fontSize.sm,
-    color: '#333',
+    ...a.text_sm,
+    color: tokens.color.gray_800,
   },
   separator: {
+    ...a.my_lg,
+    ...a.mx_lg,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
-    marginVertical: tokens.space.lg,
-    marginHorizontal: tokens.space.lg,
+    backgroundColor: tokens.color.gray_400,
   },
   noExpirationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
+    ...a.flex_row,
+    ...a.align_center,
+    ...a.justify_between,
+    ...a.px_lg,
+    ...a.py_sm,
   },
   noExpirationText: {
-    fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_xs,
+    ...a.text_black,
   },
   checkbox: {
+    ...a.justify_center,
+    ...a.align_center,
+    ...a.border,
     width: 20,
     height: 20,
-    borderRadius: tokens.space.xs,
-    borderWidth: 1,
-    borderColor: '#C1C1C1',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: tokens.radius.xs,
+    borderColor: tokens.color.gray_400,
   },
   checkboxActive: {
-    backgroundColor: tokens.color.primary_600,
-    borderColor: tokens.color.primary_600,
+    ...a.bg_primary_600,
+    ...a.border_primary_600,
   }
 });

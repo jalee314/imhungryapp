@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
   Platform,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 interface MapSelectionModalProps {
   visible: boolean;
@@ -63,46 +63,47 @@ const MapSelectionModal: React.FC<MapSelectionModalProps> = ({
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    ...a.flex_1,
+    ...a.justify_end,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'flex-end',
   },
   modalContainer: {
-    paddingHorizontal: tokens.space.lg,
+    ...a.px_lg,
     paddingBottom: 90,
   },
   modalContent: {
-    backgroundColor: tokens.color.white,
-    borderRadius: 10,
-    marginBottom: tokens.space.sm,
+    ...a.bg_white,
+    ...a.rounded_md,
+    ...a.mb_sm,
   },
   option: {
-    paddingVertical: tokens.space.lg,
-    alignItems: 'center',
+    ...a.py_lg,
+    ...a.align_center,
   },
   optionText: {
+    ...a.text_md,
+    ...a.font_normal,
+    ...a.text_black,
     fontFamily: 'Inter',
-    fontSize: tokens.fontSize.md,
-    fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: tokens.color.gray_200,
   },
   cancelButton: {
-    backgroundColor: tokens.color.white,
-    borderRadius: 10,
-    paddingVertical: tokens.space.lg,
-    alignItems: 'center',
+    ...a.bg_white,
+    ...a.rounded_md,
+    ...a.py_lg,
+    ...a.align_center,
   },
   cancelText: {
+    ...a.text_md,
+    ...a.font_normal,
+    ...a.text_black,
     fontFamily: 'Inter',
-    fontSize: tokens.fontSize.md,
-    fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
   },
 });
 
 export default MapSelectionModal;
+
 

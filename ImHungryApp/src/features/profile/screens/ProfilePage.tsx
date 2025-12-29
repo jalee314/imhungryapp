@@ -4,11 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Monicon } from '@monicon/native';
-import DealCard from '#/components/DealCard';
+import DealCard from '#/components/cards/DealCard';
 import DealCardSkeleton from '#/components/DealCardSkeleton';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useProfile } from '../hooks/useProfile';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 interface ProfilePageProps {}
 
@@ -414,11 +414,11 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   scrollView: {
-    flex: 1,
+    ...a.flex_1,
   },
   scrollViewContent: {
     flexGrow: 1, // Add this - allows content to grow and fill space
@@ -427,9 +427,9 @@ const styles = StyleSheet.create({
   userProfileContainer: {
     paddingVertical: tokens.space.lg,
     paddingHorizontal: 17,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 0.5,
-    borderBottomColor: tokens.color.gray_300,
+    ...a.border_gray_300,
   },
   
   backButtonContainer: {
@@ -440,13 +440,13 @@ const styles = StyleSheet.create({
   },
   
   actionButtonsContainer: {
-    flexDirection: 'row',
+    ...a.flex_row,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
     gap: tokens.space.xs,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: tokens.color.gray_100,
+    ...a.items_center,
+    ...a.justify_between,
+    ...a.bg_gray_100,
   },
   
   extraSpacing: {
@@ -454,39 +454,39 @@ const styles = StyleSheet.create({
   },
   
   contentArea: {
-    backgroundColor: tokens.color.gray_100,
-    flex: 1,
+    ...a.bg_gray_100,
+    ...a.flex_1,
     paddingTop: 0,
   },
   
   header: {
-    flexDirection: 'row',
+    ...a.flex_row,
     paddingTop: tokens.space.lg,
     paddingBottom: 0,
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...a.items_center,
+    ...a.justify_between,
     height: 117,
   },
   leftSection: {
-    flex: 1,
+    ...a.flex_1,
     flexDirection: 'column',
     gap: tokens.space._2xl,
-    justifyContent: 'center',
+    ...a.justify_center,
     alignSelf: 'stretch',
   },
   rightSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.items_center,
+    ...a.justify_center,
   },
   userInfo: {
-    flexDirection: 'row',
+    ...a.flex_row,
     alignItems: 'flex-start',
     gap: tokens.space.sm,
   },
   userName: {
     fontSize: tokens.fontSize._2xl,
     fontWeight: '800',
-    color: tokens.color.black,
+    ...a.text_black,
     letterSpacing: 0.48,
     lineHeight: 24,
     marginTop: -1,
@@ -497,88 +497,88 @@ const styles = StyleSheet.create({
   joinDate: {
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
     letterSpacing: 0.36,
     lineHeight: 20,
   },
   location: {
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
     letterSpacing: 0.36,
     lineHeight: 15,
   },
 
   profilePhotoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.items_center,
+    ...a.justify_center,
   },
   profilePhoto: {
     width: 85,
     height: 85,
     borderRadius: tokens.space._5xl,
     borderWidth: 2,
-    borderColor: tokens.color.primary_500,
+    ...a.border_primary_500,
   },
 
   statsContainer: {
     paddingTop: 15,
-    justifyContent: 'center',
+    ...a.justify_center,
   },
   statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    ...a.flex_row,
+    ...a.items_center,
+    ...a.flex_1,
   },
   statNumber: {
     fontSize: tokens.fontSize._2xl,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.primary_500,
+    ...a.text_primary_500,
     marginRight: 10,
   },
   statLabel: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
-    textAlign: 'center',
+    ...a.text_black,
+    ...a.text_center,
   },
 
   actionButton: {
     borderRadius: tokens.space.xl,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
-    borderColor: tokens.color.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.border_white,
+    ...a.items_center,
+    ...a.justify_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
   },
   shareActionButton: {
     borderRadius: 30,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
-    borderColor: tokens.color.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.border_white,
+    ...a.items_center,
+    ...a.justify_center,
     width: 40,
     height: 32,
   },
   activeButton: {
-    backgroundColor: tokens.color.primary_600,
-    borderColor: tokens.color.primary_600,
+    ...a.bg_primary_600,
+    ...a.border_primary_600,
   },
   actionButtonText: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   activeButtonText: {
-    color: tokens.color.black,
+    ...a.text_black,
   },
   shareButtonIcon: {
-    color: tokens.color.black,
+    ...a.text_black,
   },
 
   textContainer: {
-    position: 'absolute',
+    ...a.absolute,
     top: '50%',
     left: tokens.space.xl,
     right: tokens.space.xl,
@@ -589,77 +589,77 @@ const styles = StyleSheet.create({
   contentText: {
     fontSize: tokens.fontSize.md,
     color: '#333',
-    textAlign: 'center',
+    ...a.text_center,
     lineHeight: 24,
   },
   
   settingsList: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: 10,
-    overflow: 'hidden',
+    ...a.overflow_hidden,
     marginHorizontal: tokens.space.lg,
     marginTop: tokens.space.lg,
     marginBottom: 100,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     paddingVertical: tokens.space.lg,
     paddingHorizontal: tokens.space.xl,
     // borderBottomWidth: 1, // This was creating the separator
   },
   settingText: {
-    flex: 1,
+    ...a.flex_1,
     fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.medium,
     marginLeft: 10,
   },
   settingArrow: {
     fontSize: tokens.fontSize.xl,
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.bold,
   },
 
   // Modal styles
   modalOverlay: {
-    flex: 1,
+    ...a.flex_1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'flex-end',
+    ...a.justify_end,
   },
   modalViewContainer: {
     paddingHorizontal: tokens.space.lg,
     paddingBottom: 90,
   },
   modalContent: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: 10,
     marginBottom: tokens.space.sm,
   },
   modalOption: {
     paddingVertical: tokens.space.lg,
-    alignItems: 'center',
+    ...a.items_center,
   },
   modalOptionText: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.medium,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   deleteText: {
     color: 'red',
   },
   cancelButton: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: 10,
     paddingVertical: tokens.space.lg,
-    alignItems: 'center',
+    ...a.items_center,
   },
   cancelText: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.medium,
-    color: tokens.color.black,
+    ...a.text_black,
   },
 
   // Skeleton styles
@@ -714,18 +714,18 @@ const styles = StyleSheet.create({
     borderRadius: tokens.space.xl,
   },
   skeletonBottomNav: {
-    position: 'absolute',
+    ...a.absolute,
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    backgroundColor: tokens.color.white,
+    ...a.flex_row,
+    ...a.bg_white,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     paddingVertical: 6,
     paddingHorizontal: 15,
     justifyContent: 'space-around',
-    alignItems: 'center',
+    ...a.items_center,
     paddingBottom: 34,
   },
   skeletonNavItem: {
@@ -736,29 +736,29 @@ const styles = StyleSheet.create({
 
   // Skeleton loading styles
   loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   loadingText: {
     marginTop: tokens.space.lg,
     fontSize: tokens.fontSize.md,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
   },
   postsContainer: {
-    flex: 1,
-    width: '100%',
+    ...a.flex_1,
+    ...a.w_full,
     justifyContent: 'flex-start',
-    alignItems: 'center',
+    ...a.items_center,
   },
   dealsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    ...a.flex_row,
+    ...a.flex_wrap,
     justifyContent: 'flex-start',
     paddingTop: tokens.space.sm,
     paddingBottom: 100,
     paddingLeft: 10,
     paddingRight: 10,
-    width: '100%',
+    ...a.w_full,
   },
   leftCard: {
     marginBottom: tokens.space.xs,
@@ -769,63 +769,63 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: 60,
     paddingHorizontal: tokens.space._4xl,
-    width: '100%',
+    ...a.w_full,
   },
   emptyText: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginTop: tokens.space.lg,
     marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
-    textAlign: 'center',
-    width: '100%',
+    ...a.text_center,
+    ...a.w_full,
   },
   emptySubtext: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_400,
-    textAlign: 'center',
+    ...a.text_gray_400,
+    ...a.text_center,
     fontFamily: 'Inter',
-    width: '100%',
+    ...a.w_full,
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: 60,
 },
   errorText: {
     fontSize: tokens.fontSize.md,
-    color: tokens.color.gray_500,
-    textAlign: 'center',
+    ...a.text_gray_500,
+    ...a.text_center,
     marginBottom: tokens.space.lg,
     fontFamily: 'Inter',
   },
   retryButton: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
     paddingHorizontal: tokens.space._2xl,
     paddingVertical: tokens.space.md,
     borderRadius: tokens.space.sm,
   },
   retryButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter',
   },
   verticalInteractions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     marginBottom: 10,
   },
   verticalVoteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     backgroundColor: '#F0F0F0',
     borderRadius: 15,
     paddingHorizontal: tokens.space.sm,
@@ -835,45 +835,45 @@ const styles = StyleSheet.create({
     padding: tokens.space.xs,
   },
   upvoted: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
   },
   downvoted: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
   },
   verticalVoteCount: {
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginHorizontal: tokens.space.sm,
   },
   verticalVoteSeparator: {
     width: 1,
     height: 12,
-    backgroundColor: tokens.color.black,
+    ...a.bg_black,
     marginHorizontal: tokens.space.sm,
   },
   verticalFavoriteButton: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
     width: 40,
     height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   favorited: {
-    backgroundColor: tokens.color.primary_600,
+    ...a.bg_primary_600,
   },
   verticalDeleteButton: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 30,
     width: 40,
     height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
 });
 

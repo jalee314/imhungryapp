@@ -18,14 +18,14 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import DealCard, { Deal } from '#/components/DealCard';
+import DealCard, { Deal } from '#/components/cards/DealCard';
 import DealCardSkeleton from '#/components/DealCardSkeleton';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '#/services/voteService';
 import { logClick } from '#/services/interactionService';
 import { useFeedQuery } from '#/state/queries';
 import { useDealUpdate } from '../hooks/useDealUpdate';
 import { useFavorites } from '#/features/profile/hooks/useFavorites';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -238,34 +238,34 @@ const CommunityUploadedScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   headerBackground: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     height: 100,
-    justifyContent: 'flex-end',
+    ...a.justify_end,
     borderBottomWidth: 0.5,
-    borderBottomColor: tokens.color.gray_200,
+    ...a.border_gray_200,
   },
   headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...a.flex_row,
+    ...a.items_center,
+    ...a.justify_between,
     paddingHorizontal: tokens.space.sm,
     paddingBottom: tokens.space.sm,
   },
   backButton: {
     width: 40,
     height: 24,
-    justifyContent: 'center',
+    ...a.justify_center,
     alignItems: 'flex-start',
   },
   headerTitle: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xl,
-    color: tokens.color.black,
-    textAlign: 'center',
+    ...a.text_black,
+    ...a.text_center,
   },
   headerTitleBold: {
     fontFamily: 'Inter',
@@ -280,12 +280,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   gridItem: {
-    flex: 1,
+    ...a.flex_1,
     maxWidth: '50%',
   },
   dealsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    ...a.flex_row,
+    ...a.flex_wrap,
     justifyContent: 'flex-start',
     paddingBottom: 100,
   },
@@ -298,53 +298,53 @@ const styles = StyleSheet.create({
     marginLeft: tokens.space._2xs,
   },
   loadingContainer: {
-    flex: 1,
+    ...a.flex_1,
     paddingHorizontal: tokens.space.sm,
     paddingTop: tokens.space.sm,
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: tokens.space._5xl,
   },
   errorText: {
     fontSize: tokens.fontSize.md,
-    color: tokens.color.gray_600,
-    textAlign: 'center',
+    ...a.text_gray_600,
+    ...a.text_center,
     marginBottom: tokens.space.lg,
     fontFamily: 'Inter',
   },
   retryButton: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
     paddingHorizontal: tokens.space._2xl,
     paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.sm,
+    ...a.rounded_sm,
   },
   retryButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter',
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: tokens.space._5xl,
   },
   emptyText: {
     fontSize: tokens.fontSize.lg,
-    color: tokens.color.gray_600,
-    textAlign: 'center',
+    ...a.text_gray_600,
+    ...a.text_center,
     marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.semibold,
   },
   emptySubtext: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_400,
-    textAlign: 'center',
+    ...a.text_gray_400,
+    ...a.text_center,
     fontFamily: 'Inter',
   },
 });

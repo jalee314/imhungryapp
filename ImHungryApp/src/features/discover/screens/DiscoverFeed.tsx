@@ -24,13 +24,13 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import RowCard, { RowCardData } from '#/components/RowCard';
+import RowCard, { RowCardData } from '#/components/cards/RowCard';
 import RowCardSkeleton from '#/components/RowCardSkeleton';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useRestaurantsQuery } from '#/state/queries';
 import { DiscoverRestaurant } from '#/services/discoverService';
 import { useLocation } from '#/features/discover';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -206,20 +206,20 @@ const DiscoverFeed: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   searchContainer: {
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
   },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     backgroundColor: '#ffffffed',
     borderWidth: 0.5,
     borderColor: '#d7d7d7',
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     paddingHorizontal: tokens.space.lg,
     height: 35,
     gap: tokens.space.lg,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   searchInput: {
-    flex: 1,
+    ...a.flex_1,
     fontSize: 17,
     color: 'rgba(60, 60, 67, 0.6)',
     fontFamily: 'Inter',
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     padding: tokens.space.xs,
   },
   content: {
-    flex: 1,
+    ...a.flex_1,
     paddingBottom: 0,
   },
   listContainer: {
@@ -251,13 +251,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   loadingContainer: {
-    flex: 1,
+    ...a.flex_1,
     paddingTop: tokens.space.xs,
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: 60,
     paddingHorizontal: tokens.space._4xl,
   },
@@ -268,49 +268,49 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.lg,
     marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
   },
   errorSubtitle: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_600,
+    ...a.text_gray_600,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
     lineHeight: 20,
     marginBottom: tokens.space._2xl,
   },
   retryButton: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
     paddingHorizontal: tokens.space._2xl,
     paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.sm,
+    ...a.rounded_sm,
   },
   retryButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.semibold,
     fontFamily: 'Inter',
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: 60,
     paddingHorizontal: tokens.space._4xl,
   },
   emptyTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.gray_600,
+    ...a.text_gray_600,
     marginTop: tokens.space.lg,
     marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
   },
   emptySubtitle: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_400,
+    ...a.text_gray_400,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
     lineHeight: 20,
   },
 });

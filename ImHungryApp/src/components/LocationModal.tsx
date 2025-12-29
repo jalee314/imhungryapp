@@ -12,7 +12,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
@@ -359,92 +359,92 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: tokens.space.xl,
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
+    ...a.px_xl,
     paddingVertical: 15,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
+    borderBottomColor: tokens.color.gray_200,
   },
   headerButtonText: {
-    fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_md,
+    ...a.text_black,
   },
   headerTitle: {
+    ...a.font_semibold,
+    ...a.text_black,
     fontSize: 17,
-    fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.black,
   },
   doneButton: {
-    color: tokens.color.primary_600,
-    fontWeight: tokens.fontWeight.semibold,
+    ...a.font_semibold,
+    ...a.text_primary_600,
   },
   doneButtonDisabled: {
-    color: 'rgba(255, 140, 76, 0.5)',
+    ...a.opacity_50,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.align_center,
+    ...a.px_md,
+    ...a.py_sm,
+    ...a.mx_lg,
+    ...a.rounded_md,
     backgroundColor: '#F2F2F7',
-    borderRadius: 10,
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: tokens.space.sm,
-    marginHorizontal: tokens.space.lg,
     marginVertical: 10,
   },
   searchInput: {
-    flex: 1,
+    ...a.flex_1,
+    ...a.ml_sm,
+    ...a.text_black,
     fontSize: 17,
-    color: tokens.color.black,
-    marginLeft: tokens.space.sm,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: tokens.space.lg,
+    ...a.flex_1,
+    ...a.px_lg,
   },
   locationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...a.flex_row,
+    ...a.align_center,
+    ...a.justify_between,
+    ...a.px_xs,
     paddingVertical: 15,
-    paddingHorizontal: tokens.space.xs,
   },
   locationTextContainer: {
-    flex: 1,
+    ...a.flex_1,
   },
   locationText: {
-    fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_md,
+    ...a.text_black,
   },
   checkmark: {
+    ...a.justify_center,
+    ...a.align_center,
+    ...a.bg_primary_600,
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: tokens.color.primary_600,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   checkmarkPlaceholder: {
     width: 20,
     height: 20,
   },
   separator: {
+    ...a.ml_xs,
     height: 0.5,
-    backgroundColor: '#C6C6C8',
-    marginLeft: tokens.space.xs,
+    backgroundColor: tokens.color.gray_400,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
   },
   listContentContainer: {
-    paddingBottom: tokens.space.xl,
+    ...a.pb_xl,
   },
 });
 

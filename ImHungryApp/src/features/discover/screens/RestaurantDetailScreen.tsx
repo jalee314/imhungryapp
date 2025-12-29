@@ -16,15 +16,15 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '#/../lib/supabase';
-import RowCard, { RowCardData } from '#/components/RowCard';
+import RowCard, { RowCardData } from '#/components/cards/RowCard';
 import { DiscoverRestaurant } from '#/services/discoverService';
 import { getCurrentUserLocation } from '#/services/locationService';
 import { calculateDistance } from '#/services/locationService';
 import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '#/services/restaurantFavoriteService';
-import { Deal } from '#/components/DealCard';
+import { Deal } from '#/components/cards/DealCard';
 import { logClick } from '#/services/interactionService';
 import { useFavorites } from '#/features/profile/hooks/useFavorites';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 type RestaurantDetailRouteProp = RouteProp<{ 
   RestaurantDetail: { 
@@ -536,12 +536,12 @@ const RestaurantDetailScreen: React.FC = () => {
 // ... existing styles remain the same ...
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
     flexDirection: 'column',
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 0.5,
     borderBottomColor: '#D7D7D7',
     paddingHorizontal: tokens.space.lg,
@@ -551,56 +551,56 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.md,
   },
   headerButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
   },
   backButton: {
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
     borderRadius: tokens.space.lg,
   },
   directionsButton: {
     backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     paddingHorizontal: tokens.space._2xl,
     paddingVertical: tokens.space.sm,
   },
   directionsButtonText: {
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.sm,
     fontFamily: 'Inter-Regular',
     lineHeight: 15,
-    textAlign: 'center',
+    ...a.text_center,
   },
   restaurantInfoSection: {
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.lg,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
   },
   restaurantHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     marginBottom: tokens.space.xs,
   },
   restaurantName: {
     fontSize: tokens.fontSize._2xl,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     lineHeight: 24,
   },
   heartButton: {
-    backgroundColor: tokens.color.white,
-    borderRadius: tokens.radius.full,
+    ...a.bg_white,
+    ...a.rounded_full,
     width: 40,
     height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   favorited: {
     // Don't change background - only the heart icon color changes
@@ -611,76 +611,76 @@ const styles = StyleSheet.create({
   restaurantDetails: {
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     lineHeight: 20,
   },
   cuisineText: {
-    color: tokens.color.black,
+    ...a.text_black,
   },
   distanceText: {
-    color: tokens.color.black,
+    ...a.text_black,
   },
   separator: {
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.light,
     marginHorizontal: tokens.space.xs,
   },
   addressText: {
-    color: tokens.color.black,
+    ...a.text_black,
     marginLeft: tokens.space.xs,
   },
   dealsContainer: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   dealsList: {
     paddingVertical: tokens.space.sm,
     paddingBottom: 64,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
   },
   loadingText: {
     marginTop: tokens.space.md,
     fontSize: tokens.fontSize.md,
-    color: tokens.color.gray_600,
+    ...a.text_gray_600,
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingHorizontal: tokens.space.xl,
   },
   errorText: {
     fontSize: tokens.fontSize.md,
     color: '#FF4444',
-    textAlign: 'center',
+    ...a.text_center,
     marginBottom: tokens.space.lg,
   },
   retryButton: {
-    backgroundColor: tokens.color.primary_600,
+    ...a.bg_primary_600,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.sm,
-    borderRadius: tokens.radius.sm,
+    ...a.rounded_sm,
   },
   retryButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.semibold,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingHorizontal: tokens.space.xl,
   },
   emptyText: {
     fontSize: tokens.fontSize.md,
-    color: tokens.color.gray_600,
-    textAlign: 'center',
+    ...a.text_gray_600,
+    ...a.text_center,
   },
 });
 

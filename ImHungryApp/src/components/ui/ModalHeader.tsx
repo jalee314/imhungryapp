@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 interface ModalHeaderProps {
   title: string | React.ReactNode;
@@ -52,34 +52,34 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
+    ...a.px_lg,
+    ...a.py_md,
+    ...a.border_b,
+    borderBottomColor: tokens.color.gray_200,
   },
   headerText: {
-    fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_md,
+    ...a.text_black,
   },
   headerTitle: {
+    ...a.font_semibold,
+    ...a.text_black,
     fontSize: 17,
-    fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.black,
   },
   titleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: tokens.space.sm,
+    ...a.flex_1,
+    ...a.align_center,
+    ...a.px_sm,
   },
   doneText: {
-    color: tokens.color.primary_600,
-    fontWeight: tokens.fontWeight.bold,
+    ...a.font_bold,
+    ...a.text_primary_600,
   },
   doneDisabled: {
-    opacity: 0.5,
+    ...a.opacity_50,
   },
 });
 

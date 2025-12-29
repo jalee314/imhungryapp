@@ -17,12 +17,12 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import RowCard from '#/components/RowCard';
+import RowCard from '#/components/cards/RowCard';
 import RowCardSkeleton from '#/components/RowCardSkeleton';
 import SkeletonLoader from '#/components/SkeletonLoader';
 import { useFavoritesPageQuery } from '#/state/queries';
 import { useFavorites } from '../hooks/useFavorites';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import type { FavoriteDeal, FavoriteRestaurant } from '#/services/favoritesService';
 
 const FavoritesPage: React.FC = () => {
@@ -292,30 +292,30 @@ const FavoritesPage: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   contentContainer: {
     paddingBottom: 100,
   },
   header: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     height: 100,
-    justifyContent: 'flex-end',
+    ...a.justify_end,
     paddingBottom: tokens.space.sm,
     paddingHorizontal: tokens.space.lg,
     borderBottomWidth: 0.5,
-    borderBottomColor: tokens.color.gray_200,
+    ...a.border_gray_200,
   },
   headerTitle: {
     fontSize: tokens.fontSize._2xl,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
   },
   tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: tokens.color.white,
+    ...a.flex_row,
+    ...a.bg_white,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.sm,
     gap: tokens.space.xs,
@@ -323,32 +323,32 @@ const styles = StyleSheet.create({
   tab: {
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
-    borderRadius: tokens.radius.xl,
+    ...a.rounded_xl,
     borderWidth: 1,
-    borderColor: tokens.color.gray_200,
-    backgroundColor: tokens.color.white,
+    ...a.border_gray_200,
+    ...a.bg_white,
   },
   activeTab: {
-    backgroundColor: tokens.color.primary_600,
-    borderColor: tokens.color.primary_600,
+    ...a.bg_primary_600,
+    ...a.border_primary_600,
   },
   tabText: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
   },
   activeTabText: {
-    color: tokens.color.black,
+    ...a.text_black,
   },
   content: {
-    flex: 1,
+    ...a.flex_1,
     paddingTop: tokens.space.sm,
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.items_center,
     paddingHorizontal: tokens.space._4xl,
     paddingVertical: 60,
   },
@@ -359,12 +359,12 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.lg,
     marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
-    textAlign: 'center',
+    ...a.text_center,
   },
   emptySubtitle: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_600,
-    textAlign: 'center',
+    ...a.text_gray_600,
+    ...a.text_center,
     lineHeight: 20,
     fontFamily: 'Inter',
   },

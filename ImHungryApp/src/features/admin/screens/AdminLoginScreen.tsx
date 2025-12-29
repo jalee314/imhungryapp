@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { useNavigation } from '@react-navigation/native';
 import { adminService } from '#/services/adminService';
 import { useAdmin } from '../hooks/useAdmin';
@@ -126,16 +126,16 @@ const AdminLoginScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.gray_100,
+    ...a.flex_1,
+    ...a.bg_gray_100,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.lg,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
@@ -145,24 +145,24 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   placeholder: {
     width: 40,
   },
   content: {
-    flex: 1,
+    ...a.flex_1,
     paddingHorizontal: tokens.space._2xl,
     paddingTop: tokens.space._4xl,
   },
   lockIcon: {
-    alignItems: 'center',
+    ...a.align_center,
     marginBottom: tokens.space._2xl,
   },
   subtitle: {
     fontSize: tokens.fontSize.md,
-    textAlign: 'center',
-    color: tokens.color.gray_500,
+    ...a.text_center,
+    ...a.text_gray_500,
     marginBottom: tokens.space._3xl,
   },
   inputContainer: {
@@ -175,27 +175,27 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.sm,
   },
   input: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
     borderColor: '#DDD',
     borderRadius: tokens.space.sm,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
     fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   loginButton: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
     borderRadius: tokens.space.sm,
     paddingVertical: tokens.space.lg,
-    alignItems: 'center',
+    ...a.align_center,
     marginTop: tokens.space.xl,
   },
   loginButtonDisabled: {
     opacity: 0.6,
   },
   loginButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.bold,
   },

@@ -1,4 +1,4 @@
-import { Deal } from '../components/DealCard';
+import { Deal } from '#/components/cards/DealCard';
 import { supabase } from '../../lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import { toByteArray } from 'base64-js';

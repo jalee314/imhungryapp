@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const FAQPage = () => {
@@ -179,13 +179,13 @@ const FAQPage = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingHorizontal: tokens.space.xl,
     paddingTop: tokens.space.xl,
   },
@@ -194,9 +194,9 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.md,
     lineHeight: 19,
-    color: tokens.color.black,
-    flex: 1,
-    textAlign: 'center',
+    ...a.text_black,
+    ...a.flex_1,
+    ...a.text_center,
   },
   placeholder: {
     width: 24,
@@ -204,26 +204,26 @@ const styles = StyleSheet.create({
   dottedLine: {
     height: 1,
     borderBottomWidth: 1,
-    borderBottomColor: tokens.color.gray_200,
+    ...a.border_gray_200,
     borderStyle: 'dashed',
     marginTop: tokens.space._2xl,
   },
   scrollContainer: {
-    flex: 1,
+    ...a.flex_1,
   },
   content: {
     paddingHorizontal: tokens.space._2xl,
     gap: 18,
   },
   section: {
-    flex: 1,
+    ...a.flex_1,
   },
   sectionTitle: {
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.md,
     lineHeight: 19,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.lg,
   },
   questionContainer: {
@@ -234,19 +234,19 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.xs,
     lineHeight: 19,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   sectionContentData: {
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.xs,
     lineHeight: 19,
-    color: tokens.color.black,
+    ...a.text_black,
     marginTop: tokens.space.sm,
   },
   separator: {
     height: 0.5,
-    backgroundColor: tokens.color.gray_200,
+    ...a.bg_gray_200,
     marginTop: tokens.space.lg,
   },
 });

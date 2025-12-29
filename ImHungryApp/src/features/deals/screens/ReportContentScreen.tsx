@@ -15,7 +15,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { reportService } from '#/services/reportService';
 import { getFullUserProfile } from '#/services/userService';
 import { getDealUploaderId } from '#/services/dealService';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 type ReportContentRouteProp = RouteProp<{ ReportContent: { dealId: string; uploaderUserId: string } }, 'ReportContent'>;
 
@@ -197,53 +197,53 @@ const ReportContentScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingHorizontal: 22,
     paddingVertical: tokens.space.md,
     marginBottom: tokens.space.sm,
   },
   headerButtonText: {
     fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
   },
   headerTitle: {
     fontSize: tokens.fontSize.md,
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.bold,
     fontFamily: 'Inter',
   },
   submitButtonText: {
     fontSize: tokens.fontSize.md,
-    color: tokens.color.primary_600,
+    ...a.text_primary_600,
     fontWeight: tokens.fontWeight.bold,
     fontFamily: 'Inter',
   },
   content: {
-    flex: 1,
+    ...a.flex_1,
   },
   optionsContainer: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
   },
   optionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingVertical: tokens.space._2xl,
     paddingHorizontal: tokens.space.xl,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
   },
   optionText: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.black,
-    flex: 1,
+    ...a.text_black,
+    ...a.flex_1,
     paddingLeft: 2,
   },
   separator: {
@@ -254,10 +254,10 @@ const styles = StyleSheet.create({
   checkmark: {
     width: 24,
     height: 24,
-    borderRadius: tokens.radius.xs,
-    backgroundColor: tokens.color.primary_500,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.rounded_xs,
+    ...a.bg_primary_500,
+    ...a.justify_center,
+    ...a.items_center,
   },
   checkmarkPlaceholder: {
     width: 24,
@@ -271,10 +271,10 @@ const styles = StyleSheet.create({
   textInput: {
     borderWidth: 1,
     borderColor: '#CCCCCC',
-    borderRadius: tokens.radius.sm,
+    ...a.rounded_sm,
     padding: tokens.space.md,
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_black,
     minHeight: 128,
     textAlignVertical: 'top',
     fontFamily: 'Inter',
@@ -282,8 +282,8 @@ const styles = StyleSheet.create({
   },
   characterCount: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_400,
-    textAlign: 'right',
+    ...a.text_gray_400,
+    ...a.text_right,
     marginTop: tokens.space.sm,
     fontFamily: 'Inter',
   },

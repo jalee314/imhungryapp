@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
 import { fetchUserData } from '../services/userService';
@@ -192,43 +192,43 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
 const styles = StyleSheet.create({
   bottomNav: {
-    position: 'absolute',
+    ...a.absolute,
+    ...a.flex_row,
+    ...a.justify_around,
+    ...a.align_center,
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    backgroundColor: '#fdfdfd',
+    backgroundColor: tokens.color.gray_25,
     borderTopWidth: 0.5,
     borderTopColor: '#bcbcbc',
     paddingTop: scale(4),
     paddingBottom: scale(32),
     paddingHorizontal: scale(8),
-    justifyContent: 'space-around',
-    alignItems: 'center',
   },
   navItem: {
-    alignItems: 'center',
+    ...a.align_center,
+    ...a.flex_1,
     justifyContent: 'flex-start',
     minWidth: scale(65),
     paddingHorizontal: scale(4),
-    flex: 1,
   },
   iconContainer: {
+    ...a.justify_center,
+    ...a.align_center,
     height: ICON_SIZE,
     width: ICON_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   navLabel: {
+    ...a.text_center,
+    ...a.w_full,
     fontSize: scale(12),
     color: tokens.color.gray_500,
     fontWeight: tokens.fontWeight.normal,
     marginTop: scale(4),
-    textAlign: 'center',
-    width: '100%',
   },
   activeNavLabel: {
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.normal,
   },
   navProfilePhoto: {
@@ -236,20 +236,20 @@ const styles = StyleSheet.create({
     height: PROFILE_SIZE,
     borderRadius: PROFILE_SIZE / 2,
     borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderColor: tokens.color.transparent,
   },
   activeNavProfilePhoto: {
-    borderColor: tokens.color.black,
+    ...a.border_black,
   },
   navProfilePlaceholder: {
+    ...a.justify_center,
+    ...a.align_center,
     width: PROFILE_SIZE,
     height: PROFILE_SIZE,
     borderRadius: PROFILE_SIZE / 2,
     backgroundColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderColor: tokens.color.transparent,
   },
   navPlaceholderText: {
     fontSize: scale(12),

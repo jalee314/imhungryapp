@@ -8,7 +8,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -90,46 +90,43 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
 
 const styles = StyleSheet.create({
   modalOverlay: {
-    flex: 1,
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   popupContainer: {
-    backgroundColor: tokens.color.white,
-    borderRadius: 10,
+    ...a.bg_white,
+    ...a.rounded_md,
+    ...a.flex_col,
+    ...a.py_sm,
+    ...a.gap_sm,
     width: 369,
-    paddingVertical: tokens.space.sm,
-    flexDirection: 'column',
-    gap: tokens.space.sm,
     shadowColor: tokens.color.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
   },
   popupItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: tokens.space.lg,
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
+    ...a.px_lg,
+    ...a.gap_lg,
     paddingVertical: 2,
     height: 40,
-    gap: tokens.space.lg,
   },
   popupItemText: {
-    fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
-    fontWeight: tokens.fontWeight.normal,
-    flex: 1,
+    ...a.text_xs,
+    ...a.text_black,
+    ...a.font_normal,
+    ...a.flex_1,
   },
   popupDivider: {
+    ...a.self_stretch,
     height: 1.45,
-    backgroundColor: '#E0E0E0',
-    alignSelf: 'stretch',
+    backgroundColor: tokens.color.gray_200,
   },
 });
 

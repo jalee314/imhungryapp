@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -752,34 +752,34 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.gray_100,
+    ...a.flex_1,
+    ...a.bg_gray_100,
   },
   mainFrame: {
-    flex: 1,
-    width: '100%',
+    ...a.flex_1,
+    ...a.w_full,
   },
   mainFrameContentContainer: {
     paddingBottom: tokens.space.xl,
     paddingHorizontal: tokens.space.md,
   },
   topButtonRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.w_full,
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     marginBottom: tokens.space.sm,
   },
   backButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
     borderRadius: tokens.space.xl,
   },
   nextButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
     paddingVertical: tokens.space.sm,
     paddingHorizontal: tokens.space.lg,
     backgroundColor: 'rgba(255, 140, 76, 0.8)',
@@ -790,16 +790,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   dealContainerWrapper: {
     marginTop: 6,
-    flex: 1,
-    width: '100%',
+    ...a.flex_1,
+    ...a.w_full,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     padding: tokens.space.md,
     height: 48,
     backgroundColor: 'rgba(255, 255, 255, 0.93)',
@@ -808,15 +808,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
   },
   searchPlaceholder: {
-    flex: 1,
+    ...a.flex_1,
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
     color: 'rgba(12, 12, 13, 1)',
     marginLeft: tokens.space.sm,
   },
   selectedRestaurantContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     paddingVertical: tokens.space.lg,
     paddingHorizontal: tokens.space.lg,
     height: 59,
@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   restaurantTextContainer: {
-    flex: 1,
+    ...a.flex_1,
     marginRight: tokens.space.lg,
   },
   selectedRestaurantName: {
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.xs,
     lineHeight: 17,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: 2,
   },
   selectedRestaurantAddress: {
@@ -840,18 +840,18 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.xs,
     lineHeight: 17,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   unifiedContainer: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: 10,
     paddingVertical: tokens.space.md,
-    flex: 1,
+    ...a.flex_1,
     minHeight: 600,
   },
   dealTitleSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: 6,
     height: 38,
@@ -860,8 +860,8 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
-    flex: 1,
+    ...a.text_black,
+    ...a.flex_1,
   },
   dealTitleInputContainer: {
     paddingHorizontal: 15,
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
   extraDetailsInputContainer: {
     paddingHorizontal: 15,
     paddingVertical: tokens.space.xs,
-    flex: 1,
+    ...a.flex_1,
     minHeight: 200,
   },
   separator: {
@@ -880,21 +880,21 @@ const styles = StyleSheet.create({
     marginVertical: tokens.space.xs,
   },
   optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     paddingHorizontal: tokens.space.lg,
     minHeight: 38,
     paddingVertical: 6,
     gap: tokens.space.lg,
   },
   optionTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
   },
   optionText: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   optionSubText: {
     fontFamily: 'Inter',
@@ -905,8 +905,8 @@ const styles = StyleSheet.create({
   extraDetailsInput: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
-    flex: 1,
+    ...a.text_black,
+    ...a.flex_1,
     minHeight: 180,
     textAlignVertical: 'top',
     paddingHorizontal: 0,
@@ -917,9 +917,9 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   safeAreaContent: {
-    flex: 1,
-    width: '100%',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.w_full,
+    ...a.items_center,
     paddingTop: 14,
     paddingBottom: tokens.space.xl,
     gap: 14,
@@ -927,7 +927,7 @@ const styles = StyleSheet.create({
   dealTitleText: {
     fontFamily: 'Inter',
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_black,
     minHeight: 50,
     textAlignVertical: 'top',
     lineHeight: 20,
@@ -943,13 +943,13 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.xs,
   },
   loadingOverlay: {
-    position: 'absolute',
+    ...a.absolute,
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...a.items_center,
+    ...a.justify_center,
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     zIndex: 1000,
   },

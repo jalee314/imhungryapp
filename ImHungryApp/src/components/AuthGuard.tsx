@@ -1,17 +1,26 @@
 import React, { ReactNode } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '#/features/auth';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 interface AuthGuardProps {
   children: ReactNode;
   fallback?: ReactNode;
 }
 
+const styles = StyleSheet.create({
+  fallbackContainer: {
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
+    ...a.bg_primary_100,
+  },
+});
+
 export const AuthGuard: React.FC<AuthGuardProps> = ({ 
   children, 
   fallback = (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: tokens.color.primary_100 }}>
+    <View style={styles.fallbackContainer}>
       <ActivityIndicator size="large" color={tokens.color.primary_500} />
     </View>
   )

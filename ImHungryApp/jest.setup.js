@@ -2,9 +2,15 @@
 
 // Mock react-native
 jest.mock('react-native', () => {
+  const React = require('react');
   return {
     View: 'View',
     Text: 'Text',
+    Pressable: ({ children, style, ...props }) => {
+      // Handle style function for Pressable
+      const resolvedStyle = typeof style === 'function' ? style({ pressed: false }) : style;
+      return React.createElement('Pressable', { ...props, style: resolvedStyle }, children);
+    },
     StyleSheet: {
       create: (styles) => styles,
       flatten: (style) => {
@@ -149,6 +155,13 @@ jest.mock('lucide-react-native', () => ({
   AlertCircle: 'AlertCircle',
   Check: 'Check',
   X: 'X',
+  ArrowBigUp: 'ArrowBigUp',
+  ArrowBigDown: 'ArrowBigDown',
+  Bookmark: 'Bookmark',
+  Eye: 'Eye',
+  Calendar: 'Calendar',
+  MessageCircle: 'MessageCircle',
+  Share: 'Share',
 }));
 
 jest.mock('react-native-calendars', () => ({
@@ -209,7 +222,7 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
 }));
 
 // Mock stores
-jest.mock('./src/stores/AuthStore', () => ({
+jest.mock('./src/features/auth/stores/AuthStore', () => ({
   useAuthStore: jest.fn(() => ({
     isAuthenticated: false,
     isLoading: false,
@@ -217,7 +230,7 @@ jest.mock('./src/stores/AuthStore', () => ({
   useInitializeAuth: jest.fn(),
 }));
 
-jest.mock('./src/stores/AdminStore', () => ({
+jest.mock('./src/features/admin/stores/AdminStore', () => ({
   useAdminStore: jest.fn(() => ({
     isAdminMode: false,
   })),
@@ -229,13 +242,13 @@ jest.mock('./src/stores/DataCacheStore', () => ({
   useInitializeDataCache: jest.fn(),
 }));
 
-jest.mock('./src/stores/LocationStore', () => ({
+jest.mock('./src/features/discover/stores/LocationStore', () => ({
   useLocationStore: jest.fn(() => ({})),
   useInitializeLocation: jest.fn(),
 }));
 
 // Mock hooks
-jest.mock('./src/hooks/useAuth', () => ({
+jest.mock('./src/features/auth/hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: false,
     isLoading: false,
@@ -243,7 +256,7 @@ jest.mock('./src/hooks/useAuth', () => ({
   }),
 }));
 
-jest.mock('./src/hooks/useAdmin', () => ({
+jest.mock('./src/features/admin/hooks/useAdmin', () => ({
   useAdmin: () => ({
     isAdminMode: false,
   }),

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 const RowCardSkeleton: React.FC = () => {
   const shimmerAnimation = useRef(new Animated.Value(0)).current;
@@ -55,49 +55,49 @@ const RowCardSkeleton: React.FC = () => {
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: tokens.color.gray_200,
   },
   rowCard: {
-    backgroundColor: tokens.color.white,
-    borderRadius: tokens.radius.md,
-    padding: tokens.space.sm,
-    marginHorizontal: tokens.space.md,
-    marginVertical: tokens.space.xs,
+    ...a.bg_white,
+    ...a.rounded_md,
+    ...a.p_sm,
+    ...a.mx_md,
+    ...a.my_xs,
     height: 86,
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.lg,
-    width: '100%',
-    height: '100%',
+    ...a.flex_row,
+    ...a.align_center,
+    ...a.gap_lg,
+    ...a.w_full,
+    ...a.h_full,
   },
   imageSkeleton: {
+    ...a.rounded_sm,
     width: 70,
     height: 70,
-    borderRadius: tokens.radius.sm,
   },
   textFrame: {
-    flex: 1,
-    flexDirection: 'column',
-    gap: tokens.space.sm,
-    justifyContent: 'center',
-    paddingRight: tokens.space.sm,
+    ...a.flex_1,
+    ...a.flex_col,
+    ...a.gap_sm,
+    ...a.justify_center,
+    ...a.pr_sm,
   },
   titleSkeleton: {
+    ...a.rounded_xs,
     width: '80%',
     height: 14,
-    borderRadius: tokens.radius.xs,
   },
   subtitleSkeleton: {
+    ...a.rounded_xs,
     width: '60%',
     height: 12,
-    borderRadius: tokens.radius.xs,
   },
   arrowSkeleton: {
+    ...a.rounded_sm,
     width: 16,
     height: 16,
-    borderRadius: tokens.radius.sm,
   },
 });
 

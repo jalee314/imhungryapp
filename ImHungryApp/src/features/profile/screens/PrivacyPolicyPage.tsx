@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const PrivacyPolicyPage = () => {
@@ -136,13 +136,13 @@ const PrivacyPolicyPage = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingHorizontal: tokens.space.xl,
     paddingTop: tokens.space.xl,
     paddingBottom: tokens.space._3xl,
@@ -152,31 +152,31 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.md,
     lineHeight: 19,
-    color: tokens.color.black,
-    flex: 1,
-    textAlign: 'center',
+    ...a.text_black,
+    ...a.flex_1,
+    ...a.text_center,
   },
   placeholder: {
     width: 24,
   },
   content: {
-    flex: 1,
+    ...a.flex_1,
     paddingHorizontal: tokens.space._2xl,
     paddingBottom: tokens.space.xl,
     gap: 18,
   },
   scrollContainer: {
-    flex: 1,
+    ...a.flex_1,
   },
   textContainer: {
-    flex: 1,
+    ...a.flex_1,
   },
   mainTitle: {
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.xs,
     lineHeight: 15,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.md,
   },
   effectiveDate: {
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.xs,
     lineHeight: 15,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.md,
   },
   heading: {
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.xs,
     lineHeight: 15,
-    color: tokens.color.black,
+    ...a.text_black,
     marginTop: tokens.space.lg,
     marginBottom: tokens.space.sm,
   },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.bold,
     fontSize: tokens.fontSize.xs,
     lineHeight: 15,
-    color: tokens.color.black,
+    ...a.text_black,
     marginTop: tokens.space.md,
     marginBottom: tokens.space.xs,
   },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.xs,
     lineHeight: 15,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.sm,
   },
   listItem: {
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.xs,
     lineHeight: 15,
-    color: tokens.color.black,
+    ...a.text_black,
     marginLeft: tokens.space.lg,
     marginBottom: tokens.space.xs,
   },

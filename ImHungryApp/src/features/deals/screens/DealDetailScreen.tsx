@@ -19,7 +19,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
-import { Deal } from '#/components/DealCard';
+import { Deal } from '#/components/cards/DealCard';
 import ThreeDotPopup from '#/components/ThreeDotPopup';
 import VoteButtons from '#/components/VoteButtons';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '#/services/voteService';
@@ -30,7 +30,7 @@ import SkeletonLoader from '#/components/SkeletonLoader';
 import { OptimizedImage } from '#/components/Image';
 import MapSelectionModal from '#/components/MapSelectionModal';
 import { supabase } from '#/../lib/supabase';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
 
@@ -785,16 +785,16 @@ const DealDetailScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 0.5,
     borderBottomColor: '#E0E0E0',
   },
@@ -802,29 +802,29 @@ const styles = StyleSheet.create({
     padding: tokens.space.xs,
   },
   rightHeaderContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     gap: tokens.space.xs,
   },
   directionsButton: {
     backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     paddingHorizontal: tokens.space._2xl,
     paddingVertical: tokens.space.sm,
   },
   directionsText: {
-    color: tokens.color.black,
+    ...a.text_black,
     fontWeight: tokens.fontWeight.normal,
     fontSize: tokens.fontSize.sm,
     fontFamily: 'Inter-Regular',
     lineHeight: 15,
-    textAlign: 'center',
+    ...a.text_center,
   },
   moreButton: {
     padding: tokens.space.xs,
   },
   scrollView: {
-    flex: 1,
+    ...a.flex_1,
   },
   restaurantSection: {
     paddingHorizontal: tokens.space._2xl,
@@ -832,26 +832,26 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.space.sm,
   },
   restaurantHeaderContainer: {
-    position: 'relative',
+    ...a.relative,
     marginBottom: 2,
     minHeight: 20,
   },
   restaurantName: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     lineHeight: 20,
     paddingRight: 80,
     marginBottom: 0,
   },
   restaurantInfo: {
-    width: '100%',
+    ...a.w_full,
     marginTop: 0,
   },
   locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     marginBottom: tokens.space.xs,
   },
   locationIcon: {
@@ -866,11 +866,11 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: tokens.fontSize.xs,
     lineHeight: 20,
-    flex: 1,
+    ...a.flex_1,
   },
   validUntilRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     marginBottom: tokens.space.xs,
   },
   validUntilText: {
@@ -878,11 +878,11 @@ const styles = StyleSheet.create({
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.normal,
     lineHeight: 20,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
   },
   categoryText: {
     fontSize: tokens.fontSize.xs,
@@ -892,56 +892,56 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   infoBullet: {
     fontFamily: 'Inter-Light',
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.light,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   viewCountContainer: {
-    position: 'absolute',
+    ...a.absolute,
     top: 0,
     right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
   },
   viewCountSkeletonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
   },
   avatarSkeletonGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
   },
   viewCount: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     marginRight: 6,
   },
   avatarGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
   },
   viewerAvatar: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: tokens.color.white,
+    ...a.border_white,
   },
   separator: {
     height: 0.5,
-    backgroundColor: tokens.color.gray_200,
+    ...a.bg_gray_200,
     marginHorizontal: tokens.space._2xl,
     marginVertical: tokens.space.sm,
   },
   dealTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     paddingHorizontal: tokens.space._2xl,
     marginTop: tokens.space.sm,
     marginBottom: tokens.space.lg,
@@ -953,17 +953,17 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.lg,
   },
   imageWrapper: {
-    position: 'relative',
-    width: '100%',
-    borderRadius: tokens.radius.sm,
+    ...a.relative,
+    ...a.w_full,
+    ...a.rounded_sm,
     backgroundColor: '#F0F0F0',
-    overflow: 'hidden',
+    ...a.overflow_hidden,
     borderWidth: 0.5,
     borderColor: '#AAAAAA',
   },
   dealImage: {
-    width: '100%',
-    borderRadius: tokens.radius.sm,
+    ...a.w_full,
+    ...a.rounded_sm,
     alignSelf: 'center',
   },
   imageLoading: {
@@ -973,60 +973,60 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   imageLoadingContainer: {
-    position: 'absolute',
+    ...a.absolute,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     backgroundColor: '#F8F8F8',
-    borderRadius: tokens.radius.sm,
+    ...a.rounded_sm,
     zIndex: 1,
   },
   imageErrorContainer: {
-    position: 'absolute',
+    ...a.absolute,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
     backgroundColor: '#F8F8F8',
-    borderRadius: tokens.radius.sm,
+    ...a.rounded_sm,
     zIndex: 1,
   },
   imageErrorText: {
     marginTop: tokens.space.sm,
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_400,
+    ...a.text_gray_400,
     fontFamily: 'Inter',
   },
   actionButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.items_center,
     paddingHorizontal: tokens.space._2xl,
     marginBottom: tokens.space.sm,
   },
   voteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...a.flex_row,
+    ...a.items_center,
+    ...a.justify_between,
     backgroundColor: '#F7F4F4',
     borderWidth: 1,
     borderColor: '#D7D7D7',
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: 2,
     height: 28,
     width: 85,
   },
   voteButton: {
-    backgroundColor: 'transparent',
+    ...a.bg_transparent,
     width: 20,
     height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: tokens.radius.xs,
+    ...a.justify_center,
+    ...a.items_center,
+    ...a.rounded_xs,
   },
   upvoted: {
     // No background change - only icon color changes
@@ -1038,28 +1038,28 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 10,
     fontWeight: tokens.fontWeight.normal,
-    color: tokens.color.black,
+    ...a.text_black,
     marginHorizontal: 6,
   },
   voteSeparator: {
     width: 1,
     height: 12,
-    backgroundColor: tokens.color.gray_200,
+    ...a.bg_gray_200,
     marginHorizontal: 6,
   },
   rightActions: {
-    flexDirection: 'row',
+    ...a.flex_row,
     gap: tokens.space.xs,
   },
   actionButton: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderWidth: 1,
     borderColor: '#D7D7D7',
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     width: 40,
     height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   detailsSection: {
     paddingHorizontal: tokens.space._2xl,
@@ -1067,21 +1067,21 @@ const styles = StyleSheet.create({
   detailsTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.sm,
     fontFamily: 'Inter',
     lineHeight: 20,
   },
   detailsText: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.black,
+    ...a.text_black,
     lineHeight: 18,
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
   },
   sharedByContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.items_center,
     paddingVertical: tokens.space.lg,
     paddingHorizontal: tokens.space._2xl,
     gap: tokens.space.sm,
@@ -1092,11 +1092,11 @@ const styles = StyleSheet.create({
     borderRadius: 29,
   },
   userInfo: {
-    flex: 1,
+    ...a.flex_1,
   },
   sharedByLabel: {
     fontSize: 10,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     letterSpacing: 0.2,
@@ -1105,39 +1105,39 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: tokens.fontSize.xs,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     letterSpacing: 0.2,
     lineHeight: 15,
   },
   userLocation: {
     fontSize: 10,
-    color: tokens.color.black,
+    ...a.text_black,
     fontFamily: 'Inter',
     fontWeight: tokens.fontWeight.normal,
     letterSpacing: 0.2,
     lineHeight: 15,
   },
   imageViewerContainer: {
-    flex: 1,
+    ...a.flex_1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   imageViewerCloseButton: {
-    position: 'absolute',
+    ...a.absolute,
     top: 60,
     right: 20,
     zIndex: 1,
   },
   imageViewerScrollView: {
-    flex: 1,
-    width: '100%',
+    ...a.flex_1,
+    ...a.w_full,
   },
   scrollViewContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.justify_center,
+    ...a.items_center,
   },
   fullScreenImage: {
     width: Dimensions.get('window').width,
@@ -1145,16 +1145,16 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   modalImageLoader: {
-    position: 'absolute',
+    ...a.absolute,
   },
   modalErrorContainer: {
-      position: 'absolute',
-      justifyContent: 'center',
-      alignItems: 'center',
+    ...a.absolute,
+    ...a.justify_center,
+    ...a.items_center,
   },
   modalErrorText: {
-      color: tokens.color.white,
-      fontSize: tokens.fontSize.md,
+    ...a.text_white,
+    fontSize: tokens.fontSize.md,
   },
 });
 

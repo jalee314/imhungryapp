@@ -21,7 +21,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native'
-import { tokens } from '#/ui'
+import { tokens, atoms as a } from '#/ui'
 import { useNavigation } from '@react-navigation/native'
 import { Report, ReportCounts } from '#/services/adminService'
 import { Ionicons } from '@expo/vector-icons'
@@ -568,16 +568,16 @@ const AdminReportsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.gray_100,
+    ...a.flex_1,
+    ...a.bg_gray_100,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.lg,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
@@ -590,21 +590,21 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
   },
   emptyText: {
     fontSize: tokens.fontSize.lg,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginTop: tokens.space.lg,
   },
   listContent: {
@@ -614,10 +614,10 @@ const styles = StyleSheet.create({
   },
   emptyListContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    ...a.justify_center,
   },
   listHeader: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: tokens.space.md,
     padding: tokens.space.lg,
     marginBottom: tokens.space.md,
@@ -628,23 +628,23 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   filterContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    ...a.flex_row,
+    ...a.flex_wrap,
     gap: tokens.space.sm,
     marginTop: tokens.space.md,
   },
   filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.align_center,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
   },
   filterChipActive: {
-    borderColor: tokens.color.primary_500,
+    ...a.border_primary_500,
     backgroundColor: '#FFF3E6',
   },
   filterChipText: {
@@ -660,12 +660,12 @@ const styles = StyleSheet.create({
     minWidth: 28,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     backgroundColor: '#F0F0F0',
-    alignItems: 'center',
+    ...a.align_center,
   },
   filterCountBadgeActive: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
   },
   filterCountText: {
     fontSize: tokens.fontSize.xs,
@@ -673,15 +673,15 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   filterCountTextActive: {
-    color: tokens.color.white,
+    ...a.text_white,
   },
   filterHelperText: {
     marginTop: tokens.space.md,
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
   },
   reportCard: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: tokens.space.md,
     padding: tokens.space.lg,
     marginBottom: tokens.space.md,
@@ -692,9 +692,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   reportHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
     marginBottom: tokens.space.md,
   },
   statusBadge: {
@@ -711,63 +711,63 @@ const styles = StyleSheet.create({
   },
   reportDate: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
   },
   reportTitle: {
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.md,
   },
   reportInfo: {
-    flexDirection: 'row',
+    ...a.flex_row,
     marginBottom: 6,
   },
   reportLabel: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     fontWeight: tokens.fontWeight.semibold,
     width: 80,
   },
   reportValue: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.black,
-    flex: 1,
+    ...a.text_black,
+    ...a.flex_1,
   },
   reasonTextContainer: {
-    backgroundColor: tokens.color.gray_100,
+    ...a.bg_gray_100,
     padding: tokens.space.md,
     borderRadius: tokens.space.sm,
     marginTop: tokens.space.sm,
   },
   viewButton: {
-    backgroundColor: tokens.color.primary_500,
+    ...a.bg_primary_500,
     paddingVertical: 10,
     borderRadius: tokens.space.sm,
-    alignItems: 'center',
+    ...a.align_center,
     marginTop: tokens.space.md,
   },
   viewButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.semibold,
   },
   modalOverlay: {
-    flex: 1,
+    ...a.flex_1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    ...a.justify_end,
   },
   modalContent: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderTopLeftRadius: tokens.space.xl,
     borderTopRightRadius: tokens.space.xl,
     padding: tokens.space.xl,
     maxHeight: '85%',
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
     marginBottom: tokens.space.lg,
     paddingBottom: tokens.space.md,
     borderBottomWidth: 1,
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: tokens.fontSize.xl,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   dealImage: {
     width: '100%',
@@ -790,27 +790,27 @@ const styles = StyleSheet.create({
   dealTitle: {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.sm,
   },
   dealDescription: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginBottom: tokens.space.sm,
     lineHeight: 20,
   },
   infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...a.flex_row,
+    ...a.align_center,
     gap: tokens.space.sm,
     marginTop: tokens.space.xs,
   },
   infoText: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
   },
   reportDetailsSection: {
-    backgroundColor: tokens.color.gray_100,
+    ...a.bg_gray_100,
     padding: tokens.space.lg,
     borderRadius: tokens.space.md,
     marginBottom: tokens.space.xl,
@@ -819,15 +819,15 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.xl,
   },
   statusChipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    ...a.flex_row,
+    ...a.flex_wrap,
     gap: tokens.space.sm,
     marginTop: tokens.space.sm,
   },
   statusChip: {
     borderWidth: 1,
     borderColor: '#DDD',
-    borderRadius: tokens.radius.full,
+    ...a.rounded_full,
     paddingHorizontal: tokens.space.md,
     paddingVertical: 6,
   },
@@ -843,23 +843,23 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: tokens.fontSize.md,
     fontWeight: tokens.fontWeight.bold,
-    color: tokens.color.black,
+    ...a.text_black,
     marginBottom: tokens.space.md,
   },
   detailRow: {
-    flexDirection: 'row',
+    ...a.flex_row,
     marginBottom: tokens.space.sm,
   },
   detailLabel: {
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     width: 100,
   },
   detailValue: {
     fontSize: tokens.fontSize.sm,
-    color: tokens.color.black,
-    flex: 1,
+    ...a.text_black,
+    ...a.flex_1,
   },
   reasonTextBox: {
     marginVertical: tokens.space.sm,
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   lifecycleSection: {
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: tokens.space.md,
     padding: tokens.space.lg,
     borderWidth: 1,
@@ -879,22 +879,22 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.xl,
   },
   lifecycleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    ...a.flex_row,
+    ...a.justify_between,
     marginBottom: tokens.space.sm,
   },
   lifecycleLabel: {
     fontSize: 13,
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
   },
   lifecycleValue: {
     fontSize: 13,
-    color: tokens.color.black,
+    ...a.text_black,
   },
   workflowSection: {
     marginBottom: tokens.space.xl,
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     borderRadius: tokens.space.md,
     padding: tokens.space.lg,
     borderWidth: 1,
@@ -902,21 +902,21 @@ const styles = StyleSheet.create({
   },
   workflowHelperText: {
     fontSize: tokens.fontSize.xs,
-    color: tokens.color.gray_500,
+    ...a.text_gray_500,
     marginBottom: tokens.space.md,
   },
   workflowButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    ...a.flex_row,
+    ...a.flex_wrap,
     gap: tokens.space.md,
   },
   workflowButton: {
-    flex: 1,
+    ...a.flex_1,
     paddingVertical: tokens.space.md,
     borderRadius: tokens.space.sm,
     borderWidth: 1,
     borderColor: '#90CAF9',
-    alignItems: 'center',
+    ...a.align_center,
     backgroundColor: '#E3F2FD',
   },
   workflowButtonText: {
@@ -937,9 +937,9 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingVertical: tokens.space.md,
     borderRadius: tokens.space.sm,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
+    ...a.align_center,
+    ...a.flex_row,
+    ...a.justify_center,
     gap: tokens.space.sm,
     marginBottom: tokens.space.md,
   },
@@ -954,13 +954,13 @@ const styles = StyleSheet.create({
   },
   suspendButton: {
     backgroundColor: '#FF5722',
-    flex: 1,
+    ...a.flex_1,
   },
   banButton: {
-    backgroundColor: tokens.color.black,
+    ...a.bg_black,
   },
   actionButtonText: {
-    color: tokens.color.white,
+    ...a.text_white,
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.semibold,
   },
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   suspendSection: {
-    flexDirection: 'row',
+    ...a.flex_row,
     gap: tokens.space.md,
     marginBottom: tokens.space.md,
   },
@@ -979,8 +979,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.md,
     width: 80,
-    textAlign: 'center',
-    backgroundColor: tokens.color.white,
+    ...a.text_center,
+    ...a.bg_white,
   },
   reasonInput: {
     borderWidth: 1,
@@ -990,7 +990,7 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.md,
     minHeight: 80,
     textAlignVertical: 'top',
-    backgroundColor: tokens.color.white,
+    ...a.bg_white,
     marginBottom: tokens.space.md,
   },
   modalScrollContent: {

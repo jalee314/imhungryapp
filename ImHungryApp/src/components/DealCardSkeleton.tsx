@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 const { width: screenWidth } = Dimensions.get('window');
 // Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (4px), then divide by 2
@@ -91,103 +91,103 @@ const DealCardSkeleton: React.FC<DealCardSkeletonProps> = ({ variant = 'vertical
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: tokens.color.gray_200,
   },
   
   // Horizontal Card Styles (matching DealCard dimensions exactly)
   horizontalCard: {
-    backgroundColor: tokens.color.white,
-    borderRadius: 10,
-    paddingVertical: tokens.space.md,
-    paddingHorizontal: tokens.space.sm,
-    alignItems: 'flex-start',
+    ...a.bg_white,
+    ...a.rounded_md,
+    ...a.py_md,
+    ...a.px_sm,
+    ...a.align_start,
+    ...a.justify_center,
     width: HORIZONTAL_CARD_WIDTH,
     height: 280,
-    justifyContent: 'center',
   },
   horizontalImage: {
+    ...a.rounded_sm,
+    ...a.mb_sm,
     width: 260,
     height: 167,
-    borderRadius: tokens.radius.sm,
-    marginBottom: tokens.space.sm,
   },
   horizontalTitleContainer: {
-    width: '100%',
-    marginBottom: tokens.space.sm,
+    ...a.w_full,
+    ...a.mb_sm,
+    ...a.justify_start,
     height: 30,
-    justifyContent: 'flex-start',
   },
   horizontalTitleSkeleton: {
+    ...a.mb_xs,
     width: '90%',
     height: 12,
     borderRadius: 6,
-    marginBottom: tokens.space.xs,
   },
   horizontalDetailsSkeleton: {
-    width: '100%',
+    ...a.w_full,
+    ...a.rounded_xs,
+    ...a.mb_sm,
     height: 24,
-    borderRadius: tokens.radius.xs,
-    marginBottom: tokens.space.sm,
   },
   horizontalInteractions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
+    ...a.w_full,
   },
   horizontalVoteContainerSkeleton: {
+    ...a.rounded_full,
     width: 80,
     height: 28,
-    borderRadius: 30,
   },
   horizontalFavoriteSkeleton: {
+    ...a.rounded_full,
     width: 62,
     height: 28,
-    borderRadius: 30,
   },
 
   // Vertical Card Styles (matching DealCard dimensions exactly)
   verticalCard: {
-    backgroundColor: tokens.color.white,
-    borderRadius: tokens.radius.lg,
-    padding: tokens.space.sm,
-    alignItems: 'flex-start',
+    ...a.bg_white,
+    ...a.rounded_lg,
+    ...a.p_sm,
+    ...a.align_start,
+    ...a.justify_start,
     width: VERTICAL_CARD_WIDTH,
-    justifyContent: 'flex-start',
   },
   verticalImage: {
-    width: '100%',
+    ...a.w_full,
+    ...a.rounded_sm,
+    ...a.mb_sm,
     height: 175,
-    borderRadius: tokens.radius.sm,
-    marginBottom: tokens.space.sm,
   },
   verticalTitleSkeleton: {
+    ...a.rounded_xs,
+    ...a.mb_sm,
     width: VERTICAL_CARD_WIDTH - 24,
     height: 30,
-    borderRadius: tokens.radius.xs,
-    marginBottom: tokens.space.sm,
   },
   verticalDetailsSkeleton: {
+    ...a.rounded_xs,
+    ...a.mb_sm,
     width: VERTICAL_CARD_WIDTH - 24,
     height: 24,
-    borderRadius: tokens.radius.xs,
-    marginBottom: tokens.space.sm,
   },
   verticalInteractions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
+    ...a.w_full,
   },
   verticalVoteContainerSkeleton: {
+    ...a.rounded_full,
     width: 70,
     height: 28,
-    borderRadius: 30,
   },
   verticalFavoriteSkeleton: {
+    ...a.rounded_full,
     width: 40,
     height: 28,
-    borderRadius: 30,
   },
 });
 

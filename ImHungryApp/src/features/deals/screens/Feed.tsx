@@ -25,7 +25,7 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
-import { tokens } from '#/ui';
+import { tokens, atoms as a } from '#/ui';
 
 // Calculate horizontal card dimensions to match DealCard.tsx
 const { width: screenWidth } = Dimensions.get('window');
@@ -39,7 +39,7 @@ const HORIZONTAL_CARD_HEIGHT = HORIZONTAL_IMAGE_HEIGHT + scale(113);
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import DealCard, { Deal } from '#/components/DealCard';
+import DealCard, { Deal } from '#/components/cards/DealCard';
 import DealCardSkeleton from '#/components/DealCardSkeleton';
 import CuisineFilter from '#/components/CuisineFilter';
 import SkeletonLoader from '#/components/SkeletonLoader';
@@ -416,138 +416,136 @@ const Feed: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
+    ...a.flex_1,
+    ...a.bg_white,
   },
   content: {
-    flex: 1,
-    backgroundColor: tokens.color.white,
-    paddingTop: tokens.space.xs,
+    ...a.flex_1,
+    ...a.bg_white,
+    ...a.pt_xs,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: tokens.space.xs,
-    paddingBottom: tokens.space.xs,
-    paddingLeft: tokens.space.lg,
-    paddingRight: tokens.space.sm,
+    ...a.flex_row,
+    ...a.justify_between,
+    ...a.align_center,
+    ...a.py_xs,
+    ...a.pl_lg,
+    ...a.pr_sm,
   },
   sectionTitle: {
+    ...a.font_bold,
     fontFamily: 'Inter',
-    fontWeight: tokens.fontWeight.bold,
     fontSize: 17,
     color: tokens.color.black,
-  },
-  seeAllButton: {
-    backgroundColor: tokens.color.gray_100,
-    borderRadius: tokens.radius.full,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  communityList: {
-    paddingLeft: 10.5,
-    paddingRight: tokens.space.sm,
-  },
-  communityListWrapper: {
-    height: HORIZONTAL_CARD_HEIGHT, // Match actual card height for FlashList
-  },
-  skeletonListWrapper: {
-    height: HORIZONTAL_CARD_HEIGHT, // Match the community list height
   },
   sectionSeparator: {
     height: 0.5,
     backgroundColor: tokens.color.gray_200,
     marginHorizontal: -tokens.space.xl,
     width: '110%',
-    marginBottom: tokens.space.xs,
+    ...a.mb_xs,
+  },
+  seeAllButton: {
+    ...a.justify_center,
+    ...a.align_center,
+    ...a.bg_gray_100,
+    ...a.rounded_full,
+    width: 30,
+    height: 30,
+  },
+  communityList: {
+    paddingLeft: 10.5,
+    ...a.pr_sm,
+  },
+  communityListWrapper: {
+    height: HORIZONTAL_CARD_HEIGHT,
+  },
+  skeletonListWrapper: {
+    height: HORIZONTAL_CARD_HEIGHT,
   },
   dealsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    paddingLeft: tokens.space.sm,
-    paddingRight: tokens.space.sm,
+    ...a.flex_row,
+    ...a.flex_wrap,
+    ...a.justify_start,
+    ...a.px_sm,
     paddingBottom: 100,
   },
   leftCard: {
-    marginBottom: 0,
+    ...a.mb_0,
     marginRight: tokens.space._2xs,
   },
   rightCard: {
-    marginTop: 0,
+    ...a.mt_0,
     marginLeft: tokens.space._2xs,
   },
   loadingContainer: {
-    flex: 1,
-    paddingBottom: 0,
+    ...a.flex_1,
+    ...a.pb_0,
   },
   filterSkeletonContainer: {
-    marginTop: tokens.space.xs,
-    marginBottom: tokens.space.sm,
+    ...a.mt_xs,
+    ...a.mb_sm,
   },
   filterSkeletonList: {
+    ...a.gap_xs,
     paddingLeft: 18.5,
-    gap: tokens.space.xs,
   },
   filterSkeletonItem: {
-    marginRight: tokens.space.xs,
+    ...a.mr_xs,
   },
   skeletonSeparator: {
+    ...a.my_sm,
     height: 0.5,
-    marginVertical: tokens.space.sm,
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
     paddingVertical: tokens.space._5xl,
   },
   errorText: {
-    fontSize: tokens.fontSize.md,
-    color: tokens.color.gray_600,
-    textAlign: 'center',
-    marginBottom: tokens.space.lg,
+    ...a.text_md,
+    ...a.text_center,
+    ...a.mb_lg,
+    ...a.text_gray_600,
     fontFamily: 'Inter',
   },
   retryButton: {
-    backgroundColor: tokens.color.primary_500,
-    paddingHorizontal: tokens.space._2xl,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.sm,
+    ...a.bg_primary_500,
+    ...a.px_2xl,
+    ...a.py_md,
+    ...a.rounded_sm,
   },
   retryButtonText: {
-    color: tokens.color.white,
-    fontSize: tokens.fontSize.md,
-    fontWeight: tokens.fontWeight.semibold,
+    ...a.text_white,
+    ...a.text_md,
+    ...a.font_semibold,
     fontFamily: 'Inter',
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...a.flex_1,
+    ...a.justify_center,
+    ...a.align_center,
     paddingVertical: tokens.space._5xl,
     minHeight: 300,
   },
   emptyIcon: {
-    marginBottom: tokens.space.lg,
+    ...a.mb_lg,
   },
   emptyText: {
-    fontSize: tokens.fontSize.lg,
-    color: tokens.color.gray_600,
-    textAlign: 'center',
-    marginBottom: tokens.space.sm,
+    ...a.text_lg,
+    ...a.text_gray_600,
+    ...a.text_center,
+    ...a.mb_sm,
+    ...a.font_semibold,
     fontFamily: 'Inter',
-    fontWeight: tokens.fontWeight.semibold,
   },
   emptySubtext: {
-    fontSize: tokens.fontSize.sm,
-    color: tokens.color.gray_400,
-    textAlign: 'center',
+    ...a.text_sm,
+    ...a.text_gray_400,
+    ...a.text_center,
+    ...a.px_xl,
     fontFamily: 'Inter',
-    paddingHorizontal: tokens.space.xl,
   },
 });
 

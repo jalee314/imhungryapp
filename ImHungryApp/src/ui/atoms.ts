@@ -47,6 +47,12 @@ export const atoms = StyleSheet.create({
   align_end: { alignItems: 'flex-end' },
   align_stretch: { alignItems: 'stretch' },
   align_baseline: { alignItems: 'baseline' },
+  // Tailwind-style aliases
+  items_start: { alignItems: 'flex-start' },
+  items_center: { alignItems: 'center' },
+  items_end: { alignItems: 'flex-end' },
+  items_stretch: { alignItems: 'stretch' },
+  items_baseline: { alignItems: 'baseline' },
 
   // ==========================================
   // Alignment - Self
@@ -323,6 +329,44 @@ export const atoms = StyleSheet.create({
   z_30: { zIndex: tokens.zIndex.fixed },
   z_40: { zIndex: tokens.zIndex.modal },
   z_50: { zIndex: tokens.zIndex.popover },
+
+  // ==========================================
+  // Background Colors
+  // ==========================================
+  bg_white: { backgroundColor: tokens.color.white },
+  bg_black: { backgroundColor: tokens.color.black },
+  bg_transparent: { backgroundColor: tokens.color.transparent },
+  bg_primary_100: { backgroundColor: tokens.color.primary_100 },
+  bg_primary_500: { backgroundColor: tokens.color.primary_500 },
+  bg_primary_600: { backgroundColor: tokens.color.primary_600 },
+  bg_gray_50: { backgroundColor: tokens.color.gray_50 },
+  bg_gray_100: { backgroundColor: tokens.color.gray_100 },
+  bg_gray_200: { backgroundColor: tokens.color.gray_200 },
+
+  // ==========================================
+  // Border Colors
+  // ==========================================
+  border_gray_200: { borderColor: tokens.color.gray_200 },
+  border_gray_300: { borderColor: tokens.color.gray_300 },
+  border_gray_500: { borderColor: tokens.color.gray_500 },
+  border_primary_500: { borderColor: tokens.color.primary_500 },
+  border_primary_600: { borderColor: tokens.color.primary_600 },
+  border_transparent: { borderColor: tokens.color.transparent },
+  border_white: { borderColor: tokens.color.white },
+  border_black: { borderColor: tokens.color.black },
+
+  // ==========================================
+  // Text Colors
+  // ==========================================
+  text_white: { color: tokens.color.white },
+  text_black: { color: tokens.color.black },
+  text_primary_500: { color: tokens.color.primary_500 },
+  text_primary_600: { color: tokens.color.primary_600 },
+  text_gray_400: { color: tokens.color.gray_400 },
+  text_gray_500: { color: tokens.color.gray_500 },
+  text_gray_600: { color: tokens.color.gray_600 },
+  text_gray_700: { color: tokens.color.gray_700 },
+  text_gray_800: { color: tokens.color.gray_800 },
 })
 
 // Export atoms as 'a' shorthand (Bluesky convention)
