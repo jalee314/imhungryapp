@@ -22,12 +22,12 @@ export default function LogInScreen() {
   const responsive = {
     pagePad:        { paddingHorizontal: H, paddingVertical: V },
     backButton:     { marginBottom: Math.round(V * 0.2), marginTop: V  },
-    welcomeSection: { marginBottom: Math.round(V * 1.5) },
-    welcomeTitle:   { marginBottom: Math.round(V * 1.0) },
+    welcomeSection: { marginBottom: Math.round(V * 1.5), paddingTop: Math.round(height * 0.07) },
+    welcomeTitle:   { marginBottom: Math.round(V * 1) },
     welcomeSubtitle:{ marginBottom: -Math.round(V * 0.9) },
     formContainer:  { marginBottom: Math.round(V * 0.125) },
     paperInput:     { marginBottom: Math.round(GAP * 0.7) },
-    continueButton: { marginTop: V, marginBottom: V },
+    continueButton: { marginTop: Math.round(V * 0.6), marginBottom: V },
     legalContainer: { marginTop: V * 2 },
   };
 
@@ -110,11 +110,12 @@ export default function LogInScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-  
-            <View style={styles.mainContainer}>
+            <View>
+              <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+
+              <View style={styles.mainContainer}>
               <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
                 <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>
                   Welcome back to <TouchableWithoutFeedback onPress={handleImTap}><Text suppressHighlighting={true}>Im</Text></TouchableWithoutFeedback>Hungri
@@ -123,7 +124,7 @@ export default function LogInScreen() {
                   Sign in with your email address.
                 </Text>
               </View>
-  
+
               {/* Form Fields */}
               <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
                 <View style={responsive.paperInput}>
@@ -190,6 +191,7 @@ export default function LogInScreen() {
                 <Text style={styles.forgotPasswordText}>Forgot password?</Text>
               </TouchableOpacity>
             </View>
+            </View>
 
             {/* Legal */}
             <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
@@ -208,23 +210,18 @@ export default function LogInScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
   container: { flex: 1, backgroundColor: 'white' },
 
   keyboardAvoidingView: { flex: 1 },
-  pagePad: { flex: 1 }, // responsive padding applied at runtime
+  pagePad: { flex: 1 },
   scrollContentContainer: {
     flexGrow: 1,
+    justifyContent: 'space-between',
   },
-  mainContainer: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 50,
-  }, 
 
-  backButton: { 
-    alignSelf: 'flex-start' 
-  },
+  mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
+
+  backButton: { alignSelf: 'flex-start' },
 
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle: {
@@ -243,15 +240,21 @@ const styles = StyleSheet.create({
   },
 
   formContainer: { width: '100%' },
-  paperInput: {
-    // Only spacing, no height
+  paperInput: {},
+
+  textInputStyle: {
+    backgroundColor: 'white',
+    minHeight: 56,
+    fontSize: 16,
+    lineHeight: 22,
+    paddingVertical: 0,
   },
 
   continueButton: {
     width: '100%',
-    height: 44,
+    height: 50,
     backgroundColor: '#FF8C4C',
-    borderRadius: 22,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -280,12 +283,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
-  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Inter-SemiBold' },
-  textInputStyle: {
-    backgroundColor: 'white',
-    minHeight: 56,
-    fontSize: 16,
-    lineHeight: 22,
-    paddingVertical: 0,
+  legalLink: { 
+    color: '#FFA05C', 
+    fontWeight: '600', 
+    fontFamily: 'Inter-SemiBold' 
   },
-}); 
+});

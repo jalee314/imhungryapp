@@ -418,14 +418,15 @@ const Feed: React.FC = () => {
       return renderErrorState();
     }
 
-    // Priority 3: After initial load is complete, if location is not set AND no deals loaded, show the prompt.
-    if (!hasLocationSet && deals.length === 0) {
-      return renderEmptyState('needs_location');
-    }
-
-    // Priority 4: Show skeleton if we are fetching deals for the first time.
+    // Priority 3: Show skeleton if we are fetching deals for the first time.
+    // This takes priority over the location check to prevent flashing the "set location" message.
     if (loading && deals.length === 0) {
       return renderLoadingState();
+    }
+
+    // Priority 4: After initial load is complete and not loading, if location is not set AND no deals loaded, show the prompt.
+    if (!hasLocationSet && deals.length === 0) {
+      return renderEmptyState('needs_location');
     }
 
     // Priority 5: If filters result in no deals.

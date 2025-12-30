@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
+import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCityAndStateFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
 
 interface LocationItem {
   id: string;
@@ -170,8 +170,8 @@ const LocationModal: React.FC<LocationModalProps> = ({
       });
       const { latitude, longitude } = location.coords;
 
-      // Get city name
-      const cityName = await getCityFromCoordinates(latitude, longitude);
+      // Get city name and state abbreviation
+      const { city: cityName, stateAbbr } = await getCityAndStateFromCoordinates(latitude, longitude);
 
       // Update user location in database
       const success = await updateUserLocation(latitude, longitude, cityName);
@@ -179,7 +179,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
         const newLocation: LocationItem = {
           id: 'current',
           city: cityName,
-          state: 'Current Location',
+          state: stateAbbr || 'Current Location',
           coordinates: { lat: latitude, lng: longitude }
         };
         return newLocation;
@@ -260,7 +260,8 @@ const LocationModal: React.FC<LocationModalProps> = ({
         onPress={handleCurrentLocationRequest}
       >
         <View style={styles.locationTextContainer}>
-          <Text style={styles.locationText}>Current Location</Text>
+          <Text style={styles.locationText}>Use Current Location</Text>
+          <Ionicons name="navigate" size={16} color="#FF8C4C" style={{ marginLeft: 8 }} />
         </View>
         {selectedLocation === 'current' ? (
           <View style={styles.checkmark}>
@@ -331,10 +332,6 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
         {/* Content */}
         <View style={styles.content}>
-          {/* Current Location */}
-          {renderCurrentLocationItem()}
-          {renderSeparator()}
-
           {/* Search Results */}
           {isSearching ? (
             <View style={styles.loadingContainer}>
@@ -348,6 +345,15 @@ const LocationModal: React.FC<LocationModalProps> = ({
               ItemSeparatorComponent={renderSeparator}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContentContainer}
+              ListHeaderComponent={
+                // Only show "Use Current Location" when not searching
+                !searchText.trim() ? (
+                  <>
+                    {renderCurrentLocationItem()}
+                    {renderSeparator()}
+                  </>
+                ) : null
+              }
             />
           )}
         </View>
@@ -415,6 +421,8 @@ const styles = StyleSheet.create({
   },
   locationTextContainer: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   locationText: {
     fontSize: 16,
