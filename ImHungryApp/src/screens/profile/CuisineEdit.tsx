@@ -31,32 +31,23 @@ export default function CuisineEdit() {
     console.log('CuisineEdit: Navigating back with cuisines:', selectedCuisines);
     console.log('CuisineEdit: Profile param:', (route.params as any)?.profile);
     
-    // Get the navigation state to find the ProfileEdit screen
+    // Get the navigation state to find the ProfileEdit route key
     const state = navigation.getState();
-    const routes = state.routes;
+    const profileEditRoute = state.routes.find((r: any) => r.name === 'ProfileEdit');
     
-    // Find the ProfileEdit route and update it with new params, then go back
-    const updatedRoutes = routes.map((r: any) => {
-      if (r.name === 'ProfileEdit') {
-        return {
-          ...r,
-          params: {
-            ...r.params,
-            updatedCuisines: selectedCuisines,
-            profile: (route.params as any)?.profile
-          }
-        };
-      }
-      return r;
-    });
+    if (profileEditRoute?.key) {
+      // Set params on ProfileEdit screen before going back
+      navigation.dispatch({
+        ...CommonActions.setParams({
+          updatedCuisines: selectedCuisines,
+          profile: (route.params as any)?.profile
+        }),
+        source: profileEditRoute.key,
+      });
+    }
     
-    // Reset the navigation state with updated routes, removing current CuisineEdit screen
-    navigation.dispatch(
-      CommonActions.reset({
-        index: updatedRoutes.length - 2, // Go back to ProfileEdit (one before current)
-        routes: updatedRoutes.slice(0, -1), // Remove CuisineEdit from stack
-      })
-    );
+    // Use goBack for proper back animation (slides from left)
+    navigation.goBack();
   };
 
   const availableCuisines = cachedCuisines.map(c => c.name);
