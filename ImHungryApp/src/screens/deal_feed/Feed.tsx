@@ -47,7 +47,7 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
-  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad } = useLocation();
+  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad, isLoading: isLocationLoading } = useLocation();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
   
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
@@ -408,8 +408,8 @@ const Feed: React.FC = () => {
   };
 
   const renderContent = () => {
-    // Priority 1: While location context is doing its initial load, ALWAYS show the skeleton loader.
-    if (isInitialLoad) {
+    // Priority 1: While location context is doing its initial load OR still loading location, ALWAYS show the skeleton loader.
+    if (isInitialLoad || isLocationLoading) {
       return renderLoadingState();
     }
     

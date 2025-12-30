@@ -156,7 +156,7 @@ const DealCard: React.FC<DealCardProps> = ({
       >
         {getImageSource()}
         <View style={styles.horizontalTitleContainer}>
-          <Text style={styles.horizontalTitle} numberOfLines={2} ellipsizeMode="tail">
+          <Text style={styles.horizontalTitle} numberOfLines={1} ellipsizeMode="tail">
             {deal.title}
           </Text>
         </View>
@@ -208,7 +208,7 @@ const DealCard: React.FC<DealCardProps> = ({
       activeOpacity={0.8}
     >
       {getImageSource()}
-      <Text style={styles.verticalTitle} numberOfLines={2}>{deal.title}</Text>
+      <Text style={styles.verticalTitle} numberOfLines={1} ellipsizeMode="tail">{deal.title}</Text>
       <View style={styles.verticalDetailsContainer}>
         <Text style={styles.verticalDetails} numberOfLines={1} ellipsizeMode="tail">
           {deal.restaurant}
