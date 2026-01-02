@@ -203,6 +203,32 @@ export const getDeviceLocation = async (): Promise<{ latitude: number; longitude
   }
 };
 
+// Map of US state names to their abbreviations
+const STATE_ABBREVIATIONS: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+  'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+  'district of columbia': 'DC', 'puerto rico': 'PR', 'guam': 'GU', 'virgin islands': 'VI'
+};
+
+/**
+ * Get state abbreviation from full state name
+ */
+export const getStateAbbreviation = (stateName: string): string => {
+  if (!stateName) return '';
+  const normalized = stateName.toLowerCase().trim();
+  // Check if it's already an abbreviation (2 letters)
+  if (normalized.length === 2) return stateName.toUpperCase();
+  return STATE_ABBREVIATIONS[normalized] || stateName;
+};
+
 /**
  * Get city name from coordinates using reverse geocoding
  */
@@ -221,6 +247,28 @@ export const getCityFromCoordinates = async (latitude: number, longitude: number
     console.warn('Failed to get city from coordinates:', error);
   }
   return 'Unknown City';
+};
+
+/**
+ * Get city name and state abbreviation from coordinates using reverse geocoding
+ */
+export const getCityAndStateFromCoordinates = async (latitude: number, longitude: number): Promise<{ city: string; stateAbbr: string }> => {
+  try {
+    const reverseGeocode = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude,
+    });
+    
+    if (reverseGeocode && reverseGeocode.length > 0) {
+      const location = reverseGeocode[0];
+      const city = location.city || location.subregion || location.region || 'Unknown City';
+      const stateAbbr = getStateAbbreviation(location.region || '');
+      return { city, stateAbbr };
+    }
+  } catch (error) {
+    console.warn('Failed to get city and state from coordinates:', error);
+  }
+  return { city: 'Unknown City', stateAbbr: '' };
 };
 
 /**

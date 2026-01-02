@@ -47,7 +47,7 @@ const Feed: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
-  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad } = useLocation();
+  const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad, isLoading: isLocationLoading } = useLocation();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
   
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
@@ -408,8 +408,8 @@ const Feed: React.FC = () => {
   };
 
   const renderContent = () => {
-    // Priority 1: While location context is doing its initial load, ALWAYS show the skeleton loader.
-    if (isInitialLoad) {
+    // Priority 1: While location context is doing its initial load OR still loading location, ALWAYS show the skeleton loader.
+    if (isInitialLoad || isLocationLoading) {
       return renderLoadingState();
     }
     
@@ -418,14 +418,15 @@ const Feed: React.FC = () => {
       return renderErrorState();
     }
 
-    // Priority 3: After initial load is complete, if location is not set AND no deals loaded, show the prompt.
-    if (!hasLocationSet && deals.length === 0) {
-      return renderEmptyState('needs_location');
-    }
-
-    // Priority 4: Show skeleton if we are fetching deals for the first time.
+    // Priority 3: Show skeleton if we are fetching deals for the first time.
+    // This takes priority over the location check to prevent flashing the "set location" message.
     if (loading && deals.length === 0) {
       return renderLoadingState();
+    }
+
+    // Priority 4: After initial load is complete and not loading, if location is not set AND no deals loaded, show the prompt.
+    if (!hasLocationSet && deals.length === 0) {
+      return renderEmptyState('needs_location');
     }
 
     // Priority 5: If filters result in no deals.

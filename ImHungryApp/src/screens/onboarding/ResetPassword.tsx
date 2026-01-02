@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -191,13 +190,20 @@ export default function ResetPasswordScreen() {
         <StatusBar style="dark" />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-          <View style={[styles.pagePad, responsive.pagePad]}>
-            <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
+          <ScrollView
+            style={[styles.pagePad, responsive.pagePad]}
+            contentContainerStyle={styles.scrollContentContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Top Content */}
+            <View>
+              <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
 
-            <View style={styles.mainContainer}>
-              <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
+              <View style={styles.mainContainer}>
+                <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
                 <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to ImHungri</Text>
                 <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
                   Create a New Password
@@ -283,24 +289,28 @@ export default function ResetPasswordScreen() {
 
               {/* Update Password Button */}
               <TouchableOpacity
-                style={[styles.resetButton, responsive.resetButton, CONSTRAIN, (!sessionReady || loading) && { opacity: 0.7 }]}
-                onPress={handleUpdatePassword}
-                disabled={!sessionReady || loading}
-              >
-                <Text style={styles.resetButtonText}>Update Password</Text>
-              </TouchableOpacity>
+                  style={[styles.resetButton, responsive.resetButton, CONSTRAIN, (!sessionReady || loading) && { opacity: 0.7 }]}
+                  onPress={handleUpdatePassword}
+                  disabled={!sessionReady || loading}
+                >
+                  <Text style={styles.resetButtonText}>Update Password</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
+            {/* Spacer to push legal to bottom */}
+            <View style={styles.spacer} />
+
             {/* Legal */}
-            <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
-              <Text style={styles.legalText}>
+            <View style={[styles.legalContainer, CONSTRAIN]}>
+              <Text style={styles.legalText} numberOfLines={2}>
                 By continuing, you agree to ImHungri's{' '}
                 <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
                 and{' '}
                 <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
               </Text>
             </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -311,11 +321,34 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white' },
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 },
-  mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
+  scrollContentContainer: {
+    flexGrow: 1,
+  },
+  mainContainer: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 30,
+  },
+  spacer: {
+    flex: 1,
+    minHeight: 20,
+  },
   backButton: { alignSelf: 'flex-start' },
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: { fontSize: 20, color: '#000', fontFamily: 'Inter-Bold' },
-  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Inter-Regular' },
+  welcomeTitle: {
+    fontSize: 18,
+    color: '#181619',
+    fontFamily: 'Inter-Bold',
+    fontWeight: '700',
+    textAlign: 'left'
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#181619',
+    lineHeight: 24,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'left'
+  },
   formContainer: { width: '100%' },
   paperInput: { backgroundColor: 'white' },
   textInputStyle: {
@@ -333,8 +366,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  resetButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '400',
+    fontFamily: 'Inter-Regular',
+    lineHeight: 24
+  },
   legalContainer: { alignItems: 'center' },
-  legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
-  legalLink: { color: '#FF9800', fontWeight: '500' },
+  legalText: {
+    fontSize: 12,
+    color: '#181619',
+    textAlign: 'left',
+    lineHeight: 16,
+    fontFamily: 'Inter-Medium',
+    fontWeight: '500'
+  },
+  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Inter-SemiBold' },
 });

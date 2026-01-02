@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useDataCache } from '../../hooks/useDataCache';
 
@@ -31,10 +31,23 @@ export default function CuisineEdit() {
     console.log('CuisineEdit: Navigating back with cuisines:', selectedCuisines);
     console.log('CuisineEdit: Profile param:', (route.params as any)?.profile);
     
-    navigation.navigate('ProfileEdit' as never, { 
-      updatedCuisines: selectedCuisines,
-      profile: (route.params as any)?.profile
-    } as never);
+    // Get the navigation state to find the ProfileEdit route key
+    const state = navigation.getState();
+    const profileEditRoute = state.routes.find((r: any) => r.name === 'ProfileEdit');
+    
+    if (profileEditRoute?.key) {
+      // Set params on ProfileEdit screen before going back
+      navigation.dispatch({
+        ...CommonActions.setParams({
+          updatedCuisines: selectedCuisines,
+          profile: (route.params as any)?.profile
+        }),
+        source: profileEditRoute.key,
+      });
+    }
+    
+    // Use goBack for proper back animation (slides from left)
+    navigation.goBack();
   };
 
   const availableCuisines = cachedCuisines.map(c => c.name);

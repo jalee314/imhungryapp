@@ -82,9 +82,16 @@ export const useLocationStore = create<LocationState>((set, get) => ({
   setCurrentLocation: (location: string) => set({ currentLocation: location }),
 
   updateLocation: (location: any) => {
-    const locationDisplay = location?.state === 'Current Location'
-      ? location?.city
-      : `${location?.city}, ${String(location?.state ?? '').split(' ')[0].slice(0, 2).toUpperCase()}`;
+    // State is now a 2-letter abbreviation for current location, or full state name for manual selection
+    const stateValue = location?.state ?? '';
+    // If state is 2 letters (abbreviation), use it directly; otherwise, extract abbreviation from full state name
+    const stateAbbr = stateValue.length === 2 
+      ? stateValue.toUpperCase()
+      : String(stateValue).split(' ')[0].slice(0, 2).toUpperCase();
+    
+    const locationDisplay = stateAbbr 
+      ? `${location?.city}, ${stateAbbr}`
+      : location?.city || 'Unknown Location';
 
     set({ currentLocation: locationDisplay, hasLocationSet: true });
 
