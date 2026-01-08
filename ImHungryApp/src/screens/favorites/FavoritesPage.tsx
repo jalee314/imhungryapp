@@ -62,13 +62,13 @@ const FavoritesPage: React.FC = () => {
         setRestaurantsLoading(true);
       }
       console.log('🔄 Loading restaurants...', silent ? '(silent)' : '');
-      
+
       // Clear unfavorited state on initial load
       if (!hasLoadedInitialData) {
         clearUnfavorited();
         setHasLoadedInitialData(true);
       }
-      
+
       const restaurantsData = await fetchFavoriteRestaurants();
       console.log('📊 Raw restaurants data:', restaurantsData);
       // Filter out unfavorited restaurants
@@ -92,13 +92,13 @@ const FavoritesPage: React.FC = () => {
         setDealsLoading(true);
       }
       console.log('🔄 Loading deals...', silent ? '(silent)' : '');
-      
+
       // Clear unfavorited state on initial load
       if (!hasLoadedInitialData) {
         clearUnfavorited();
         setHasLoadedInitialData(true);
       }
-      
+
       const dealsData = await fetchFavoriteDeals();
       // Filter out unfavorited deals
       const filteredData = dealsData.filter(deal => !isUnfavorited(deal.id, 'deal'));
@@ -118,7 +118,7 @@ const FavoritesPage: React.FC = () => {
     try {
       // Clear cache to ensure fresh data
       clearFavoritesCache();
-      
+
       // Only refresh the active tab's data, preserve other state
       if (activeTab === 'deals') {
         await loadDeals();
@@ -140,7 +140,7 @@ const FavoritesPage: React.FC = () => {
       loadDeals();
     }
     setupRealtimeSubscription();
-    
+
     return () => {
       // Cleanup subscription on unmount
       if (favoriteChannel.current) {
@@ -174,14 +174,14 @@ const FavoritesPage: React.FC = () => {
   useFocusEffect(
     React.useCallback(() => {
       setupRealtimeSubscription();
-      
+
       // INSTANT UI UPDATE: Immediately update the list with changes made while away
       // This happens BEFORE the database fetch, so the UI updates instantly
       if (hasLoadedInitialData) {
         // Remove unfavorited items
         setDeals(prev => prev.filter(deal => !isUnfavorited(deal.id, 'deal')));
         setRestaurants(prev => prev.filter(restaurant => !isUnfavorited(restaurant.id, 'restaurant')));
-        
+
         // Add newly favorited deals instantly
         const newDeals = getNewlyFavoritedDeals();
         if (newDeals.length > 0) {
@@ -215,7 +215,7 @@ const FavoritesPage: React.FC = () => {
           });
         }
       }
-      
+
       // Then do a silent background refresh to sync with database
       const silentRefresh = async () => {
         clearFavoritesCache();
@@ -228,12 +228,12 @@ const FavoritesPage: React.FC = () => {
         // (data is now synced with database)
         clearNewlyFavorited();
       };
-      
+
       // Only do silent refresh if we've already loaded data once
       if (hasLoadedInitialData) {
         silentRefresh();
       }
-      
+
       return () => {
         // Cleanup when screen loses focus
         if (favoriteChannel.current) {
@@ -290,29 +290,29 @@ const FavoritesPage: React.FC = () => {
           // =================================================================
           (payload: any) => {
             console.log('🔄 Favorites realtime update:', payload.eventType, payload);
-            
+
             const payloadUserId = payload.new?.user_id || payload.old?.user_id;
             if (payloadUserId !== userId) {
               console.log('🔄 Ignoring realtime update for different user:', payloadUserId);
               return;
             }
-            
+
             // --- EFFICIENT DELETE HANDLING ---
             if (payload.eventType === 'DELETE') {
               console.log('🔪 Realtime DELETE detected. Updating local state.');
               const oldFavorite = payload.old;
-              
+
               // Check if a favorite deal was removed
               if (oldFavorite.deal_id) {
                 const dealIdToRemove = oldFavorite.deal_id;
                 setDeals(prevDeals => prevDeals.filter(deal => deal.id !== dealIdToRemove));
-              } 
+              }
               // Check if a favorite restaurant was removed
               else if (oldFavorite.restaurant_id) {
                 const restaurantIdToRemove = oldFavorite.restaurant_id;
                 setRestaurants(prevRestaurants => prevRestaurants.filter(r => r.id !== restaurantIdToRemove));
               }
-            } 
+            }
             // --- PRAGMATIC INSERT HANDLING ---
             else if (payload.eventType === 'INSERT') {
               // For inserts, we need to fetch the new item's full details (name, image, etc.)
@@ -365,7 +365,7 @@ const FavoritesPage: React.FC = () => {
         lat: 0, // We'll need to get this from the restaurant data if needed
         lng: 0, // We'll need to get this from the restaurant data if needed
       };
-      
+
       (navigation as any).navigate('RestaurantDetail', { restaurant: restaurantForDetail });
     }
   };
@@ -397,7 +397,7 @@ const FavoritesPage: React.FC = () => {
         restaurantAddress: deal.restaurantAddress,
         isAnonymous: deal.isAnonymous,
       };
-      
+
       (navigation as any).navigate('DealDetail', { deal: dealForDetail });
     }
   };
@@ -406,10 +406,10 @@ const FavoritesPage: React.FC = () => {
     // Find the deal to get the username
     const deal = deals.find(d => d.userId === userId);
     if (deal && deal.userDisplayName) {
-      (navigation as any).navigate('ProfilePage', { 
-        viewUser: true, 
+      (navigation as any).navigate('ProfilePage', {
+        viewUser: true,
         username: deal.userDisplayName,
-        userId: userId 
+        userId: userId
       });
     }
   };
@@ -417,19 +417,19 @@ const FavoritesPage: React.FC = () => {
   const handleUnfavorite = async (id: string, type: 'restaurant' | 'deal') => {
     // Prevent multiple rapid clicks
     if (unfavoritingIds.has(id)) return;
-    
+
     try {
       // Add to unfavoriting set to prevent duplicate clicks
       setUnfavoritingIds(prev => new Set(prev).add(id));
-      
+
       // 1. MARK AS UNFAVORITED IN GLOBAL STATE (persists across navigation)
       markAsUnfavorited(id, type);
-      
+
       // 2. INSTANT UI UPDATE (optimistic update)
       if (type === 'restaurant') {
         // Remove restaurant from UI immediately
         setRestaurants(prev => prev.filter(r => r.id !== id));
-        
+
         // Also remove all deals from this restaurant
         const restaurant = restaurants.find(r => r.id === id);
         if (restaurant) {
@@ -439,7 +439,7 @@ const FavoritesPage: React.FC = () => {
         // Remove deal from UI immediately
         setDeals(prev => prev.filter(d => d.id !== id));
       }
-      
+
       // 3. BACKGROUND API CALLS (fire and forget)
       if (type === 'restaurant') {
         // Unfavorite restaurant directly in background
@@ -452,10 +452,10 @@ const FavoritesPage: React.FC = () => {
           console.error('Failed to unfavorite deal:', err);
         });
       }
-      
+
       // 4. CLEAR CACHE IMMEDIATELY (synchronous)
       clearFavoritesCache();
-      
+
     } catch (error) {
       console.error('Error unfavoriting:', error);
     } finally {
@@ -491,7 +491,7 @@ const FavoritesPage: React.FC = () => {
         subtitle: `${deal.restaurantName} • ${deal.distance}`,
         // Use placeholder image for old deals, Cloudinary URL for new ones
         image: deal.imageUrl === 'placeholder' || !deal.imageUrl
-          ? require('../../../img/default-rest.png') 
+          ? require('../../../img/default-rest.png')
           : { uri: deal.imageUrl },
         userId: deal.userId,
         userProfilePhoto: deal.userProfilePhoto,
@@ -510,7 +510,7 @@ const FavoritesPage: React.FC = () => {
         No {activeTab === 'restaurants' ? 'Restaurants' : 'Deals'} Favorited
       </Text>
       <Text style={styles.emptySubtitle}>
-        {activeTab === 'restaurants' 
+        {activeTab === 'restaurants'
           ? 'Start favoriting restaurants to see them here'
           : 'Start favoriting deals to see them here'
         }
@@ -525,13 +525,13 @@ const FavoritesPage: React.FC = () => {
         <View style={styles.header}>
           <SkeletonLoader width={120} height={28} borderRadius={4} />
         </View>
-        
+
         {/* Tab Skeleton */}
         <View style={styles.tabContainer}>
           <SkeletonLoader width={85} height={34} borderRadius={20} />
           <SkeletonLoader width={115} height={34} borderRadius={20} />
         </View>
-        
+
         {/* Content Skeleton */}
         <View style={styles.skeletonContainer}>
           {[1, 2, 3, 4, 5, 6, 7].map((item) => (
@@ -543,8 +543,8 @@ const FavoritesPage: React.FC = () => {
   }
 
   // Only show loading skeleton if data hasn't been loaded yet for this tab
-  const isTabLoading = (activeTab === 'restaurants' && restaurantsLoading && !hasLoadedRestaurants) || 
-                       (activeTab === 'deals' && dealsLoading && !hasLoadedDeals);
+  const isTabLoading = (activeTab === 'restaurants' && restaurantsLoading && !hasLoadedRestaurants) ||
+    (activeTab === 'deals' && dealsLoading && !hasLoadedDeals);
 
   return (
     <View style={styles.container}>
@@ -555,7 +555,7 @@ const FavoritesPage: React.FC = () => {
 
       {/* Tab Selector */}
       <View style={styles.tabContainer}>
-        
+
         <TouchableOpacity
           style={[styles.tab, activeTab === 'deals' && styles.activeTab]}
           onPress={() => setActiveTab('deals')}
@@ -638,12 +638,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 20,
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#d7d7d7',
-    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    height: 35,
   },
   activeTab: {
     backgroundColor: '#ff8c4c',
@@ -654,6 +657,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontFamily: 'Inter',
     textAlign: 'center',
+    lineHeight: 18,
   },
   activeTabText: {
     color: '#000000',
