@@ -12,8 +12,9 @@ const BASE_WIDTH = 393;
 const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
 
 // Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (4px), then divide by 2
-const HORIZONTAL_PADDING = scale(20); // 10px on each side, scaled
-const CARD_GAP = scale(4); // 2px padding on each card (halved for tighter spacing)
+// Use fixed values to match the parent container's fixed padding (not scaled)
+const HORIZONTAL_PADDING = 20; // 10px on each side (fixed, not scaled - matches parent container)
+const CARD_GAP = 4; // 2px margin on each card side (fixed, not scaled - matches parent container)
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
 // Calculate horizontal card width to align with header location icon
@@ -103,7 +104,7 @@ const DealCard: React.FC<DealCardProps> = ({
         console.error('Failed to preload image:', err);
       });
     }
-    
+
     // Navigate immediately - no await, no delay
     onPress?.(deal.id);
   };
@@ -117,12 +118,12 @@ const DealCard: React.FC<DealCardProps> = ({
     if (deal.imageVariants) {
       // Use OptimizedImage for database images with variants
       // Dynamic sizing based on screen width
-      const displaySize = variant === 'horizontal' 
+      const displaySize = variant === 'horizontal'
         ? { width: Math.round(HORIZONTAL_IMAGE_WIDTH), height: Math.round(HORIZONTAL_IMAGE_HEIGHT) }
         : { width: Math.round(VERTICAL_IMAGE_SIZE), height: Math.round(VERTICAL_IMAGE_SIZE) };
-      
+
       return (
-        <OptimizedImage 
+        <OptimizedImage
           variants={deal.imageVariants}
           componentType="deal"
           displaySize={displaySize}
@@ -132,14 +133,14 @@ const DealCard: React.FC<DealCardProps> = ({
       );
     } else if (deal.image) {
       // Fallback to regular Image for static images or simple URIs
-      const imageSource = typeof deal.image === 'string' 
-        ? { uri: deal.image } 
+      const imageSource = typeof deal.image === 'string'
+        ? { uri: deal.image }
         : deal.image;
-      
+
       return (
-        <Image 
-          source={imageSource} 
-          style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage} 
+        <Image
+          source={imageSource}
+          style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage}
         />
       );
     }
@@ -168,7 +169,7 @@ const DealCard: React.FC<DealCardProps> = ({
             {deal.milesAway || '?mi'} away • {deal.timeAgo} • By {deal.author || 'Unknown'}
           </Text>
         </View>
-        
+
         <View style={styles.horizontalInteractions}>
           <VoteButtons
             votes={deal.votes}
@@ -178,15 +179,15 @@ const DealCard: React.FC<DealCardProps> = ({
             onDownvote={handleDownvote}
           />
           <View style={styles.horizontalFavoriteWrapper}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.horizontalFavoriteButton, deal.isFavorited && styles.favorited]}
               onPress={handleFavorite}
               activeOpacity={0.6}
             >
               <Monicon
                 name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
-                size={scale(19)} 
-                color={deal.isFavorited ? "#FF1E00" : "#000"} 
+                size={scale(19)}
+                color={deal.isFavorited ? "#FF1E00" : "#000"}
               />
             </TouchableOpacity>
           </View>
@@ -200,7 +201,7 @@ const DealCard: React.FC<DealCardProps> = ({
   const detailsLine = deal.cuisine && deal.cuisine !== 'Cuisine'
     ? `${deal.cuisine} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
     : `${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
-  
+
   return (
     <TouchableOpacity
       style={styles.verticalCard}
@@ -217,7 +218,7 @@ const DealCard: React.FC<DealCardProps> = ({
           {detailsLine}
         </Text>
       </View>
-      
+
       <View style={styles.verticalInteractions}>
         <VoteButtons
           votes={deal.votes}
@@ -226,30 +227,30 @@ const DealCard: React.FC<DealCardProps> = ({
           onUpvote={handleUpvote}
           onDownvote={handleDownvote}
         />
-        
+
         {/* Replace favorite button with delete button conditionally */}
         {showDelete ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.verticalDeleteButton}
             onPress={handleDelete}
             activeOpacity={0.6}
           >
             <Monicon
               name="uil:trash-alt"
-              size={scale(16)} 
-              color="#000000" 
+              size={scale(16)}
+              color="#000000"
             />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.verticalFavoriteButton, deal.isFavorited && styles.favorited]}
             onPress={handleFavorite}
             activeOpacity={0.6}
           >
             <Monicon
               name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
-              size={scale(19)} 
-              color={deal.isFavorited ? "#FF1E00" : "#000"} 
+              size={scale(19)}
+              color={deal.isFavorited ? "#FF1E00" : "#000"}
             />
           </TouchableOpacity>
         )}
