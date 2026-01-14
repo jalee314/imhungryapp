@@ -120,7 +120,7 @@ export default function CuisinePreferencesScreen() {
               <View style={styles.titleSection}>
                 <Text style={styles.title}>Cuisine Preferences</Text>
                 <Text style={styles.subtitle}>
-                  What are your favorite cuisines? Choose up to 3, or skip to continue.
+                  What are your favorite cuisines? Choose up to 3.
                 </Text>
               </View>
 
@@ -154,12 +154,10 @@ export default function CuisinePreferencesScreen() {
                 )}
               </View>
 
-              <View style={styles.spacer} />
-
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={[
-                    styles.continueButton, 
+                    styles.continueButton,
                     loading && { opacity: 0.7 }
                   ]}
                   onPress={handleFinish}
@@ -179,68 +177,66 @@ export default function CuisinePreferencesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: 'white' 
+  container: {
+    flex: 1,
+    backgroundColor: 'white'
   },
 
   keyboardAvoidingView: { flex: 1 },
-  pagePad: { 
-    flex: 1, 
-    paddingHorizontal: 24, 
-    paddingVertical: 20 
+  pagePad: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 20
   },
 
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 40,
     height: 44
   },
 
   backButton: { paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { 
-    fontSize: 20, 
-    color: '#000', 
-    fontWeight: '500' 
+  backButtonText: {
+    fontSize: 20,
+    color: '#000',
+    fontWeight: '500'
   },
 
   skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
-  skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
+  skipText: {
+    fontSize: 16,
+    color: '#404040',
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
 
-  mainContainer: { 
-    flex: 1, 
-    alignItems: 'flex-start', 
+  mainContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
     width: '100%'
   },
 
-  titleSection: { 
-    marginBottom: 10,
-    width: '100%',
-    maxWidth: 320,
+  titleSection: {
     alignItems: 'flex-start',
-    alignSelf: 'center',
+    marginBottom: 24,
+    maxWidth: 343,
   },
-  title: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
-    marginBottom: 15,
+  title: {
+    fontSize: 24,
+    color: '#000',
+    fontWeight: 'bold',
+    marginBottom: 25,
     fontFamily: 'Inter-Bold',
     textAlign: 'left',
   },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#404040', 
+  subtitle: {
+    fontSize: 16,
+    color: '#404040',
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left',
-    marginBottom: 12,
   },
 
   cuisineGrid: {
@@ -248,25 +244,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     width: '100%',
-    maxWidth: 320,
-    marginBottom: 20, 
-    alignSelf: 'center',
+    flex: 1,
+    paddingBottom: 16,
   },
   cuisineButton: {
     width: '48%',
-    height: 40,
+    height: 36,
     backgroundColor: '#eaeaea',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   cuisineButtonSelected: {
     backgroundColor: '#FF8C4C',
   },
   cuisineButtonText: {
     color: '#000',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '400',
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
@@ -274,33 +269,30 @@ const styles = StyleSheet.create({
   cuisineButtonTextSelected: {
     color: '#000',
   },
-  spacer: { flex: 1 },
-
-  footer: { 
-    width: '100%', 
+  footer: {
+    width: '100%',
     alignItems: 'center',
-    alignSelf: 'center',
   },
 
-  continueButton: { 
-    width: '100%', 
+  continueButton: {
+    width: '100%',
     maxWidth: 343,
-    height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
-    alignItems: 'center', 
+    height: 44,
+    backgroundColor: '#FF8C4C',
+    borderRadius: 22,
+    alignItems: 'center',
     justifyContent: 'center'
   },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600'
   },
   skeletonButton: {
     width: '48%',
-    height: 40,
+    height: 36,
     backgroundColor: '#E1E9EE',
-    borderRadius: 20,
-    marginBottom: 10,
+    borderRadius: 18,
+    marginBottom: 8,
   },
 });

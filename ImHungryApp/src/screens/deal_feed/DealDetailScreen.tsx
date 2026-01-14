@@ -805,54 +805,56 @@ const DealDetailScreen: React.FC = () => {
         currentUserId={currentUserId || undefined}
       />
 
-      {fullScreenImageSource && (
-        <Modal
-          visible={isImageViewVisible}
-          transparent={true}
-          onRequestClose={() => setImageViewVisible(false)}
-        >
-          <View style={styles.imageViewerContainer}>
-            <TouchableOpacity
-              style={styles.imageViewerCloseButton}
-              onPress={() => setImageViewVisible(false)}
-            >
-              <Ionicons name="close" size={30} color="white" />
-            </TouchableOpacity>
-            {modalImageLoading && (
-              <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
-            )}
-            <ScrollView
-              key={imageViewerKey}
-              ref={scrollViewRef}
-              style={styles.imageViewerScrollView}
-              contentContainerStyle={styles.scrollViewContent}
-              maximumZoomScale={3}
-              minimumZoomScale={1}
-              showsHorizontalScrollIndicator={false}
-              showsVerticalScrollIndicator={false}
-              bounces={false}
-              bouncesZoom={true}
-              centerContent={true}
-            >
-              <Image
-                source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource}
-                style={styles.fullScreenImage}
-                resizeMode="contain"
-                onLoad={() => setModalImageLoading(false)}
-                onError={() => {
-                  setModalImageLoading(false);
-                  setModalImageError(true);
-                }}
-              />
-            </ScrollView>
-            {modalImageError && (
-              <View style={styles.modalErrorContainer}>
-                <Text style={styles.modalErrorText}>Could not load image</Text>
-              </View>
-            )}
-          </View>
-        </Modal>
-      )}
+      {
+        fullScreenImageSource && (
+          <Modal
+            visible={isImageViewVisible}
+            transparent={true}
+            onRequestClose={() => setImageViewVisible(false)}
+          >
+            <View style={styles.imageViewerContainer}>
+              <TouchableOpacity
+                style={styles.imageViewerCloseButton}
+                onPress={() => setImageViewVisible(false)}
+              >
+                <Ionicons name="close" size={30} color="white" />
+              </TouchableOpacity>
+              {modalImageLoading && (
+                <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
+              )}
+              <ScrollView
+                key={imageViewerKey}
+                ref={scrollViewRef}
+                style={styles.imageViewerScrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                maximumZoomScale={3}
+                minimumZoomScale={1}
+                showsHorizontalScrollIndicator={false}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+                bouncesZoom={true}
+                centerContent={true}
+              >
+                <Image
+                  source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource}
+                  style={styles.fullScreenImage}
+                  resizeMode="contain"
+                  onLoad={() => setModalImageLoading(false)}
+                  onError={() => {
+                    setModalImageLoading(false);
+                    setModalImageError(true);
+                  }}
+                />
+              </ScrollView>
+              {modalImageError && (
+                <View style={styles.modalErrorContainer}>
+                  <Text style={styles.modalErrorText}>Could not load image</Text>
+                </View>
+              )}
+            </View>
+          </Modal>
+        )
+      }
 
       {/* Map Selection Modal */}
       <MapSelectionModal
@@ -861,7 +863,7 @@ const DealDetailScreen: React.FC = () => {
         onSelectAppleMaps={handleSelectAppleMaps}
         onSelectGoogleMaps={handleSelectGoogleMaps}
       />
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 

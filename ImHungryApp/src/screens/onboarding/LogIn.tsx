@@ -13,20 +13,20 @@ export default function LogInScreen() {
   const { width, height } = useWindowDimensions();
   const { isLoading: authLoading } = useAuth();
 
-  const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
-  const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
-  const GAP = Math.max( 8, Math.min(16, Math.round(height * 0.012)));  // between inputs
+  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));   // horizontal page padding
+  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
+  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));  // between inputs
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
 
   const responsive = {
-    pagePad:        { paddingHorizontal: H, paddingVertical: V },
-    backButton:     { marginBottom: Math.round(V * 0.2), marginTop: V  },
+    pagePad: { paddingHorizontal: H, paddingVertical: V },
+    backButton: { marginBottom: Math.round(V * 0.2), marginTop: V },
     welcomeSection: { marginBottom: Math.round(V * 1.5), paddingTop: Math.round(height * 0.07) },
-    welcomeTitle:   { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.9) },
-    formContainer:  { marginBottom: Math.round(V * 0.125) },
-    paperInput:     { marginBottom: Math.round(GAP * 0.7) },
+    welcomeTitle: { marginBottom: Math.round(V * 1) },
+    welcomeSubtitle: { marginBottom: -Math.round(V * 0.9) },
+    formContainer: { marginBottom: Math.round(V * 0.125) },
+    paperInput: { marginBottom: Math.round(GAP * 0.7) },
     continueButton: { marginTop: Math.round(V * 0.6), marginBottom: V },
     legalContainer: { marginTop: V * 2 },
   };
@@ -70,8 +70,8 @@ export default function LogInScreen() {
     (navigation as any).navigate('ForgotPassword');
   };
 
-  const handleTermsPress = () => {};
-  const handlePrivacyPress = () => {};
+  const handleTermsPress = () => { };
+  const handlePrivacyPress = () => { };
 
   const handleImTap = () => {
     // Increment tap count
@@ -116,81 +116,81 @@ export default function LogInScreen() {
               </TouchableOpacity>
 
               <View style={styles.mainContainer}>
-              <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>
-                  Welcome back to <TouchableWithoutFeedback onPress={handleImTap}><Text suppressHighlighting={true}>Im</Text></TouchableWithoutFeedback>Hungri
-                </Text>
-                <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                  Sign in with your email address.
-                </Text>
-              </View>
-
-              {/* Form Fields */}
-              <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
-                <View style={responsive.paperInput}>
-                  <TextInput
-                    label="Email address"
-                    mode="outlined"
-                    value={formData.email}
-                    onChangeText={t => handleInputChange('email', t)}
-                    placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                    theme={{
-                      roundness: 8,
-                      colors: {
-                        background: 'white',
-                      },
-                    }}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    textContentType="emailAddress"
-                    returnKeyType="next"
-                  />
+                <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
+                  <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>
+                    Welcome back to <TouchableWithoutFeedback onPress={handleImTap}><Text suppressHighlighting={true}>Im</Text></TouchableWithoutFeedback>Hungri
+                  </Text>
+                  <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
+                    Sign in with your email address.
+                  </Text>
                 </View>
 
-                <View style={responsive.paperInput}>
-                  <TextInput
-                    label="Password"
-                    mode="outlined"
-                    value={formData.password}
-                    onChangeText={t => handleInputChange('password', t)}
-                    placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                    theme={{
-                      roundness: 8,
-                      colors: {
-                        background: 'white',
-                      },
-                    }}
-                    keyboardType="default"
-                    autoCapitalize="none"
-                    autoComplete="current-password"
-                    textContentType="password"
-                    secureTextEntry
-                    returnKeyType="done"
-                  />
+                {/* Form Fields */}
+                <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
+                  <View style={responsive.paperInput}>
+                    <TextInput
+                      label="Email address"
+                      mode="outlined"
+                      value={formData.email}
+                      onChangeText={t => handleInputChange('email', t)}
+                      placeholder=""
+                      outlineColor="#FF8C4C"
+                      activeOutlineColor="#FF8C4C"
+                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                      theme={{
+                        roundness: 8,
+                        colors: {
+                          background: 'white',
+                        },
+                      }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      textContentType="emailAddress"
+                      returnKeyType="next"
+                    />
+                  </View>
+
+                  <View style={responsive.paperInput}>
+                    <TextInput
+                      label="Password"
+                      mode="outlined"
+                      value={formData.password}
+                      onChangeText={t => handleInputChange('password', t)}
+                      placeholder=""
+                      outlineColor="#FF8C4C"
+                      activeOutlineColor="#FF8C4C"
+                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                      theme={{
+                        roundness: 8,
+                        colors: {
+                          background: 'white',
+                        },
+                      }}
+                      keyboardType="default"
+                      autoCapitalize="none"
+                      autoComplete="current-password"
+                      textContentType="password"
+                      secureTextEntry
+                      returnKeyType="done"
+                    />
+                  </View>
                 </View>
+
+                {/* Login Button */}
+                <TouchableOpacity
+                  style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+                  onPress={handleLogin}
+                  disabled={loading || authLoading}
+                >
+                  <Text style={styles.continueButtonText}>Log in</Text>
+                </TouchableOpacity>
+
+                {/* Forgot Password */}
+                <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
+                  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                </TouchableOpacity>
               </View>
-
-              {/* Login Button */}
-              <TouchableOpacity
-                style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
-                onPress={handleLogin}
-                disabled={loading || authLoading}
-              >
-                <Text style={styles.continueButtonText}>Log in</Text>
-              </TouchableOpacity>
-
-              {/* Forgot Password */}
-              <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-              </TouchableOpacity>
-            </View>
             </View>
 
             {/* Legal */}
@@ -283,9 +283,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
-  legalLink: { 
-    color: '#FFA05C', 
-    fontWeight: '600', 
-    fontFamily: 'Inter-SemiBold' 
+  legalLink: {
+    color: '#FFA05C',
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold'
   },
 });

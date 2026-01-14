@@ -977,5 +977,3 @@ export const deleteDeal = async (dealId: string): Promise<{ success: boolean; er
     return { success: false, error: 'An unexpected error occurred' };
   }
 };
-
-
