@@ -87,14 +87,19 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
     }
 
     // Upload all images and collect metadata IDs
+    // Upload all images in parallel
+    const uploadPromises = dealData.imageUris.map(uri => uploadDealImage(uri));
+    const uploadedIds = await Promise.all(uploadPromises);
+
+    // Check for any failures
     const imageMetadataIds: string[] = [];
-    for (const imageUri of dealData.imageUris) {
-      const metadataId = await uploadDealImage(imageUri);
-      if (!metadataId) {
-        console.error('Failed to upload image:', imageUri);
+    for (let i = 0; i < uploadedIds.length; i++) {
+      const id = uploadedIds[i];
+      if (!id) {
+        console.error('Failed to upload image:', dealData.imageUris[i]);
         return { success: false, error: 'Failed to upload one or more images' };
       }
-      imageMetadataIds.push(metadataId);
+      imageMetadataIds.push(id);
     }
 
     // Use the thumbnail image as the primary image in deal_template
@@ -852,45 +857,58 @@ export const deleteDeal = async (dealId: string): Promise<{ success: boolean; er
     }
 
     // Get Cloudinary public ID if image_metadata_id exists
-    const imageMetadataId = (dealInstance.deal_template as any).image_metadata_id;
-    if (imageMetadataId) {
+    // Get all image metadata IDs associated with this deal
+    const templateImageId = (dealInstance.deal_template as any).image_metadata_id;
+    const templateId = dealInstance.template_id;
+
+    // Fetch all images from deal_images table
+    const { data: dealImages } = await supabase
+      .from('deal_images')
+      .select('image_metadata_id')
+      .eq('deal_template_id', templateId);
+
+    // Combine all IDs
+    const allImageIds = new Set<string>();
+    if (templateImageId) allImageIds.add(templateImageId);
+    if (dealImages) {
+      dealImages.forEach((img: any) => {
+        if (img.image_metadata_id) allImageIds.add(img.image_metadata_id);
+      });
+    }
+
+    // Convert to array
+    const imageIdsToDelete = Array.from(allImageIds);
+
+    if (imageIdsToDelete.length > 0) {
       try {
-        // Fetch the cloudinary_public_id from image_metadata table
-        const { data: imageMetadata, error: metadataError } = await supabase
+        // Fetch Cloudinary public IDs for ALL images
+        const { data: imageMetadataList, error: metadataError } = await supabase
           .from('image_metadata')
-          .select('cloudinary_public_id')
-          .eq('image_metadata_id', imageMetadataId)
-          .single();
+          .select('image_metadata_id, cloudinary_public_id')
+          .in('image_metadata_id', imageIdsToDelete);
 
-        if (!metadataError && imageMetadata?.cloudinary_public_id) {
-          console.log('Deleting Cloudinary image:', imageMetadata.cloudinary_public_id);
+        if (!metadataError && imageMetadataList && imageMetadataList.length > 0) {
+          const publicIds = imageMetadataList
+            .map(img => img.cloudinary_public_id)
+            .filter(id => id !== null && id !== undefined);
 
-          // Call the edge function to delete from Cloudinary
-          const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
-            body: { publicIds: [imageMetadata.cloudinary_public_id] }
-          });
+          if (publicIds.length > 0) {
+            console.log('Deleting Cloudinary images:', publicIds.length);
 
-          if (cloudinaryError) {
-            console.warn('Failed to delete image from Cloudinary:', cloudinaryError);
-            // Continue anyway - the database records are more important
-          } else {
-            console.log('Successfully deleted Cloudinary image');
-          }
+            // Call the edge function to delete from Cloudinary
+            const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
+              body: { publicIds }
+            });
 
-          // Also delete the image_metadata record
-          const { error: deleteMetadataError } = await supabase
-            .from('image_metadata')
-            .delete()
-            .eq('image_metadata_id', imageMetadataId);
-
-          if (deleteMetadataError) {
-            console.warn('Failed to delete image metadata record:', deleteMetadataError);
-            // Continue anyway
+            if (cloudinaryError) {
+              console.warn('Failed to delete images from Cloudinary:', cloudinaryError);
+            } else {
+              console.log('Successfully deleted Cloudinary images');
+            }
           }
         }
       } catch (cloudinaryCleanupError) {
         console.warn('Error during Cloudinary cleanup:', cloudinaryCleanupError);
-        // Continue with database deletion even if Cloudinary cleanup fails
       }
     }
 
@@ -917,6 +935,17 @@ export const deleteDeal = async (dealId: string): Promise<{ success: boolean; er
       return { success: false, error: 'Failed to delete deal' };
     }
 
+    // Explicitly delete deal_images rows first (to avoid FK constraints if no cascade)
+    const { error: deleteImagesError } = await supabase
+      .from('deal_images')
+      .delete()
+      .eq('deal_template_id', dealInstance.template_id);
+
+    if (deleteImagesError) {
+      console.warn('Failed to delete deal_images rows:', deleteImagesError);
+      // Attempt to continue, but template deletion might fail
+    }
+
     // Delete the deal template
     const { error: deleteTemplateError } = await supabase
       .from('deal_template')
@@ -926,6 +955,20 @@ export const deleteDeal = async (dealId: string): Promise<{ success: boolean; er
     if (deleteTemplateError) {
       console.error('Error deleting deal template:', deleteTemplateError);
       return { success: false, error: 'Failed to delete deal template' };
+    }
+
+    // Finally, cleanup image_metadata records
+    if (imageIdsToDelete.length > 0) {
+      const { error: deleteMetadataError } = await supabase
+        .from('image_metadata')
+        .delete()
+        .in('image_metadata_id', imageIdsToDelete);
+
+      if (deleteMetadataError) {
+        console.warn('Failed to cleanup image_metadata records:', deleteMetadataError);
+      } else {
+        console.log('Successfully cleaned up image_metadata records');
+      }
     }
 
     return { success: true };
