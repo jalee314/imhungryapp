@@ -36,6 +36,14 @@ type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// In-memory cache for deal images to avoid showing skeleton on repeat views
+const dealImageCache = new Map<string, { carouselUrls: string[]; originalUrls: string[] }>();
+
+// Export function to invalidate cache when a deal is edited
+export const invalidateDealImageCache = (dealId: string) => {
+  dealImageCache.delete(dealId);
+};
+
 const DealDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<DealDetailRouteProp>();
@@ -57,16 +65,22 @@ const DealDetailScreen: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
+  // Check if we have cached images for this deal
+  const cachedImages = dealImageCache.get(deal.id);
+
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  // Track if we've fetched fresh image data from the server (or have cached data)
+  const [hasFetchedFreshImages, setHasFetchedFreshImages] = useState(!!cachedImages);
 
   // Carousel state for multiple images
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const carouselRef = useRef<FlatList>(null);
   // Keep two arrays: one for in-page carousel (optimized display) and one for fullscreen (original)
-  const [carouselImageUris, setCarouselImageUris] = useState<string[] | null>(deal.images || null);
-  const [originalImageUris, setOriginalImageUris] = useState<string[] | null>(null);
+  // Use cached data if available, otherwise wait for fetchDealData
+  const [carouselImageUris, setCarouselImageUris] = useState<string[] | null>(cachedImages?.carouselUrls || null);
+  const [originalImageUris, setOriginalImageUris] = useState<string[] | null>(cachedImages?.originalUrls || null);
 
   // State to hold image dimensions for skeleton
   const [skeletonHeight, setSkeletonHeight] = useState(250); // Better default height
@@ -177,12 +191,12 @@ const DealDetailScreen: React.FC = () => {
 
       const template = (instance as any).deal_template as any;
 
-      // Update deal title and description if changed
-      if (template?.title && template.title !== dealData.title) {
+      // Always update deal title and description with fresh data from server
+      if (template) {
         setDealData(prev => ({
           ...prev,
-          title: template.title,
-          details: template.description || prev.details,
+          title: template.title || prev.title,
+          details: template.description ?? prev.details,
         }));
       }
 
@@ -212,14 +226,24 @@ const DealDetailScreen: React.FC = () => {
       }
 
       if (images.length > 0) {
-        setCarouselImageUris(images.map((x: any) => x.displayUrl));
-        setOriginalImageUris(images.map((x: any) => x.originalUrl));
+        const carouselUrls = images.map((x: any) => x.displayUrl);
+        const origUrls = images.map((x: any) => x.originalUrl);
+        
+        // Cache the fetched images for future visits
+        dealImageCache.set(dealData.id, { carouselUrls, originalUrls: origUrls });
+        
+        setCarouselImageUris(carouselUrls);
+        setOriginalImageUris(origUrls);
         // Reset image loading state to show fresh images
         setImageLoading(true);
         setCurrentImageIndex(0);
       }
+      // Mark that we have fetched fresh images (even if empty)
+      setHasFetchedFreshImages(true);
     } catch (e) {
       console.warn('DealDetailScreen: Failed to fetch deal data:', e);
+      // Even on error, mark as fetched so we can fall back to passed data
+      setHasFetchedFreshImages(true);
     }
   }, [dealData.id, dealData.title]);
 
@@ -265,13 +289,28 @@ const DealDetailScreen: React.FC = () => {
     setImageError(true);
   };
 
-  // Reset image loading state when deal changes
+  // Reset image loading state when deal changes - but use cache if available
   useEffect(() => {
     console.log('🔄 Resetting image loading state for deal:', dealData.id);
     setImageLoading(true);
     setImageError(false);
     // Reset dimensions so skeleton shows properly
     setImageDimensions(null);
+    
+    // Check if we have cached images for this deal
+    const cached = dealImageCache.get(dealData.id);
+    if (cached) {
+      // Use cached data - no need to show skeleton
+      console.log('✅ Using cached images for deal:', dealData.id);
+      setCarouselImageUris(cached.carouselUrls);
+      setOriginalImageUris(cached.originalUrls);
+      setHasFetchedFreshImages(true);
+    } else {
+      // No cache - reset and wait for fetch
+      setHasFetchedFreshImages(false);
+      setCarouselImageUris(null);
+      setOriginalImageUris(null);
+    }
   }, [dealData.id]);
 
   // Fetch initial view count, viewer photos, and subscribe to realtime updates
@@ -596,9 +635,11 @@ const DealDetailScreen: React.FC = () => {
       .replace('thumbnail/', 'original/');
   };
 
+  // Only use dealData.images as fallback AFTER we've attempted to fetch fresh data
+  // This prevents showing stale/deleted image URLs from the cache
   const imagesForCarousel = carouselImageUris && carouselImageUris.length > 0
     ? carouselImageUris
-    : (dealData.images && dealData.images.length > 0 ? dealData.images : null);
+    : (hasFetchedFreshImages && dealData.images && dealData.images.length > 0 ? dealData.images : null);
 
   const fullScreenImageSource =
     (originalImageUris && originalImageUris[currentImageIndex]) ||
@@ -789,6 +830,19 @@ const DealDetailScreen: React.FC = () => {
                 ))}
               </View>
             )}
+          </View>
+        ) : !hasFetchedFreshImages ? (
+          // Show skeleton while waiting for fresh image data from server
+          <View style={styles.imageContainer}>
+            <View style={[styles.imageWrapper, { minHeight: Math.max(skeletonHeight, 200), borderWidth: 0 }]}>
+              <View style={styles.imageLoadingContainer}>
+                <SkeletonLoader
+                  width="100%"
+                  height={Math.max(skeletonHeight, 200)}
+                  borderRadius={10}
+                />
+              </View>
+            </View>
           </View>
         ) : (
           // Fallback to single image display for deals without multiple images

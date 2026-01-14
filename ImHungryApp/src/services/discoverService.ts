@@ -303,7 +303,7 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
       return new Map();
     }
 
-    // Step 1: Get all deal templates for these restaurants
+    // Step 1: Get all deal templates for these restaurants with deal_images
     const { data: dealTemplates, error: templateError } = await supabase
       .from('deal_template')
       .select(`
@@ -313,6 +313,14 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
         image_metadata_id,
         image_metadata:image_metadata_id (
           variants
+        ),
+        deal_images (
+          image_metadata_id,
+          display_order,
+          is_thumbnail,
+          image_metadata:image_metadata_id (
+            variants
+          )
         )
       `)
       .in('restaurant_id', restaurantIds);
@@ -376,13 +384,38 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
       }
     });
 
-    // Step 5: Extract image URLs
+    // Step 5: Extract image URLs - prioritize deal_images thumbnail
     const result = new Map<string, string>();
     
     Object.entries(mostLikedByRestaurant).forEach(([restaurantId, data]) => {
       const template = data.template;
       
-      // Handle image_metadata - might be an array or object
+      // First, check deal_images for the designated thumbnail
+      const dealImages = template.deal_images || [];
+      const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
+      const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+      
+      if (thumbnailImage?.image_metadata?.variants) {
+        // Use thumbnail from deal_images table (preferred for edited deals)
+        const variants = thumbnailImage.image_metadata.variants;
+        const imageUrl = variants.medium || variants.small || variants.large || '';
+        if (imageUrl) {
+          result.set(restaurantId, imageUrl);
+          return;
+        }
+      }
+      
+      if (firstDealImage?.image_metadata?.variants) {
+        // Use first available image from deal_images
+        const variants = firstDealImage.image_metadata.variants;
+        const imageUrl = variants.medium || variants.small || variants.large || '';
+        if (imageUrl) {
+          result.set(restaurantId, imageUrl);
+          return;
+        }
+      }
+      
+      // Fallback: Handle image_metadata from deal_template
       const imageMetadata = Array.isArray(template.image_metadata) 
         ? template.image_metadata[0] 
         : template.image_metadata;

@@ -23,6 +23,8 @@ import PhotoActionModal from '../../components/PhotoActionModal';
 import ImageCropperModal from '../../components/ImageCropperModal';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { ProfileCacheService } from '../../services/profileCacheService';
+import { dealCacheService } from '../../services/dealCacheService';
+import { invalidateDealImageCache } from '../deal_feed/DealDetailScreen';
 import {
   fetchDealForEdit,
   updateDealFields,
@@ -449,8 +451,14 @@ export default function DealEditScreen() {
         await setDealThumbnail(dealId, thumbnailId);
       }
 
-      // Success
-      await ProfileCacheService.forceRefresh();
+      // Invalidate the in-memory image cache for this deal
+      invalidateDealImageCache(dealId);
+
+      // Success - refresh both profile and deal caches
+      await Promise.all([
+        ProfileCacheService.forceRefresh(),
+        dealCacheService.invalidateAndRefresh(),
+      ]);
       setPostAdded(true);
 
       Alert.alert('Success', 'Your deal has been updated!', [

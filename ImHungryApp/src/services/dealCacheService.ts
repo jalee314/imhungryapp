@@ -158,6 +158,18 @@ class DealCacheService {
           this.scheduleRefresh();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deal_images',
+        },
+        () => {
+          console.log('⚡ Deal images change detected, scheduling refresh...');
+          this.scheduleRefresh();
+        }
+      )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('📡 Deal cache realtime: SUBSCRIBED');
@@ -205,6 +217,24 @@ class DealCacheService {
     });
     
     // Notify subscribers
+    this.notifySubscribers(this.cachedDeals);
+  }
+
+  // Invalidate cache and force a fresh fetch (call after deal modifications)
+  async invalidateAndRefresh() {
+    console.log('🔄 Invalidating cache and forcing refresh...');
+    // Clear the timestamp to force refresh
+    await AsyncStorage.removeItem(CACHE_TIMESTAMP_KEY);
+    // Fetch fresh data
+    return this.fetchAndCache(true);
+  }
+
+  // Remove a specific deal from cache
+  removeDealFromCache(dealId: string) {
+    this.cachedDeals = this.cachedDeals.filter(deal => deal.id !== dealId);
+    AsyncStorage.setItem(CACHE_KEY, JSON.stringify(this.cachedDeals)).catch(err => {
+      console.error('Error updating cache:', err);
+    });
     this.notifySubscribers(this.cachedDeals);
   }
 

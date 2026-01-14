@@ -551,17 +551,33 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
   const timeAgo = getTimeAgo(new Date(dbDeal.created_at));
 
   // Handle image source - ONLY use Cloudinary or placeholder
+  // PRIORITY: 1. Thumbnail from deal_images table, 2. Primary image from deal_template.image_metadata
   let imageSource;
   let imageVariants = undefined;
 
-  if (dbDeal.image_metadata?.variants) {
-    // Use Cloudinary variants (new deals)
-    console.log('✅ Using Cloudinary for deal:', dbDeal.title);
+  // First, check deal_images for the designated thumbnail
+  const thumbnailImage = dbDeal.deal_images?.find(img => img.is_thumbnail && img.variants);
+  // If no explicit thumbnail, use the first image with variants from deal_images
+  const firstDealImage = !thumbnailImage ? dbDeal.deal_images?.find(img => img.variants) : null;
+
+  if (thumbnailImage?.variants) {
+    // Use thumbnail from deal_images table (preferred for edited deals)
+    console.log('✅ Using thumbnail from deal_images for deal:', dbDeal.title);
+    imageSource = require('../../img/default-rest.png'); // Fallback for Image component
+    imageVariants = thumbnailImage.variants;
+  } else if (firstDealImage?.variants) {
+    // Use first available image from deal_images
+    console.log('✅ Using first deal_image for deal:', dbDeal.title);
+    imageSource = require('../../img/default-rest.png');
+    imageVariants = firstDealImage.variants;
+  } else if (dbDeal.image_metadata?.variants) {
+    // Fallback to primary image on deal_template (for old deals not yet migrated to deal_images)
+    console.log('✅ Using deal_template.image_metadata for deal:', dbDeal.title);
     imageSource = require('../../img/default-rest.png'); // Fallback for Image component
     imageVariants = dbDeal.image_metadata.variants; // OptimizedImage will use this
   } else {
-    // Old deal without Cloudinary → use placeholder instead of slow Supabase Storage
-    console.log('⚠️ Old deal, using placeholder:', dbDeal.title);
+    // No image available → use placeholder
+    console.log('⚠️ No image found, using placeholder:', dbDeal.title);
     imageSource = require('../../img/default-rest.png');
     imageVariants = undefined; // No variants = OptimizedImage won't be used
   }

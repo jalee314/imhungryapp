@@ -108,6 +108,14 @@ const RestaurantDetailScreen: React.FC = () => {
             image_metadata:image_metadata_id (
               variants
             ),
+            deal_images (
+              image_metadata_id,
+              display_order,
+              is_thumbnail,
+              image_metadata:image_metadata_id (
+                variants
+              )
+            ),
             user!inner(
               display_name,
               profile_photo
@@ -152,13 +160,27 @@ const RestaurantDetailScreen: React.FC = () => {
 
           const template = Array.isArray(deal.deal_template) ? deal.deal_template[0] : deal.deal_template;
           const user = Array.isArray(template.user) ? template.user[0] : template.user;
-          const imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
+          
+          // Prioritize thumbnail from deal_images, fallback to deal_template.image_metadata
+          const dealImages = template.deal_images || [];
+          const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
+          const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+          
+          let imageMetadata;
+          if (thumbnailImage?.image_metadata) {
+            imageMetadata = thumbnailImage.image_metadata;
+          } else if (firstDealImage?.image_metadata) {
+            imageMetadata = firstDealImage.image_metadata;
+          } else {
+            imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
+          }
           
           console.log('🔍 Processing deal:', template.title, {
             has_image_url: !!template.image_url,
             has_image_metadata: !!imageMetadata,
             image_metadata_variants: imageMetadata?.variants,
-            image_url: template.image_url
+            image_url: template.image_url,
+            deal_images_count: dealImages.length
           });
           
           return {

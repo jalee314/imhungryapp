@@ -101,7 +101,7 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       return [];
     }
 
-    // Get all template data in one batch query - NOW WITH IMAGE METADATA
+    // Get all template data in one batch query - NOW WITH IMAGE METADATA AND DEAL_IMAGES
     const templateIds = [...new Set(deals.map(d => d.template_id))];
     const { data: templatesData } = await supabase
       .from('deal_template')
@@ -118,6 +118,14 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         is_anonymous,
         image_metadata:image_metadata_id (
           variants
+        ),
+        deal_images (
+          image_metadata_id,
+          display_order,
+          is_thumbnail,
+          image_metadata:image_metadata_id (
+            variants
+          )
         ),
         user:user_id (
           display_name,
@@ -200,17 +208,35 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
       const distance = formatDistance(distanceMap.get(restaurant.restaurant_id));
 
-      // UPDATED: Handle image URL - use Cloudinary or use 'placeholder' string
+      // UPDATED: Handle image URL - prioritize deal_images thumbnail, then fallback to deal_template.image_metadata
       let imageUrl = 'placeholder'; // Default to placeholder
       let imageVariants = undefined; // Store variants for skeleton loading
-      const imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
-      if (imageMetadata?.variants) {
-        // Use Cloudinary variants (new deals)
-        const variants = imageMetadata.variants;
+      
+      // First, check deal_images for the designated thumbnail
+      const dealImages = (template as any).deal_images || [];
+      const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
+      const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+      
+      if (thumbnailImage?.image_metadata?.variants) {
+        // Use thumbnail from deal_images table (preferred for edited deals)
+        const variants = thumbnailImage.image_metadata.variants;
         imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
-        imageVariants = variants; // Preserve variants for skeleton loading
+        imageVariants = variants;
+      } else if (firstDealImage?.image_metadata?.variants) {
+        // Use first available image from deal_images
+        const variants = firstDealImage.image_metadata.variants;
+        imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
+        imageVariants = variants;
+      } else {
+        // Fallback to deal_template.image_metadata (for old deals not yet migrated)
+        const imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
+        if (imageMetadata?.variants) {
+          const variants = imageMetadata.variants;
+          imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
+          imageVariants = variants;
+        }
       }
-      // OLD Supabase storage images will just use 'placeholder'
+      // No image available = use 'placeholder' string
 
       // Process user data with Cloudinary support
       const userData = Array.isArray(template.user) ? template.user[0] : template.user;
@@ -375,7 +401,7 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       allRestaurantIds.length > 0
         ? (async () => {
             try {
-              // Step 1: Get all deal templates for these restaurants (with or without image_metadata_id)
+              // Step 1: Get all deal templates for these restaurants (with deal_images for thumbnail support)
               const { data: dealTemplates, error: templateError } = await supabase
                 .from('deal_template')
                 .select(`
@@ -385,6 +411,14 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
                   image_metadata_id,
                   image_metadata:image_metadata_id (
                     variants
+                  ),
+                  deal_images (
+                    image_metadata_id,
+                    display_order,
+                    is_thumbnail,
+                    image_metadata:image_metadata_id (
+                      variants
+                    )
                   )
                 `)
                 .in('restaurant_id', allRestaurantIds);
@@ -457,6 +491,7 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
                     image_url: template.image_url,
                     image_metadata_id: template.image_metadata_id,
                     image_metadata: template.image_metadata,
+                    deal_images: template.deal_images, // Include deal_images for thumbnail support
                     upvote_count: upvoteCount
                   };
                 }
@@ -523,19 +558,34 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       const mostLikedDeal = mostLikedDealsMap.get(restaurantId);
       
       if (mostLikedDeal) {
-        // Handle image_metadata - might be an array or object
-        const imageMetadata = Array.isArray(mostLikedDeal.image_metadata) 
-          ? mostLikedDeal.image_metadata[0] 
-          : mostLikedDeal.image_metadata;
+        // First, check deal_images for the designated thumbnail
+        const dealImages = mostLikedDeal.deal_images || [];
+        const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
+        const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
         
-        // Try to get image from Cloudinary variants first (for new deals)
-        if (imageMetadata?.variants) {
-          const variants = imageMetadata.variants;
+        if (thumbnailImage?.image_metadata?.variants) {
+          // Use thumbnail from deal_images table (preferred for edited deals)
+          const variants = thumbnailImage.image_metadata.variants;
           imageUrl = variants.medium || variants.small || variants.large || '';
-        }
-        // Fallback to image_url if no variants (older deals might still use this)
-        else if (mostLikedDeal.image_url) {
-          imageUrl = mostLikedDeal.image_url;
+        } else if (firstDealImage?.image_metadata?.variants) {
+          // Use first available image from deal_images
+          const variants = firstDealImage.image_metadata.variants;
+          imageUrl = variants.medium || variants.small || variants.large || '';
+        } else {
+          // Fallback to deal_template.image_metadata
+          const imageMetadata = Array.isArray(mostLikedDeal.image_metadata) 
+            ? mostLikedDeal.image_metadata[0] 
+            : mostLikedDeal.image_metadata;
+          
+          // Try to get image from Cloudinary variants first (for new deals)
+          if (imageMetadata?.variants) {
+            const variants = imageMetadata.variants;
+            imageUrl = variants.medium || variants.small || variants.large || '';
+          }
+          // Fallback to image_url if no variants (older deals might still use this)
+          else if (mostLikedDeal.image_url) {
+            imageUrl = mostLikedDeal.image_url;
+          }
         }
       }
 

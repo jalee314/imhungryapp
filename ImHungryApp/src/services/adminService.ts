@@ -389,6 +389,14 @@ class AdminService {
             ),
             image_metadata:image_metadata_id(
               variants
+            ),
+            deal_images (
+              image_metadata_id,
+              display_order,
+              is_thumbnail,
+              image_metadata:image_metadata_id (
+                variants
+              )
             )
           )
         `)
@@ -409,11 +417,21 @@ class AdminService {
       }
 
       return results.map((deal: any) => {
-        // Get image URL from metadata variants
+        // Get image URL - prioritize deal_images thumbnail over deal_template.image_metadata
         let imageUrl = null;
-        if (deal.deal_template?.image_metadata?.variants) {
+        const dealImages = deal.deal_template?.deal_images || [];
+        const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
+        const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+        
+        if (thumbnailImage?.image_metadata?.variants) {
+          const variants = thumbnailImage.image_metadata.variants;
+          imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
+        } else if (firstDealImage?.image_metadata?.variants) {
+          const variants = firstDealImage.image_metadata.variants;
+          imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
+        } else if (deal.deal_template?.image_metadata?.variants) {
+          // Fallback to deal_template.image_metadata
           const variants = deal.deal_template.image_metadata.variants;
-          // Try to get medium size, fallback to original or any available variant
           imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
         }
 
