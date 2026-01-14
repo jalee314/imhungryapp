@@ -68,8 +68,8 @@ const DealDetailScreen: React.FC = () => {
   // Check if we have cached images for this deal
   const cachedImages = dealImageCache.get(deal.id);
 
-  // Loading states
-  const [imageLoading, setImageLoading] = useState(true);
+  // Loading states - don't show loading if we have cached images
+  const [imageLoading, setImageLoading] = useState(!cachedImages);
   const [imageError, setImageError] = useState(false);
   // Track if we've fetched fresh image data from the server (or have cached data)
   const [hasFetchedFreshImages, setHasFetchedFreshImages] = useState(!!cachedImages);
@@ -161,7 +161,20 @@ const DealDetailScreen: React.FC = () => {
   }, [dealData.id]);
 
   // Function to fetch deal data including images from Supabase
-  const fetchDealData = useCallback(async () => {
+  const fetchDealData = useCallback(async (forceRefresh = false) => {
+    // Skip fetch if we have cached data and this isn't a forced refresh (e.g., from edit)
+    const hasCachedData = dealImageCache.has(dealData.id);
+    if (hasCachedData && !forceRefresh) {
+      console.log('✅ Skipping fetch - using cached images for deal:', dealData.id);
+      // Ensure we use cached data and don't show skeleton
+      const cached = dealImageCache.get(dealData.id)!;
+      setCarouselImageUris(cached.carouselUrls);
+      setOriginalImageUris(cached.originalUrls);
+      setImageLoading(false);
+      setHasFetchedFreshImages(true);
+      return;
+    }
+
     try {
       const { data: instance, error } = await supabase
         .from('deal_instance')
@@ -234,8 +247,8 @@ const DealDetailScreen: React.FC = () => {
         
         setCarouselImageUris(carouselUrls);
         setOriginalImageUris(origUrls);
-        // Reset image loading state to show fresh images
-        setImageLoading(true);
+        // Note: imageLoading is handled by the caller (forceRefresh sets it to true before calling)
+        // For first load, it's already true from initial state
         setCurrentImageIndex(0);
       }
       // Mark that we have fetched fresh images (even if empty)
@@ -249,15 +262,17 @@ const DealDetailScreen: React.FC = () => {
 
   // Fetch original variants for fullscreen viewing (and large variants for carousel) from Supabase
   useEffect(() => {
-    fetchDealData();
+    fetchDealData(false); // Normal load - use cache if available
   }, [fetchDealData]);
 
   // Refresh deal data when returning from edit screen
   useFocusEffect(
     useCallback(() => {
       if (postAdded) {
-        console.log('🔄 DealDetailScreen: Detected deal update, refreshing data...');
-        fetchDealData();
+        console.log('🔄 DealDetailScreen: Detected deal update, forcing refresh...');
+        // Show loading state for refresh
+        setImageLoading(true);
+        fetchDealData(true); // Force refresh - ignore cache
         setPostAdded(false);
       }
     }, [postAdded, setPostAdded, fetchDealData])
@@ -291,22 +306,20 @@ const DealDetailScreen: React.FC = () => {
 
   // Reset image loading state when deal changes - but use cache if available
   useEffect(() => {
-    console.log('🔄 Resetting image loading state for deal:', dealData.id);
-    setImageLoading(true);
     setImageError(false);
-    // Reset dimensions so skeleton shows properly
     setImageDimensions(null);
     
     // Check if we have cached images for this deal
     const cached = dealImageCache.get(dealData.id);
     if (cached) {
-      // Use cached data - no need to show skeleton
-      console.log('✅ Using cached images for deal:', dealData.id);
+      // Use cached data - no need to show skeleton, images are likely in RN's image cache too
       setCarouselImageUris(cached.carouselUrls);
       setOriginalImageUris(cached.originalUrls);
       setHasFetchedFreshImages(true);
+      setImageLoading(false);
     } else {
       // No cache - reset and wait for fetch
+      setImageLoading(true);
       setHasFetchedFreshImages(false);
       setCarouselImageUris(null);
       setOriginalImageUris(null);
