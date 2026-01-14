@@ -213,6 +213,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     hasData,
     activeTab,
     postsLoading,
+    postsInitialized,
     postsError,
     displayName,
     joinDateText,
@@ -403,7 +404,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         <View style={styles.contentArea}>
           {activeTab === 'posts' && (
             <View style={styles.postsContainer}>
-              {postsLoading ? (
+              {(!postsInitialized || postsLoading) ? (
                 <View style={styles.dealsGrid}>
                   {[1, 2, 3, 4, 5, 6].map((item, index) => (
                     <View key={item} style={[

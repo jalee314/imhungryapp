@@ -31,6 +31,7 @@ export interface UseProfileResult {
   hasData: boolean;
   activeTab: 'posts' | 'settings';
   postsLoading: boolean;
+  postsInitialized: boolean;
   postsError: string | null;
   displayName: string;
   joinDateText: string;
@@ -71,6 +72,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [postsInitialized, setPostsInitialized] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [hasData, setHasData] = useState(false);
@@ -141,6 +143,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
         console.error('Error loading other user posts (non-critical):', postsErr);
       } finally {
         setPostsLoading(false);
+        setPostsInitialized(true);
       }
     } catch (err) {
       console.error('Error loading other user profile:', err);
@@ -202,6 +205,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
       setPostsError('Failed to load your posts');
     } finally {
       setPostsLoading(false);
+      setPostsInitialized(true);
     }
   }, [viewUser, postsLoading]);
 
@@ -357,7 +361,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
   const onProfileTabReselect = () => {
     if (viewUser) {
       // Reset to current user
-      setProfile(null); setPhotoUrl(null); setUserData(null); setUserPosts([]); setDealCount(0); setHasData(false);
+      setProfile(null); setPhotoUrl(null); setUserData(null); setUserPosts([]); setDealCount(0); setHasData(false); setPostsInitialized(false);
       loadProfileData();
     }
   };
@@ -401,6 +405,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     hasData,
     activeTab,
     postsLoading,
+    postsInitialized,
     postsError,
     displayName,
     joinDateText,
