@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    Modal,
-    View,
-    Text,
-    Image,
-    StyleSheet,
-    SafeAreaView,
-    TouchableOpacity,
-    ScrollView,
-    ActivityIndicator,
-    Animated,
-    Dimensions,
+  Modal,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  FlatList,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -45,332 +46,379 @@ interface User {
 }
 
 interface DealPreviewScreenProps {
-    visible: boolean;
-    onClose: () => void;
-    onPost: () => void;
-    dealTitle: string;
-    dealDetails: string;
-    imageUri: string | null;
-    expirationDate: string | null;
-    selectedRestaurant: Restaurant | null;
-    selectedCategory: string;
-    selectedCuisine: string;
-    userData: User;
-    isPosting?: boolean;
+  visible: boolean;
+  onClose: () => void;
+  onPost: () => void;
+  dealTitle: string;
+  dealDetails: string;
+  imageUris: string[];
+  expirationDate: string | null;
+  selectedRestaurant: Restaurant | null;
+  selectedCategory: string;
+  selectedCuisine: string;
+  userData: User;
+  isPosting?: boolean;
 }
 
 const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
-    visible,
-    onClose,
-    onPost,
-    dealTitle,
-    dealDetails,
-    imageUri,
-    expirationDate,
-    selectedRestaurant,
-    selectedCategory,
-    selectedCuisine,
-    userData,
-    isPosting = false,
+  visible,
+  onClose,
+  onPost,
+  dealTitle,
+  dealDetails,
+  imageUris,
+  expirationDate,
+  selectedRestaurant,
+  selectedCategory,
+  selectedCuisine,
+  userData,
+  isPosting = false,
 }) => {
-    const [distance, setDistance] = useState<string>('?mi away');
-    const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
-    const [isImageViewVisible, setImageViewVisible] = useState(false);
-    const [modalImageLoading, setModalImageLoading] = useState(false);
-    const [modalImageError, setModalImageError] = useState(false);
-    const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
-    const [imageViewerKey, setImageViewerKey] = useState(0);
-    const slideAnim = useRef(new Animated.Value(400)).current; // Start off-screen to the right
+  const [distance, setDistance] = useState<string>('?mi away');
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  const [isImageViewVisible, setImageViewVisible] = useState(false);
+  const [modalImageLoading, setModalImageLoading] = useState(false);
+  const [modalImageError, setModalImageError] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number, height: number } | null>(null);
+  const [imageViewerKey, setImageViewerKey] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const carouselRef = useRef<FlatList>(null);
+  const slideAnim = useRef(new Animated.Value(400)).current; // Start off-screen to the right
 
-    useEffect(() => {
-        if (visible) {
-            // Slide in from right
-            Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
+  useEffect(() => {
+    if (visible) {
+      // Slide in from right
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Animate out to the right when closing
+      Animated.timing(slideAnim, {
+        toValue: 400,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
+
+  const removeZipCode = (address: string) => {
+    // Remove zip code (5 digits or 5+4 digits) from the end of the address
+    return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
+  };
+
+  useEffect(() => {
+    const calculateRestaurantDistance = async () => {
+      if (!selectedRestaurant?.lat || !selectedRestaurant?.lng) {
+        setDistance('?mi away');
+        return;
+      }
+
+      setIsCalculatingDistance(true);
+
+      try {
+        const userLocation = await getCurrentUserLocation();
+
+        if (userLocation) {
+          const distanceMiles = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            selectedRestaurant.lat,
+            selectedRestaurant.lng
+          );
+
+          // Format distance with no decimals
+          const formattedDistance = distanceMiles < 1
+            ? '<1mi away'
+            : `${Math.round(distanceMiles)}mi away`;
+
+          setDistance(formattedDistance);
         } else {
-            // Animate out to the right when closing
-            Animated.timing(slideAnim, {
-                toValue: 400,
-                duration: 250,
-                useNativeDriver: true,
-            }).start();
+          setDistance('?mi away');
         }
-    }, [visible]);
-
-    const removeZipCode = (address: string) => {
-        // Remove zip code (5 digits or 5+4 digits) from the end of the address
-        return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
+      } catch (error) {
+        console.error('Error calculating distance:', error);
+        setDistance('?mi away');
+      } finally {
+        setIsCalculatingDistance(false);
+      }
     };
 
-    useEffect(() => {
-        const calculateRestaurantDistance = async () => {
-            if (!selectedRestaurant?.lat || !selectedRestaurant?.lng) {
-                setDistance('?mi away');
-                return;
-            }
+    if (visible && selectedRestaurant) {
+      calculateRestaurantDistance();
+    }
+  }, [visible, selectedRestaurant]);
 
-            setIsCalculatingDistance(true);
-            
-            try {
-                const userLocation = await getCurrentUserLocation();
-                
-                if (userLocation) {
-                    const distanceMiles = calculateDistance(
-                        userLocation.lat,
-                        userLocation.lng,
-                        selectedRestaurant.lat,
-                        selectedRestaurant.lng
-                    );
-                    
-                    // Format distance with no decimals
-                    const formattedDistance = distanceMiles < 1 
-                        ? '<1mi away' 
-                        : `${Math.round(distanceMiles)}mi away`;
-                    
-                    setDistance(formattedDistance);
-                } else {
-                    setDistance('?mi away');
-                }
-            } catch (error) {
-                console.error('Error calculating distance:', error);
-                setDistance('?mi away');
-            } finally {
-                setIsCalculatingDistance(false);
-            }
-        };
+  const formatDate = (dateString: string | null) => {
+    if (!dateString || dateString === 'Unknown') return 'Not Known';
+    const date = new Date(dateString);
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
-        if (visible && selectedRestaurant) {
-            calculateRestaurantDistance();
-        }
-    }, [visible, selectedRestaurant]);
+  const scrollViewRef = useRef<ScrollView>(null);
 
-    const formatDate = (dateString: string | null) => {
-        if (!dateString || dateString === 'Unknown') return 'Not Known';
-        const date = new Date(dateString);
-        return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-    };
+  const openImageViewer = () => {
+    setModalImageLoading(true);
+    setModalImageError(false);
+    setImageViewVisible(true);
+    // Force ScrollView to re-render with fresh state
+    setImageViewerKey(prev => prev + 1);
+  };
 
-    const scrollViewRef = useRef<ScrollView>(null);
-
-    const openImageViewer = () => {
-        setModalImageLoading(true);
-        setModalImageError(false);
-        setImageViewVisible(true);
-        // Force ScrollView to re-render with fresh state
-        setImageViewerKey(prev => prev + 1);
-    };
-
-    const handleImageLoad = (event: any) => {
-        const { width, height } = event.nativeEvent.source;
-        setImageDimensions({ width, height });
-    };
+  const handleImageLoad = (event: any) => {
+    const { width, height } = event.nativeEvent.source;
+    setImageDimensions({ width, height });
+  };
 
 
-    return (
-        <Modal visible={visible} animationType="none" onRequestClose={onClose}>
-            <Animated.View 
-                style={[
-                    styles.animatedContainer,
-                    {
-                        transform: [{ translateX: slideAnim }]
-                    }
-                ]}
+  return (
+    <Modal visible={visible} animationType="none" onRequestClose={onClose}>
+      <Animated.View
+        style={[
+          styles.animatedContainer,
+          {
+            transform: [{ translateX: slideAnim }]
+          }
+        ]}
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar style="dark" />
+
+          {/* Back Button and Next Button Row */}
+          <View style={styles.topButtonRow}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={onClose}
+              disabled={isPosting}
             >
-                <SafeAreaView style={styles.container}>
-                    <StatusBar style="dark" />
-                
-                {/* Back Button and Next Button Row */}
-                <View style={styles.topButtonRow}>
-                    <TouchableOpacity 
-                        style={styles.backButton} 
-                        onPress={onClose}
-                        disabled={isPosting}
-                    >
-                        <Ionicons name="arrow-back" size={20} color={isPosting ? "#ccc" : "#000000"} />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={[styles.nextButton, isPosting ? styles.disabledButton : null]} 
-                        onPress={onPost}
-                        disabled={isPosting}
-                    >
-                        {isPosting ? (
-                            <ActivityIndicator size="small" color="#000000" />
-                        ) : (
-                            <Text style={styles.nextButtonText}>Share</Text>
-                        )}
-                    </TouchableOpacity>
+              <Ionicons name="arrow-back" size={20} color={isPosting ? "#ccc" : "#000000"} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.nextButton, isPosting ? styles.disabledButton : null]}
+              onPress={onPost}
+              disabled={isPosting}
+            >
+              {isPosting ? (
+                <ActivityIndicator size="small" color="#000000" />
+              ) : (
+                <Text style={styles.nextButtonText}>Share</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.card}>
+              {/* Restaurant Info */}
+              <View style={styles.restaurantWrapper}>
+                <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
+
+                {/* Location row */}
+                <View style={styles.locationRow}>
+                  <Text style={styles.infoText}>📍 {isCalculatingDistance ? 'Calculating...' : distance} </Text>
+                  <Text style={styles.bulletText}>•</Text>
+                  <Text style={styles.infoText} numberOfLines={1}> {removeZipCode(selectedRestaurant?.subtext || '')}</Text>
                 </View>
 
-                <ScrollView contentContainerStyle={styles.scrollContainer}>
-                    <View style={styles.card}>
-                        {/* Restaurant Info */}
-                        <View style={styles.restaurantWrapper}>
-                            <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
-                            
-                            {/* Location row */}
-                            <View style={styles.locationRow}>
-                                <Text style={styles.infoText}>📍 {isCalculatingDistance ? 'Calculating...' : distance} </Text>
-                                <Text style={styles.bulletText}>•</Text>
-                                <Text style={styles.infoText} numberOfLines={1}> {removeZipCode(selectedRestaurant?.subtext || '')}</Text>
-                            </View>
-                            
-                            {/* Valid until row */}
-                            <View style={styles.validUntilRow}>
-                                <Text style={styles.infoText}>⏳ Valid Until • {formatDate(expirationDate)}</Text>
-                            </View>
-                            
-                            {/* Only show category row if cuisine or deal type exists and has meaningful content */}
-                            {((selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine') || 
-                              (selectedCategory && selectedCategory.trim() !== '')) && (
-                                <View style={styles.categoryRow}>
-                                    <Text style={styles.infoText}>
-                                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' && (
-                                            <Text style={styles.infoRegular}>🍽 {selectedCuisine}</Text>
-                                        )}
-                                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' && 
-                                         selectedCategory && selectedCategory.trim() !== '' && (
-                                            <Text style={styles.bulletText}> • </Text>
-                                        )}
-                                        {selectedCategory && selectedCategory.trim() !== '' && (
-                                            <Text style={styles.infoRegular}> {selectedCategory}</Text>
-                                        )}
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
+                {/* Valid until row */}
+                <View style={styles.validUntilRow}>
+                  <Text style={styles.infoText}>⏳ Valid Until • {formatDate(expirationDate)}</Text>
+                </View>
 
-                        {/* Separator */}
-                        <View style={styles.separator} />
-
-                        {/* Deal Title */}
-                        <Text style={styles.dealTitle}>{dealTitle}</Text>
-
-                        {/* Deal Image */}
-                        {imageUri && typeof imageUri === 'string' && imageUri.trim() !== '' && (
-                            <TouchableOpacity onPress={openImageViewer}>
-                                <Image 
-                                    source={{ uri: imageUri }} 
-                                    style={[
-                                        styles.dealImage,
-                                        imageDimensions && {
-                                            height: (imageDimensions.height / imageDimensions.width) * 350
-                                        }
-                                    ]}
-                                    resizeMode="cover"
-                                    onLoad={handleImageLoad}
-                                />
-                            </TouchableOpacity>
+                {/* Only show category row if cuisine or deal type exists and has meaningful content */}
+                {((selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine') ||
+                  (selectedCategory && selectedCategory.trim() !== '')) && (
+                    <View style={styles.categoryRow}>
+                      <Text style={styles.infoText}>
+                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' && (
+                          <Text style={styles.infoRegular}>🍽 {selectedCuisine}</Text>
                         )}
-
-                        {/* Interactions (Preview State - Non-interactive, matches DealDetailScreen) */}
-                        <View style={styles.actionButtonsContainer}>
-                            <View style={styles.voteContainer}>
-                                <View style={styles.upvoteArea}>
-                                    <ArrowBigUp size={ARROW_SIZE} color="#000000" fill="transparent" />
-                                    <Text style={styles.voteCount}>0</Text>
-                                </View>
-                                <View style={styles.voteSeparator} />
-                                <View style={styles.downvoteArea}>
-                                    <ArrowBigDown size={ARROW_SIZE} color="#000000" fill="transparent" />
-                                </View>
-                            </View>
-                            
-                            <View style={styles.rightActions}>
-                                <View style={styles.actionButton}>
-                                    <Monicon name="mdi:heart-outline" size={19} color="#000" />
-                                </View>
-                                <View style={styles.actionButton}>
-                                    <Monicon name="mdi-light:share" size={24} color="#000000" />
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Separator */}
-                        <View style={styles.separator} />
-
-                        {/* Deal Details */}
-                        {dealDetails ? (
-                            <View style={styles.detailsSection}>
-                                <Text style={styles.detailsHeader}>Details</Text>
-                                <Text style={styles.detailsContent}>{dealDetails}</Text>
-                            </View>
-                        ) : null}
-
-                        {/* Shared By Section */}
-                        <View style={styles.sharedByComponent}>
-                            {userData.profilePicture ? (
-                                <Image source={{ uri: userData.profilePicture }} style={styles.pfp} />
-                            ) : (
-                                <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.pfp} />
-                            )}
-                            <Text style={styles.sharedByText}>
-                                <Text style={styles.sharedByLabel}>Shared By{"\n"}</Text>
-                                <Text style={styles.userName}>{userData.username}{"\n"}</Text>
-                                <Text style={styles.userLocation}>{userData.city}, {userData.state}</Text>
-                            </Text>
-                        </View>
+                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' &&
+                          selectedCategory && selectedCategory.trim() !== '' && (
+                            <Text style={styles.bulletText}> • </Text>
+                          )}
+                        {selectedCategory && selectedCategory.trim() !== '' && (
+                          <Text style={styles.infoRegular}> {selectedCategory}</Text>
+                        )}
+                      </Text>
                     </View>
-                </ScrollView>
-            </SafeAreaView>
-            </Animated.View>
+                  )}
+              </View>
 
-            {imageUri && typeof imageUri === 'string' && imageUri.trim() !== '' && (
-                <Modal
-                    visible={isImageViewVisible}
-                    transparent={true}
-                    onRequestClose={() => setImageViewVisible(false)}
-                >
-                    <View style={styles.imageViewerContainer}>
-                        <TouchableOpacity 
-                            style={styles.imageViewerCloseButton} 
-                            onPress={() => setImageViewVisible(false)}
-                        >
-                            <Ionicons name="close" size={30} color="white" />
-                        </TouchableOpacity>
-                        {modalImageLoading && (
-                            <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
-                        )}
-                        <ScrollView
-                            key={imageViewerKey}
-                            ref={scrollViewRef}
-                            style={styles.scrollView}
-                            contentContainerStyle={styles.scrollViewContent}
-                            maximumZoomScale={3}
-                            minimumZoomScale={1}
-                            showsHorizontalScrollIndicator={false}
-                            showsVerticalScrollIndicator={false}
-                            bounces={false}
-                            bouncesZoom={true}
-                            centerContent={true}
-                        >
-                            <Image 
-                                source={{ uri: imageUri }} 
-                                style={styles.fullScreenImage} 
-                                resizeMode="contain" 
-                                onLoad={() => setModalImageLoading(false)}
-                                onError={() => {
-                                    setModalImageLoading(false);
-                                    setModalImageError(true);
-                                }}
-                            />
-                        </ScrollView>
-                        {modalImageError && (
-                            <View style={styles.modalErrorContainer}>
-                                <Text style={styles.modalErrorText}>Could not load image</Text>
-                            </View>
-                        )}
+              {/* Separator */}
+              <View style={styles.separator} />
+
+              {/* Deal Title */}
+              <Text style={styles.dealTitle}>{dealTitle}</Text>
+
+              {/* Deal Images Carousel */}
+              {imageUris.length > 0 && (
+                <View style={{ marginBottom: 16 }}>
+                  <FlatList
+                    ref={carouselRef}
+                    data={imageUris}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    nestedScrollEnabled={true}
+                    scrollEnabled={true}
+                    style={{ height: 250 }}
+                    onMomentumScrollEnd={(event) => {
+                      const index = Math.round(event.nativeEvent.contentOffset.x / (screenWidth - 32));
+                      setCurrentImageIndex(index);
+                    }}
+                    keyExtractor={(item, index) => `preview-image-${index}`}
+                    renderItem={({ item, index }) => (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setCurrentImageIndex(index);
+                          openImageViewer();
+                        }}
+                        style={{ width: screenWidth - 32 }}
+                      >
+                        <Image
+                          source={{ uri: item }}
+                          style={[
+                            styles.dealImage,
+                            { width: screenWidth - 32 }
+                          ]}
+                          resizeMode="cover"
+                          onLoad={handleImageLoad}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  />
+                  {/* Pagination Dots */}
+                  {imageUris.length > 1 && (
+                    <View style={styles.paginationContainer}>
+                      {imageUris.map((_, index) => (
+                        <View
+                          key={`dot-${index}`}
+                          style={[
+                            styles.paginationDot,
+                            currentImageIndex === index && styles.paginationDotActive
+                          ]}
+                        />
+                      ))}
                     </View>
-                </Modal>
+                  )}
+                </View>
+              )}
+
+              {/* Interactions (Preview State - Non-interactive, matches DealDetailScreen) */}
+              <View style={styles.actionButtonsContainer}>
+                <View style={styles.voteContainer}>
+                  <View style={styles.upvoteArea}>
+                    <ArrowBigUp size={ARROW_SIZE} color="#000000" fill="transparent" />
+                    <Text style={styles.voteCount}>0</Text>
+                  </View>
+                  <View style={styles.voteSeparator} />
+                  <View style={styles.downvoteArea}>
+                    <ArrowBigDown size={ARROW_SIZE} color="#000000" fill="transparent" />
+                  </View>
+                </View>
+
+                <View style={styles.rightActions}>
+                  <View style={styles.actionButton}>
+                    <Monicon name="mdi:heart-outline" size={19} color="#000" />
+                  </View>
+                  <View style={styles.actionButton}>
+                    <Monicon name="mdi-light:share" size={24} color="#000000" />
+                  </View>
+                </View>
+              </View>
+
+              {/* Separator */}
+              <View style={styles.separator} />
+
+              {/* Deal Details */}
+              {dealDetails ? (
+                <View style={styles.detailsSection}>
+                  <Text style={styles.detailsHeader}>Details</Text>
+                  <Text style={styles.detailsContent}>{dealDetails}</Text>
+                </View>
+              ) : null}
+
+              {/* Shared By Section */}
+              <View style={styles.sharedByComponent}>
+                {userData.profilePicture ? (
+                  <Image source={{ uri: userData.profilePicture }} style={styles.pfp} />
+                ) : (
+                  <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.pfp} />
+                )}
+                <Text style={styles.sharedByText}>
+                  <Text style={styles.sharedByLabel}>Shared By{"\n"}</Text>
+                  <Text style={styles.userName}>{userData.username}{"\n"}</Text>
+                  <Text style={styles.userLocation}>{userData.city}, {userData.state}</Text>
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Animated.View>
+
+      {imageUris.length > 0 && imageUris[currentImageIndex] && (
+        <Modal
+          visible={isImageViewVisible}
+          transparent={true}
+          onRequestClose={() => setImageViewVisible(false)}
+        >
+          <View style={styles.imageViewerContainer}>
+            <TouchableOpacity
+              style={styles.imageViewerCloseButton}
+              onPress={() => setImageViewVisible(false)}
+            >
+              <Ionicons name="close" size={30} color="white" />
+            </TouchableOpacity>
+            {modalImageLoading && (
+              <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
             )}
+            <ScrollView
+              key={imageViewerKey}
+              ref={scrollViewRef}
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollViewContent}
+              maximumZoomScale={3}
+              minimumZoomScale={1}
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              bouncesZoom={true}
+              centerContent={true}
+            >
+              <Image
+                source={{ uri: imageUris[currentImageIndex] }}
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+                onLoad={() => setModalImageLoading(false)}
+                onError={() => {
+                  setModalImageLoading(false);
+                  setModalImageError(true);
+                }}
+              />
+            </ScrollView>
+            {modalImageError && (
+              <View style={styles.modalErrorContainer}>
+                <Text style={styles.modalErrorText}>Could not load image</Text>
+              </View>
+            )}
+            {/* Image counter */}
+            {imageUris.length > 1 && (
+              <View style={styles.imageCounterContainer}>
+                <Text style={styles.imageCounterText}>
+                  {currentImageIndex + 1} / {imageUris.length}
+                </Text>
+              </View>
+            )}
+          </View>
         </Modal>
-    );
+      )}
+    </Modal>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -487,10 +535,10 @@ const styles = StyleSheet.create({
   },
   dealImage: {
     width: '100%',
+    height: 250,
     backgroundColor: '#EFEFEF',
     borderRadius: 8,
     alignSelf: 'center',
-    marginBottom: 16,
   },
   // Matches DealDetailScreen.actionButtonsContainer exactly
   actionButtonsContainer: {
@@ -637,13 +685,49 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   modalErrorContainer: {
-      position: 'absolute',
-      justifyContent: 'center',
-      alignItems: 'center',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalErrorText: {
-      color: 'white',
-      fontSize: 16,
+    color: 'white',
+    fontSize: 16,
+  },
+  // Pagination styles for image carousel
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#D0D0D0',
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: '#FFA05C',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  // Image counter in fullscreen viewer
+  imageCounterContainer: {
+    position: 'absolute',
+    bottom: 60,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  imageCounterText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

@@ -34,6 +34,7 @@ export interface Deal {
   details: string;
   image: string | any;
   imageVariants?: any; // Add this field
+  images?: string[]; // Array of image URLs for multiple photos
   votes: number;
   isUpvoted: boolean;
   isDownvoted: boolean;

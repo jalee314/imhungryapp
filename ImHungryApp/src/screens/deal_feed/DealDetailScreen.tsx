@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Modal,
   Dimensions,
+  FlatList,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -33,6 +34,8 @@ import { supabase } from '../../../lib/supabase';
 
 type DealDetailRouteProp = RouteProp<{ DealDetail: { deal: Deal } }, 'DealDetail'>;
 
+const { width: screenWidth } = Dimensions.get('window');
+
 const DealDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<DealDetailRouteProp>();
@@ -49,15 +52,19 @@ const DealDetailScreen: React.FC = () => {
   const [isImageViewVisible, setImageViewVisible] = useState(false);
   const [modalImageLoading, setModalImageLoading] = useState(false);
   const [modalImageError, setModalImageError] = useState(false);
-  const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number, height: number } | null>(null);
   const [imageViewerKey, setImageViewerKey] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
-  
+
   // Loading states
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  
+
+  // Carousel state for multiple images
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const carouselRef = useRef<FlatList>(null);
+
   // State to hold image dimensions for skeleton
   const [skeletonHeight, setSkeletonHeight] = useState(250); // Better default height
 
@@ -90,21 +97,21 @@ const DealDetailScreen: React.FC = () => {
     const getImageSize = async () => {
       try {
         let uriToLoad = '';
-        
+
         if (dealData.imageVariants) {
           // Try to get the large variant for sizing
           uriToLoad = dealData.imageVariants.large || dealData.imageVariants.original || '';
         } else if (typeof dealData.image === 'string') {
           uriToLoad = dealData.image;
         }
-        
+
         if (uriToLoad) {
           // Set a timeout to ensure skeleton shows even if Image.getSize is slow
           const timeoutId = setTimeout(() => {
             console.log('⚠️ Image.getSize took too long, using default skeleton height');
             setSkeletonHeight(250); // Use reasonable default if getSize is slow
           }, 1000); // 1 second timeout
-          
+
           Image.getSize(
             uriToLoad,
             (width, height) => {
@@ -132,7 +139,7 @@ const DealDetailScreen: React.FC = () => {
         setSkeletonHeight(250); // Use fallback height on error
       }
     };
-    
+
     getImageSize();
   }, [dealData.id]);
 
@@ -241,12 +248,12 @@ const DealDetailScreen: React.FC = () => {
     const previousState = { ...dealData };
     const wasUpvoted = previousState.isUpvoted;
     const wasDownvoted = previousState.isDownvoted;
-    
+
     // 1. INSTANT UI update (synchronous)
     setDealData({
       ...previousState,
-      votes: wasUpvoted 
-        ? previousState.votes - 1 
+      votes: wasUpvoted
+        ? previousState.votes - 1
         : (wasDownvoted ? previousState.votes + 2 : previousState.votes + 1),
       isUpvoted: !wasUpvoted,
       isDownvoted: false,
@@ -263,12 +270,12 @@ const DealDetailScreen: React.FC = () => {
     const previousState = { ...dealData };
     const wasDownvoted = previousState.isDownvoted;
     const wasUpvoted = previousState.isUpvoted;
-    
+
     // 1. INSTANT UI update
     setDealData({
       ...previousState,
-      votes: wasDownvoted 
-        ? previousState.votes + 1 
+      votes: wasDownvoted
+        ? previousState.votes + 1
         : (wasUpvoted ? previousState.votes - 2 : previousState.votes - 1),
       isDownvoted: !wasDownvoted,
       isUpvoted: false,
@@ -284,9 +291,9 @@ const DealDetailScreen: React.FC = () => {
   const handleFavorite = () => {
     const previousState = { ...dealData };
     const wasFavorited = previousState.isFavorited;
-    
+
     console.log('🔄 Toggling favorite for deal:', previousState.id, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
-    
+
     // 1. INSTANT UI update
     setDealData({
       ...previousState,
@@ -360,11 +367,11 @@ const DealDetailScreen: React.FC = () => {
     try {
       const address = dealData.restaurantAddress || dealData.restaurant;
       const encodedAddress = encodeURIComponent(address);
-      
+
       // Apple Maps URL scheme
       const appleMapsUrl = `maps://?daddr=${encodedAddress}`;
       const supported = await Linking.canOpenURL(appleMapsUrl);
-      
+
       if (supported) {
         await Linking.openURL(appleMapsUrl);
       } else {
@@ -383,14 +390,14 @@ const DealDetailScreen: React.FC = () => {
     try {
       const address = dealData.restaurantAddress || dealData.restaurant;
       const encodedAddress = encodeURIComponent(address);
-      
+
       let url: string;
-      
+
       if (Platform.OS === 'ios') {
         // Try Google Maps app first on iOS
         url = `comgooglemaps://?daddr=${encodedAddress}`;
         const supported = await Linking.canOpenURL(url);
-        
+
         if (!supported) {
           // Fallback to Google Maps web
           url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
@@ -399,19 +406,19 @@ const DealDetailScreen: React.FC = () => {
         // Android: Try Google Maps navigation first
         url = `google.navigation:q=${encodedAddress}`;
         const supported = await Linking.canOpenURL(url);
-        
+
         if (!supported) {
           // Fallback to geo URI
           url = `geo:0,0?q=${encodedAddress}`;
           const geoSupported = await Linking.canOpenURL(url);
-          
+
           if (!geoSupported) {
             // Final fallback to web
             url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
           }
         }
       }
-      
+
       await Linking.openURL(url);
     } catch (error) {
       console.error('Error opening Google Maps:', error);
@@ -462,8 +469,8 @@ const DealDetailScreen: React.FC = () => {
     : { uri: dealData.userProfilePhoto };
 
   // Get display name - handle anonymous posts
-  const displayName = dealData.isAnonymous 
-    ? 'Anonymous' 
+  const displayName = dealData.isAnonymous
+    ? 'Anonymous'
     : (dealData.userDisplayName || 'Unknown User');
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -476,18 +483,21 @@ const DealDetailScreen: React.FC = () => {
     setImageViewerKey(prev => prev + 1);
   };
 
-  const fullScreenImageSource = dealData.imageVariants?.original || dealData.imageVariants?.large || dealData.image;
+  // Use current carousel image if available, otherwise fall back to single image
+  const fullScreenImageSource = dealData.images && dealData.images.length > 0
+    ? dealData.images[currentImageIndex]
+    : (dealData.imageVariants?.original || dealData.imageVariants?.large || dealData.image);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       {/* Fixed Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#404040" />
         </TouchableOpacity>
-        
+
         <View style={styles.rightHeaderContainer}>
           <TouchableOpacity style={styles.directionsButton} onPress={handleDirections}>
             <Text style={styles.directionsText}>Directions</Text>
@@ -520,13 +530,13 @@ const DealDetailScreen: React.FC = () => {
                   {viewerPhotos && viewerPhotos.length > 0 && (
                     <View style={styles.avatarGroup}>
                       {viewerPhotos.map((photoUrl, index) => (
-                        <Image 
+                        <Image
                           key={index}
-                          source={{ uri: photoUrl }} 
+                          source={{ uri: photoUrl }}
                           style={[
-                            styles.viewerAvatar, 
+                            styles.viewerAvatar,
                             { zIndex: viewerPhotos.length - index, marginLeft: index > 0 ? -8 : 0 }
-                          ]} 
+                          ]}
                         />
                       ))}
                     </View>
@@ -551,24 +561,24 @@ const DealDetailScreen: React.FC = () => {
               <Text style={styles.validUntilText}>Valid Until • {formatDate(dealData.expirationDate || null)}</Text>
             </View>
             {/* Only show category row if cuisine or deal type exists and has meaningful content */}
-            {((dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine') || 
+            {((dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine') ||
               (dealData.dealType && dealData.dealType.trim() !== '')) && (
-              <View style={styles.categoryRow}>
-                <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
-                <Text style={styles.categoryText}>
-                  {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && (
-                    <Text style={styles.infoRegular}>{dealData.cuisine}</Text>
-                  )}
-                  {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && 
-                   dealData.dealType && dealData.dealType.trim() !== '' && (
-                    <Text style={styles.infoBullet}> • </Text>
-                  )}
-                  {dealData.dealType && dealData.dealType.trim() !== '' && (
-                    <Text style={styles.infoRegular}>{dealData.dealType}</Text>
-                  )}
-                </Text>
-              </View>
-            )}
+                <View style={styles.categoryRow}>
+                  <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.tagIcon} />
+                  <Text style={styles.categoryText}>
+                    {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && (
+                      <Text style={styles.infoRegular}>{dealData.cuisine}</Text>
+                    )}
+                    {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' &&
+                      dealData.dealType && dealData.dealType.trim() !== '' && (
+                        <Text style={styles.infoBullet}> • </Text>
+                      )}
+                    {dealData.dealType && dealData.dealType.trim() !== '' && (
+                      <Text style={styles.infoRegular}>{dealData.dealType}</Text>
+                    )}
+                  </Text>
+                </View>
+              )}
           </View>
         </View>
 
@@ -580,8 +590,8 @@ const DealDetailScreen: React.FC = () => {
           {dealData.title}
         </Text>
 
-        {/* Deal Image */}
-        <TouchableOpacity onPress={openImageViewer} disabled={imageLoading}>
+        {/* Deal Images Carousel */}
+        {dealData.images && dealData.images.length > 0 ? (
           <View style={styles.imageContainer}>
             <View style={[
               styles.imageWrapper,
@@ -589,62 +599,135 @@ const DealDetailScreen: React.FC = () => {
             ]}>
               {imageLoading && (
                 <View style={styles.imageLoadingContainer}>
-                  <SkeletonLoader 
-                    width="100%" 
-                    height={Math.max(skeletonHeight, 200)} // Ensure minimum height of 200
-                    borderRadius={10} 
+                  <SkeletonLoader
+                    width="100%"
+                    height={Math.max(skeletonHeight, 200)}
+                    borderRadius={10}
                   />
                 </View>
               )}
-              
-              {!imageError && (dealData.imageVariants ? (
-                <OptimizedImage 
-                  variants={dealData.imageVariants}
-                  componentType="deal"
-                  displaySize={{ width: 300, height: 300 }}
-                  fallbackSource={typeof dealData.image === 'string' 
-                    ? { uri: dealData.image } 
-                    : dealData.image
-                  }
-                  style={[
-                    styles.dealImage,
-                    imageDimensions && {
-                      height: (imageDimensions.height / imageDimensions.width) * 350
-                    },
-                    imageLoading && { opacity: 0 }
-                  ]}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Image 
-                  source={typeof dealData.image === 'string' 
-                    ? { uri: dealData.image } 
-                    : dealData.image
-                  } 
-                  style={[
-                    styles.dealImage,
-                    imageDimensions && {
-                      height: (imageDimensions.height / imageDimensions.width) * 350
-                    },
-                    imageLoading && { opacity: 0 }
-                  ]}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                  resizeMode="cover"
-                />
-              ))}
-              
-              {imageError && (
-                <View style={styles.imageErrorContainer}>
-                  <MaterialCommunityIcons name="image-off" size={48} color="#ccc" />
-                  <Text style={styles.imageErrorText}>Failed to load image</Text>
+              <FlatList
+                ref={carouselRef}
+                data={dealData.images}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled={true}
+                scrollEnabled={true}
+                onMomentumScrollEnd={(event) => {
+                  const index = Math.round(event.nativeEvent.contentOffset.x / (screenWidth - 32));
+                  setCurrentImageIndex(index);
+                }}
+                keyExtractor={(item, index) => `detail-image-${index}`}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCurrentImageIndex(index);
+                      openImageViewer();
+                    }}
+                    style={{ width: screenWidth - 32 }}
+                  >
+                    <Image
+                      source={{ uri: item }}
+                      style={[
+                        styles.dealImage,
+                        { width: screenWidth - 32 },
+                        imageDimensions && {
+                          height: (imageDimensions.height / imageDimensions.width) * 350
+                        },
+                        !imageDimensions && { height: 350 },
+                        imageLoading && { opacity: 0 }
+                      ]}
+                      resizeMode="cover"
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                  </TouchableOpacity>
+                )}
+              />
+              {/* Pagination Dots */}
+              {dealData.images.length > 1 && (
+                <View style={styles.paginationContainer}>
+                  {dealData.images.map((_, index) => (
+                    <View
+                      key={`dot-${index}`}
+                      style={[
+                        styles.paginationDot,
+                        currentImageIndex === index && styles.paginationDotActive
+                      ]}
+                    />
+                  ))}
                 </View>
               )}
             </View>
           </View>
-        </TouchableOpacity>
+        ) : (
+          // Fallback to single image display for deals without multiple images
+          <TouchableOpacity onPress={openImageViewer} disabled={imageLoading}>
+            <View style={styles.imageContainer}>
+              <View style={[
+                styles.imageWrapper,
+                imageLoading && { minHeight: Math.max(skeletonHeight, 200), borderWidth: 0 }
+              ]}>
+                {imageLoading && (
+                  <View style={styles.imageLoadingContainer}>
+                    <SkeletonLoader
+                      width="100%"
+                      height={Math.max(skeletonHeight, 200)}
+                      borderRadius={10}
+                    />
+                  </View>
+                )}
+
+                {!imageError && (dealData.imageVariants ? (
+                  <OptimizedImage
+                    variants={dealData.imageVariants}
+                    componentType="deal"
+                    displaySize={{ width: 300, height: 300 }}
+                    fallbackSource={typeof dealData.image === 'string'
+                      ? { uri: dealData.image }
+                      : dealData.image
+                    }
+                    style={[
+                      styles.dealImage,
+                      imageDimensions && {
+                        height: (imageDimensions.height / imageDimensions.width) * 350
+                      },
+                      imageLoading && { opacity: 0 }
+                    ]}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Image
+                    source={typeof dealData.image === 'string'
+                      ? { uri: dealData.image }
+                      : dealData.image
+                    }
+                    style={[
+                      styles.dealImage,
+                      imageDimensions && {
+                        height: (imageDimensions.height / imageDimensions.width) * 350
+                      },
+                      imageLoading && { opacity: 0 }
+                    ]}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    resizeMode="cover"
+                  />
+                ))}
+
+                {imageError && (
+                  <View style={styles.imageErrorContainer}>
+                    <MaterialCommunityIcons name="image-off" size={48} color="#ccc" />
+                    <Text style={styles.imageErrorText}>Failed to load image</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
@@ -657,15 +740,15 @@ const DealDetailScreen: React.FC = () => {
           />
 
           <View style={styles.rightActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionButton}
               onPress={handleFavorite}
               activeOpacity={0.6}
             >
-              <Monicon 
-                name={dealData.isFavorited ? "mdi:heart" : "mdi:heart-outline"} 
-                size={19} 
-                color={dealData.isFavorited ? "#FF1E00" : "#000"} 
+              <Monicon
+                name={dealData.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
+                size={19}
+                color={dealData.isFavorited ? "#FF1E00" : "#000"}
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
@@ -693,15 +776,15 @@ const DealDetailScreen: React.FC = () => {
 
         {/* Shared By Section */}
         <View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.sharedByContainer}
             onPress={handleUserPress}
             activeOpacity={dealData.isAnonymous ? 1 : 0.7} // No feedback for anonymous
             disabled={dealData.isAnonymous} // Disable press for anonymous
           >
-            <Image 
-              source={profilePicture} 
-              style={styles.profilePicture} 
+            <Image
+              source={profilePicture}
+              style={styles.profilePicture}
             />
             <View style={styles.userInfo}>
               <Text style={styles.sharedByLabel}>Shared By</Text>
@@ -723,52 +806,52 @@ const DealDetailScreen: React.FC = () => {
       />
 
       {fullScreenImageSource && (
-          <Modal
-              visible={isImageViewVisible}
-              transparent={true}
-              onRequestClose={() => setImageViewVisible(false)}
-          >
-              <View style={styles.imageViewerContainer}>
-                  <TouchableOpacity 
-                      style={styles.imageViewerCloseButton} 
-                      onPress={() => setImageViewVisible(false)}
-                  >
-                      <Ionicons name="close" size={30} color="white" />
-                  </TouchableOpacity>
-                  {modalImageLoading && (
-                      <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
-                  )}
-                  <ScrollView
-                      key={imageViewerKey}
-                      ref={scrollViewRef}
-                      style={styles.imageViewerScrollView}
-                      contentContainerStyle={styles.scrollViewContent}
-                      maximumZoomScale={3}
-                      minimumZoomScale={1}
-                      showsHorizontalScrollIndicator={false}
-                      showsVerticalScrollIndicator={false}
-                      bounces={false}
-                      bouncesZoom={true}
-                      centerContent={true}
-                  >
-                      <Image 
-                          source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource} 
-                          style={styles.fullScreenImage} 
-                          resizeMode="contain" 
-                          onLoad={() => setModalImageLoading(false)}
-                          onError={() => {
-                              setModalImageLoading(false);
-                              setModalImageError(true);
-                          }}
-                      />
-                  </ScrollView>
-                  {modalImageError && (
-                      <View style={styles.modalErrorContainer}>
-                          <Text style={styles.modalErrorText}>Could not load image</Text>
-                      </View>
-                  )}
+        <Modal
+          visible={isImageViewVisible}
+          transparent={true}
+          onRequestClose={() => setImageViewVisible(false)}
+        >
+          <View style={styles.imageViewerContainer}>
+            <TouchableOpacity
+              style={styles.imageViewerCloseButton}
+              onPress={() => setImageViewVisible(false)}
+            >
+              <Ionicons name="close" size={30} color="white" />
+            </TouchableOpacity>
+            {modalImageLoading && (
+              <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
+            )}
+            <ScrollView
+              key={imageViewerKey}
+              ref={scrollViewRef}
+              style={styles.imageViewerScrollView}
+              contentContainerStyle={styles.scrollViewContent}
+              maximumZoomScale={3}
+              minimumZoomScale={1}
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              bouncesZoom={true}
+              centerContent={true}
+            >
+              <Image
+                source={typeof fullScreenImageSource === 'string' ? { uri: fullScreenImageSource } : fullScreenImageSource}
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+                onLoad={() => setModalImageLoading(false)}
+                onError={() => {
+                  setModalImageLoading(false);
+                  setModalImageError(true);
+                }}
+              />
+            </ScrollView>
+            {modalImageError && (
+              <View style={styles.modalErrorContainer}>
+                <Text style={styles.modalErrorText}>Could not load image</Text>
               </View>
-          </Modal>
+            )}
+          </View>
+        </Modal>
       )}
 
       {/* Map Selection Modal */}
@@ -1147,13 +1230,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   modalErrorContainer: {
-      position: 'absolute',
-      justifyContent: 'center',
-      alignItems: 'center',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalErrorText: {
-      color: 'white',
-      fontSize: 16,
+    color: 'white',
+    fontSize: 16,
+  },
+  // Pagination styles for image carousel
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#D1D1D1',
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: '#FF6B35',
   },
 });
 

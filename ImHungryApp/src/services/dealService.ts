@@ -29,7 +29,7 @@ const uploadDealImage = async (imageUri: string): Promise<string | null> => {
 
     // Use new Cloudinary processing - FIX: Change 'deal' to 'deal_image'
     const result = await processImageWithEdgeFunction(imageUri, 'deal_image');
-    
+
     if (!result.success || !result.metadataId) {
       console.error('Failed to process image:', result.error);
       return null;
@@ -69,7 +69,8 @@ const parseDate = (dateString: string | null): string | null => {
 export interface CreateDealData {
   title: string;
   description: string;
-  imageUri: string | null;
+  imageUris: string[];  // Changed from imageUri to array
+  thumbnailIndex: number;  // Which image is the thumbnail
   expirationDate: string | null;
   restaurantId: string;
   categoryId: string | null;
@@ -85,20 +86,27 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
       return { success: false, error: 'No authenticated user found' };
     }
 
-    let metadataId: string | null = null;
-    if (dealData.imageUri) {
-      metadataId = await uploadDealImage(dealData.imageUri);
+    // Upload all images and collect metadata IDs
+    const imageMetadataIds: string[] = [];
+    for (const imageUri of dealData.imageUris) {
+      const metadataId = await uploadDealImage(imageUri);
       if (!metadataId) {
-        return { success: false, error: 'Failed to upload image' };
+        console.error('Failed to upload image:', imageUri);
+        return { success: false, error: 'Failed to upload one or more images' };
       }
+      imageMetadataIds.push(metadataId);
     }
+
+    // Use the thumbnail image as the primary image in deal_template
+    const thumbnailIndex = Math.min(dealData.thumbnailIndex, imageMetadataIds.length - 1);
+    const primaryMetadataId = imageMetadataIds.length > 0 ? imageMetadataIds[thumbnailIndex] : null;
 
     const dealTemplateData = {
       restaurant_id: dealData.restaurantId,
       user_id: userId,
       title: dealData.title,
       description: dealData.description || null,
-      image_metadata_id: metadataId, // Use metadata ID instead of image_url
+      image_metadata_id: primaryMetadataId, // Use thumbnail as primary image
       category_id: dealData.categoryId,
       cuisine_id: dealData.cuisineId,
       is_anonymous: dealData.isAnonymous,
@@ -108,26 +116,44 @@ export const createDeal = async (dealData: CreateDealData): Promise<{ success: b
     console.log('📝 Attempting to insert deal template:', dealTemplateData);
 
     // Insert ONLY the deal template (database trigger will create instance)
-    const { data, error: templateError } = await supabase
+    const { data: templateData, error: templateError } = await supabase
       .from('deal_template')
       .insert(dealTemplateData)
-      .select();
+      .select('template_id')
+      .single();
 
-    if (templateError) {
+    if (templateError || !templateData) {
       console.error('❌ Deal template error:', templateError);
-      console.error('Error details:', {
-        message: templateError.message,
-        details: templateError.details,
-        hint: templateError.hint,
-        code: templateError.code,
-      });
-      return { 
-        success: false, 
-        error: `Failed to create deal: ${templateError.message}` 
+      return {
+        success: false,
+        error: `Failed to create deal: ${templateError?.message || 'Unknown error'}`
       };
     }
 
-    console.log('✅ Deal template created successfully:', data);
+    console.log('✅ Deal template created successfully:', templateData);
+
+    // Now insert all images into deal_images junction table
+    if (imageMetadataIds.length > 0) {
+      // Insert all images into deal_images table using deal_template_id
+      const dealImagesData = imageMetadataIds.map((metadataId, index) => ({
+        deal_template_id: templateData.template_id,
+        image_metadata_id: metadataId,
+        display_order: index,
+        is_thumbnail: index === thumbnailIndex,
+      }));
+
+      const { error: imagesError } = await supabase
+        .from('deal_images')
+        .insert(dealImagesData);
+
+      if (imagesError) {
+        console.warn('Failed to insert images into deal_images:', imagesError);
+        // Deal was still created successfully, just without the junction table entries
+      } else {
+        console.log('✅ Added', imageMetadataIds.length, 'images to deal_images table');
+      }
+    }
+
     return { success: true };
   } catch (error) {
     console.error('❌ Unexpected error in createDeal:', error);
@@ -148,9 +174,9 @@ export const checkDealContentForProfanity = async (title: string, description?: 
     }
 
     if (!titleData?.isClean) {
-      return { 
-        success: false, 
-        error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.' 
+      return {
+        success: false,
+        error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.'
       };
     }
 
@@ -164,9 +190,9 @@ export const checkDealContentForProfanity = async (title: string, description?: 
       }
 
       if (!descData?.isClean) {
-        return { 
-          success: false, 
-          error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.' 
+        return {
+          success: false,
+          error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.'
         };
       }
     }
@@ -206,11 +232,18 @@ export interface DatabaseDeal {
   user_city?: string | null;
   user_state?: string | null;
   restaurant_id: string;
-  // Add image metadata
+  // Add image metadata (primary/thumbnail image)
   image_metadata?: {
     variants: ImageVariants;
     image_type: ImageType;
   };
+  // Add all images from deal_images table
+  deal_images?: Array<{
+    image_metadata_id: string;
+    display_order: number;
+    is_thumbnail: boolean;
+    variants: ImageVariants;
+  }>;
   // Add user profile metadata
   user_profile_metadata?: {
     variants: ImageVariants;
@@ -312,7 +345,7 @@ export const addVotesToDeals = async (deals: DatabaseDeal[]): Promise<DatabaseDe
 
     // Get deal IDs
     const dealIds = deals.map(deal => deal.deal_id);
-    
+
     // Fetch vote states and counts in parallel
     const [voteStates, voteCounts] = await Promise.all([
       getUserVoteStates(dealIds),
@@ -420,6 +453,14 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
             variants,
             image_type
           ),
+          deal_images (
+            image_metadata_id,
+            display_order,
+            is_thumbnail,
+            image_metadata:image_metadata_id (
+              variants
+            )
+          ),
           restaurant:restaurant_id (
             name,
             address
@@ -446,33 +487,47 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
     if (error) throw error;
 
     // Transform the nested data structure
-    const transformedDeals = deals?.map(deal => ({
-      deal_id: deal.deal_id,
-      template_id: deal.template_id,
-      title: (deal.deal_template as any).title,
-      description: (deal.deal_template as any).description,
-      image_url: (deal.deal_template as any).image_url,
-      restaurant_name: (deal.deal_template as any).restaurant.name,
-      restaurant_address: (deal.deal_template as any).restaurant.address,
-      cuisine_name: (deal.deal_template as any).cuisine?.cuisine_name || null,
-      cuisine_id: (deal.deal_template as any).cuisine_id,
-      category_name: (deal.deal_template as any).category?.category_name || null,
-      created_at: deal.created_at,
-      start_date: deal.start_date,
-      end_date: deal.end_date,
-      is_anonymous: deal.is_anonymous,
-      user_id: (deal.deal_template as any).user_id,
-      user_display_name: (deal.deal_template as any).user?.display_name || null,
-      user_profile_photo: (deal.deal_template as any).user?.profile_photo || null,
-      user_city: (deal.deal_template as any).user?.location_city || null,
-      user_state: 'CA', // Hardcoded for California (as per app's current scope)
-      restaurant_id: (deal.deal_template as any).restaurant_id,
-      // Add image metadata with fallback
-      image_metadata: (deal.deal_template as any).image_metadata || null,
-      // Add user profile image metadata
-      user_profile_metadata: (deal.deal_template as any).user?.image_metadata || null,
-      distance_miles: distanceMap.get(deal.deal_id) ?? null
-    })) || [];
+    const transformedDeals = deals?.map(deal => {
+      // Transform deal_images array, sort by display_order (from deal_template)
+      const dealImages = ((deal.deal_template as any)?.deal_images || [])
+        .map((img: any) => ({
+          image_metadata_id: img.image_metadata_id,
+          display_order: img.display_order,
+          is_thumbnail: img.is_thumbnail,
+          variants: img.image_metadata?.variants || null,
+        }))
+        .sort((a: any, b: any) => a.display_order - b.display_order);
+
+      return {
+        deal_id: deal.deal_id,
+        template_id: deal.template_id,
+        title: (deal.deal_template as any).title,
+        description: (deal.deal_template as any).description,
+        image_url: (deal.deal_template as any).image_url,
+        restaurant_name: (deal.deal_template as any).restaurant.name,
+        restaurant_address: (deal.deal_template as any).restaurant.address,
+        cuisine_name: (deal.deal_template as any).cuisine?.cuisine_name || null,
+        cuisine_id: (deal.deal_template as any).cuisine_id,
+        category_name: (deal.deal_template as any).category?.category_name || null,
+        created_at: deal.created_at,
+        start_date: deal.start_date,
+        end_date: deal.end_date,
+        is_anonymous: deal.is_anonymous,
+        user_id: (deal.deal_template as any).user_id,
+        user_display_name: (deal.deal_template as any).user?.display_name || null,
+        user_profile_photo: (deal.deal_template as any).user?.profile_photo || null,
+        user_city: (deal.deal_template as any).user?.location_city || null,
+        user_state: 'CA', // Hardcoded for California (as per app's current scope)
+        restaurant_id: (deal.deal_template as any).restaurant_id,
+        // Add image metadata with fallback
+        image_metadata: (deal.deal_template as any).image_metadata || null,
+        // Add all images from deal_images table
+        deal_images: dealImages.length > 0 ? dealImages : undefined,
+        // Add user profile image metadata
+        user_profile_metadata: (deal.deal_template as any).user?.image_metadata || null,
+        distance_miles: distanceMap.get(deal.deal_id) ?? null
+      };
+    }) || [];
 
     // Reorder based on ranking
     const orderedDeals = rankedIds
@@ -489,11 +544,11 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
 // Update transformDealForUI to match your current schema
 export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
   const timeAgo = getTimeAgo(new Date(dbDeal.created_at));
-  
+
   // Handle image source - ONLY use Cloudinary or placeholder
   let imageSource;
   let imageVariants = undefined;
-  
+
   if (dbDeal.image_metadata?.variants) {
     // Use Cloudinary variants (new deals)
     console.log('✅ Using Cloudinary for deal:', dbDeal.title);
@@ -522,6 +577,18 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     milesAway = `${Math.round(dbDeal.distance_miles * 10) / 10}mi`;
   }
 
+  // Extract image URLs from deal_images for carousel
+  let images: string[] | undefined = undefined;
+  if (dbDeal.deal_images && dbDeal.deal_images.length > 0) {
+    images = dbDeal.deal_images
+      .filter(img => img.variants)
+      .map(img => {
+        // Prefer large, then medium, then original
+        return img.variants?.large || img.variants?.medium || img.variants?.original || '';
+      })
+      .filter(url => url !== '');
+  }
+
   return {
     id: dbDeal.deal_id,
     title: dbDeal.title,
@@ -529,6 +596,7 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     details: dbDeal.description || '',
     image: imageSource,
     imageVariants: imageVariants,  // Only set if Cloudinary variants exist
+    images: images,  // Array of image URLs for carousel
     votes: dbDeal.votes || 0,
     isUpvoted: dbDeal.is_upvoted || false,
     isDownvoted: dbDeal.is_downvoted || false,
@@ -552,7 +620,7 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
 // Helper function to get user ID for a specific deal
 export const getDealUploaderId = async (dealId: string): Promise<string | null> => {
   try {
-    
+
     const { data, error } = await supabase
       .from('deal_instance')
       .select(`
@@ -578,7 +646,7 @@ export const getDealUploaderId = async (dealId: string): Promise<string | null> 
 const getTimeAgo = (date: Date): string => {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
+
   if (diffInSeconds < 60) {
     return `${diffInSeconds}s ago`;
   } else if (diffInSeconds < 3600) {
@@ -628,6 +696,14 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
           image_metadata:image_metadata_id(
             variants
           ),
+          deal_images (
+            image_metadata_id,
+            display_order,
+            is_thumbnail,
+            image_metadata:image_metadata_id (
+              variants
+            )
+          ),
           category:category_id(category_name),
           cuisine:cuisine_id(cuisine_name),
           restaurant:restaurant_id(
@@ -676,7 +752,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
       const template = deal.deal_template as any;
       const restaurant = template.restaurant;
       const restaurantLocation = locationMap[restaurant.restaurant_id];
-      
+
       // Calculate distance
       let distanceMiles = null;
       if (restaurantLocation && userLocation) {
@@ -694,6 +770,16 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
         isFavorited: false
       };
 
+      // Transform deal_images array, sort by display_order (from template)
+      const dealImages = (template?.deal_images || [])
+        .map((img: any) => ({
+          image_metadata_id: img.image_metadata_id,
+          display_order: img.display_order,
+          is_thumbnail: img.is_thumbnail,
+          variants: img.image_metadata?.variants || null,
+        }))
+        .sort((a: any, b: any) => a.display_order - b.display_order);
+
       return {
         deal_id: deal.deal_id,
         template_id: deal.template_id,
@@ -701,6 +787,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
         description: template.description,
         image_url: template.image_url,
         image_metadata: template.image_metadata, // ✅ Add this
+        deal_images: dealImages.length > 0 ? dealImages : undefined, // ✅ Add this
         restaurant_name: restaurant.name,
         restaurant_address: restaurant.address,
         cuisine_name: template.cuisine?.cuisine_name || null,
@@ -740,14 +827,15 @@ export const deleteDeal = async (dealId: string): Promise<{ success: boolean; er
       return { success: false, error: 'User not authenticated' };
     }
 
-    // First, get the deal instance to find the template_id and verify ownership
+    // First, get the deal instance to find the template_id, verify ownership, and get image info
     const { data: dealInstance, error: fetchError } = await supabase
       .from('deal_instance')
       .select(`
         template_id,
         deal_template!inner(
           user_id,
-          image_url
+          image_url,
+          image_metadata_id
         )
       `)
       .eq('deal_id', dealId)
@@ -763,12 +851,55 @@ export const deleteDeal = async (dealId: string): Promise<{ success: boolean; er
       return { success: false, error: 'Unauthorized: You can only delete your own posts' };
     }
 
-    // Delete the image from storage if it exists
+    // Get Cloudinary public ID if image_metadata_id exists
+    const imageMetadataId = (dealInstance.deal_template as any).image_metadata_id;
+    if (imageMetadataId) {
+      try {
+        // Fetch the cloudinary_public_id from image_metadata table
+        const { data: imageMetadata, error: metadataError } = await supabase
+          .from('image_metadata')
+          .select('cloudinary_public_id')
+          .eq('image_metadata_id', imageMetadataId)
+          .single();
+
+        if (!metadataError && imageMetadata?.cloudinary_public_id) {
+          console.log('Deleting Cloudinary image:', imageMetadata.cloudinary_public_id);
+
+          // Call the edge function to delete from Cloudinary
+          const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
+            body: { publicIds: [imageMetadata.cloudinary_public_id] }
+          });
+
+          if (cloudinaryError) {
+            console.warn('Failed to delete image from Cloudinary:', cloudinaryError);
+            // Continue anyway - the database records are more important
+          } else {
+            console.log('Successfully deleted Cloudinary image');
+          }
+
+          // Also delete the image_metadata record
+          const { error: deleteMetadataError } = await supabase
+            .from('image_metadata')
+            .delete()
+            .eq('image_metadata_id', imageMetadataId);
+
+          if (deleteMetadataError) {
+            console.warn('Failed to delete image metadata record:', deleteMetadataError);
+            // Continue anyway
+          }
+        }
+      } catch (cloudinaryCleanupError) {
+        console.warn('Error during Cloudinary cleanup:', cloudinaryCleanupError);
+        // Continue with database deletion even if Cloudinary cleanup fails
+      }
+    }
+
+    // Delete legacy image from Supabase Storage if it exists
     if ((dealInstance.deal_template as any).image_url) {
       const { error: storageError } = await supabase.storage
         .from('deal-images')
         .remove([(dealInstance.deal_template as any).image_url]);
-      
+
       if (storageError) {
         console.warn('Failed to delete image from storage:', storageError);
         // Continue anyway - the database records are more important

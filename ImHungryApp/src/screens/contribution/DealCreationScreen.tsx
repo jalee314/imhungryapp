@@ -428,12 +428,12 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     setIsPosting(true);
 
     try {
-      // For now, use the thumbnail image as the primary image
-      // TODO: Update dealService to handle multiple images
+      // Pass all images and thumbnail index to createDeal
       const dealData = {
         title: dealTitle,
         description: dealDetails,
-        imageUri: imageUris[thumbnailIndex] || imageUris[0],
+        imageUris: imageUris,
+        thumbnailIndex: thumbnailIndex,
         expirationDate: expirationDate,
         restaurantId: selectedRestaurant.id,
         categoryId: selectedCategory,
@@ -763,7 +763,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onPost={handlePost}
         dealTitle={dealTitle}
         dealDetails={dealDetails}
-        imageUri={imageUris.length > 0 ? imageUris[thumbnailIndex] || imageUris[0] : null}
+        imageUris={imageUris}
         expirationDate={expirationDate}
         selectedRestaurant={selectedRestaurant}
         selectedCategory={getSelectedCategoryName()}
