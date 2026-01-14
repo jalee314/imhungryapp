@@ -48,6 +48,7 @@ import CommunityUploadedScreen from './src/screens/deal_feed/CommunityUploadedSc
 import DealDetailScreen from './src/screens/deal_feed/DealDetailScreen';
 import ReportContentScreen from './src/screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from './src/screens/deal_feed/BlockUserScreen';
+import DealEditScreen from './src/screens/contribution/DealEditScreen';
 
 // Admin screens
 import AdminLoginScreen from './src/screens/admin/AdminLoginScreen';
@@ -218,6 +219,7 @@ const AppStack = () => (
       
       {/* Shared screens accessible from any tab */}
       <Stack.Screen name="DealDetail" component={DealDetailScreen} />
+      <Stack.Screen name="DealEdit" component={DealEditScreen} />
       <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
       <Stack.Screen name="ReportContent" component={ReportContentScreen} />
       <Stack.Screen name="BlockUser" component={BlockUserScreen} />
@@ -331,3 +333,6 @@ export default function App() {
     <AppContent />
   );
 }
+
+
+

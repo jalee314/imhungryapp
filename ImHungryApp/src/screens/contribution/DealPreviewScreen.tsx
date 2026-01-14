@@ -52,6 +52,8 @@ interface DealPreviewScreenProps {
   dealTitle: string;
   dealDetails: string;
   imageUris: string[];
+  // Optional originals (uncropped) so fullscreen preview can always show the full photo
+  originalImageUris?: string[];
   expirationDate: string | null;
   selectedRestaurant: Restaurant | null;
   selectedCategory: string;
@@ -67,6 +69,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
   dealTitle,
   dealDetails,
   imageUris,
+  originalImageUris,
   expirationDate,
   selectedRestaurant,
   selectedCategory,
@@ -265,26 +268,36 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
                     nestedScrollEnabled={true}
-                    scrollEnabled={true}
+                    scrollEnabled={imageUris.length > 1}
+                    decelerationRate="fast"
                     style={{ height: 250 }}
-                    onMomentumScrollEnd={(event) => {
-                      const index = Math.round(event.nativeEvent.contentOffset.x / (screenWidth - 32));
-                      setCurrentImageIndex(index);
+                    onScroll={(event) => {
+                      const contentWidth = screenWidth - 48;
+                      const index = Math.round(event.nativeEvent.contentOffset.x / contentWidth);
+                      if (index !== currentImageIndex && index >= 0 && index < imageUris.length) {
+                        setCurrentImageIndex(index);
+                      }
                     }}
+                    scrollEventThrottle={16}
                     keyExtractor={(item, index) => `preview-image-${index}`}
+                    getItemLayout={(_, index) => ({
+                      length: screenWidth - 48,
+                      offset: (screenWidth - 48) * index,
+                      index,
+                    })}
                     renderItem={({ item, index }) => (
                       <TouchableOpacity
                         onPress={() => {
                           setCurrentImageIndex(index);
                           openImageViewer();
                         }}
-                        style={{ width: screenWidth - 32 }}
+                        style={{ width: screenWidth - 48 }}
                       >
                         <Image
                           source={{ uri: item }}
                           style={[
                             styles.dealImage,
-                            { width: screenWidth - 32 }
+                            { width: screenWidth - 48 }
                           ]}
                           resizeMode="cover"
                           onLoad={handleImageLoad}
@@ -391,7 +404,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
               centerContent={true}
             >
               <Image
-                source={{ uri: imageUris[currentImageIndex] }}
+                source={{ uri: (originalImageUris?.[currentImageIndex] || imageUris[currentImageIndex]) }}
                 style={styles.fullScreenImage}
                 resizeMode="contain"
                 onLoad={() => setModalImageLoading(false)}

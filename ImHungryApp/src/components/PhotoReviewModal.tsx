@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import ImageCropperModal from './ImageCropperModal';
 
 const { width: screenWidth } = Dimensions.get('window');
 const THUMBNAIL_SIZE = 64;
@@ -21,15 +22,17 @@ const MAX_PHOTOS = 5;
 interface PhotoReviewModalProps {
     visible: boolean;
     photos: string[];
+    originalPhotos?: string[]; // Original uncropped photos for re-cropping
     thumbnailIndex: number;
     onClose: () => void;
-    onDone: (photos: string[], thumbnailIndex: number) => void;
+    onDone: (photos: string[], thumbnailIndex: number, originalPhotos: string[]) => void;
     onAddMore: () => void;
 }
 
 const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     visible,
     photos,
+    originalPhotos: propOriginalPhotos,
     thumbnailIndex,
     onClose,
     onDone,
@@ -37,17 +40,24 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
 }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [localPhotos, setLocalPhotos] = useState<string[]>(photos);
+    const [localOriginalPhotos, setLocalOriginalPhotos] = useState<string[]>(propOriginalPhotos || photos);
     const [localThumbnailIndex, setLocalThumbnailIndex] = useState(thumbnailIndex);
     const flatListRef = useRef<FlatList>(null);
+    
+    // Cropping state
+    const [isCropperVisible, setIsCropperVisible] = useState(false);
+    const [cropImageIndex, setCropImageIndex] = useState<number | null>(null);
 
     // Sync with props when modal opens
     React.useEffect(() => {
         if (visible) {
             setLocalPhotos(photos);
+            // Use provided original photos or fall back to current photos
+            setLocalOriginalPhotos(propOriginalPhotos || photos);
             setLocalThumbnailIndex(thumbnailIndex);
             setCurrentIndex(0);
         }
-    }, [visible, photos, thumbnailIndex]);
+    }, [visible, photos, propOriginalPhotos, thumbnailIndex]);
 
     const handleDeletePhoto = (index: number) => {
         if (localPhotos.length <= 1) {
@@ -65,7 +75,9 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                     style: 'destructive',
                     onPress: () => {
                         const newPhotos = localPhotos.filter((_, i) => i !== index);
+                        const newOriginals = localOriginalPhotos.filter((_, i) => i !== index);
                         setLocalPhotos(newPhotos);
+                        setLocalOriginalPhotos(newOriginals);
 
                         // Adjust thumbnail index if needed
                         if (localThumbnailIndex === index) {
@@ -93,8 +105,28 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         flatListRef.current?.scrollToIndex({ index, animated: true });
     };
 
+    const handleEditPhoto = (index: number) => {
+        setCropImageIndex(index);
+        setIsCropperVisible(true);
+    };
+
+    const handleCropComplete = (croppedUri: string) => {
+        if (cropImageIndex !== null) {
+            const newPhotos = [...localPhotos];
+            newPhotos[cropImageIndex] = croppedUri;
+            setLocalPhotos(newPhotos);
+        }
+        setIsCropperVisible(false);
+        setCropImageIndex(null);
+    };
+
+    const handleCropCancel = () => {
+        setIsCropperVisible(false);
+        setCropImageIndex(null);
+    };
+
     const handleDone = () => {
-        onDone(localPhotos, localThumbnailIndex);
+        onDone(localPhotos, localThumbnailIndex, localOriginalPhotos);
     };
 
     const handleAddMorePhotos = () => {
@@ -124,6 +156,14 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 onPress={() => handleDeletePhoto(index)}
             >
                 <Ionicons name="close-circle" size={32} color="#FF3B30" />
+            </TouchableOpacity>
+            {/* Edit/Crop button */}
+            <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => handleEditPhoto(index)}
+            >
+                <Ionicons name="crop" size={18} color="#FFFFFF" />
+                <Text style={styles.editButtonText}>Edit</Text>
             </TouchableOpacity>
             {/* Set as thumbnail button */}
             <TouchableOpacity
@@ -238,9 +278,18 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
 
                 {/* Instructions */}
                 <Text style={styles.instructionText}>
-                    Tap ⭐ to set cover photo • Swipe to view photos
+                    Tap star to set cover photo - Tap Edit to crop - Swipe to view
                 </Text>
             </SafeAreaView>
+
+            {/* Image Cropper Modal - always use original image for cropping */}
+            <ImageCropperModal
+                visible={isCropperVisible}
+                imageUri={cropImageIndex !== null ? localOriginalPhotos[cropImageIndex] : ''}
+                aspectRatio={4 / 3}
+                onCancel={handleCropCancel}
+                onComplete={handleCropComplete}
+            />
         </Modal>
     );
 };
@@ -302,6 +351,24 @@ const styles = StyleSheet.create({
         right: 16,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         borderRadius: 16,
+    },
+    editButton: {
+        position: 'absolute',
+        top: 16,
+        left: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 4,
+    },
+    editButtonText: {
+        fontFamily: 'Inter',
+        fontSize: 12,
+        fontWeight: '500',
+        color: '#FFFFFF',
     },
     thumbnailBadgeButton: {
         position: 'absolute',

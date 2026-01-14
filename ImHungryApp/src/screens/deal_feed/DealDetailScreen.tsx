@@ -64,6 +64,9 @@ const DealDetailScreen: React.FC = () => {
   // Carousel state for multiple images
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const carouselRef = useRef<FlatList>(null);
+  // Keep two arrays: one for in-page carousel (optimized display) and one for fullscreen (original)
+  const [carouselImageUris, setCarouselImageUris] = useState<string[] | null>(deal.images || null);
+  const [originalImageUris, setOriginalImageUris] = useState<string[] | null>(null);
 
   // State to hold image dimensions for skeleton
   const [skeletonHeight, setSkeletonHeight] = useState(250); // Better default height
@@ -141,6 +144,73 @@ const DealDetailScreen: React.FC = () => {
     };
 
     getImageSize();
+  }, [dealData.id]);
+
+  // Fetch original variants for fullscreen viewing (and large variants for carousel) from Supabase
+  useEffect(() => {
+    const fetchDealImagesWithVariants = async () => {
+      try {
+        const { data: instance, error } = await supabase
+          .from('deal_instance')
+          .select(`
+            deal_id,
+            template_id,
+            deal_template!inner(
+              image_metadata_id,
+              image_metadata:image_metadata_id(variants, original_path),
+              deal_images(
+                image_metadata_id,
+                display_order,
+                is_thumbnail,
+                image_metadata:image_metadata_id(variants, original_path)
+              )
+            )
+          `)
+          .eq('deal_id', dealData.id)
+          .single();
+
+        if (error || !instance) {
+          console.warn('DealDetailScreen: Could not fetch deal image variants:', error);
+          return;
+        }
+
+        const template = (instance as any).deal_template as any;
+
+        // Prefer deal_images; fallback to primary image on deal_template
+        let images = (template?.deal_images || [])
+          .map((img: any) => {
+            const variants = img?.image_metadata?.variants;
+            const originalPath = img?.image_metadata?.original_path;
+            return {
+              displayOrder: img.display_order ?? 0,
+              displayUrl: variants?.large || variants?.medium || variants?.original || '',
+              // Prefer the true original upload URL for fullscreen (Cloudinary secure_url stored in original_path)
+              originalUrl: originalPath || variants?.public || variants?.original || variants?.large || variants?.medium || '',
+            };
+          })
+          .filter((x: any) => x.displayUrl && x.originalUrl)
+          .sort((a: any, b: any) => a.displayOrder - b.displayOrder);
+
+        if (images.length === 0 && template?.image_metadata?.variants) {
+          const variants = template.image_metadata.variants;
+          const originalPath = template.image_metadata.original_path;
+          const displayUrl = variants.large || variants.medium || variants.original || '';
+          const originalUrl = originalPath || (variants as any)?.public || variants.original || variants.large || variants.medium || '';
+          if (displayUrl && originalUrl) {
+            images = [{ displayOrder: 0, displayUrl, originalUrl }];
+          }
+        }
+
+        if (images.length > 0) {
+          setCarouselImageUris(images.map((x: any) => x.displayUrl));
+          setOriginalImageUris(images.map((x: any) => x.originalUrl));
+        }
+      } catch (e) {
+        console.warn('DealDetailScreen: Failed to fetch deal image variants:', e);
+      }
+    };
+
+    fetchDealImagesWithVariants();
   }, [dealData.id]);
 
   // ✨ NEW: Update context whenever deal data changes
@@ -483,10 +553,33 @@ const DealDetailScreen: React.FC = () => {
     setImageViewerKey(prev => prev + 1);
   };
 
-  // Use current carousel image if available, otherwise fall back to single image
-  const fullScreenImageSource = dealData.images && dealData.images.length > 0
-    ? dealData.images[currentImageIndex]
-    : (dealData.imageVariants?.original || dealData.imageVariants?.large || dealData.image);
+  // Best-effort: if an image URL/path points at a resized variant, try to swap to the original variant.
+  // This lets fullscreen view show the "full" image even if the carousel uses a cropped/cover rendering.
+  const toOriginalVariantUri = (uri: string): string => {
+    if (!uri || typeof uri !== 'string') return uri;
+    // Cloudinary URLs may contain transformations; don't attempt to rewrite
+    if (uri.startsWith('https://res.cloudinary.com/')) return uri;
+    return uri
+      .replace('/large/', '/original/')
+      .replace('/medium/', '/original/')
+      .replace('/small/', '/original/')
+      .replace('/thumbnail/', '/original/')
+      .replace('large/', 'original/')
+      .replace('medium/', 'original/')
+      .replace('small/', 'original/')
+      .replace('thumbnail/', 'original/');
+  };
+
+  const imagesForCarousel = carouselImageUris && carouselImageUris.length > 0
+    ? carouselImageUris
+    : (dealData.images && dealData.images.length > 0 ? dealData.images : null);
+
+  const fullScreenImageSource =
+    (originalImageUris && originalImageUris[currentImageIndex]) ||
+    (imagesForCarousel && imagesForCarousel[currentImageIndex] ? toOriginalVariantUri(imagesForCarousel[currentImageIndex]) : null) ||
+    dealData.imageVariants?.original ||
+    dealData.imageVariants?.large ||
+    (typeof dealData.image === 'string' ? toOriginalVariantUri(dealData.image) : dealData.image);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -591,7 +684,7 @@ const DealDetailScreen: React.FC = () => {
         </Text>
 
         {/* Deal Images Carousel */}
-        {dealData.images && dealData.images.length > 0 ? (
+        {imagesForCarousel && imagesForCarousel.length > 0 ? (
           <View style={styles.imageContainer}>
             <View style={[
               styles.imageWrapper,
@@ -608,30 +701,40 @@ const DealDetailScreen: React.FC = () => {
               )}
               <FlatList
                 ref={carouselRef}
-                data={dealData.images}
+                data={imagesForCarousel}
                 horizontal
-                pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 nestedScrollEnabled={true}
-                scrollEnabled={true}
-                onMomentumScrollEnd={(event) => {
-                  const index = Math.round(event.nativeEvent.contentOffset.x / (screenWidth - 32));
-                  setCurrentImageIndex(index);
+                pagingEnabled
+                scrollEnabled={imagesForCarousel.length > 1}
+                decelerationRate="fast"
+                onScroll={(event) => {
+                  const contentWidth = screenWidth - 48;
+                  const index = Math.round(event.nativeEvent.contentOffset.x / contentWidth);
+                  if (index !== currentImageIndex && index >= 0 && index < imagesForCarousel.length) {
+                    setCurrentImageIndex(index);
+                  }
                 }}
+                scrollEventThrottle={16}
                 keyExtractor={(item, index) => `detail-image-${index}`}
+                getItemLayout={(_, index) => ({
+                  length: screenWidth - 48,
+                  offset: (screenWidth - 48) * index,
+                  index,
+                })}
                 renderItem={({ item, index }) => (
                   <TouchableOpacity
                     onPress={() => {
                       setCurrentImageIndex(index);
                       openImageViewer();
                     }}
-                    style={{ width: screenWidth - 32 }}
+                    style={{ width: screenWidth - 48 }}
                   >
                     <Image
                       source={{ uri: item }}
                       style={[
                         styles.dealImage,
-                        { width: screenWidth - 32 },
+                        { width: screenWidth - 48 },
                         imageDimensions && {
                           height: (imageDimensions.height / imageDimensions.width) * 350
                         },
@@ -645,21 +748,21 @@ const DealDetailScreen: React.FC = () => {
                   </TouchableOpacity>
                 )}
               />
-              {/* Pagination Dots */}
-              {dealData.images.length > 1 && (
-                <View style={styles.paginationContainer}>
-                  {dealData.images.map((_, index) => (
-                    <View
-                      key={`dot-${index}`}
-                      style={[
-                        styles.paginationDot,
-                        currentImageIndex === index && styles.paginationDotActive
-                      ]}
-                    />
-                  ))}
-                </View>
-              )}
             </View>
+            {/* Pagination Dots - Outside imageWrapper so border ends with image */}
+            {imagesForCarousel.length > 1 && (
+              <View style={styles.paginationContainer}>
+                {imagesForCarousel.map((_, index) => (
+                  <View
+                    key={`dot-${index}`}
+                    style={[
+                      styles.paginationDot,
+                      currentImageIndex === index && styles.paginationDotActive
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
           </View>
         ) : (
           // Fallback to single image display for deals without multiple images
@@ -1245,7 +1348,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 10,
+    marginBottom: 5,
   },
   paginationDot: {
     width: 8,
@@ -1255,7 +1359,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#FFA05C',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 });
 

@@ -32,11 +32,21 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
 }) => {
   const navigation = useNavigation();
 
+  // Check if current user owns this post
+  const isOwnPost = currentUserId && uploaderUserId && currentUserId === uploaderUserId;
+
+  const handleEditPost = () => {
+    onClose();
+    if (dealId) {
+      (navigation as any).navigate('DealEdit', { dealId });
+    }
+  };
+
   const handleReportContent = () => {
     onClose();
     
     // Check if user is trying to report their own post
-    if (currentUserId && uploaderUserId && currentUserId === uploaderUserId) {
+    if (isOwnPost) {
       Alert.alert(
         'Cannot Report Own Post',
         'You cannot report your own post. If you want to remove it, please delete it from your profile instead.'
@@ -53,7 +63,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
     onClose();
     
     // Check if user is trying to block themselves
-    if (currentUserId && uploaderUserId && currentUserId === uploaderUserId) {
+    if (isOwnPost) {
       Alert.alert(
         'Cannot Block Yourself',
         'You cannot block yourself.'
@@ -63,6 +73,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
     
     onBlockUser();
   };
+
   return (
     <Modal
       visible={visible}
@@ -72,6 +83,16 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <View style={styles.popupContainer}>
+          {/* Edit Post - only shown for own posts */}
+          {isOwnPost && (
+            <>
+              <TouchableOpacity style={styles.popupItem} onPress={handleEditPost}>
+                <Text style={styles.popupItemText}>Edit Post</Text>
+                <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
+              </TouchableOpacity>
+              <View style={styles.popupDivider} />
+            </>
+          )}
           <TouchableOpacity style={styles.popupItem} onPress={handleReportContent}>
             <Text style={styles.popupItemText}>Report Content</Text>
             <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />

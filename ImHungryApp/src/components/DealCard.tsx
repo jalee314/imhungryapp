@@ -498,7 +498,8 @@ const arePropsEqual = (prevProps: DealCardProps, nextProps: DealCardProps) => {
     prevProps.deal.isUpvoted === nextProps.deal.isUpvoted &&
     prevProps.deal.isDownvoted === nextProps.deal.isDownvoted &&
     prevProps.deal.isFavorited === nextProps.deal.isFavorited &&
-    prevProps.variant === nextProps.variant
+    prevProps.variant === nextProps.variant &&
+    prevProps.showDelete === nextProps.showDelete
   );
 };
 

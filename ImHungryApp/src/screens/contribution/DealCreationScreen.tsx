@@ -83,6 +83,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [imageUris, setImageUris] = useState<string[]>([]);
+  // Keep original (uncropped) URIs so re-editing always starts from the original
+  const [originalImageUris, setOriginalImageUris] = useState<string[]>([]);
   const [thumbnailIndex, setThumbnailIndex] = useState(0);
   const [isPhotoReviewVisible, setIsPhotoReviewVisible] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -227,15 +229,15 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
   const handleTakePhoto = async () => {
     try {
-      console.log('🎥 Starting camera photo process...');
+      console.log('Starting camera photo process...');
 
       // Request camera permissions
-      console.log('📱 Requesting camera permissions...');
+      console.log('Requesting camera permissions...');
       const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
-      console.log('🔐 Camera permission status:', cameraStatus);
+      console.log('Camera permission status:', cameraStatus);
 
       if (cameraStatus.status !== 'granted') {
-        console.log('❌ Camera permission denied');
+        console.log('Camera permission denied');
         handleCloseCameraModal();
         Alert.alert(
           'Camera Permission Required',
@@ -248,18 +250,18 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         return;
       }
 
-      console.log('✅ Camera permission granted, launching camera...');
+      console.log('Camera permission granted, launching camera...');
       let result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.7
       });
 
-      console.log('📸 Camera result:', result);
+      console.log('Camera result:', result);
       handleCloseCameraModal();
 
       if (!result.canceled) {
-        console.log('✅ Photo taken successfully:', result.assets[0].uri);
+        console.log('Photo taken successfully:', result.assets[0].uri);
         // Append to existing photos (max 5)
         setImageUris(prev => {
           if (prev.length >= 5) {
@@ -268,12 +270,16 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           }
           return [...prev, result.assets[0].uri];
         });
+        setOriginalImageUris(prev => {
+          if (prev.length >= 5) return prev;
+          return [...prev, result.assets[0].uri];
+        });
       } else {
-        console.log('📱 User canceled camera');
+        console.log('User canceled camera');
       }
     } catch (error: any) {
       handleCloseCameraModal();
-      console.error('❌ Camera error:', error);
+      console.error('Camera error:', error);
       Alert.alert('Camera Error', `Unable to open camera: ${error?.message || 'Unknown error'}. Please try again.`);
     }
   };
@@ -306,11 +312,15 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       handleCloseCameraModal();
 
       if (!result.canceled && result.assets.length > 0) {
-        // Append selected photos to existing array
+        // Add photos directly - user can edit/crop from review modal
         const newUris = result.assets.map(asset => asset.uri);
         setImageUris(prev => {
           const combined = [...prev, ...newUris];
           return combined.slice(0, 5); // Ensure max 5
+        });
+        setOriginalImageUris(prev => {
+          const combined = [...prev, ...newUris];
+          return combined.slice(0, 5);
         });
       }
     } catch (error) {
@@ -470,6 +480,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
                   setDealTitle('');
                   setDealDetails('');
                   setImageUris([]);
+                    setOriginalImageUris([]);
                   setThumbnailIndex(0);
                   setExpirationDate(null);
                   setSelectedCategory(null);
@@ -764,6 +775,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         dealTitle={dealTitle}
         dealDetails={dealDetails}
         imageUris={imageUris}
+        originalImageUris={originalImageUris}
         expirationDate={expirationDate}
         selectedRestaurant={selectedRestaurant}
         selectedCategory={getSelectedCategoryName()}
@@ -775,10 +787,12 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       <PhotoReviewModal
         visible={isPhotoReviewVisible}
         photos={imageUris}
+        originalPhotos={originalImageUris}
         thumbnailIndex={thumbnailIndex}
         onClose={() => setIsPhotoReviewVisible(false)}
-        onDone={(photos, thumbIdx) => {
+        onDone={(photos, thumbIdx, originals) => {
           setImageUris(photos);
+          setOriginalImageUris(originals);
           setThumbnailIndex(thumbIdx);
           setIsPhotoReviewVisible(false);
         }}
