@@ -306,7 +306,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         allowsMultipleSelection: true,
         selectionLimit: 5 - imageUris.length, // Allow up to remaining slots
         aspect: [4, 3],
-        quality: 0.7
+        quality: 0.5,
+        exif: false, // Skip EXIF data for faster processing
       });
 
       handleCloseCameraModal();

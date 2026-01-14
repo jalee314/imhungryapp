@@ -962,8 +962,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    borderRadius: 13,
   },
   editImageButton: {
     position: 'absolute',

@@ -276,10 +276,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                     )}
                 </View>
 
-                {/* Instructions */}
-                <Text style={styles.instructionText}>
-                    Tap star to set cover photo - Tap Edit to crop - Swipe to view
-                </Text>
+        
             </SafeAreaView>
 
             {/* Image Cropper Modal - always use original image for cropping */}
@@ -297,7 +294,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import {
   Dimensions,
   FlatList,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
 import { Deal } from '../../components/DealCard';
@@ -40,7 +40,7 @@ const DealDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<DealDetailRouteProp>();
   const { deal } = route.params;
-  const { updateDeal } = useDealUpdate();
+  const { updateDeal, postAdded, setPostAdded } = useDealUpdate();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
 
   // Local state for deal interactions
@@ -146,72 +146,98 @@ const DealDetailScreen: React.FC = () => {
     getImageSize();
   }, [dealData.id]);
 
+  // Function to fetch deal data including images from Supabase
+  const fetchDealData = useCallback(async () => {
+    try {
+      const { data: instance, error } = await supabase
+        .from('deal_instance')
+        .select(`
+          deal_id,
+          template_id,
+          deal_template!inner(
+            title,
+            description,
+            image_metadata_id,
+            image_metadata:image_metadata_id(variants, original_path),
+            deal_images(
+              image_metadata_id,
+              display_order,
+              is_thumbnail,
+              image_metadata:image_metadata_id(variants, original_path)
+            )
+          )
+        `)
+        .eq('deal_id', dealData.id)
+        .single();
+
+      if (error || !instance) {
+        console.warn('DealDetailScreen: Could not fetch deal data:', error);
+        return;
+      }
+
+      const template = (instance as any).deal_template as any;
+
+      // Update deal title and description if changed
+      if (template?.title && template.title !== dealData.title) {
+        setDealData(prev => ({
+          ...prev,
+          title: template.title,
+          details: template.description || prev.details,
+        }));
+      }
+
+      // Prefer deal_images; fallback to primary image on deal_template
+      let images = (template?.deal_images || [])
+        .map((img: any) => {
+          const variants = img?.image_metadata?.variants;
+          const originalPath = img?.image_metadata?.original_path;
+          return {
+            displayOrder: img.display_order ?? 0,
+            displayUrl: variants?.large || variants?.medium || variants?.original || '',
+            // Prefer the true original upload URL for fullscreen (Cloudinary secure_url stored in original_path)
+            originalUrl: originalPath || variants?.public || variants?.original || variants?.large || variants?.medium || '',
+          };
+        })
+        .filter((x: any) => x.displayUrl && x.originalUrl)
+        .sort((a: any, b: any) => a.displayOrder - b.displayOrder);
+
+      if (images.length === 0 && template?.image_metadata?.variants) {
+        const variants = template.image_metadata.variants;
+        const originalPath = template.image_metadata.original_path;
+        const displayUrl = variants.large || variants.medium || variants.original || '';
+        const originalUrl = originalPath || (variants as any)?.public || variants.original || variants.large || variants.medium || '';
+        if (displayUrl && originalUrl) {
+          images = [{ displayOrder: 0, displayUrl, originalUrl }];
+        }
+      }
+
+      if (images.length > 0) {
+        setCarouselImageUris(images.map((x: any) => x.displayUrl));
+        setOriginalImageUris(images.map((x: any) => x.originalUrl));
+        // Reset image loading state to show fresh images
+        setImageLoading(true);
+        setCurrentImageIndex(0);
+      }
+    } catch (e) {
+      console.warn('DealDetailScreen: Failed to fetch deal data:', e);
+    }
+  }, [dealData.id, dealData.title]);
+
   // Fetch original variants for fullscreen viewing (and large variants for carousel) from Supabase
   useEffect(() => {
-    const fetchDealImagesWithVariants = async () => {
-      try {
-        const { data: instance, error } = await supabase
-          .from('deal_instance')
-          .select(`
-            deal_id,
-            template_id,
-            deal_template!inner(
-              image_metadata_id,
-              image_metadata:image_metadata_id(variants, original_path),
-              deal_images(
-                image_metadata_id,
-                display_order,
-                is_thumbnail,
-                image_metadata:image_metadata_id(variants, original_path)
-              )
-            )
-          `)
-          .eq('deal_id', dealData.id)
-          .single();
+    fetchDealData();
+  }, [fetchDealData]);
 
-        if (error || !instance) {
-          console.warn('DealDetailScreen: Could not fetch deal image variants:', error);
-          return;
-        }
-
-        const template = (instance as any).deal_template as any;
-
-        // Prefer deal_images; fallback to primary image on deal_template
-        let images = (template?.deal_images || [])
-          .map((img: any) => {
-            const variants = img?.image_metadata?.variants;
-            const originalPath = img?.image_metadata?.original_path;
-            return {
-              displayOrder: img.display_order ?? 0,
-              displayUrl: variants?.large || variants?.medium || variants?.original || '',
-              // Prefer the true original upload URL for fullscreen (Cloudinary secure_url stored in original_path)
-              originalUrl: originalPath || variants?.public || variants?.original || variants?.large || variants?.medium || '',
-            };
-          })
-          .filter((x: any) => x.displayUrl && x.originalUrl)
-          .sort((a: any, b: any) => a.displayOrder - b.displayOrder);
-
-        if (images.length === 0 && template?.image_metadata?.variants) {
-          const variants = template.image_metadata.variants;
-          const originalPath = template.image_metadata.original_path;
-          const displayUrl = variants.large || variants.medium || variants.original || '';
-          const originalUrl = originalPath || (variants as any)?.public || variants.original || variants.large || variants.medium || '';
-          if (displayUrl && originalUrl) {
-            images = [{ displayOrder: 0, displayUrl, originalUrl }];
-          }
-        }
-
-        if (images.length > 0) {
-          setCarouselImageUris(images.map((x: any) => x.displayUrl));
-          setOriginalImageUris(images.map((x: any) => x.originalUrl));
-        }
-      } catch (e) {
-        console.warn('DealDetailScreen: Failed to fetch deal image variants:', e);
+  // Refresh deal data when returning from edit screen
+  useFocusEffect(
+    useCallback(() => {
+      if (postAdded) {
+        console.log('🔄 DealDetailScreen: Detected deal update, refreshing data...');
+        fetchDealData();
+        setPostAdded(false);
       }
-    };
-
-    fetchDealImagesWithVariants();
-  }, [dealData.id]);
+    }, [postAdded, setPostAdded, fetchDealData])
+  );
 
   // ✨ NEW: Update context whenever deal data changes
   useEffect(() => {
