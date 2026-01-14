@@ -56,7 +56,17 @@ export default function LogInScreen() {
       // Auth listeners will update navigation flow automatically
       console.log('Login successful, auth store will handle navigation');
     } catch (err: any) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      const message = err?.message || '';
+      
+      if (message.includes('Invalid login credentials')) {
+        Alert.alert('Login Failed', 'Incorrect email or password. Please try again.');
+      } else if (message.includes('Email not confirmed')) {
+        Alert.alert('Email Not Verified', 'Please verify your email address before logging in.');
+      } else if (message.includes('Too many requests')) {
+        Alert.alert('Too Many Attempts', 'Please wait a moment before trying again.');
+      } else {
+        Alert.alert('Login Failed', message || 'An unexpected error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
