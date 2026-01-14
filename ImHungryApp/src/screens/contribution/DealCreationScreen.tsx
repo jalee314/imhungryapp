@@ -19,6 +19,7 @@ import * as Location from 'expo-location';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
+import PhotoReviewModal from '../../components/PhotoReviewModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -63,7 +64,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const { setPostAdded } = useDealUpdate();
   // Get data from the context (removed 'restaurants')
   const { categories, cuisines, loading: dataLoading, error } = useDataCache();
-  
+
   const [userData, setUserData] = useState({
     username: '',
     profilePicture: null as string | null,
@@ -81,17 +82,19 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageUris, setImageUris] = useState<string[]>([]);
+  const [thumbnailIndex, setThumbnailIndex] = useState(0);
+  const [isPhotoReviewVisible, setIsPhotoReviewVisible] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPosting, setIsPosting] = useState(false);
-  
+
   // Google Places search state
   const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  
+
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -164,7 +167,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       try {
         // Get device location for search
         const deviceLocation = await getDeviceLocation();
-        
+
         if (!deviceLocation) {
           setSearchError('Location not available. Please enable location services.');
           setSearchResults([]);
@@ -197,7 +200,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
             address: place.address.replace(/, USA$/, ''), // Also clean the address field
             distance_miles: place.distance_miles,
           }));
-          
+
           setSearchResults(transformed);
           setSearchError(null);
         }
@@ -217,7 +220,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     setSearchQuery(text);
     debouncedSearch(text);
   };
-  
+
   // All existing handler functions remain the same
   const handleAddPhoto = () => setIsCameraModalVisible(true);
   const handleCloseCameraModal = () => setIsCameraModalVisible(false);
@@ -225,12 +228,12 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const handleTakePhoto = async () => {
     try {
       console.log('🎥 Starting camera photo process...');
-      
+
       // Request camera permissions
       console.log('📱 Requesting camera permissions...');
       const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
       console.log('🔐 Camera permission status:', cameraStatus);
-      
+
       if (cameraStatus.status !== 'granted') {
         console.log('❌ Camera permission denied');
         handleCloseCameraModal();
@@ -246,25 +249,32 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       }
 
       console.log('✅ Camera permission granted, launching camera...');
-      let result = await ImagePicker.launchCameraAsync({ 
-        allowsEditing: true, 
-        aspect: [4, 3], 
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
         quality: 0.7
       });
-      
+
       console.log('📸 Camera result:', result);
       handleCloseCameraModal();
-      
+
       if (!result.canceled) {
         console.log('✅ Photo taken successfully:', result.assets[0].uri);
-        setImageUri(result.assets[0].uri);
+        // Append to existing photos (max 5)
+        setImageUris(prev => {
+          if (prev.length >= 5) {
+            Alert.alert('Limit Reached', 'You can only add up to 5 photos.');
+            return prev;
+          }
+          return [...prev, result.assets[0].uri];
+        });
       } else {
         console.log('📱 User canceled camera');
       }
-    } catch (error) {
+    } catch (error: any) {
       handleCloseCameraModal();
       console.error('❌ Camera error:', error);
-      Alert.alert('Camera Error', `Unable to open camera: ${error.message}. Please try again.`);
+      Alert.alert('Camera Error', `Unable to open camera: ${error?.message || 'Unknown error'}. Please try again.`);
     }
   };
 
@@ -272,7 +282,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     try {
       // Request media library permissions
       const mediaStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (mediaStatus.status !== 'granted') {
         handleCloseCameraModal();
         Alert.alert(
@@ -286,16 +296,22 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         return;
       }
 
-      let result = await ImagePicker.launchImageLibraryAsync({ 
-        allowsEditing: true, 
-        aspect: [4, 3], 
+      let result = await ImagePicker.launchImageLibraryAsync({
+        allowsMultipleSelection: true,
+        selectionLimit: 5 - imageUris.length, // Allow up to remaining slots
+        aspect: [4, 3],
         quality: 0.7
       });
-      
+
       handleCloseCameraModal();
-      
-      if (!result.canceled) {
-        setImageUri(result.assets[0].uri);
+
+      if (!result.canceled && result.assets.length > 0) {
+        // Append selected photos to existing array
+        const newUris = result.assets.map(asset => asset.uri);
+        setImageUris(prev => {
+          const combined = [...prev, ...newUris];
+          return combined.slice(0, 5); // Ensure max 5
+        });
       }
     } catch (error) {
       handleCloseCameraModal();
@@ -324,10 +340,10 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     if (selectedIds.length > 0) {
       // Get selected restaurant from search results
       const selectedPlace = searchResults.find(r => r.id === selectedIds[0]);
-      
+
       if (selectedPlace && selectedPlace.google_place_id) {
         setIsSearchModalVisible(false);
-        
+
         try {
           // Persist to database and get restaurant_id
           const result = await getOrCreateRestaurant({
@@ -356,7 +372,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         }
       }
     }
-    
+
     // Clear search state
     setSearchQuery('');
     setSearchResults([]);
@@ -364,7 +380,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   };
 
   const handleClearRestaurant = () => setSelectedRestaurant(null);
-  
+
   const handleSearchPress = () => {
     setSearchQuery('');
     setSearchResults([]);
@@ -378,8 +394,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       return;
     }
 
-    if (!imageUri) {
-      Alert.alert("Missing Photo", "Please add a photo to continue.");
+    if (imageUris.length === 0) {
+      Alert.alert("Missing Photo", "Please add at least one photo to continue.");
       return;
     }
 
@@ -404,18 +420,20 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       return;
     }
 
-    if (!imageUri) {
-      Alert.alert("Missing Photo", "Please add a photo to continue.");
+    if (imageUris.length === 0) {
+      Alert.alert("Missing Photo", "Please add at least one photo to continue.");
       return;
     }
 
     setIsPosting(true);
-    
+
     try {
+      // For now, use the thumbnail image as the primary image
+      // TODO: Update dealService to handle multiple images
       const dealData = {
         title: dealTitle,
         description: dealDetails,
-        imageUri: imageUri,
+        imageUri: imageUris[thumbnailIndex] || imageUris[0],
         expirationDate: expirationDate,
         restaurantId: selectedRestaurant.id,
         categoryId: selectedCategory,
@@ -432,32 +450,33 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       }
 
       const result = await createDeal(dealData);
-      
+
       if (result.success) {
         await ProfileCacheService.forceRefresh();
         setPostAdded(true);
-        
+
         Alert.alert(
-          "Success!", 
-          "Your deal has been posted successfully!", 
+          "Success!",
+          "Your deal has been posted successfully!",
           [
             {
               text: "OK",
               onPress: () => {
                 // First close the preview screen
                 setIsPreviewVisible(false);
-                
+
                 // Clear the form after a brief delay
                 setTimeout(() => {
                   setDealTitle('');
                   setDealDetails('');
-                  setImageUri(null);
+                  setImageUris([]);
+                  setThumbnailIndex(0);
                   setExpirationDate(null);
                   setSelectedCategory(null);
                   setSelectedCuisine(null);
                   setSelectedRestaurant(null);
                   setIsAnonymous(false);
-                  
+
                   // Then close the main modal
                   onClose();
                 }, 200);
@@ -516,7 +535,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
-        
+
         {/* Show a loading indicator when data is being loaded */}
         {dataLoading && (
           <View style={styles.loadingOverlay}>
@@ -537,14 +556,14 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         >
           {/* Back Button and Next Button Row */}
           <View style={styles.topButtonRow}>
-            <TouchableOpacity 
-              style={styles.backButton} 
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={onClose}
             >
               <Ionicons name="arrow-back" size={20} color="#000000" />
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.nextButton, dataLoading ? styles.disabledButton : null]} 
+            <TouchableOpacity
+              style={[styles.nextButton, dataLoading ? styles.disabledButton : null]}
               onPress={handlePreview}
               disabled={dataLoading}
             >
@@ -573,110 +592,117 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           {/* Unified main container - with minimal gap from search */}
           <View style={styles.dealContainerWrapper}>
             <View style={styles.unifiedContainer}>
-            {/* Deal Title Section */}
-            <View style={styles.dealTitleSection}>
-              <Ionicons name="menu-outline" size={20} color="#606060" />
-              <Text style={styles.sectionLabel}>Deal Title *</Text>
-            </View>
-            <View style={styles.dealTitleInputContainer}>
-              <TextInput
-                ref={titleInputRef}
-                style={styles.dealTitleText}
-                value={dealTitle}
-                onChangeText={setDealTitle}
-                placeholder="$10 Sushi before 5pm on M-W"
-                placeholderTextColor="#C1C1C1"
-                multiline
-                maxLength={100}
-                onFocus={handleTitleFocus}
-              />
-              <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
-            </View>
-            
-            <View style={styles.separator} />
+              {/* Deal Title Section */}
+              <View style={styles.dealTitleSection}>
+                <Ionicons name="menu-outline" size={20} color="#606060" />
+                <Text style={styles.sectionLabel}>Deal Title *</Text>
+              </View>
+              <View style={styles.dealTitleInputContainer}>
+                <TextInput
+                  ref={titleInputRef}
+                  style={styles.dealTitleText}
+                  value={dealTitle}
+                  onChangeText={setDealTitle}
+                  placeholder="$10 Sushi before 5pm on M-W"
+                  placeholderTextColor="#C1C1C1"
+                  multiline
+                  maxLength={100}
+                  onFocus={handleTitleFocus}
+                />
+                <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
+              </View>
 
-                        
-            {/* Options Section */}
-            <TouchableOpacity style={styles.optionRow} onPress={handleAddPhoto}>
-              <Ionicons name="camera-outline" size={20} color="#404040" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Add Photo *</Text>
-                {imageUri && <Text style={styles.optionSubText}>Photo Added</Text>}
+              <View style={styles.separator} />
+
+
+              {/* Options Section */}
+              <TouchableOpacity
+                style={styles.optionRow}
+                onPress={imageUris.length > 0 ? () => setIsPhotoReviewVisible(true) : handleAddPhoto}
+              >
+                <Ionicons name="camera-outline" size={20} color="#404040" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Add Photo *</Text>
+                  {imageUris.length > 0 && (
+                    <Text style={styles.optionSubText}>
+                      {imageUris.length} Photo{imageUris.length !== 1 ? 's' : ''} Added
+                    </Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
+                <Ionicons name="time-outline" size={20} color="#4E4E4E" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Expiration Date</Text>
+                  {expirationDate && (
+                    <Text style={styles.optionSubText}>
+                      {expirationDate === 'Unknown' ? 'Not Known' : formatDate(expirationDate)}
+                    </Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
+                <Ionicons name="grid-outline" size={20} color="#606060" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Deal Categories</Text>
+                  {selectedCategory && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryName()}</Text>}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
+                <Ionicons name="pricetag-outline" size={20} color="#606060" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Cuisine Tag</Text>
+                  {selectedCuisine && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineName()}</Text>}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <View style={styles.optionRow}>
+                <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
+                <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
+                <Switch
+                  trackColor={{ false: "#D2D5DA", true: "#FFA05C" }}
+                  thumbColor={"#FFFFFF"}
+                  onValueChange={setIsAnonymous}
+                  value={isAnonymous}
+                />
               </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
-              <Ionicons name="time-outline" size={20} color="#4E4E4E" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Expiration Date</Text>
-                {expirationDate && (
-                  <Text style={styles.optionSubText}>
-                    {expirationDate === 'Unknown' ? 'Not Known' : formatDate(expirationDate)}
-                  </Text>
-                )}
+
+              <View style={styles.separator} />
+
+              <View style={styles.optionRow}>
+                <Ionicons name="menu-outline" size={20} color="#606060" />
+                <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
               </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
-              <Ionicons name="grid-outline" size={20} color="#606060" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Deal Categories</Text>
-                {selectedCategory && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryName()}</Text>}
+
+              <View style={styles.extraDetailsInputContainer}>
+                <TextInput
+                  ref={detailsInputRef}
+                  style={styles.extraDetailsInput}
+                  value={dealDetails}
+                  onChangeText={setDealDetails}
+                  placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Are there any limitations or exclusions?&#10;• Are there any codes or special instructions needed to redeem it?&#10;• Is this a mobile deal or in-person deal?"
+                  placeholderTextColor="#C1C1C1"
+                  multiline
+                  onFocus={handleDetailsFocus}
+                />
               </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
-              <Ionicons name="pricetag-outline" size={20} color="#606060" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Cuisine Tag</Text>
-                {selectedCuisine && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineName()}</Text>}
-              </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <View style={styles.optionRow}>
-              <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
-              <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
-              <Switch 
-                trackColor={{ false: "#D2D5DA", true: "#FFA05C" }} 
-                thumbColor={"#FFFFFF"} 
-                onValueChange={setIsAnonymous} 
-                value={isAnonymous} 
-              />
-            </View>
-            
-            <View style={styles.separator} />
-            
-            <View style={styles.optionRow}>
-              <Ionicons name="menu-outline" size={20} color="#606060" />
-              <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
-            </View>
-            
-            <View style={styles.extraDetailsInputContainer}>
-              <TextInput
-                ref={detailsInputRef}
-                style={styles.extraDetailsInput}
-                value={dealDetails}
-                onChangeText={setDealDetails}
-                placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Are there any limitations or exclusions?&#10;• Are there any codes or special instructions needed to redeem it?&#10;• Is this a mobile deal or in-person deal?"
-                placeholderTextColor="#C1C1C1"
-                multiline
-                onFocus={handleDetailsFocus}
-              />
             </View>
           </View>
-        </View>
         </KeyboardAwareScrollView>
       </SafeAreaView>
 
@@ -688,44 +714,44 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onChooseFromAlbum={handleChooseFromAlbum}
       />
       <CalendarModal visible={isCalendarModalVisible} onClose={() => setIsCalendarModalVisible(false)} onConfirm={handleConfirmDate} initialDate={expirationDate} />
-      <ListSelectionModal 
-        visible={isCategoriesModalVisible} 
-        onClose={() => setIsCategoriesModalVisible(false)} 
-        onDone={handleDoneCategories} 
+      <ListSelectionModal
+        visible={isCategoriesModalVisible}
+        onClose={() => setIsCategoriesModalVisible(false)}
+        onDone={handleDoneCategories}
         initialSelected={selectedCategory ? [selectedCategory] : []}
         data={categories}
-        title="Add Deal Category" 
+        title="Add Deal Category"
         singleSelect={true}
       />
-      <ListSelectionModal 
-        visible={isFoodTagsModalVisible} 
-        onClose={() => setIsFoodTagsModalVisible(false)} 
-        onDone={handleDoneCuisines} 
+      <ListSelectionModal
+        visible={isFoodTagsModalVisible}
+        onClose={() => setIsFoodTagsModalVisible(false)}
+        onDone={handleDoneCuisines}
         initialSelected={selectedCuisine ? [selectedCuisine] : []}
         data={cuisines}
-        title="Cuisine Tag" 
+        title="Cuisine Tag"
         singleSelect={true}
       />
-      <ListSelectionModal 
-        visible={isSearchModalVisible} 
+      <ListSelectionModal
+        visible={isSearchModalVisible}
         onClose={() => {
           setIsSearchModalVisible(false);
           setSearchQuery('');
           setSearchResults([]);
           setSearchError(null);
-        }} 
-        onDone={handleDoneSearch} 
+        }}
+        onDone={handleDoneSearch}
         data={
-          isSearching 
+          isSearching
             ? [{ id: 'loading', name: 'Searching restaurants...', subtext: '' }]
             : searchError
-            ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
-            : searchQuery.trim().length > 0
-            ? (searchResults.length > 0 
-                ? searchResults 
-                : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
-            : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
-        } 
+              ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
+              : searchQuery.trim().length > 0
+                ? (searchResults.length > 0
+                  ? searchResults
+                  : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
+                : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
+        }
         title="Search Restaurant"
         onSearchChange={handleSearchChange}
         searchQuery={searchQuery}
@@ -737,13 +763,29 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onPost={handlePost}
         dealTitle={dealTitle}
         dealDetails={dealDetails}
-        imageUri={imageUri}
+        imageUri={imageUris.length > 0 ? imageUris[thumbnailIndex] || imageUris[0] : null}
         expirationDate={expirationDate}
         selectedRestaurant={selectedRestaurant}
         selectedCategory={getSelectedCategoryName()}
         selectedCuisine={getSelectedCuisineName()}
         userData={userData}
         isPosting={isPosting}
+      />
+
+      <PhotoReviewModal
+        visible={isPhotoReviewVisible}
+        photos={imageUris}
+        thumbnailIndex={thumbnailIndex}
+        onClose={() => setIsPhotoReviewVisible(false)}
+        onDone={(photos, thumbIdx) => {
+          setImageUris(photos);
+          setThumbnailIndex(thumbIdx);
+          setIsPhotoReviewVisible(false);
+        }}
+        onAddMore={() => {
+          setIsPhotoReviewVisible(false);
+          setIsCameraModalVisible(true);
+        }}
       />
     </Modal>
   );
