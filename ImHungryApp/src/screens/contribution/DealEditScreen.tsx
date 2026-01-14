@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,27 +16,31 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import CalendarModal from '../../components/CalendarModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import ImageCropperModal from '../../components/ImageCropperModal';
+import DraggableThumbnailStrip from '../../components/DraggableThumbnailStrip';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { ProfileCacheService } from '../../services/profileCacheService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { invalidateDealImageCache } from '../deal_feed/DealDetailScreen';
+import { clearAllPostsCache } from '../../services/userPostsService';
+import { clearFavoritesCache } from '../../services/favoritesService';
 import {
   fetchDealForEdit,
   updateDealFields,
   addDealImages,
   removeDealImage,
   setDealThumbnail,
+  updateDealImageOrder,
   DealEditData,
 } from '../../services/dealService';
 
 const { width: screenWidth } = Dimensions.get('window');
 const MAX_PHOTOS = 5;
-const THUMBNAIL_SIZE = 56;
 
 type DealEditRouteProp = RouteProp<{ DealEdit: { dealId: string } }, 'DealEdit'>;
 
@@ -67,7 +71,6 @@ export default function DealEditScreen() {
     // The source image we always re-crop from (never changes once set)
     originalUri?: string;
   }>>([]);
-  const [thumbnailId, setThumbnailId] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [pendingNewImages, setPendingNewImages] = useState<string[]>([]);
   // Parallel array to keep track of which temp image each pendingNewImages entry belongs to
@@ -118,19 +121,17 @@ export default function DealEditScreen() {
     setIsAnonymous(data.isAnonymous);
     setExpirationDate(data.expirationDate);
 
-    // Set images
-    const loadedImages = data.images.map(img => ({
-      imageMetadataId: img.imageMetadataId,
-      url: img.url,
-      isNew: false,
-      originalUri: img.url,
-    }));
+    // Set images - sorted by display order, first image is the cover/thumbnail
+    const loadedImages = data.images
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map(img => ({
+        imageMetadataId: img.imageMetadataId,
+        url: img.url,
+        isNew: false,
+        originalUri: img.url,
+      }));
     console.log('DealEditScreen: Setting images:', loadedImages.length);
     setImages(loadedImages);
-
-    // Set thumbnail
-    const thumbImage = data.images.find(img => img.isThumbnail);
-    setThumbnailId(thumbImage?.imageMetadataId || data.images[0]?.imageMetadataId || null);
 
     setIsLoading(false);
   };
@@ -243,25 +244,28 @@ export default function DealEditScreen() {
         } else {
           // Cropping an already-uploaded image: mark old for removal and add a new temp replacement
           const tempId = `new_${Date.now()}`;
+          
+          // Find the index of the image being replaced to maintain its position
+          const targetIndex = images.findIndex(img => img.imageMetadataId === target.imageMetadataId);
 
           setPendingRemovals(prev => (prev.includes(target.imageMetadataId) ? prev : [...prev, target.imageMetadataId]));
           setPendingNewImages(prev => [...prev, croppedUri]);
           setPendingNewImageTempIds(prev => [...prev, tempId]);
 
-          setImages(prev => [
-            ...prev,
-            {
+          // Insert the new image at the same position as the old one
+          setImages(prev => {
+            const newImages = [...prev];
+            // Insert the new image right after the old one (which will be filtered out as pending removal)
+            const insertIndex = targetIndex !== -1 ? targetIndex + 1 : prev.length;
+            newImages.splice(insertIndex, 0, {
               imageMetadataId: tempId,
               url: croppedUri,
               isNew: true,
               localUri: croppedUri,
               originalUri,
-            },
-          ]);
-
-          if (thumbnailId === target.imageMetadataId) {
-            setThumbnailId(tempId);
-          }
+            });
+            return newImages;
+          });
         }
       }
     } else {
@@ -339,14 +343,12 @@ export default function DealEditScreen() {
               setPendingRemovals(prev => [...prev, imageMetadataId]);
             }
 
-            // If removing thumbnail, set a new one
-            if (thumbnailId === imageMetadataId) {
-              const remaining = images.filter(
-                img => img.imageMetadataId !== imageMetadataId && !pendingRemovals.includes(img.imageMetadataId)
-              );
-              if (remaining.length > 0) {
-                setThumbnailId(remaining[0].imageMetadataId);
-              }
+            // Adjust current index if needed
+            const remainingImages = images.filter(
+              img => img.imageMetadataId !== imageMetadataId && !pendingRemovals.includes(img.imageMetadataId)
+            );
+            if (currentImageIndex >= remainingImages.length) {
+              setCurrentImageIndex(Math.max(0, remainingImages.length - 1));
             }
           },
         },
@@ -354,9 +356,48 @@ export default function DealEditScreen() {
     );
   };
 
-  const handleSetThumbnail = (imageMetadataId: string) => {
-    setThumbnailId(imageMetadataId);
-  };
+  // Handle drag-and-drop reorder from thumbnail strip
+  const handleReorderImages = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    
+    // Set the target index immediately so the FlatList knows where to stay
+    const targetIdx = toIndex;
+    
+    setImages(prev => {
+      // Get only active images (not pending removal)
+      const currentActiveImages = prev.filter(img => !pendingRemovals.includes(img.imageMetadataId));
+      
+      // Validate indices
+      if (fromIndex < 0 || fromIndex >= currentActiveImages.length || 
+          toIndex < 0 || toIndex >= currentActiveImages.length) {
+        console.warn('Invalid reorder indices:', { fromIndex, toIndex, activeCount: currentActiveImages.length });
+        return prev;
+      }
+      
+      // Get the image being moved
+      const fromImage = currentActiveImages[fromIndex];
+      if (!fromImage) {
+        console.warn('Could not find image at fromIndex:', fromIndex);
+        return prev;
+      }
+      
+      // Create new array with reordered active images
+      const newActiveImages = [...currentActiveImages];
+      newActiveImages.splice(fromIndex, 1);
+      newActiveImages.splice(toIndex, 0, fromImage);
+      
+      // Reconstruct full array: removed images stay at end (they'll be deleted on save)
+      const removedImages = prev.filter(img => pendingRemovals.includes(img.imageMetadataId));
+      return [...newActiveImages, ...removedImages];
+    });
+    
+    // Update index after state update - use InteractionManager to wait for render
+    setCurrentImageIndex(targetIdx);
+    // Schedule scroll after React has processed the state update
+    requestAnimationFrame(() => {
+      carouselRef.current?.scrollToIndex({ index: targetIdx, animated: false });
+    });
+  }, [pendingRemovals]);
 
   const handleThumbnailPress = (index: number) => {
     setCurrentImageIndex(index);
@@ -405,15 +446,21 @@ export default function DealEditScreen() {
         await removeDealImage(dealId, metadataId);
       }
 
-      // 3. Add new images
+      // 3. Add new images - track uploaded IDs for order update
+      const uploadedImageMap = new Map<string, string>(); // tempId -> uploadedId
+      
       if (pendingNewImages.length > 0) {
         const addResult = await addDealImages(dealId, pendingNewImages);
         if (!addResult.success) {
           console.warn('Some images failed to upload:', addResult.error);
         } else if (addResult.newImages && addResult.newImages.length > 0) {
-          // Best-effort: map returned new images to temp IDs by index
+          // Map temp IDs to uploaded IDs
           const mappedCount = Math.min(addResult.newImages.length, pendingNewImageTempIds.length);
-          let nextThumbnailId = thumbnailId;
+          for (let i = 0; i < mappedCount; i++) {
+            const tempId = pendingNewImageTempIds[i];
+            const uploaded = addResult.newImages[i];
+            uploadedImageMap.set(tempId, uploaded.imageMetadataId);
+          }
 
           setImages(prev => {
             const updated = [...prev];
@@ -428,37 +475,48 @@ export default function DealEditScreen() {
                   url: uploaded.url,
                   isNew: false,
                   localUri: undefined,
-                  // keep originalUri as-is
                 };
-                if (nextThumbnailId === tempId) {
-                  nextThumbnailId = uploaded.imageMetadataId;
-                }
               }
             }
             return updated;
           });
-
-          // If thumbnail was pointing to a temp image, update it to the uploaded id we mapped
-          if (nextThumbnailId !== thumbnailId) {
-            setThumbnailId(nextThumbnailId);
-          }
         }
       }
 
-      // 4. Update thumbnail if changed
-      // If thumbnail is still a temp id at this point, we can't reliably set it server-side.
-      if (thumbnailId && !thumbnailId.startsWith('new_')) {
-        await setDealThumbnail(dealId, thumbnailId);
+      // 4. Update display_order for all images based on current array order
+      // Get active images (not pending removal) in their current order
+      const currentActiveImages = images.filter(img => !pendingRemovals.includes(img.imageMetadataId));
+      const imageOrder = currentActiveImages.map((img, index) => {
+        // Resolve temp IDs to uploaded IDs
+        const resolvedId = uploadedImageMap.get(img.imageMetadataId) || img.imageMetadataId;
+        return {
+          imageMetadataId: resolvedId,
+          displayOrder: index,
+        };
+      }).filter(item => !item.imageMetadataId.startsWith('new_')); // Skip any unresolved temp IDs
+      
+      if (imageOrder.length > 0) {
+        await updateDealImageOrder(dealId, imageOrder);
+        
+        // 5. Set the first image as the thumbnail
+        const firstImageId = imageOrder[0].imageMetadataId;
+        await setDealThumbnail(dealId, firstImageId);
       }
 
-      // Invalidate the in-memory image cache for this deal
+      // Invalidate all caches to ensure fresh data everywhere
       invalidateDealImageCache(dealId);
+      clearAllPostsCache();
+      clearFavoritesCache();
 
       // Success - refresh both profile and deal caches
-      await Promise.all([
-        ProfileCacheService.forceRefresh(),
-        dealCacheService.invalidateAndRefresh(),
-      ]);
+      // IMPORTANT: Wait for these to complete before navigating back
+      // so the Feed has fresh data when it gains focus
+      await ProfileCacheService.forceRefresh();
+      
+      // Force a complete refresh of the deal cache with fresh data from DB
+      // This ensures the new thumbnail/display_order is reflected
+      await dealCacheService.invalidateAndRefresh();
+      
       setPostAdded(true);
 
       Alert.alert('Success', 'Your deal has been updated!', [
@@ -477,6 +535,28 @@ export default function DealEditScreen() {
 
   // Get active images (excluding pending removals)
   const activeImages = images.filter(img => !pendingRemovals.includes(img.imageMetadataId));
+
+  // Check if any changes have been made from original
+  const hasChanges = useMemo(() => {
+    if (!dealData) return false;
+
+    // Check text field changes
+    const titleChanged = dealTitle !== dealData.title;
+    const detailsChanged = (dealDetails || '') !== (dealData.description || '');
+    const anonymousChanged = isAnonymous !== dealData.isAnonymous;
+    const dateChanged = expirationDate !== dealData.expirationDate;
+
+    // Check image changes
+    const hasNewImages = pendingNewImages.length > 0;
+    const hasRemovedImages = pendingRemovals.length > 0;
+
+    // Check image order changes
+    const originalOrder = dealData.images?.map(img => img.imageMetadataId) || [];
+    const currentOrder = activeImages.filter(img => !img.isNew).map(img => img.imageMetadataId);
+    const orderChanged = JSON.stringify(originalOrder) !== JSON.stringify(currentOrder);
+
+    return titleChanged || detailsChanged || anonymousChanged || dateChanged || hasNewImages || hasRemovedImages || orderChanged;
+  }, [dealData, dealTitle, dealDetails, isAnonymous, expirationDate, pendingNewImages, pendingRemovals, activeImages]);
 
   // Loading state
   if (isLoading) {
@@ -528,13 +608,13 @@ export default function DealEditScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleSave}
-            style={[styles.saveButton, isSaving && styles.disabledButton]}
-            disabled={isSaving}
+            style={[styles.saveButton, (isSaving || !hasChanges) && styles.disabledButton]}
+            disabled={isSaving || !hasChanges}
           >
             {isSaving ? (
               <ActivityIndicator size="small" color="#000" />
             ) : (
-              <Text style={styles.saveButtonText}>Save</Text>
+              <Text style={[styles.saveButtonText, !hasChanges && styles.disabledButtonText]}>Save</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -585,13 +665,19 @@ export default function DealEditScreen() {
                 <FlatList
                   ref={carouselRef}
                   data={activeImages}
+                  extraData={currentImageIndex}
                   horizontal
                   pagingEnabled
                   showsHorizontalScrollIndicator={false}
-                  onScroll={(event) => {
-                    const carouselWidth = screenWidth - 48; // 12px padding + 12px margin on each side
+                  snapToInterval={screenWidth - 48}
+                  snapToAlignment="start"
+                  decelerationRate="fast"
+                  initialScrollIndex={currentImageIndex}
+                  maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+                  onMomentumScrollEnd={(event) => {
+                    const carouselWidth = screenWidth - 48;
                     const index = Math.round(event.nativeEvent.contentOffset.x / carouselWidth);
-                    if (index !== currentImageIndex && index >= 0 && index < activeImages.length) {
+                    if (index >= 0 && index < activeImages.length) {
                       setCurrentImageIndex(index);
                     }
                   }}
@@ -622,24 +708,6 @@ export default function DealEditScreen() {
                         <Ionicons name="crop" size={14} color="#FFF" />
                         <Text style={styles.editButtonText}>Edit</Text>
                       </TouchableOpacity>
-
-                      {/* Set as cover button */}
-                      <TouchableOpacity
-                        style={[
-                          styles.coverButton,
-                          thumbnailId === item.imageMetadataId && styles.coverButtonActive,
-                        ]}
-                        onPress={() => handleSetThumbnail(item.imageMetadataId)}
-                      >
-                        <Ionicons
-                          name={thumbnailId === item.imageMetadataId ? 'star' : 'star-outline'}
-                          size={12}
-                          color={thumbnailId === item.imageMetadataId ? '#FFD700' : '#FFF'}
-                        />
-                        <Text style={styles.coverButtonText}>
-                          {thumbnailId === item.imageMetadataId ? 'Cover' : 'Set Cover'}
-                        </Text>
-                      </TouchableOpacity>
                     </View>
                   )}
                 />
@@ -651,37 +719,17 @@ export default function DealEditScreen() {
               )}
             </View>
 
-            {/* Thumbnail strip + Add button */}
-            <View style={styles.thumbnailStrip}>
-              {activeImages.map((item, index) => (
-                <TouchableOpacity
-                  key={item.imageMetadataId}
-                  style={[
-                    styles.thumbnail,
-                    currentImageIndex === index && styles.thumbnailSelected,
-                    thumbnailId === item.imageMetadataId && styles.thumbnailIsCover,
-                  ]}
-                  onPress={() => handleThumbnailPress(index)}
-                >
-                  <Image source={{ uri: item.url }} style={styles.thumbnailImage} />
-                  {thumbnailId === item.imageMetadataId && (
-                    <View style={styles.thumbnailCoverBadge}>
-                      <Ionicons name="star" size={8} color="#FFD700" />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-
-              {/* Add more button */}
-              {activeImages.length < MAX_PHOTOS && (
-                <TouchableOpacity
-                  style={styles.addPhotoButton}
-                  onPress={() => setIsCameraModalVisible(true)}
-                >
-                  <Ionicons name="add" size={20} color="#FF8C4C" />
-                </TouchableOpacity>
-              )}
-            </View>
+            {/* Draggable thumbnail strip - drag to reorder, first image is cover */}
+            <GestureHandlerRootView>
+              <DraggableThumbnailStrip
+                images={activeImages}
+                currentIndex={currentImageIndex}
+                onThumbnailPress={handleThumbnailPress}
+                onReorder={handleReorderImages}
+                onAddPress={() => setIsCameraModalVisible(true)}
+                maxPhotos={MAX_PHOTOS}
+              />
+            </GestureHandlerRootView>
 
             <View style={styles.separator} />
 
@@ -862,6 +910,9 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
+  disabledButtonText: {
+    color: '#888888',
+  },
   selectedRestaurantContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -989,27 +1040,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontFamily: 'Inter',
   },
-  coverButton: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  coverButtonActive: {
-    backgroundColor: 'rgba(255, 140, 76, 0.9)',
-  },
-  coverButtonText: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: '#FFF',
-    fontFamily: 'Inter',
-  },
   noPhotosContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1020,49 +1050,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     fontFamily: 'Inter',
-  },
-  thumbnailStrip: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  thumbnail: {
-    width: THUMBNAIL_SIZE,
-    height: THUMBNAIL_SIZE,
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  thumbnailSelected: {
-    borderColor: '#FF8C4C',
-  },
-  thumbnailIsCover: {
-    borderColor: '#FFD700',
-  },
-  thumbnailImage: {
-    width: '100%',
-    height: '100%',
-  },
-  thumbnailCoverBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 6,
-    padding: 2,
-  },
-  addPhotoButton: {
-    width: THUMBNAIL_SIZE,
-    height: THUMBNAIL_SIZE,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#FF8C4C',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 140, 76, 0.08)',
   },
   optionRow: {
     flexDirection: 'row',

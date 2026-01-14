@@ -8,6 +8,16 @@ const cache = {
   CACHE_DURATION: 30000, // 30 seconds
 };
 
+/**
+ * Clear the favorites cache to force fresh data on next fetch
+ */
+export const clearFavoritesCache = () => {
+  cache.restaurants.clear();
+  cache.deals.clear();
+  cache.lastFetch.clear();
+  console.log('🗑️ Favorites cache cleared');
+};
+
 export interface FavoriteDeal {
   id: string;
   title: string;
@@ -208,23 +218,27 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
       const distance = formatDistance(distanceMap.get(restaurant.restaurant_id));
 
-      // UPDATED: Handle image URL - prioritize deal_images thumbnail, then fallback to deal_template.image_metadata
+      // Handle image URL - prioritize first image by display_order, then fallback
       let imageUrl = 'placeholder'; // Default to placeholder
       let imageVariants = undefined; // Store variants for skeleton loading
       
-      // First, check deal_images for the designated thumbnail
+      // Sort deal_images by display_order and get the first one (which is the cover/thumbnail)
       const dealImages = (template as any).deal_images || [];
-      const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
-      const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+      const sortedDealImages = [...dealImages].sort((a: any, b: any) => 
+        (a.display_order ?? 999) - (b.display_order ?? 999)
+      );
+      const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
+      // Fallback: check for is_thumbnail flag (for backward compatibility)
+      const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
       
-      if (thumbnailImage?.image_metadata?.variants) {
-        // Use thumbnail from deal_images table (preferred for edited deals)
-        const variants = thumbnailImage.image_metadata.variants;
+      if (firstImageByOrder?.image_metadata?.variants) {
+        // Use first image by display_order (preferred - this is the cover)
+        const variants = firstImageByOrder.image_metadata.variants;
         imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
         imageVariants = variants;
-      } else if (firstDealImage?.image_metadata?.variants) {
-        // Use first available image from deal_images
-        const variants = firstDealImage.image_metadata.variants;
+      } else if (thumbnailImage?.image_metadata?.variants) {
+        // Fallback to is_thumbnail flag
+        const variants = thumbnailImage.image_metadata.variants;
         imageUrl = variants.medium || variants.small || variants.large || 'placeholder';
         imageVariants = variants;
       } else {
@@ -558,18 +572,22 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       const mostLikedDeal = mostLikedDealsMap.get(restaurantId);
       
       if (mostLikedDeal) {
-        // First, check deal_images for the designated thumbnail
+        // Sort deal_images by display_order and get the first one (which is the cover/thumbnail)
         const dealImages = mostLikedDeal.deal_images || [];
-        const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
-        const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+        const sortedDealImages = [...dealImages].sort((a: any, b: any) => 
+          (a.display_order ?? 999) - (b.display_order ?? 999)
+        );
+        const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
+        // Fallback: check for is_thumbnail flag (for backward compatibility)
+        const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
         
-        if (thumbnailImage?.image_metadata?.variants) {
-          // Use thumbnail from deal_images table (preferred for edited deals)
-          const variants = thumbnailImage.image_metadata.variants;
+        if (firstImageByOrder?.image_metadata?.variants) {
+          // Use first image by display_order (preferred - this is the cover)
+          const variants = firstImageByOrder.image_metadata.variants;
           imageUrl = variants.medium || variants.small || variants.large || '';
-        } else if (firstDealImage?.image_metadata?.variants) {
-          // Use first available image from deal_images
-          const variants = firstDealImage.image_metadata.variants;
+        } else if (thumbnailImage?.image_metadata?.variants) {
+          // Fallback to is_thumbnail flag
+          const variants = thumbnailImage.image_metadata.variants;
           imageUrl = variants.medium || variants.small || variants.large || '';
         } else {
           // Fallback to deal_template.image_metadata
@@ -658,21 +676,6 @@ export const toggleRestaurantFavorite = async (
   } catch (error) {
     console.error('Error toggling restaurant favorite:', error);
     throw error;
-  }
-};
-
-/**
- * Clear cache for a specific user (useful when favorites change)
- * Optimized for speed - no async operations
- */
-export const clearFavoritesCache = (): void => {
-  try {
-    // Clear all cache entries immediately (synchronous)
-    cache.deals.clear();
-    cache.restaurants.clear();
-    cache.lastFetch.clear();
-  } catch (error) {
-    console.error('Error clearing favorites cache:', error);
   }
 };
 

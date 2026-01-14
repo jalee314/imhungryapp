@@ -113,6 +113,17 @@ export const fetchUserPosts = async (
         ),
         image_metadata:image_metadata_id (
           variants
+        ),
+        deal_instance!inner (
+          deal_id
+        ),
+        deal_images (
+          image_metadata_id,
+          display_order,
+          is_thumbnail,
+          image_metadata:image_metadata_id (
+            variants
+          )
         )
       `)
       .eq('user_id', targetUserId)
@@ -132,19 +143,50 @@ export const fetchUserPosts = async (
     console.log('Loading posts for user:', targetUserId, 'Found posts:', postsData.length);
     
     // Transform posts to UI format
-    const transformedPosts = postsData.map((post: any) => transformDealForUI({
-      deal_id: post.template_id,
-      template_id: post.template_id,
-      title: post.title,
-      description: post.description,
-      image_url: post.image_url,
-      image_metadata: post.image_metadata, // ✅ Pass Cloudinary metadata
-      created_at: post.created_at,
-      restaurant: post.restaurant,
-      user_display_name: '', // Will be set by caller
-      user_profile_photo: null, // Will be set by caller
-      user_id: targetUserId,
-    }));
+    const transformedPosts = postsData.map((post: any) => {
+      // Get the actual deal_id from deal_instance (not template_id)
+      const dealInstance = Array.isArray(post.deal_instance) 
+        ? post.deal_instance[0] 
+        : post.deal_instance;
+      const actualDealId = dealInstance?.deal_id || post.template_id;
+      
+      // Determine image variants - prioritize first image by display_order from deal_images
+      let imageMetadata = null;
+      const dealImages = post.deal_images || [];
+      
+      if (dealImages.length > 0) {
+        // Sort by display_order and use the first image (which is the cover/thumbnail)
+        const sortedImages = [...dealImages].sort((a: any, b: any) => 
+          (a.display_order ?? 999) - (b.display_order ?? 999)
+        );
+        const firstImage = sortedImages.find((img: any) => img.image_metadata?.variants);
+        // Fallback to is_thumbnail flag for backward compatibility
+        const thumbnailImage = !firstImage ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
+        const selectedImage = firstImage || thumbnailImage;
+        if (selectedImage?.image_metadata?.variants) {
+          imageMetadata = selectedImage.image_metadata;
+        }
+      }
+      
+      // Fall back to deal_template.image_metadata if no deal_images
+      if (!imageMetadata && post.image_metadata?.variants) {
+        imageMetadata = post.image_metadata;
+      }
+      
+      return transformDealForUI({
+        deal_id: actualDealId,
+        template_id: post.template_id,
+        title: post.title,
+        description: post.description,
+        image_url: post.image_url,
+        image_metadata: imageMetadata, // ✅ Pass best available image metadata
+        created_at: post.created_at,
+        restaurant: post.restaurant,
+        user_display_name: '', // Will be set by caller
+        user_profile_photo: null, // Will be set by caller
+        user_id: targetUserId,
+      });
+    });
 
     // Cache the results
     postsCache.set(cacheKey, {

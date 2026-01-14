@@ -181,6 +181,17 @@ const Feed: React.FC = () => {
 
   useFocusEffect(
     React.useCallback(() => {
+      // Sync with cache on focus - ensures we have latest data after edits
+      // The cache is updated by invalidateAndRefresh() when deals are edited
+      const syncWithCache = async () => {
+        const cachedDeals = dealCacheService.getCachedDeals();
+        if (cachedDeals.length > 0) {
+          setDeals(cachedDeals);
+        }
+      };
+      syncWithCache();
+
+      // Also check for individual deal updates from the update store
       const timeoutId = setTimeout(() => {
         setDeals(prevDeals => {
           let hasChanges = false;

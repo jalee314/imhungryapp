@@ -417,17 +417,22 @@ class AdminService {
       }
 
       return results.map((deal: any) => {
-        // Get image URL - prioritize deal_images thumbnail over deal_template.image_metadata
+        // Get image URL - prioritize first image by display_order
         let imageUrl = null;
         const dealImages = deal.deal_template?.deal_images || [];
-        const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
-        const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+        // Sort by display_order and get the first one (which is the cover/thumbnail)
+        const sortedDealImages = [...dealImages].sort((a: any, b: any) => 
+          (a.display_order ?? 999) - (b.display_order ?? 999)
+        );
+        const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
+        // Fallback: check for is_thumbnail flag (for backward compatibility)
+        const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
         
-        if (thumbnailImage?.image_metadata?.variants) {
-          const variants = thumbnailImage.image_metadata.variants;
+        if (firstImageByOrder?.image_metadata?.variants) {
+          const variants = firstImageByOrder.image_metadata.variants;
           imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
-        } else if (firstDealImage?.image_metadata?.variants) {
-          const variants = firstDealImage.image_metadata.variants;
+        } else if (thumbnailImage?.image_metadata?.variants) {
+          const variants = thumbnailImage.image_metadata.variants;
           imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
         } else if (deal.deal_template?.image_metadata?.variants) {
           // Fallback to deal_template.image_metadata

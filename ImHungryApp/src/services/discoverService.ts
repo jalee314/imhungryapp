@@ -384,20 +384,24 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
       }
     });
 
-    // Step 5: Extract image URLs - prioritize deal_images thumbnail
+    // Step 5: Extract image URLs - prioritize first image by display_order
     const result = new Map<string, string>();
     
     Object.entries(mostLikedByRestaurant).forEach(([restaurantId, data]) => {
       const template = data.template;
       
-      // First, check deal_images for the designated thumbnail
+      // Sort deal_images by display_order and get the first one (which is the cover/thumbnail)
       const dealImages = template.deal_images || [];
-      const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
-      const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+      const sortedDealImages = [...dealImages].sort((a: any, b: any) => 
+        (a.display_order ?? 999) - (b.display_order ?? 999)
+      );
+      const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
+      // Fallback: check for is_thumbnail flag (for backward compatibility)
+      const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
       
-      if (thumbnailImage?.image_metadata?.variants) {
-        // Use thumbnail from deal_images table (preferred for edited deals)
-        const variants = thumbnailImage.image_metadata.variants;
+      if (firstImageByOrder?.image_metadata?.variants) {
+        // Use first image by display_order (preferred - this is the cover)
+        const variants = firstImageByOrder.image_metadata.variants;
         const imageUrl = variants.medium || variants.small || variants.large || '';
         if (imageUrl) {
           result.set(restaurantId, imageUrl);
@@ -405,9 +409,9 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
         }
       }
       
-      if (firstDealImage?.image_metadata?.variants) {
-        // Use first available image from deal_images
-        const variants = firstDealImage.image_metadata.variants;
+      if (thumbnailImage?.image_metadata?.variants) {
+        // Fallback to is_thumbnail flag
+        const variants = thumbnailImage.image_metadata.variants;
         const imageUrl = variants.medium || variants.small || variants.large || '';
         if (imageUrl) {
           result.set(restaurantId, imageUrl);

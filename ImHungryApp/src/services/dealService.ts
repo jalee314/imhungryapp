@@ -551,33 +551,32 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
   const timeAgo = getTimeAgo(new Date(dbDeal.created_at));
 
   // Handle image source - ONLY use Cloudinary or placeholder
-  // PRIORITY: 1. Thumbnail from deal_images table, 2. Primary image from deal_template.image_metadata
+  // PRIORITY: 1. First image by display_order from deal_images, 2. is_thumbnail flag, 3. Primary image from deal_template.image_metadata
   let imageSource;
   let imageVariants = undefined;
 
-  // First, check deal_images for the designated thumbnail
-  const thumbnailImage = dbDeal.deal_images?.find(img => img.is_thumbnail && img.variants);
-  // If no explicit thumbnail, use the first image with variants from deal_images
-  const firstDealImage = !thumbnailImage ? dbDeal.deal_images?.find(img => img.variants) : null;
+  // Sort deal_images by display_order and get the first one (which is the cover/thumbnail)
+  const sortedDealImages = [...(dbDeal.deal_images || [])].sort((a, b) => 
+    (a.display_order ?? 999) - (b.display_order ?? 999)
+  );
+  const firstImageByOrder = sortedDealImages.find(img => img.variants);
+  // Fallback: check for is_thumbnail flag (for backward compatibility)
+  const thumbnailImage = !firstImageByOrder ? dbDeal.deal_images?.find(img => img.is_thumbnail && img.variants) : null;
 
-  if (thumbnailImage?.variants) {
-    // Use thumbnail from deal_images table (preferred for edited deals)
-    console.log('✅ Using thumbnail from deal_images for deal:', dbDeal.title);
+  if (firstImageByOrder?.variants) {
+    // Use first image by display_order (preferred - this is the cover)
     imageSource = require('../../img/default-rest.png'); // Fallback for Image component
-    imageVariants = thumbnailImage.variants;
-  } else if (firstDealImage?.variants) {
-    // Use first available image from deal_images
-    console.log('✅ Using first deal_image for deal:', dbDeal.title);
+    imageVariants = firstImageByOrder.variants;
+  } else if (thumbnailImage?.variants) {
+    // Fallback to is_thumbnail flag
     imageSource = require('../../img/default-rest.png');
-    imageVariants = firstDealImage.variants;
+    imageVariants = thumbnailImage.variants;
   } else if (dbDeal.image_metadata?.variants) {
     // Fallback to primary image on deal_template (for old deals not yet migrated to deal_images)
-    console.log('✅ Using deal_template.image_metadata for deal:', dbDeal.title);
     imageSource = require('../../img/default-rest.png'); // Fallback for Image component
     imageVariants = dbDeal.image_metadata.variants; // OptimizedImage will use this
   } else {
     // No image available → use placeholder
-    console.log('⚠️ No image found, using placeholder:', dbDeal.title);
     imageSource = require('../../img/default-rest.png');
     imageVariants = undefined; // No variants = OptimizedImage won't be used
   }
@@ -598,10 +597,10 @@ export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
     milesAway = `${Math.round(dbDeal.distance_miles * 10) / 10}mi`;
   }
 
-  // Extract image URLs from deal_images for carousel
+  // Extract image URLs from deal_images for carousel (use sorted images!)
   let images: string[] | undefined = undefined;
-  if (dbDeal.deal_images && dbDeal.deal_images.length > 0) {
-    images = dbDeal.deal_images
+  if (sortedDealImages && sortedDealImages.length > 0) {
+    images = sortedDealImages
       .filter(img => img.variants)
       .map(img => {
         // Prefer large, then medium, then original

@@ -136,6 +136,11 @@ class DealCacheService {
     return this.fetchAndCache(false, customCoordinates);
   }
 
+  // Get cached deals synchronously (for focus sync without async)
+  getCachedDeals(): Deal[] {
+    return this.cachedDeals;
+  }
+
   // Initialize realtime subscriptions
   async initializeRealtime() {
     if (this.isInitialized) return;
@@ -223,10 +228,16 @@ class DealCacheService {
   // Invalidate cache and force a fresh fetch (call after deal modifications)
   async invalidateAndRefresh() {
     console.log('🔄 Invalidating cache and forcing refresh...');
-    // Clear the timestamp to force refresh
+    // Clear ALL cache data to ensure no stale data
+    this.cachedDeals = [];
+    await AsyncStorage.removeItem(CACHE_KEY);
     await AsyncStorage.removeItem(CACHE_TIMESTAMP_KEY);
+    // Reset fetching flag in case it's stuck
+    this.isFetching = false;
     // Fetch fresh data
-    return this.fetchAndCache(true);
+    const freshDeals = await this.fetchAndCache(true);
+    console.log(`✅ Cache refreshed with ${freshDeals.length} deals`);
+    return freshDeals;
   }
 
   // Remove a specific deal from cache
