@@ -1211,7 +1211,10 @@ export const updateDealFields = async (
     // Update deal_instance for expiration date and anonymous flag
     if (updates.expirationDate !== undefined || updates.isAnonymous !== undefined) {
       const instanceUpdates: any = {};
-      if (updates.expirationDate !== undefined) instanceUpdates.end_date = updates.expirationDate;
+      // Handle "Unknown" as null for database - "Unknown" is a UI-only value
+      if (updates.expirationDate !== undefined) {
+        instanceUpdates.end_date = updates.expirationDate === 'Unknown' ? null : updates.expirationDate;
+      }
       if (updates.isAnonymous !== undefined) instanceUpdates.is_anonymous = updates.isAnonymous;
 
       const { error: instanceError } = await supabase

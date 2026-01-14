@@ -65,6 +65,12 @@ const DealDetailScreen: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
+  // Sync dealData with navigation params when they change
+  // This ensures updated data from Feed is reflected when navigating back
+  useEffect(() => {
+    setDealData(deal);
+  }, [deal]);
+
   // Check if we have cached images for this deal
   const cachedImages = dealImageCache.get(deal.id);
 
@@ -181,10 +187,17 @@ const DealDetailScreen: React.FC = () => {
         .select(`
           deal_id,
           template_id,
+          is_anonymous,
+          end_date,
           deal_template!inner(
             title,
             description,
             image_metadata_id,
+            user:user_id(
+              display_name,
+              profile_photo,
+              image_metadata:profile_photo_metadata_id(variants)
+            ),
             image_metadata:image_metadata_id(variants, original_path),
             deal_images(
               image_metadata_id,
@@ -204,15 +217,6 @@ const DealDetailScreen: React.FC = () => {
 
       const template = (instance as any).deal_template as any;
 
-      // Always update deal title and description with fresh data from server
-      if (template) {
-        setDealData(prev => ({
-          ...prev,
-          title: template.title || prev.title,
-          details: template.description ?? prev.details,
-        }));
-      }
-
       // Prefer deal_images; fallback to primary image on deal_template
       let images = (template?.deal_images || [])
         .map((img: any) => {
@@ -220,6 +224,7 @@ const DealDetailScreen: React.FC = () => {
           const originalPath = img?.image_metadata?.original_path;
           return {
             displayOrder: img.display_order ?? 0,
+            variants: variants,  // Keep full variants for imageVariants update
             displayUrl: variants?.large || variants?.medium || variants?.original || '',
             // Prefer the true original upload URL for fullscreen (Cloudinary secure_url stored in original_path)
             originalUrl: originalPath || variants?.public || variants?.original || variants?.large || variants?.medium || '',
@@ -234,8 +239,38 @@ const DealDetailScreen: React.FC = () => {
         const displayUrl = variants.large || variants.medium || variants.original || '';
         const originalUrl = originalPath || (variants as any)?.public || variants.original || variants.large || variants.medium || '';
         if (displayUrl && originalUrl) {
-          images = [{ displayOrder: 0, displayUrl, originalUrl }];
+          images = [{ displayOrder: 0, variants: variants, displayUrl, originalUrl }];
         }
+      }
+
+      // Always update deal title, description, imageVariants, isAnonymous, and author with fresh data from server
+      // This ensures the DealUpdateContext has the latest data for Feed sync
+      if (template) {
+        const firstImageVariants = images.length > 0 ? images[0].variants : undefined;
+        const isAnonymous = (instance as any).is_anonymous ?? false;
+        const endDate = (instance as any).end_date;
+        
+        // Get user profile photo URL from variants
+        let userProfilePhotoUrl: string | undefined = undefined;
+        if (template.user?.image_metadata?.variants?.small) {
+          userProfilePhotoUrl = template.user.image_metadata.variants.small;
+        } else if (template.user?.image_metadata?.variants?.thumbnail) {
+          userProfilePhotoUrl = template.user.image_metadata.variants.thumbnail;
+        } else if (template.user?.profile_photo) {
+          userProfilePhotoUrl = template.user.profile_photo;
+        }
+        
+        setDealData(prev => ({
+          ...prev,
+          title: template.title || prev.title,
+          details: template.description ?? prev.details,
+          imageVariants: firstImageVariants || prev.imageVariants,
+          isAnonymous: isAnonymous,
+          author: isAnonymous ? 'Anonymous' : (template.user?.display_name || prev.author),
+          userDisplayName: template.user?.display_name || prev.userDisplayName,
+          userProfilePhoto: userProfilePhotoUrl || prev.userProfilePhoto,
+          expirationDate: endDate ?? prev.expirationDate,
+        }));
       }
 
       if (images.length > 0) {
@@ -247,12 +282,13 @@ const DealDetailScreen: React.FC = () => {
         
         setCarouselImageUris(carouselUrls);
         setOriginalImageUris(origUrls);
-        // Note: imageLoading is handled by the caller (forceRefresh sets it to true before calling)
-        // For first load, it's already true from initial state
         setCurrentImageIndex(0);
       }
       // Mark that we have fetched fresh images (even if empty)
       setHasFetchedFreshImages(true);
+      // Always reset imageLoading after fetch completes - the image might already be cached
+      // so onLoad might not fire, causing the screen to appear stuck
+      setImageLoading(false);
     } catch (e) {
       console.warn('DealDetailScreen: Failed to fetch deal data:', e);
       // Even on error, mark as fetched so we can fall back to passed data

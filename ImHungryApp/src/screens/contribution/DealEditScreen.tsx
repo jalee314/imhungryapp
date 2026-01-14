@@ -795,8 +795,8 @@ export default function DealEditScreen() {
       <CalendarModal
         visible={isCalendarModalVisible}
         onClose={() => setIsCalendarModalVisible(false)}
-        onSelect={handleDateSelect}
-        selectedDate={expirationDate || undefined}
+        onConfirm={handleDateSelect}
+        initialDate={expirationDate}
       />
 
       {/* Photo Action Modal */}
@@ -1002,14 +1002,16 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   photoCarouselContainer: {
-    height: 200,
+    height: 350,
     marginHorizontal: 16,
     borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: '#F0F0F0',
+    borderWidth: 0.5,
+    borderColor: '#AAAAAA',
   },
   carouselItem: {
-    height: 200,
+    height: 350,
     justifyContent: 'center',
     alignItems: 'center',
   },
