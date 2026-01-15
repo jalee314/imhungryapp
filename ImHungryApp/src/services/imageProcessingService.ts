@@ -1,4 +1,4 @@
-import { PixelRatio, Dimensions } from 'react-native';
+import { PixelRatio, Dimensions, Image } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
@@ -227,21 +227,29 @@ export const processImageWithEdgeFunction = async (
     if (!user) throw new Error('User not authenticated');
 
     // Step 0: Compress/Resize image locally using expo-image-manipulator
-    // This significantly reduces upload time to Supabase Storage
+    // Skip if image is already optimized (e.g., from PhotoReviewModal crop)
     let uriToUpload = imageUri;
     try {
-      console.log('🔄 Optimizing image before upload...');
-      // Resize to max width 1080px (standard for mobile feeds) and compress
-      // expo-image-manipulator maintains aspect ratio if only one dim is provided
-      const manipResult = await manipulateAsync(
-        imageUri,
-        [{ resize: { width: 1080 } }], // Safe max width for mobile
-        { compress: 0.7, format: SaveFormat.JPEG }
-      );
-      uriToUpload = manipResult.uri;
-      console.log('✅ Image optimized successfully');
+      // Check if image needs optimization by getting its info
+      const imageInfo = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+        Image.getSize(imageUri, (width, height) => resolve({ width, height }), reject);
+      });
+      
+      // Only resize if image is larger than 1200px (allow some margin above 1080)
+      if (imageInfo.width > 1200) {
+        console.log(`🔄 Optimizing large image (${imageInfo.width}px) before upload...`);
+        const manipResult = await manipulateAsync(
+          imageUri,
+          [{ resize: { width: 1080 } }], // Safe max width for mobile
+          { compress: 0.8, format: SaveFormat.JPEG }
+        );
+        uriToUpload = manipResult.uri;
+        console.log('✅ Image optimized successfully');
+      } else {
+        console.log(`✅ Image already optimized (${imageInfo.width}px), skipping resize`);
+      }
     } catch (optError) {
-      console.warn('⚠️ Image optimization failed, falling back to original:', optError);
+      console.warn('⚠️ Image optimization check failed, using original:', optError);
       // Continue with original URI
     }
 

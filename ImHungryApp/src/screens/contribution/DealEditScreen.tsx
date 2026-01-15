@@ -811,7 +811,7 @@ export default function DealEditScreen() {
       <ImageCropperModal
         visible={isCropperVisible}
         imageUri={pendingCropUri || ''}
-        aspectRatio={4 / 3}
+        aspectRatio={(screenWidth - 48) / 350}
         onCancel={handleCropCancel}
         onComplete={handleCropComplete}
       />

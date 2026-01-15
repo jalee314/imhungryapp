@@ -270,7 +270,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                     nestedScrollEnabled={true}
                     scrollEnabled={imageUris.length > 1}
                     decelerationRate="fast"
-                    style={{ height: 250 }}
+                    style={{ height: 350 }}
                     onScroll={(event) => {
                       const contentWidth = screenWidth - 48;
                       const index = Math.round(event.nativeEvent.contentOffset.x / contentWidth);
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   },
   dealImage: {
     width: '100%',
-    height: 250,
+    height: 350,
     backgroundColor: '#EFEFEF',
     borderRadius: 8,
     alignSelf: 'center',
