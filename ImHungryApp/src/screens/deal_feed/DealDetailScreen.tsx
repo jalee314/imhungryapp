@@ -168,19 +168,12 @@ const DealDetailScreen: React.FC = () => {
 
   // Function to fetch deal data including images from Supabase
   const fetchDealData = useCallback(async (forceRefresh = false) => {
-    // Skip fetch if we have cached data and this isn't a forced refresh (e.g., from edit)
-    const hasCachedData = dealImageCache.has(dealData.id);
-    if (hasCachedData && !forceRefresh) {
-      console.log('✅ Skipping fetch - using cached images for deal:', dealData.id);
-      // Ensure we use cached data and don't show skeleton
-      const cached = dealImageCache.get(dealData.id)!;
-      setCarouselImageUris(cached.carouselUrls);
-      setOriginalImageUris(cached.originalUrls);
-      setImageLoading(false);
-      setHasFetchedFreshImages(true);
-      return;
-    }
-
+    // Check if we have cached image data
+    const hasCachedImages = dealImageCache.has(dealData.id);
+    
+    // Always fetch deal metadata from DB to ensure isAnonymous, author, etc. are up to date
+    // Only skip if we have cached images AND this isn't a forced refresh - in that case,
+    // we still need to fetch metadata but can skip image processing
     try {
       const { data: instance, error } = await supabase
         .from('deal_instance')
@@ -212,12 +205,59 @@ const DealDetailScreen: React.FC = () => {
 
       if (error || !instance) {
         console.warn('DealDetailScreen: Could not fetch deal data:', error);
+        // If we have cached images, still use them
+        if (hasCachedImages && !forceRefresh) {
+          const cached = dealImageCache.get(dealData.id)!;
+          setCarouselImageUris(cached.carouselUrls);
+          setOriginalImageUris(cached.originalUrls);
+          setImageLoading(false);
+          setHasFetchedFreshImages(true);
+        }
         return;
       }
 
       const template = (instance as any).deal_template as any;
 
-      // Prefer deal_images; fallback to primary image on deal_template
+      // Always update deal metadata (isAnonymous, author, etc.) from server
+      // This ensures changes like switching to/from anonymous are reflected
+      if (template) {
+        const isAnonymous = (instance as any).is_anonymous ?? false;
+        const endDate = (instance as any).end_date;
+        
+        // Get user profile photo URL from variants
+        let userProfilePhotoUrl: string | undefined = undefined;
+        if (template.user?.image_metadata?.variants?.small) {
+          userProfilePhotoUrl = template.user.image_metadata.variants.small;
+        } else if (template.user?.image_metadata?.variants?.thumbnail) {
+          userProfilePhotoUrl = template.user.image_metadata.variants.thumbnail;
+        } else if (template.user?.profile_photo) {
+          userProfilePhotoUrl = template.user.profile_photo;
+        }
+        
+        setDealData(prev => ({
+          ...prev,
+          title: template.title || prev.title,
+          details: template.description ?? prev.details,
+          isAnonymous: isAnonymous,
+          author: isAnonymous ? 'Anonymous' : (template.user?.display_name || prev.author),
+          userDisplayName: template.user?.display_name || prev.userDisplayName,
+          userProfilePhoto: userProfilePhotoUrl || prev.userProfilePhoto,
+          expirationDate: endDate ?? prev.expirationDate,
+        }));
+      }
+
+      // If we have cached images and not forcing refresh, use cached images but we already updated metadata above
+      if (hasCachedImages && !forceRefresh) {
+        console.log('✅ Using cached images, metadata updated from server for deal:', dealData.id);
+        const cached = dealImageCache.get(dealData.id)!;
+        setCarouselImageUris(cached.carouselUrls);
+        setOriginalImageUris(cached.originalUrls);
+        setImageLoading(false);
+        setHasFetchedFreshImages(true);
+        return;
+      }
+
+      // Process images from server response
       let images = (template?.deal_images || [])
         .map((img: any) => {
           const variants = img?.image_metadata?.variants;
@@ -243,33 +283,12 @@ const DealDetailScreen: React.FC = () => {
         }
       }
 
-      // Always update deal title, description, imageVariants, isAnonymous, and author with fresh data from server
-      // This ensures the DealUpdateContext has the latest data for Feed sync
-      if (template) {
-        const firstImageVariants = images.length > 0 ? images[0].variants : undefined;
-        const isAnonymous = (instance as any).is_anonymous ?? false;
-        const endDate = (instance as any).end_date;
-        
-        // Get user profile photo URL from variants
-        let userProfilePhotoUrl: string | undefined = undefined;
-        if (template.user?.image_metadata?.variants?.small) {
-          userProfilePhotoUrl = template.user.image_metadata.variants.small;
-        } else if (template.user?.image_metadata?.variants?.thumbnail) {
-          userProfilePhotoUrl = template.user.image_metadata.variants.thumbnail;
-        } else if (template.user?.profile_photo) {
-          userProfilePhotoUrl = template.user.profile_photo;
-        }
-        
+      // Update imageVariants with fresh data
+      if (template && images.length > 0) {
+        const firstImageVariants = images[0].variants;
         setDealData(prev => ({
           ...prev,
-          title: template.title || prev.title,
-          details: template.description ?? prev.details,
           imageVariants: firstImageVariants || prev.imageVariants,
-          isAnonymous: isAnonymous,
-          author: isAnonymous ? 'Anonymous' : (template.user?.display_name || prev.author),
-          userDisplayName: template.user?.display_name || prev.userDisplayName,
-          userProfilePhoto: userProfilePhotoUrl || prev.userProfilePhoto,
-          expirationDate: endDate ?? prev.expirationDate,
         }));
       }
 
@@ -309,9 +328,10 @@ const DealDetailScreen: React.FC = () => {
         // Show loading state for refresh
         setImageLoading(true);
         fetchDealData(true); // Force refresh - ignore cache
-        setPostAdded(false);
+        // NOTE: Don't reset postAdded here - let the origin screens (Feed/Profile) handle it
+        // DealDetailScreen updates the store via updateDeal(dealData) which those screens can pick up
       }
-    }, [postAdded, setPostAdded, fetchDealData])
+    }, [postAdded, fetchDealData])
   );
 
   // ✨ NEW: Update context whenever deal data changes

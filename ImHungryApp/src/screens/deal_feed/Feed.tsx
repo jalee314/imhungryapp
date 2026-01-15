@@ -45,7 +45,7 @@ const getCurrentUserId = async (): Promise<string | null> => {
 
 const Feed: React.FC = () => {
   const navigation = useNavigation();
-  const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
+  const { getUpdatedDeal, clearUpdatedDeal, postAdded, setPostAdded } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
   const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad, isLoading: isLocationLoading } = useLocation();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
@@ -183,7 +183,18 @@ const Feed: React.FC = () => {
     React.useCallback(() => {
       // Sync with cache on focus - ensures we have latest data after edits
       // The cache is updated by invalidateAndRefresh() when deals are edited
-      const syncWithCache = () => {
+      const syncWithCache = async () => {
+        // If a deal was just edited/added, force refresh from the already-updated cache
+        if (postAdded) {
+          console.log('📸 Feed: postAdded detected, syncing with fresh cache');
+          const cachedDeals = dealCacheService.getCachedDeals();
+          if (cachedDeals.length > 0) {
+            setDeals(cachedDeals);
+          }
+          setPostAdded(false);
+          return;
+        }
+        
         const cachedDeals = dealCacheService.getCachedDeals();
         if (cachedDeals.length > 0) {
           // Compare cached deals with current deals to detect changes
@@ -249,7 +260,7 @@ const Feed: React.FC = () => {
         });
       }, 0);
       return () => clearTimeout(timeoutId);
-    }, [getUpdatedDeal, clearUpdatedDeal])
+    }, [getUpdatedDeal, clearUpdatedDeal, postAdded, setPostAdded])
   );
 
   const onRefresh = useCallback(async () => {

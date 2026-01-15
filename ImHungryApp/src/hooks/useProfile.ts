@@ -78,7 +78,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
   const [hasData, setHasData] = useState(false);
   const [userProfileCache, setUserProfileCache] = useState<Map<string, UserProfileCache>>(new Map());
   const postsLoadedRef = useRef(false);
-  const { postAdded, setPostAdded } = useDealUpdate();
+  const { postAdded, setPostAdded, getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
 
   // ---------- Data Loading (current user) ----------
@@ -230,16 +230,50 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
       let cancelled = false;
       const run = async () => {
         if (postAdded) {
+          console.log('📸 Profile: postAdded detected, refreshing posts');
           await loadUserPosts();
           if (!cancelled) setPostAdded(false);
         }
+        
+        // Also check for individual deal updates from the store (e.g., from DealDetailScreen)
         if (!viewUser) {
+          setUserPosts(prevPosts => {
+            let hasChanges = false;
+            const dealIdsToClear: string[] = [];
+            const updatedPosts = prevPosts.map(post => {
+              const updatedDeal = getUpdatedDeal(post.id);
+              if (updatedDeal) {
+                hasChanges = true;
+                dealIdsToClear.push(post.id);
+                // Merge updated deal data into the post
+                return {
+                  ...post,
+                  title: updatedDeal.title,
+                  details: updatedDeal.details,
+                  isAnonymous: updatedDeal.isAnonymous,
+                  author: updatedDeal.author,
+                  imageVariants: updatedDeal.imageVariants,
+                };
+              }
+              return post;
+            });
+            
+            if (hasChanges) {
+              console.log('📸 Profile: Applying deal updates from store');
+              setTimeout(() => {
+                dealIdsToClear.forEach(id => clearUpdatedDeal(id));
+              }, 0);
+            }
+            
+            return hasChanges ? updatedPosts : prevPosts;
+          });
+          
           await refreshProfile();
         }
       };
       run();
       return () => { cancelled = true; };
-    }, [viewUser, postAdded, refreshProfile, loadUserPosts, setPostAdded])
+    }, [viewUser, postAdded, refreshProfile, loadUserPosts, setPostAdded, getUpdatedDeal, clearUpdatedDeal])
   );
 
   // ---------- Optimistic vote/favorite handlers ----------
