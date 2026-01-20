@@ -100,6 +100,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
+  // Reference to abort controller for cancelling in-flight search requests
+  const searchAbortControllerRef = useRef<AbortController | null>(null);
 
   const loadUserData = async () => {
     try {
@@ -124,30 +126,45 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     }, [visible])
   );
 
-  // NEW: Get device's current location (not from database)
+  // Get device's current location with timeout to prevent hangs
   const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    const LOCATION_TIMEOUT_MS = 5000; // 5 second timeout
+
     try {
-      let { status } = await Location.getForegroundPermissionsAsync();
+      // Wrap the entire location process with a timeout
+      const locationPromise = (async () => {
+        let { status } = await Location.getForegroundPermissionsAsync();
 
-      // If permissions are not granted, request them
-      if (status !== 'granted') {
-        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-        status = newStatus;
-      }
+        // If permissions are not granted, request them
+        if (status !== 'granted') {
+          const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+          status = newStatus;
+        }
 
-      // If permissions are still not granted, return null
-      if (status !== 'granted') {
-        return null;
-      }
+        // If permissions are still not granted, return null
+        if (status !== 'granted') {
+          return null;
+        }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        return {
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+        };
+      })();
+
+      // Race against timeout
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn('getDeviceLocation: Timed out after 5 seconds');
+          resolve(null);
+        }, LOCATION_TIMEOUT_MS);
       });
 
-      return {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      };
+      return await Promise.race([locationPromise, timeoutPromise]);
     } catch (error) {
       console.error('Error getting device location:', error);
       return null;
@@ -163,12 +180,25 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         return;
       }
 
+      // Cancel any previous search
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
+      }
+      // Create new abort controller for this search
+      const abortController = new AbortController();
+      searchAbortControllerRef.current = abortController;
+
       setIsSearching(true);
       setSearchError(null);
 
       try {
         // Get device location for search
         const deviceLocation = await getDeviceLocation();
+
+        // Check if this search was cancelled while we were getting location
+        if (abortController.signal.aborted) {
+          return;
+        }
 
         if (!deviceLocation) {
           setSearchError('Location not available. Please enable location services.');
@@ -177,12 +207,18 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           return;
         }
 
-        // Search via Google Places API
+        // Search via Google Places API with abort signal
         const result = await searchRestaurants(
           query,
           deviceLocation.lat,
-          deviceLocation.lng
+          deviceLocation.lng,
+          abortController.signal
         );
+
+        // Check if cancelled before updating state
+        if (abortController.signal.aborted) {
+          return;
+        }
 
         if (!result.success) {
           setSearchError(result.error || 'Failed to search restaurants');
@@ -206,16 +242,39 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           setSearchResults(transformed);
           setSearchError(null);
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Don't show error if search was cancelled
+        if (abortController.signal.aborted || error?.message?.includes('cancelled')) {
+          return;
+        }
         console.error('Search error:', error);
         setSearchError('An error occurred while searching');
         setSearchResults([]);
       } finally {
-        setIsSearching(false);
+        // Only update loading state if this is still the current search
+        if (!abortController.signal.aborted) {
+          setIsSearching(false);
+        }
       }
     }, 500),
     []
   );
+
+  // Cleanup function to cancel in-flight searches when modal closes
+  useEffect(() => {
+    if (!visible) {
+      // Cancel any in-flight search when modal closes
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
+        searchAbortControllerRef.current = null;
+      }
+      // Reset search state
+      setIsSearching(false);
+      setSearchError(null);
+      setSearchResults([]);
+      setSearchQuery('');
+    }
+  }, [visible]);
 
   // Handle search query change
   const handleSearchChange = (text: string) => {
@@ -481,7 +540,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
                   setDealTitle('');
                   setDealDetails('');
                   setImageUris([]);
-                    setOriginalImageUris([]);
+                  setOriginalImageUris([]);
                   setThumbnailIndex(0);
                   setExpirationDate(null);
                   setSelectedCategory(null);

@@ -5,6 +5,7 @@ interface UserLocation {
   lat: number;
   lng: number;
   city?: string;
+  state?: string;
 }
 
 /**
@@ -42,16 +43,18 @@ export const getCurrentUserLocation = async (): Promise<UserLocation | null> => 
       return null;
     }
 
-    console.log('✅ Location found (with city from DB):', { 
-      lat: locationData.lat, 
+    console.log('✅ Location found (with city/state from DB):', {
+      lat: locationData.lat,
       lng: locationData.lng,
-      city: locationData.city 
+      city: locationData.city,
+      state: locationData.state
     });
-    
+
     return {
       lat: locationData.lat,
       lng: locationData.lng,
-      city: locationData.city // Now includes city from database!
+      city: locationData.city,
+      state: locationData.state
     };
   } catch (error) {
     console.error('Error getting user location:', error);
@@ -72,15 +75,15 @@ export const calculateDistance = (
   const R = 3958.8; // Earth's radius in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
-  
-  const a = 
+
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
-  
+
   return distance;
 };
 
@@ -105,7 +108,7 @@ export const getRestaurantLocationsBatch = async (
     }
 
     const locations: Record<string, { lat: number; lng: number }> = {};
-    
+
     data?.forEach(restaurant => {
       if (restaurant.lat && restaurant.lng) {
         locations[restaurant.restaurant_id] = {
@@ -229,6 +232,20 @@ export const getStateAbbreviation = (stateName: string): string => {
   return STATE_ABBREVIATIONS[normalized] || stateName;
 };
 
+// Map of city names to their common abbreviations
+const CITY_ABBREVIATIONS: Record<string, string> = {
+  'new york': 'NYC',
+};
+
+/**
+ * Get city abbreviation if one exists, otherwise return original city name
+ */
+export const getCityAbbreviation = (cityName: string): string => {
+  if (!cityName) return '';
+  const normalized = cityName.toLowerCase().trim();
+  return CITY_ABBREVIATIONS[normalized] || cityName;
+};
+
 /**
  * Get city name from coordinates using reverse geocoding
  */
@@ -238,7 +255,7 @@ export const getCityFromCoordinates = async (latitude: number, longitude: number
       latitude,
       longitude,
     });
-    
+
     if (reverseGeocode && reverseGeocode.length > 0) {
       const location = reverseGeocode[0];
       return location.city || location.subregion || location.region || 'Unknown City';
@@ -258,10 +275,11 @@ export const getCityAndStateFromCoordinates = async (latitude: number, longitude
       latitude,
       longitude,
     });
-    
+
     if (reverseGeocode && reverseGeocode.length > 0) {
       const location = reverseGeocode[0];
-      const city = location.city || location.subregion || location.region || 'Unknown City';
+      const rawCity = location.city || location.subregion || location.region || 'Unknown City';
+      const city = getCityAbbreviation(rawCity);
       const stateAbbr = getStateAbbreviation(location.region || '');
       return { city, stateAbbr };
     }
@@ -277,7 +295,7 @@ export const getCityAndStateFromCoordinates = async (latitude: number, longitude
 export const getCoordinatesFromCity = async (cityName: string, state: string = 'California'): Promise<{ lat: number; lng: number } | null> => {
   try {
     const geocode = await Location.geocodeAsync(`${cityName}, ${state}, USA`);
-    
+
     if (geocode && geocode.length > 0) {
       const location = geocode[0];
       return {
@@ -297,7 +315,8 @@ export const getCoordinatesFromCity = async (cityName: string, state: string = '
 export const updateUserLocation = async (
   latitude: number,
   longitude: number,
-  city?: string
+  city?: string,
+  state?: string
 ): Promise<boolean> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -314,7 +333,8 @@ export const updateUserLocation = async (
       user_uuid: user.id,
       lat: latitude,
       lng: longitude,
-      city: city || null
+      city: city || null,
+      state: state || null
     });
 
     if (error) {

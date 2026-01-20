@@ -85,11 +85,11 @@ export const useLocationStore = create<LocationState>((set, get) => ({
     // State is now a 2-letter abbreviation for current location, or full state name for manual selection
     const stateValue = location?.state ?? '';
     // If state is 2 letters (abbreviation), use it directly; otherwise, extract abbreviation from full state name
-    const stateAbbr = stateValue.length === 2 
+    const stateAbbr = stateValue.length === 2
       ? stateValue.toUpperCase()
       : String(stateValue).split(' ')[0].slice(0, 2).toUpperCase();
-    
-    const locationDisplay = stateAbbr 
+
+    const locationDisplay = stateAbbr
       ? `${location?.city}, ${stateAbbr}`
       : location?.city || 'Unknown Location';
 
@@ -111,7 +111,11 @@ export const useLocationStore = create<LocationState>((set, get) => ({
       const location = await getCurrentUserLocation();
       const took = Date.now() - start;
       if (location) {
-        const displayName = location.city ? `${location.city}, CA` : 'Unknown Location';
+        // Use actual state from database, fallback to empty string if not set
+        const stateAbbr = location.state || '';
+        const displayName = location.city
+          ? (stateAbbr ? `${location.city}, ${stateAbbr}` : location.city)
+          : 'Unknown Location';
         set({
           currentLocation: displayName,
           selectedCoordinates: { lat: location.lat, lng: location.lng },

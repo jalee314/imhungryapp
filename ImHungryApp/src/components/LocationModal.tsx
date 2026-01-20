@@ -46,14 +46,14 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
   // Sample data - in production, you'd want to search through a real location database
   const sampleLocations: LocationItem[] = [
-    { id: '1', city: 'Fullerton', state: 'California' },
-    { id: '2', city: 'Anaheim', state: 'California' },
-    { id: '3', city: 'Brea', state: 'California' },
-    { id: '4', city: 'Orange', state: 'California' },
-    { id: '5', city: 'Placentia', state: 'California' },
-    { id: '6', city: 'Yorba Linda', state: 'California' },
-    { id: '7', city: 'La Habra', state: 'California' },
-    { id: '8', city: 'Buena Park', state: 'California' },
+    { id: '1', city: 'Fullerton', state: 'CA' },
+    { id: '2', city: 'Anaheim', state: 'CA' },
+    { id: '3', city: 'Brea', state: 'CA' },
+    { id: '4', city: 'Orange', state: 'CA' },
+    { id: '5', city: 'Placentia', state: 'CA' },
+    { id: '6', city: 'Yorba Linda', state: 'CA' },
+    { id: '7', city: 'La Habra', state: 'CA' },
+    { id: '8', city: 'Buena Park', state: 'CA' },
   ];
 
   useEffect(() => {
@@ -103,11 +103,11 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
   const handleCurrentLocationRequest = async () => {
     const hasPermission = await checkLocationPermission();
-    
+
     if (!hasPermission) {
       // Get detailed permission status
       const permissionStatus = await getLocationPermissionStatus();
-      
+
       if (permissionStatus.isDenied) {
         // User has already denied permission before, go straight to settings guidance
         Alert.alert(
@@ -126,7 +126,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
         );
         return;
       }
-      
+
       // First time asking (status is likely 'undetermined') - request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -148,7 +148,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
         return;
       }
     }
-    
+
     // Permission granted, proceed with location request
     setSelectedLocation('current');
   };
@@ -173,8 +173,8 @@ const LocationModal: React.FC<LocationModalProps> = ({
       // Get city name and state abbreviation
       const { city: cityName, stateAbbr } = await getCityAndStateFromCoordinates(latitude, longitude);
 
-      // Update user location in database
-      const success = await updateUserLocation(latitude, longitude, cityName);
+      // Update user location in database (now includes state)
+      const success = await updateUserLocation(latitude, longitude, cityName, stateAbbr);
       if (success) {
         const newLocation: LocationItem = {
           id: 'current',
@@ -203,7 +203,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
     if (selectedLocation === 'current') {
       // Close modal immediately for current location
       onClose();
-      
+
       // Get current location in the background
       const currentLoc = await requestCurrentLocation();
       if (currentLoc) {
@@ -221,11 +221,11 @@ const LocationModal: React.FC<LocationModalProps> = ({
             ...selectedLocationItem,
             coordinates: coordinates || undefined
           };
-          
+
           // Save the selected location to the database
           if (coordinates) {
             console.log('💾 Saving manual location to database:', coordinates);
-            const success = await updateUserLocation(coordinates.lat, coordinates.lng, selectedLocationItem.city);
+            const success = await updateUserLocation(coordinates.lat, coordinates.lng, selectedLocationItem.city, selectedLocationItem.state);
             if (success) {
               console.log('✅ Manual location saved to database successfully');
             } else {
@@ -255,7 +255,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
   const renderCurrentLocationItem = () => {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.locationItem}
         onPress={handleCurrentLocationRequest}
       >
@@ -275,7 +275,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
   };
 
   const renderLocationItem = ({ item }: { item: LocationItem }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.locationItem}
       onPress={() => handleSelectLocation(item.id)}
     >
@@ -303,7 +303,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
             <Text style={styles.headerButtonText}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Search City</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleDone}
             disabled={!selectedLocation || isUpdatingLocation}
           >

@@ -22,7 +22,7 @@ const ReportContentScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<ReportContentRouteProp>();
   const { dealId, uploaderUserId } = route.params;
-  
+
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
 
@@ -37,8 +37,8 @@ const ReportContentScreen: React.FC = () => {
   ];
 
   const toggleOption = (option: string) => {
-    setSelectedOptions(prev => 
-      prev.includes(option) 
+    setSelectedOptions(prev =>
+      prev.includes(option)
         ? prev.filter(item => item !== option)
         : [...prev, option]
     );
@@ -53,7 +53,7 @@ const ReportContentScreen: React.FC = () => {
     try {
       // Get current user profile
       const currentUser = await getFullUserProfile();
-      
+
       if (!currentUser) {
         Alert.alert('Error', 'You must be logged in to submit a report.');
         return;
@@ -61,15 +61,15 @@ const ReportContentScreen: React.FC = () => {
 
       // Check if uploaderUserId is valid (not the fallback UUID)
       let finalUploaderUserId = uploaderUserId;
-      
+
       if (!uploaderUserId || uploaderUserId === "00000000-0000-0000-0000-000000000000") {
         const fetchedUserId = await getDealUploaderId(dealId);
-        
+
         if (!fetchedUserId) {
           Alert.alert('Error', 'Unable to identify the content uploader. Please try again later.');
           return;
         }
-        
+
         finalUploaderUserId = fetchedUserId;
       }
 
@@ -85,12 +85,12 @@ const ReportContentScreen: React.FC = () => {
 
       // Map selected options to reason code UUIDs from your Supabase database
       const reasonCodeMap: { [key: string]: string } = {
-        'I\'ve seen this deal already / it\'s a repeat': '80c755ea-1e1b-4f11-8ed5-1ca3b6779b5b', 
-        'Inappropriate / offensive content': 'f4ad8941-54e7-4b86-8750-313360cefbda', 
+        'I\'ve seen this deal already / it\'s a repeat': '80c755ea-1e1b-4f11-8ed5-1ca3b6779b5b',
+        'Inappropriate / offensive content': 'f4ad8941-54e7-4b86-8750-313360cefbda',
         'This deal is no longer valid / has expired': 'b6fc9047-30f2-44f9-8787-69e415041581',
         'Wrong Price': 'bee4479d-4368-4fe8-9e31-7e7e4af8698e',
         'Wrong Deal': 'b8654ee1-9a0e-471f-b205-b05b0c5cc113',
-        'Other': '2deae166-7539-46d7-a279-ae235b419791' 
+        'Other': '2deae166-7539-46d7-a279-ae235b419791'
       };
 
       // Get the first selected reason (you might want to handle multiple selections differently)
@@ -112,11 +112,13 @@ const ReportContentScreen: React.FC = () => {
         Alert.alert(
           'Report Submitted',
           'Thank you for your report. We will review it and take appropriate action.',
-          [{ text: 'OK', onPress: () => {
-            // Navigate back to the main feed, not the deal detail screen
-            // Since the reported deal should no longer be visible
-            navigation.goBack();
-          }}]
+          [{
+            text: 'Done', onPress: () => {
+              // Navigate back to the main feed, not the deal detail screen
+              // Since the reported deal should no longer be visible
+              navigation.goBack();
+            }
+          }]
         );
       } else {
         Alert.alert('Error', result.error || 'Failed to submit report. Please try again.');
@@ -133,15 +135,15 @@ const ReportContentScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleCancel}>
           <Text style={styles.headerButtonText}>Cancel</Text>
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>Report Content</Text>
-        
+
         <TouchableOpacity onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Submit</Text>
         </TouchableOpacity>
@@ -154,7 +156,7 @@ const ReportContentScreen: React.FC = () => {
             const isSelected = selectedOptions.includes(option);
             return (
               <React.Fragment key={option}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.optionRow}
                   onPress={() => toggleOption(option)}
                 >
