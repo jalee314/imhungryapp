@@ -11,9 +11,9 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   const R = 3958.8; // Earth's radius in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -21,6 +21,7 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 // Check if a place is actually a restaurant/food establishment
 function isFoodRelated(types: string[]): boolean {
   const foodTypes = [
+    // Core food types
     'restaurant',
     'food',
     'cafe',
@@ -28,13 +29,33 @@ function isFoodRelated(types: string[]): boolean {
     'bakery',
     'meal_takeaway',
     'meal_delivery',
+    // Quick service / fast food
     'fast_food_restaurant',
     'pizza_restaurant',
     'sandwich_shop',
+    'hamburger_restaurant',
+    // Beverages & desserts
     'coffee_shop',
     'ice_cream_shop',
+    'dessert_shop',
+    'donut_shop',
+    'juice_shop',
+    'bubble_tea_store',
+    'tea_house',
+    // Bars & nightlife (food often served)
+    'wine_bar',
+    'cocktail_bar',
+    'sports_bar',
+    'night_club',
+    'pub',
+    'beer_garden',
+    'brewery',
+    'winery',
+    'distillery',
+    // Meal types
     'brunch_restaurant',
     'breakfast_restaurant',
+    // Cuisine-specific restaurants
     'american_restaurant',
     'chinese_restaurant',
     'italian_restaurant',
@@ -54,11 +75,30 @@ function isFoodRelated(types: string[]): boolean {
     'spanish_restaurant',
     'vegetarian_restaurant',
     'vegan_restaurant',
-    'hamburger_restaurant',
     'ramen_restaurant',
-    'noodle_house'
+    'noodle_house',
+    'bbq_restaurant',
+    'soul_food_restaurant',
+    'cajun_restaurant',
+    'caribbean_restaurant',
+    'cuban_restaurant',
+    'peruvian_restaurant',
+    'brazilian_restaurant',
+    'argentinian_restaurant',
+    'turkish_restaurant',
+    'lebanese_restaurant',
+    'ethiopian_restaurant',
+    'african_restaurant',
+    'british_restaurant',
+    'german_restaurant',
+    'polish_restaurant',
+    'russian_restaurant',
+    'indonesian_restaurant',
+    'malaysian_restaurant',
+    'filipino_restaurant',
+    'hawaiian_restaurant'
   ];
-  
+
   // Check if any of the place's types match our food-related types
   return types.some(type => foodTypes.includes(type.toLowerCase()));
 }
@@ -106,7 +146,7 @@ Deno.serve(async (req) => {
 
     // Preprocess query for common restaurant name patterns
     let preprocessedQuery = query.trim();
-    
+
     // Handle common restaurant name variations
     const nameVariations: { [key: string]: string } = {
       'in n out': 'in-n-out burger',
@@ -121,7 +161,7 @@ Deno.serve(async (req) => {
       'arbys': 'arby\'s',
       'dennys': 'denny\'s'
     };
-    
+
     // Check if query matches any known variations (case insensitive)
     const lowerQuery = preprocessedQuery.toLowerCase();
     for (const [variation, canonical] of Object.entries(nameVariations)) {
@@ -131,9 +171,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Format query to be more precise
-    // Add "restaurant" to the end to help Google understand context
-    const formattedQuery = preprocessedQuery + ' restaurant';
+    // Use the preprocessed query directly - don't append "restaurant" 
+    // so cafes, bars, and other food establishments can be found
+    const formattedQuery = preprocessedQuery;
 
     const requestBody = {
       textQuery: formattedQuery,
@@ -146,8 +186,8 @@ Deno.serve(async (req) => {
           radius: radiusMeters
         }
       },
-      // Request only food-related establishments
-      includedType: 'restaurant',
+      // Don't restrict to 'restaurant' type - let isFoodRelated() filter results
+      // This allows cafes, bars, bakeries, etc. to appear in search
       maxResultCount: 20,
       // Add ranking preference for relevance
       rankPreference: 'RELEVANCE'
@@ -171,7 +211,7 @@ Deno.serve(async (req) => {
     console.log(`Preprocessed Query: "${preprocessedQuery}"`);
     console.log(`Final Query Sent: "${formattedQuery}"`);
     console.log(`Found ${googleData.places?.length || 0} places`);
-    
+
     // Log first few results for debugging
     if (googleData.places && googleData.places.length > 0) {
       console.log('Top results:');
@@ -222,15 +262,15 @@ Deno.serve(async (req) => {
         if (restaurant.distance_miles > radius) {
           return false;
         }
-        
+
         // Then filter to only include food-related places
         const types = restaurant.types;
         const isFoodPlace = isFoodRelated(types);
-        
+
         if (!isFoodPlace) {
           console.log(`Filtered out non-food place: ${restaurant.name} (types: ${types.join(', ')})`);
         }
-        
+
         return isFoodPlace;
       })
       .map((restaurant: any) => {

@@ -1041,9 +1041,14 @@ const styles = StyleSheet.create({
     },
     deleteButton: {
         position: 'absolute',
-        top: 8,
-        right: 8,
+        top: 12,
+        right: 12,
         zIndex: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 1,
+        elevation: 2,
     },
     cropOverlay: {
         ...StyleSheet.absoluteFillObject,
