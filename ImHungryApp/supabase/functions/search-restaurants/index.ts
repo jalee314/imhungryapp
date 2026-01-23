@@ -103,6 +103,113 @@ function isFoodRelated(types: string[]): boolean {
   return types.some(type => foodTypes.includes(type.toLowerCase()));
 }
 
+// Calculate Levenshtein distance between two strings (for typo tolerance)
+function levenshteinDistance(str1: string, str2: string): number {
+  const m = str1.length;
+  const n = str2.length;
+
+  // Create a 2D array to store distances
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+  // Initialize base cases
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  // Fill in the rest of the matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+
+  return dp[m][n];
+}
+
+// Calculate relevance score for a restaurant name given a search query
+// Higher score = more relevant
+function calculateRelevanceScore(
+  restaurantName: string,
+  query: string,
+  distanceMiles: number,
+  maxRadius: number
+): number {
+  const name = restaurantName.toLowerCase().trim();
+  const searchQuery = query.toLowerCase().trim();
+
+  let score = 0;
+
+  // 1. Exact match (highest priority)
+  if (name === searchQuery) {
+    score = 1000;
+  }
+  // 2. Name starts with query (prefix match)
+  else if (name.startsWith(searchQuery)) {
+    score = 500;
+  }
+  // 3. Any word in the name starts with the query (word-start match)
+  else {
+    const words = name.split(/[\s\-'.,&]+/);
+    const queryWords = searchQuery.split(/[\s\-'.,&]+/);
+
+    // Check if any word starts with any query word
+    let hasWordStartMatch = false;
+    let hasContainsMatch = false;
+
+    for (const qWord of queryWords) {
+      if (qWord.length < 2) continue; // Skip very short query words
+
+      for (const word of words) {
+        if (word.startsWith(qWord)) {
+          hasWordStartMatch = true;
+          break;
+        }
+        if (word.includes(qWord)) {
+          hasContainsMatch = true;
+        }
+      }
+      if (hasWordStartMatch) break;
+    }
+
+    if (hasWordStartMatch) {
+      score = 200;
+    }
+    // 4. Name contains query anywhere
+    else if (name.includes(searchQuery) || hasContainsMatch) {
+      score = 100;
+    }
+    // 5. Typo tolerance - check for fuzzy matches
+    else {
+      // Only apply fuzzy matching for queries with at least 3 characters
+      if (searchQuery.length >= 3) {
+        // Check each word in the restaurant name
+        for (const word of words) {
+          if (word.length < 2) continue;
+
+          // Allow 1 typo for short words, 2 for longer words
+          const maxTypos = word.length <= 4 ? 1 : 2;
+          const distance = levenshteinDistance(word.substring(0, searchQuery.length), searchQuery);
+
+          if (distance <= maxTypos) {
+            score = 50;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Add a small distance bonus as a tiebreaker (0-31 points based on distance)
+  // Closer restaurants get higher bonus, but it's small enough not to override text relevance
+  const distanceBonus = Math.max(0, maxRadius - distanceMiles);
+  score += distanceBonus;
+
+  return score;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -278,8 +385,21 @@ Deno.serve(async (req) => {
         const { _rawPlace, ...cleanRestaurant } = restaurant;
         return cleanRestaurant;
       })
-      .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
+      .sort((a: any, b: any) => {
+        // Use hybrid relevance scoring: prioritize text match, use distance as tiebreaker
+        const scoreA = calculateRelevanceScore(a.name, query, a.distance_miles, radius);
+        const scoreB = calculateRelevanceScore(b.name, query, b.distance_miles, radius);
+        return scoreB - scoreA; // Higher score = more relevant, so sort descending
+      })
       .slice(0, 20);
+
+    // Log relevance scores for debugging
+    console.log('--- Relevance Scores ---');
+    restaurants.slice(0, 5).forEach((r: any, idx: number) => {
+      const score = calculateRelevanceScore(r.name, query, r.distance_miles, radius);
+      console.log(`  ${idx + 1}. ${r.name} - Score: ${score.toFixed(1)}, Distance: ${r.distance_miles}mi`);
+    });
+    console.log('------------------------');
 
     console.log(`Filtered to ${restaurants.length} food-related restaurants within ${radius} miles`);
 
