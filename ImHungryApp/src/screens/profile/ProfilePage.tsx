@@ -8,6 +8,7 @@ import DealCard from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import { useProfile } from '../../hooks/useProfile';
+import { useAdmin } from '../../hooks/useAdmin';
 
 interface ProfilePageProps { }
 
@@ -240,6 +241,9 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     confirmDeleteAccount,
   } = useProfile({ navigation, route });
 
+  // Admin mode for switching between admin portal and standard profile
+  const { isAdmin, isAdminMode, enterAdminMode, exitAdminMode } = useAdmin();
+
   // All data/state/handlers now come from useProfile hook
 
   // Skeleton when no data
@@ -466,6 +470,24 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingText}>Profile</Text>
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
+
+              {/* Admin Mode Switch - only visible to admin users */}
+              {isAdmin && (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={isAdminMode ? exitAdminMode : enterAdminMode}
+                >
+                  <MaterialCommunityIcons
+                    name={isAdminMode ? "account" : "shield-account"}
+                    size={20}
+                    color="#000"
+                  />
+                  <Text style={styles.settingText}>
+                    {isAdminMode ? 'Switch to Standard Profile' : 'Switch to Admin Profile'}
+                  </Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={styles.settingItem}

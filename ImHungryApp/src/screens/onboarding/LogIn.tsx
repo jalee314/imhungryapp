@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { TextInput } from 'react-native-paper';
@@ -36,17 +36,23 @@ export default function LogInScreen() {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tapCount, setTapCount] = useState(0);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { signIn } = useAuth();
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Error persists until next login attempt (standard UX pattern)
   };
 
   const handleLogin = async () => {
+    // Clear any previous error
+    setErrorMessage(null);
+
     if (!formData.email || !formData.password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      setErrorMessage('Please fill in all fields');
       return;
     }
 
@@ -57,15 +63,15 @@ export default function LogInScreen() {
       console.log('Login successful, auth store will handle navigation');
     } catch (err: any) {
       const message = err?.message || '';
-      
+
       if (message.includes('Invalid login credentials')) {
-        Alert.alert('Login Failed', 'Incorrect email or password. Please try again.');
+        setErrorMessage('Login credentials not recognized. Please check your email and password.');
       } else if (message.includes('Email not confirmed')) {
-        Alert.alert('Email Not Verified', 'Please verify your email address before logging in.');
+        setErrorMessage('Email not verified. Please verify your email address before logging in.');
       } else if (message.includes('Too many requests')) {
-        Alert.alert('Too Many Attempts', 'Please wait a moment before trying again.');
+        setErrorMessage('Too many attempts. Please wait a moment before trying again.');
       } else {
-        Alert.alert('Login Failed', message || 'An unexpected error occurred. Please try again.');
+        setErrorMessage(message || 'An unexpected error occurred. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -181,11 +187,25 @@ export default function LogInScreen() {
                       autoCapitalize="none"
                       autoComplete="current-password"
                       textContentType="password"
-                      secureTextEntry
+                      secureTextEntry={!showPassword}
                       returnKeyType="done"
+                      right={
+                        <TextInput.Icon
+                          icon={showPassword ? 'eye-off' : 'eye'}
+                          onPress={() => setShowPassword(!showPassword)}
+                          forceTextInputFocus={false}
+                        />
+                      }
                     />
                   </View>
                 </View>
+
+                {/* Error Message */}
+                {errorMessage && (
+                  <View style={[styles.errorContainer, CONSTRAIN]}>
+                    <Text style={styles.errorText}>{errorMessage}</Text>
+                  </View>
+                )}
 
                 {/* Login Button */}
                 <TouchableOpacity
@@ -297,5 +317,17 @@ const styles = StyleSheet.create({
     color: '#FFA05C',
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold'
+  },
+  errorContainer: {
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 4,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
