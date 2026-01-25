@@ -79,9 +79,9 @@ const FeedStack = () => (
 
 const DiscoverStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen 
-      name="DiscoverMain" 
-      component={DiscoverMainScreen} 
+    <Stack.Screen
+      name="DiscoverMain"
+      component={DiscoverMainScreen}
     />
   </Stack.Navigator>
 );
@@ -89,8 +89,8 @@ const DiscoverStack = () => (
 // For contribute tab, we'll handle it specially since it's a modal
 const ContributeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen 
-      name="ContributeMain" 
+    <Stack.Screen
+      name="ContributeMain"
       component={FeedTabNavigator} // Show feed as fallback when contribute tab is "active"
     />
   </Stack.Navigator>
@@ -116,21 +116,26 @@ const ProfileStack = () => (
 );
 
 // Tab Navigator with persistent bottom navigation
-const MainTabNavigator = () => (
-  <Tab.Navigator
-    tabBar={(props) => <CustomTabBar {...props} />}
-    screenOptions={{
-      headerShown: false,
-    }}
-    initialRouteName="Feed"
-  >
-    <Tab.Screen name="Feed" component={FeedStack} />
-    <Tab.Screen name="DiscoverFeed" component={DiscoverStack} />
-    <Tab.Screen name="DealCreationScreen" component={ContributeStack} />
-    <Tab.Screen name="FavoritesPage" component={FavoritesStack} />
-    <Tab.Screen name="ProfilePage" component={ProfileStack} />
-  </Tab.Navigator>
-);
+const MainTabNavigator = () => {
+  const { navigateToProfileSettings } = useAdmin();
+
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
+      initialRouteName={navigateToProfileSettings ? "ProfilePage" : "Feed"}
+    >
+      <Tab.Screen name="Feed" component={FeedStack} />
+      <Tab.Screen name="DiscoverFeed" component={DiscoverStack} />
+      <Tab.Screen name="DealCreationScreen" component={ContributeStack} />
+      <Tab.Screen name="FavoritesPage" component={FavoritesStack} />
+      <Tab.Screen name="ProfilePage" component={ProfileStack} />
+    </Tab.Navigator>
+  );
+};
+
 
 // Custom tab bar component using existing BottomNavigation
 const CustomTabBar = ({ state, navigation }: any) => {
@@ -138,7 +143,7 @@ const CustomTabBar = ({ state, navigation }: any) => {
   // Don't change activeTab if user is on contribute tab (which is index 2)
   const actualActiveTab = state.index === 2 ? 'feed' : tabMapping[state.index];
   const [lastActiveTab, setLastActiveTab] = React.useState('feed');
-  
+
   // Update last active tab when navigating to non-contribute tabs
   React.useEffect(() => {
     if (state.index !== 2) { // Not contribute tab
@@ -159,7 +164,7 @@ const CustomTabBar = ({ state, navigation }: any) => {
   };
 
   return (
-    <BottomNavigation 
+    <BottomNavigation
       activeTab={state.index === 2 ? lastActiveTab : actualActiveTab}
       onTabPress={handleTabPress}
     />
@@ -167,35 +172,35 @@ const CustomTabBar = ({ state, navigation }: any) => {
 };
 
 const OnboardingStack = () => (
-  <Stack.Navigator 
-    screenOptions={{ 
+  <Stack.Navigator
+    screenOptions={{
       headerShown: false,
       animation: 'slide_from_right',
       gestureEnabled: false
     }}
     initialRouteName="Landing"
   >
-    <Stack.Screen name="Landing" component={LandingScreen}  />
-    <Stack.Screen 
-      name="SignUp" 
-      component={SignUp} 
+    <Stack.Screen name="Landing" component={LandingScreen} />
+    <Stack.Screen
+      name="SignUp"
+      component={SignUp}
       options={({ route }) => ({
         animation: (route.params as any)?.fromLogin ? 'slide_from_left' : 'slide_from_right'
       })}
     />
-    <Stack.Screen name="LogIn" component={LogIn}  />
+    <Stack.Screen name="LogIn" component={LogIn} />
     <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
     <Stack.Screen name="ResetPassword" component={ResetPassword} />
-    <Stack.Screen 
-      name="Username" 
-      component={UsernameScreen} 
+    <Stack.Screen
+      name="Username"
+      component={UsernameScreen}
       options={{ gestureEnabled: false }}
     />
     <Stack.Screen name="ProfilePhoto" component={ProfilePhoto} />
     <Stack.Screen name="LocationPermissions" component={LocationPermissions} />
     <Stack.Screen name="InstantNotifications" component={InstantNotifications} />
     <Stack.Screen name="CuisinePreferences" component={CuisinePreferences} />
-    
+
     {/* Admin login accessible from login screen */}
     <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
   </Stack.Navigator>
@@ -216,7 +221,7 @@ const AppStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {/* Main tab navigator with persistent bottom navigation */}
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-      
+
       {/* Shared screens accessible from any tab */}
       <Stack.Screen name="DealDetail" component={DealDetailScreen} />
       <Stack.Screen name="DealEdit" component={DealEditScreen} />
@@ -254,7 +259,7 @@ const AppContent = () => {
 
   // Determine which stack to show
   let currentStack;
-  
+
   if (isAdminMode) {
     // Admin mode - show admin stack regardless of auth status
     currentStack = <AdminStack />;
@@ -265,7 +270,7 @@ const AppContent = () => {
     // Not authenticated or in password reset - show onboarding
     currentStack = <OnboardingStack />;
   }
-  
+
   // Debug logging
   console.log('App navigation decision:', {
     isAuthenticated,
@@ -275,7 +280,7 @@ const AppContent = () => {
   });
 
   return (
-    <NavigationContainer 
+    <NavigationContainer
       linking={linking}
     >
       {currentStack}
@@ -305,8 +310,8 @@ export default function App() {
     'Inter-Medium': Inter_500Medium,
     'Inter-SemiBold': Inter_600SemiBold,
     'Inter-Bold': Inter_700Bold,
-  }); 
-  
+  });
+
   const [timeoutReached, setTimeoutReached] = React.useState(false);
 
   React.useEffect(() => {

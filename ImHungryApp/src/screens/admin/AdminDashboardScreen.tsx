@@ -18,8 +18,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 const AdminDashboardScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { exitAdminMode } = useAdmin();
+  const { exitAdminMode, exitAdminModeToSettings } = useAdmin();
   const { signOut } = useAuth();
+
   const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -170,7 +171,8 @@ const AdminDashboardScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} onPress={exitAdminMode}>
+          <TouchableOpacity style={styles.actionButton} onPress={exitAdminModeToSettings}>
+
             <Ionicons name="person-outline" size={24} color="#333" />
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Switch to Standard Profile</Text>
