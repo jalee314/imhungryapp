@@ -274,7 +274,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     };
 
     const handleDeletePhoto = (index: number) => {
-        // If this is the last photo, ask to confirm then close the modal
+        // If this is the last photo, ask to confirm then clear photos and close
         if (localPhotos.length <= 1) {
             Alert.alert(
                 'Delete Photo',
@@ -284,7 +284,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                     {
                         text: 'Delete',
                         style: 'destructive',
-                        onPress: () => onClose(),
+                        onPress: () => onDone([], 0, []), // Clear all photos in parent
                     },
                 ]
             );

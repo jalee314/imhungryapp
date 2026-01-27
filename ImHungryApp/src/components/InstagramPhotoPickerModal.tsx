@@ -493,8 +493,8 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                         />
                     )}
 
-                    {/* Selection Counter */}
-                    {selectedPhotos.length > 0 && (
+                    {/* Selection Counter - only show when multi-select is enabled */}
+                    {isMultiSelectEnabled && selectedPhotos.length > 0 && (
                         <View style={styles.selectionCounter}>
                             <Text style={styles.selectionCounterText}>
                                 {selectedPhotos.length} / {availableSlots} selected

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator, Image } from 'react-native';
+import { View, ActivityIndicator, Image, Animated, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -249,13 +249,20 @@ const AppContent = () => {
   const { isAuthenticated, isLoading, isPasswordResetMode } = useAuth();
   const { isAdminMode } = useAdmin();
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
-        <ActivityIndicator size="large" color="#FFA05C" />
-      </View>
-    );
-  }
+  const fadeAnim = React.useRef(new Animated.Value(1)).current;
+  const [isSplashVisible, setSplashVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!isLoading) {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        setSplashVisible(false);
+      });
+    }
+  }, [isLoading]);
 
   // Determine which stack to show
   let currentStack;
@@ -280,13 +287,37 @@ const AppContent = () => {
   });
 
   return (
-    <NavigationContainer
-      linking={linking}
-    >
-      {currentStack}
-    </NavigationContainer>
+    <View style={{ flex: 1 }}>
+      <NavigationContainer linking={linking}>
+        {currentStack}
+      </NavigationContainer>
+
+      {isSplashVisible && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#FFE5B4',
+            opacity: fadeAnim,
+            zIndex: 999
+          }}
+        >
+          <Image
+            source={require('./assets/images/icon_splash.png')}
+            style={{ width: 200, height: 200, resizeMode: 'contain' }}
+          />
+        </Animated.View>
+      )}
+    </View>
   );
 };
+
+
 
 export default function App() {
   // Initialize Zustand auth store once at app start
@@ -329,7 +360,10 @@ export default function App() {
   if (!fontsLoaded && !fontError && !timeoutReached) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
-        <ActivityIndicator size="large" color="#FFA05C" />
+        <Image
+          source={require('./assets/images/icon_splash.png')}
+          style={{ width: 200, height: 200, resizeMode: 'contain' }}
+        />
       </View>
     );
   }

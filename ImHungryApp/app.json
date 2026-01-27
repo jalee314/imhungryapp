@@ -10,7 +10,7 @@
     "scheme": "imhungri",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#FFF5AB"
+      "backgroundColor": "#FFE5B4"
     },
     "ios": {
       "supportsTablet": true,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -12,6 +12,7 @@ import {
   Animated,
   Dimensions,
   FlatList,
+  Easing,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,7 +20,7 @@ import { Monicon } from '@monicon/native';
 import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 // Base design width (iPhone 15 = 393pt) - matches VoteButtons component
 const BASE_WIDTH = 393;
@@ -85,26 +86,56 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
   const [imageDimensions, setImageDimensions] = useState<{ width: number, height: number } | null>(null);
   const [imageViewerKey, setImageViewerKey] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const carouselRef = useRef<FlatList>(null);
-  const slideAnim = useRef(new Animated.Value(400)).current; // Start off-screen to the right
+  const slideAnim = useRef(new Animated.Value(screenWidth)).current; // Start off-screen to the right
+  const fadeAnim = useRef(new Animated.Value(0)).current; // For fade effect on background
 
   useEffect(() => {
-    if (visible) {
-      // Slide in from right
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      // Animate out to the right when closing
-      Animated.timing(slideAnim, {
-        toValue: 400,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
+    if (visible && !isAnimatingOut) {
+      // Reset animation values and slide in from right with easing
+      slideAnim.setValue(screenWidth);
+      fadeAnim.setValue(0);
+
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 350,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [visible]);
+
+  // Animated close handler - slides out before closing
+  const handleAnimatedClose = useCallback(() => {
+    if (isPosting || isAnimatingOut) return;
+
+    setIsAnimatingOut(true);
+
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: screenWidth,
+        duration: 300,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsAnimatingOut(false);
+      onClose();
+    });
+  }, [isPosting, isAnimatingOut, onClose, slideAnim, fadeAnim]);
 
   const removeZipCode = (address: string) => {
     // Remove zip code (5 digits or 5+4 digits) from the end of the address
@@ -180,7 +211,14 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
 
 
   return (
-    <Modal visible={visible} animationType="none" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="none" transparent={true} onRequestClose={handleAnimatedClose}>
+      {/* Fade background overlay */}
+      <Animated.View
+        style={[
+          styles.modalOverlay,
+          { opacity: fadeAnim }
+        ]}
+      />
       <Animated.View
         style={[
           styles.animatedContainer,
@@ -196,10 +234,10 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
           <View style={styles.topButtonRow}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={onClose}
-              disabled={isPosting}
+              onPress={handleAnimatedClose}
+              disabled={isPosting || isAnimatingOut}
             >
-              <Ionicons name="arrow-back" size={20} color={isPosting ? "#ccc" : "#000000"} />
+              <Ionicons name="arrow-back" size={20} color={(isPosting || isAnimatingOut) ? "#ccc" : "#000000"} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.nextButton, isPosting ? styles.disabledButton : null]}
@@ -435,8 +473,13 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+  },
   animatedContainer: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
