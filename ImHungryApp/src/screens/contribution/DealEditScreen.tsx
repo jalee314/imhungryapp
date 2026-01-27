@@ -22,6 +22,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import CalendarModal from '../../components/CalendarModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import ImageCropperModal from '../../components/ImageCropperModal';
+import InstagramPhotoPickerModal from '../../components/InstagramPhotoPickerModal';
 import DraggableThumbnailStrip from '../../components/DraggableThumbnailStrip';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { ProfileCacheService } from '../../services/profileCacheService';
@@ -86,6 +87,7 @@ export default function DealEditScreen() {
   const [pendingCropUri, setPendingCropUri] = useState<string | null>(null);
   // Track the image by ID (not list index) so filtering doesn't break edits
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
+  const [isInstagramPickerVisible, setIsInstagramPickerVisible] = useState(false);
 
   // Ref for carousel
   const carouselRef = React.useRef<FlatList>(null);
@@ -183,31 +185,21 @@ export default function DealEditScreen() {
     }
   };
 
-  const handleChooseFromLibrary = async () => {
+  const handleChooseFromLibrary = () => {
     setIsCameraModalVisible(false);
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Photo library access is needed.');
-        return;
-      }
+    setIsInstagramPickerVisible(true);
+  };
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsEditing: false, // We'll use our own cropper
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        // Start cropping flow
-        setPendingCropUri(result.assets[0].uri);
-        setEditingImageId(null); // New image, not editing
-        setIsCropperVisible(true);
-      }
-    } catch (error) {
-      console.error('Error choosing photo:', error);
-      Alert.alert('Error', 'Failed to select photo');
+  // Handle photos selected from Instagram-style picker
+  const handleInstagramPickerDone = (photos: string[]) => {
+    setIsInstagramPickerVisible(false);
+    if (photos.length > 0) {
+      // Open cropper for the first photo
+      setPendingCropUri(photos[0]);
+      setEditingImageId(null);
+      setIsCropperVisible(true);
+      // Store remaining photos for subsequent cropping if needed
+      // For now, we'll just crop the first one
     }
   };
 
@@ -244,7 +236,7 @@ export default function DealEditScreen() {
         } else {
           // Cropping an already-uploaded image: mark old for removal and add a new temp replacement
           const tempId = `new_${Date.now()}`;
-          
+
           // Find the index of the image being replaced to maintain its position
           const targetIndex = images.findIndex(img => img.imageMetadataId === target.imageMetadataId);
 
@@ -328,7 +320,7 @@ export default function DealEditScreen() {
           style: 'destructive',
           onPress: () => {
             const imageToRemove = images.find(img => img.imageMetadataId === imageMetadataId);
-            
+
             if (imageToRemove?.isNew) {
               // Remove from pending new images
               setPendingNewImages(prevUris => {
@@ -359,38 +351,38 @@ export default function DealEditScreen() {
   // Handle drag-and-drop reorder from thumbnail strip
   const handleReorderImages = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    
+
     // Set the target index immediately so the FlatList knows where to stay
     const targetIdx = toIndex;
-    
+
     setImages(prev => {
       // Get only active images (not pending removal)
       const currentActiveImages = prev.filter(img => !pendingRemovals.includes(img.imageMetadataId));
-      
+
       // Validate indices
-      if (fromIndex < 0 || fromIndex >= currentActiveImages.length || 
-          toIndex < 0 || toIndex >= currentActiveImages.length) {
+      if (fromIndex < 0 || fromIndex >= currentActiveImages.length ||
+        toIndex < 0 || toIndex >= currentActiveImages.length) {
         console.warn('Invalid reorder indices:', { fromIndex, toIndex, activeCount: currentActiveImages.length });
         return prev;
       }
-      
+
       // Get the image being moved
       const fromImage = currentActiveImages[fromIndex];
       if (!fromImage) {
         console.warn('Could not find image at fromIndex:', fromIndex);
         return prev;
       }
-      
+
       // Create new array with reordered active images
       const newActiveImages = [...currentActiveImages];
       newActiveImages.splice(fromIndex, 1);
       newActiveImages.splice(toIndex, 0, fromImage);
-      
+
       // Reconstruct full array: removed images stay at end (they'll be deleted on save)
       const removedImages = prev.filter(img => pendingRemovals.includes(img.imageMetadataId));
       return [...newActiveImages, ...removedImages];
     });
-    
+
     // Update index after state update - use InteractionManager to wait for render
     setCurrentImageIndex(targetIdx);
     // Schedule scroll after React has processed the state update
@@ -448,7 +440,7 @@ export default function DealEditScreen() {
 
       // 3. Add new images - track uploaded IDs for order update
       const uploadedImageMap = new Map<string, string>(); // tempId -> uploadedId
-      
+
       if (pendingNewImages.length > 0) {
         const addResult = await addDealImages(dealId, pendingNewImages);
         if (!addResult.success) {
@@ -494,10 +486,10 @@ export default function DealEditScreen() {
           displayOrder: index,
         };
       }).filter(item => !item.imageMetadataId.startsWith('new_')); // Skip any unresolved temp IDs
-      
+
       if (imageOrder.length > 0) {
         await updateDealImageOrder(dealId, imageOrder);
-        
+
         // 5. Set the first image as the thumbnail
         const firstImageId = imageOrder[0].imageMetadataId;
         await setDealThumbnail(dealId, firstImageId);
@@ -512,11 +504,11 @@ export default function DealEditScreen() {
       // IMPORTANT: Wait for these to complete before navigating back
       // so the Feed has fresh data when it gains focus
       await ProfileCacheService.forceRefresh();
-      
+
       // Force a complete refresh of the deal cache with fresh data from DB
       // This ensures the new thumbnail/display_order is reflected
       await dealCacheService.invalidateAndRefresh();
-      
+
       setPostAdded(true);
 
       Alert.alert('Success', 'Your deal has been updated!', [
@@ -691,7 +683,7 @@ export default function DealEditScreen() {
                   renderItem={({ item, index }) => (
                     <View style={[styles.carouselItem, { width: screenWidth - 48 }]}>
                       <Image source={{ uri: item.url }} style={styles.carouselImage} resizeMode="cover" />
-                      
+
                       {/* Delete button */}
                       <TouchableOpacity
                         style={styles.deleteImageButton}
@@ -814,6 +806,15 @@ export default function DealEditScreen() {
         aspectRatio={(screenWidth - 48) / 350}
         onCancel={handleCropCancel}
         onComplete={handleCropComplete}
+      />
+
+      {/* Instagram Photo Picker Modal */}
+      <InstagramPhotoPickerModal
+        visible={isInstagramPickerVisible}
+        onClose={() => setIsInstagramPickerVisible(false)}
+        onDone={handleInstagramPickerDone}
+        maxPhotos={MAX_PHOTOS}
+        existingPhotosCount={activeImages.length}
       />
     </SafeAreaView>
   );

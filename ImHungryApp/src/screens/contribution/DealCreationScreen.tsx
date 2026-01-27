@@ -20,6 +20,7 @@ import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import PhotoReviewModal from '../../components/PhotoReviewModal';
+import InstagramPhotoPickerModal from '../../components/InstagramPhotoPickerModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -91,6 +92,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  const [isInstagramPickerVisible, setIsInstagramPickerVisible] = useState(false);
 
   // Google Places search state
   const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
@@ -343,50 +345,23 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     }
   };
 
-  const handleChooseFromAlbum = async () => {
-    try {
-      // Request media library permissions
-      const mediaStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const handleChooseFromAlbum = () => {
+    handleCloseCameraModal();
+    setIsInstagramPickerVisible(true);
+  };
 
-      if (mediaStatus.status !== 'granted') {
-        handleCloseCameraModal();
-        Alert.alert(
-          'Photo Library Permission Required',
-          'Please allow photo library access in your device settings to choose photos.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => ImagePicker.requestMediaLibraryPermissionsAsync() }
-          ]
-        );
-        return;
-      }
-
-      let result = await ImagePicker.launchImageLibraryAsync({
-        allowsMultipleSelection: true,
-        selectionLimit: 5 - imageUris.length, // Allow up to remaining slots
-        aspect: [4, 3],
-        quality: 0.5,
-        exif: false, // Skip EXIF data for faster processing
+  // Handle photos selected from Instagram-style picker
+  const handleInstagramPickerDone = (photos: string[]) => {
+    setIsInstagramPickerVisible(false);
+    if (photos.length > 0) {
+      setImageUris(prev => {
+        const combined = [...prev, ...photos];
+        return combined.slice(0, 5); // Ensure max 5
       });
-
-      handleCloseCameraModal();
-
-      if (!result.canceled && result.assets.length > 0) {
-        // Add photos directly - user can edit/crop from review modal
-        const newUris = result.assets.map(asset => asset.uri);
-        setImageUris(prev => {
-          const combined = [...prev, ...newUris];
-          return combined.slice(0, 5); // Ensure max 5
-        });
-        setOriginalImageUris(prev => {
-          const combined = [...prev, ...newUris];
-          return combined.slice(0, 5);
-        });
-      }
-    } catch (error) {
-      handleCloseCameraModal();
-      console.error('Photo library error:', error);
-      Alert.alert('Photo Library Error', 'Unable to open photo library. Please try again.');
+      setOriginalImageUris(prev => {
+        const combined = [...prev, ...photos];
+        return combined.slice(0, 5);
+      });
     }
   };
 
@@ -860,6 +835,14 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           setIsPhotoReviewVisible(false);
           setIsCameraModalVisible(true);
         }}
+      />
+
+      <InstagramPhotoPickerModal
+        visible={isInstagramPickerVisible}
+        onClose={() => setIsInstagramPickerVisible(false)}
+        onDone={handleInstagramPickerDone}
+        maxPhotos={5}
+        existingPhotosCount={imageUris.length}
       />
     </Modal>
   );

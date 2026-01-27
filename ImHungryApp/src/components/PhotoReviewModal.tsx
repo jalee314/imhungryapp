@@ -62,7 +62,7 @@ interface CropState {
 // Helper to calculate visual index after theoretical reorder
 function getVisualIndex(itemIndex: number, dragFrom: number, dragTo: number): number {
     if (itemIndex === dragFrom) return dragTo;
-    
+
     if (dragFrom < dragTo) {
         if (itemIndex > dragFrom && itemIndex <= dragTo) {
             return itemIndex - 1;
@@ -105,7 +105,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const [localPhotos, setLocalPhotos] = useState<string[]>(photos);
     const [localOriginalPhotos, setLocalOriginalPhotos] = useState<string[]>(propOriginalPhotos || photos);
     const flatListRef = useRef<FlatList>(null);
-    
+
     // Per-image crop states (saved when switching images)
     const [cropStates, setCropStates] = useState<Map<number, CropState>>(new Map());
     const [imageDimensions, setImageDimensions] = useState<Map<number, ImageDimensions>>(new Map());
@@ -113,14 +113,14 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const [cropAreaHeight, setCropAreaHeight] = useState(screenHeight * 0.6); // Default fallback
     const [cropAreaWidth, setCropAreaWidth] = useState(screenWidth); // Actual crop area width
-    
+
     // Calculate crop frame size to maintain aspect ratio within the crop area
     const getCropFrameDimensions = () => {
         // The crop frame should fit inside cropAreaWidth x cropAreaHeight while maintaining CROP_FRAME_ASPECT_RATIO
         const containerAspect = cropAreaWidth / cropAreaHeight;
         let frameWidth: number;
         let frameHeight: number;
-        
+
         if (CROP_FRAME_ASPECT_RATIO > containerAspect) {
             // Frame is wider than container aspect - fit by width
             frameWidth = cropAreaWidth - 48; // Keep consistent padding
@@ -130,10 +130,10 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             frameHeight = cropAreaHeight * 0.7;
             frameWidth = frameHeight * CROP_FRAME_ASPECT_RATIO;
         }
-        
+
         return { width: frameWidth, height: frameHeight };
     };
-    
+
     const cropFrameDimensions = getCropFrameDimensions();
 
     // Shared values for gestures (current image)
@@ -150,7 +150,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     // cropWidth and cropHeight now represent the crop FRAME (not full area)
     const cropWidth = useSharedValue(CROP_FRAME_WIDTH);
     const cropHeight = useSharedValue(CROP_FRAME_HEIGHT);
-    
+
     // Update crop frame shared values when dimensions change
     React.useEffect(() => {
         if (cropAreaHeight > 0 && cropAreaWidth > 0) {
@@ -195,20 +195,20 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     useEffect(() => {
         if (visible && localOriginalPhotos[currentIndex] && cropAreaHeight > 0 && cropAreaWidth > 0) {
             const imageUri = localOriginalPhotos[currentIndex];
-            
+
             if (!imageDimensions.has(currentIndex)) {
                 Image.getSize(
                     imageUri,
                     (width, height) => {
                         setImageDimensions(prev => new Map(prev).set(currentIndex, { width, height }));
-                        
+
                         const imageAspect = width / height;
                         // Use crop frame dimensions for sizing (not full area)
                         const frameDims = getCropFrameDimensions();
                         const frameAspect = frameDims.width / frameDims.height;
                         let calcDisplayWidth: number;
                         let calcDisplayHeight: number;
-                        
+
                         // Image should always COVER the crop frame (fill it completely)
                         if (imageAspect > frameAspect) {
                             // Image is wider - fit by height, extend width
@@ -219,7 +219,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                             calcDisplayWidth = frameDims.width;
                             calcDisplayHeight = calcDisplayWidth / imageAspect;
                         }
-                        
+
                         setDisplaySizes(prev => new Map(prev).set(currentIndex, { width: calcDisplayWidth, height: calcDisplayHeight }));
                         // Update shared values for worklet access
                         displayWidth.value = calcDisplayWidth;
@@ -274,8 +274,20 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     };
 
     const handleDeletePhoto = (index: number) => {
+        // If this is the last photo, ask to confirm then close the modal
         if (localPhotos.length <= 1) {
-            Alert.alert('Cannot Delete', 'You must have at least one photo.');
+            Alert.alert(
+                'Delete Photo',
+                'Are you sure you want to remove this photo?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: () => onClose(),
+                    },
+                ]
+            );
             return;
         }
 
@@ -336,7 +348,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         const [movedOriginal] = newOriginals.splice(fromIndex, 1);
         newPhotos.splice(toIndex, 0, movedPhoto);
         newOriginals.splice(toIndex, 0, movedOriginal);
-        
+
         setLocalPhotos(newPhotos);
         setLocalOriginalPhotos(newOriginals);
 
@@ -373,7 +385,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const cropImageWithState = async (index: number, state: CropState): Promise<string> => {
         const dimensions = imageDimensions.get(index);
         const displaySize = displaySizes.get(index);
-        
+
         if (!dimensions || !displaySize) {
             console.log('Missing dimensions or displaySize for index', index);
             return localPhotos[index];
@@ -394,7 +406,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
 
         // Get the crop frame dimensions (not full area)
         const frameDims = getCropFrameDimensions();
-        
+
         // Size of the crop frame in display coordinates (accounting for zoom)
         const cropFrameWidthInDisplay = frameDims.width / currentScale;
         const cropFrameHeightInDisplay = frameDims.height / currentScale;
@@ -402,14 +414,14 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         // Convert crop frame size to original image coordinates
         let cropWidth = cropFrameWidthInDisplay * scaleToOriginalX;
         let cropHeight = cropFrameHeightInDisplay * scaleToOriginalY;
-        
+
         // Ensure crop dimensions don't exceed image dimensions
         cropWidth = Math.min(cropWidth, dimensions.width);
         cropHeight = Math.min(cropHeight, dimensions.height);
-        
+
         const centerX = dimensions.width / 2;
         const centerY = dimensions.height / 2;
-        
+
         // Calculate origin (top-left of crop area in original image)
         let originX = centerX + (visibleCenterX * scaleToOriginalX) - (cropWidth / 2);
         let originY = centerY + (visibleCenterY * scaleToOriginalY) - (cropHeight / 2);
@@ -417,7 +429,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         // Clamp origin to valid range (ensure crop stays within image bounds)
         originX = Math.max(0, Math.min(originX, dimensions.width - cropWidth));
         originY = Math.max(0, Math.min(originY, dimensions.height - cropHeight));
-        
+
         // Final safety check - ensure dimensions are positive and within bounds
         const finalOriginX = Math.round(Math.max(0, originX));
         const finalOriginY = Math.round(Math.max(0, originY));
@@ -425,8 +437,8 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         const finalHeight = Math.round(Math.max(1, Math.min(cropHeight, dimensions.height - finalOriginY)));
 
         // Validate crop rectangle is within image bounds
-        if (finalOriginX < 0 || finalOriginY < 0 || 
-            finalOriginX + finalWidth > dimensions.width || 
+        if (finalOriginX < 0 || finalOriginY < 0 ||
+            finalOriginX + finalWidth > dimensions.width ||
             finalOriginY + finalHeight > dimensions.height ||
             finalWidth <= 0 || finalHeight <= 0) {
             console.log('Invalid crop bounds, returning original photo');
@@ -465,33 +477,33 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             translateX: savedTranslateX.value,
             translateY: savedTranslateY.value,
         };
-        
+
         // Create a combined map with all saved states plus current
         const allCropStates = new Map(cropStates);
         allCropStates.set(currentIndex, currentState);
-        
+
         // Helper to check if image was modified (with small tolerance for floating point)
         const isModified = (state: CropState | undefined): boolean => {
             if (!state) return false;
             const tolerance = 0.01;
-            return Math.abs(state.scale - 1) > tolerance || 
-                   Math.abs(state.translateX) > tolerance || 
-                   Math.abs(state.translateY) > tolerance;
+            return Math.abs(state.scale - 1) > tolerance ||
+                Math.abs(state.translateX) > tolerance ||
+                Math.abs(state.translateY) > tolerance;
         };
-        
+
         // Check if any images need cropping
-        const needsCropping = Array.from({ length: localPhotos.length }, (_, i) => 
+        const needsCropping = Array.from({ length: localPhotos.length }, (_, i) =>
             isModified(allCropStates.get(i)) && imageDimensions.has(i) && displaySizes.has(i)
         );
-        
+
         const anyCroppingNeeded = needsCropping.some(Boolean);
-        
+
         if (!anyCroppingNeeded) {
             // No cropping needed, return immediately
             onDone(localPhotos, 0, localOriginalPhotos);
             return;
         }
-        
+
         setIsProcessing(true);
         try {
             // Apply crops only to images that were modified and have dimensions loaded
@@ -529,12 +541,12 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         // The scaled image size
         const scaledWidth = imgWidth * currentScale;
         const scaledHeight = imgHeight * currentScale;
-        
+
         // Maximum translation is half the difference between scaled image and crop area
         // (because translate is from center)
         const maxX = Math.max(0, (scaledWidth - cropW) / 2);
         const maxY = Math.max(0, (scaledHeight - cropH) / 2);
-        
+
         return { maxX, maxY };
     };
 
@@ -561,7 +573,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             'worklet';
             const newScale = Math.min(4, Math.max(1, savedScale.value * event.scale));
             scale.value = newScale;
-            
+
             // Adjust translation to stay within bounds during zoom
             const { maxX, maxY } = getMaxTranslation(
                 newScale,
@@ -570,7 +582,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 cropWidth.value,
                 cropHeight.value
             );
-            
+
             // Apply soft bounds during pinch
             translateX.value = rubberBand(savedTranslateX.value, maxX, 0.5);
             translateY.value = rubberBand(savedTranslateY.value, maxY, 0.5);
@@ -578,7 +590,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         .onEnd(() => {
             'worklet';
             savedScale.value = scale.value;
-            
+
             // Snap to bounds after pinch ends
             const { maxX, maxY } = getMaxTranslation(
                 scale.value,
@@ -587,10 +599,10 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 cropWidth.value,
                 cropHeight.value
             );
-            
+
             const clampedX = clamp(translateX.value, -maxX, maxX);
             const clampedY = clamp(translateY.value, -maxY, maxY);
-            
+
             translateX.value = withSpring(clampedX, { damping: 20, stiffness: 300 });
             translateY.value = withSpring(clampedY, { damping: 20, stiffness: 300 });
             savedTranslateX.value = clampedX;
@@ -608,10 +620,10 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 cropWidth.value,
                 cropHeight.value
             );
-            
+
             const rawX = savedTranslateX.value + event.translationX;
             const rawY = savedTranslateY.value + event.translationY;
-            
+
             // Apply rubber band effect at boundaries
             translateX.value = rubberBand(rawX, maxX);
             translateY.value = rubberBand(rawY, maxY);
@@ -625,11 +637,11 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 cropWidth.value,
                 cropHeight.value
             );
-            
+
             // Snap back to valid bounds
             const clampedX = clamp(translateX.value, -maxX, maxX);
             const clampedY = clamp(translateY.value, -maxY, maxY);
-            
+
             translateX.value = withSpring(clampedX, { damping: 20, stiffness: 300 });
             translateY.value = withSpring(clampedY, { damping: 20, stiffness: 300 });
             savedTranslateX.value = clampedX;
@@ -688,11 +700,11 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 // Follow finger exactly - no damping
                 dragX.value = event.translationX;
                 dragY.value = event.translationY;
-                
+
                 // Check if thumbnail is close enough vertically to the strip (within 100px)
                 const verticalDistance = Math.abs(event.translationY);
                 const maxVerticalDistanceForDrop = 100;
-                
+
                 // Only calculate target if within vertical drop zone
                 if (verticalDistance > maxVerticalDistanceForDrop) {
                     // Too far vertically - reset target to original position (no shuffle animation)
@@ -702,21 +714,21 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                     }
                     return;
                 }
-                
+
                 // Calculate target position - need to move at least 50% of item width to change position
                 const threshold = ITEM_WIDTH * 0.5;
                 const rawOffset = Math.round(event.translationX / ITEM_WIDTH);
-                
+
                 // Only update target if moved clearly past threshold
                 const distanceMoved = Math.abs(event.translationX);
                 const minDistance = threshold; // Must move at least half an item width
-                
+
                 let newTarget = index;
                 if (distanceMoved >= minDistance) {
                     const maxIndex = imageCount - 1;
                     newTarget = Math.max(0, Math.min(maxIndex, index + rawOffset));
                 }
-                
+
                 if (newTarget !== currentTarget.value) {
                     currentTarget.value = newTarget;
                     runOnJS(updateTargetIdx)(newTarget);
@@ -725,28 +737,28 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             .onEnd((event) => {
                 'worklet';
                 const fromIdx = activeIndex.value;
-                
+
                 // Check if the movement was intentional (moved far enough horizontally)
                 const distanceMoved = Math.abs(event.translationX);
                 const minDistanceForReorder = ITEM_WIDTH * 0.5;
-                
+
                 // Check if thumbnail is close enough vertically to the strip (within 100px)
                 const verticalDistance = Math.abs(event.translationY);
                 const maxVerticalDistanceForDrop = 100;
-                
+
                 let finalTarget = fromIdx; // Default: snap back to original
                 // Only reorder if moved enough horizontally AND not too far vertically
                 if (distanceMoved >= minDistanceForReorder && verticalDistance <= maxVerticalDistanceForDrop) {
                     // Movement was clear and close to strip - use calculated target
                     finalTarget = currentTarget.value;
                 }
-                
+
                 dragX.value = withSpring(0);
                 dragY.value = withSpring(0);
                 dragScale.value = withSpring(1);
                 activeIndex.value = -1;
                 currentTarget.value = -1;
-                
+
                 runOnJS(endDragging)(fromIdx, finalTarget);
             })
             .onFinalize(() => {
@@ -776,8 +788,8 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                         <Text style={styles.headerTitle}>
                             {localPhotos.length} Photo{localPhotos.length !== 1 ? 's' : ''}
                         </Text>
-                        <TouchableOpacity 
-                            style={styles.headerButton} 
+                        <TouchableOpacity
+                            style={styles.headerButton}
                             onPress={handleDone}
                             disabled={isProcessing}
                         >
@@ -790,80 +802,80 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                     </View>
 
                     {/* Inline Crop Area - Instagram style */}
-                    <View 
-                      style={styles.cropAreaWrapper}
-                      onLayout={(event) => {
-                        const { height, width } = event.nativeEvent.layout;
-                        if (height > 0 && (height !== cropAreaHeight || width !== cropAreaWidth)) {
-                          setCropAreaHeight(height);
-                          setCropAreaWidth(width);
-                          // Clear display sizes to recalculate with new dimensions
-                          setDisplaySizes(new Map());
-                          setImageDimensions(new Map());
-                        }
-                      }}
+                    <View
+                        style={styles.cropAreaWrapper}
+                        onLayout={(event) => {
+                            const { height, width } = event.nativeEvent.layout;
+                            if (height > 0 && (height !== cropAreaHeight || width !== cropAreaWidth)) {
+                                setCropAreaHeight(height);
+                                setCropAreaWidth(width);
+                                // Clear display sizes to recalculate with new dimensions
+                                setDisplaySizes(new Map());
+                                setImageDimensions(new Map());
+                            }
+                        }}
                     >
-                      <View style={styles.cropAreaContainer}>
-                        {/* The movable/zoomable image */}
-                        <GestureDetector gesture={composedGesture}>
-                            <Animated.View style={[styles.imageWrapper, animatedImageStyle]}>
-                                {localOriginalPhotos[currentIndex] && (
-                                    <Image
-                                        source={{ uri: localOriginalPhotos[currentIndex] }}
-                                        style={{
-                                            width: currentDisplaySize.width,
-                                            height: currentDisplaySize.height,
-                                        }}
-                                        resizeMode="cover"
-                                    />
-                                )}
-                            </Animated.View>
-                        </GestureDetector>
+                        <View style={styles.cropAreaContainer}>
+                            {/* The movable/zoomable image */}
+                            <GestureDetector gesture={composedGesture}>
+                                <Animated.View style={[styles.imageWrapper, animatedImageStyle]}>
+                                    {localOriginalPhotos[currentIndex] && (
+                                        <Image
+                                            source={{ uri: localOriginalPhotos[currentIndex] }}
+                                            style={{
+                                                width: currentDisplaySize.width,
+                                                height: currentDisplaySize.height,
+                                            }}
+                                            resizeMode="cover"
+                                        />
+                                    )}
+                                </Animated.View>
+                            </GestureDetector>
 
-                        {/* Crop Frame Overlay - shows the crop boundary */}
-                        <View style={styles.cropOverlay} pointerEvents="none">
-                            {/* Top darkened area */}
-                            <View style={[styles.cropOverlayDark, { 
-                                height: (cropAreaHeight - cropFrameDimensions.height) / 2,
-                                width: '100%',
-                            }]} />
-                            
-                            {/* Middle row with side darkened areas and transparent center */}
-                            <View style={{ flexDirection: 'row', height: cropFrameDimensions.height }}>
-                                {/* Left darkened area */}
-                                <View style={[styles.cropOverlayDark, { 
-                                    width: (cropAreaWidth - cropFrameDimensions.width) / 2,
-                                    height: '100%',
+                            {/* Crop Frame Overlay - shows the crop boundary */}
+                            <View style={styles.cropOverlay} pointerEvents="none">
+                                {/* Top darkened area */}
+                                <View style={[styles.cropOverlayDark, {
+                                    height: (cropAreaHeight - cropFrameDimensions.height) / 2,
+                                    width: '100%',
                                 }]} />
-                                
-                                {/* Transparent center (the crop frame) */}
-                                <View style={[styles.cropFrame, {
-                                    width: cropFrameDimensions.width,
-                                    height: cropFrameDimensions.height,
-                                }]} />
-                                
-                                {/* Right darkened area */}
-                                <View style={[styles.cropOverlayDark, { 
-                                    width: (cropAreaWidth - cropFrameDimensions.width) / 2,
-                                    height: '100%',
+
+                                {/* Middle row with side darkened areas and transparent center */}
+                                <View style={{ flexDirection: 'row', height: cropFrameDimensions.height }}>
+                                    {/* Left darkened area */}
+                                    <View style={[styles.cropOverlayDark, {
+                                        width: (cropAreaWidth - cropFrameDimensions.width) / 2,
+                                        height: '100%',
+                                    }]} />
+
+                                    {/* Transparent center (the crop frame) */}
+                                    <View style={[styles.cropFrame, {
+                                        width: cropFrameDimensions.width,
+                                        height: cropFrameDimensions.height,
+                                    }]} />
+
+                                    {/* Right darkened area */}
+                                    <View style={[styles.cropOverlayDark, {
+                                        width: (cropAreaWidth - cropFrameDimensions.width) / 2,
+                                        height: '100%',
+                                    }]} />
+                                </View>
+
+                                {/* Bottom darkened area */}
+                                <View style={[styles.cropOverlayDark, {
+                                    height: (cropAreaHeight - cropFrameDimensions.height) / 2,
+                                    width: '100%',
                                 }]} />
                             </View>
-                            
-                            {/* Bottom darkened area */}
-                            <View style={[styles.cropOverlayDark, { 
-                                height: (cropAreaHeight - cropFrameDimensions.height) / 2,
-                                width: '100%',
-                            }]} />
-                        </View>
 
-                        {/* Delete button */}
-                        <TouchableOpacity
-                            style={styles.deleteButton}
-                            onPress={() => handleDeletePhoto(currentIndex)}
-                        >
-                            <Ionicons name="close-circle" size={32} color="#FF3B30" />
-                        </TouchableOpacity>
-                      </View>
+                            {/* Delete button */}
+                            <TouchableOpacity
+                                style={styles.deleteButton}
+                                onPress={() => handleDeletePhoto(currentIndex)}
+                            >
+                                <Ionicons name="close-circle" size={32} color="#FF3B30" />
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     {/* Draggable Thumbnail Strip */}
@@ -871,7 +883,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                         {localPhotos.map((item, index) => {
                             const isDragging = draggingIndex === index;
                             const offset = getItemOffset(index, draggingIndex, targetIndex);
-                            
+
                             const visualIndex = draggingIndex !== null && targetIndex !== null
                                 ? getVisualIndex(index, draggingIndex, targetIndex)
                                 : index;
@@ -940,7 +952,7 @@ const DraggableThumbnailItem: React.FC<DraggableThumbnailItemProps> = ({
 }) => {
     // Track previous offset to detect changes
     const prevOffset = useSharedValue(0);
-    
+
     const animatedStyle = useAnimatedStyle(() => {
         if (isDragging) {
             return {
