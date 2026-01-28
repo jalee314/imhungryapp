@@ -38,17 +38,17 @@ const DiscoverFeed: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Try the RPC function first, fallback to direct query
         // Pass selectedCoordinates if available
         let result = await getRestaurantsWithDeals(selectedCoordinates || undefined);
-        
+
         // If RPC function fails, try direct query
         if (!result.success && result.error?.includes('function')) {
           console.log('RPC function not available, trying direct query...');
           result = await getRestaurantsWithDealsDirect(selectedCoordinates || undefined);
         }
-        
+
         if (result.success) {
           setRestaurants(result.restaurants);
         } else {
@@ -69,12 +69,12 @@ const DiscoverFeed: React.FC = () => {
   // This is now handled by LocationContext, so we can remove this effect
 
   // Maximum distance limit in miles
-  const MAX_DISTANCE_MILES = 20;
+  const MAX_DISTANCE_MILES = 31;
 
   // Filter restaurants based on search query (name only) and 20-mile distance limit
   // Also sort by distance (nearest first)
   const filteredRestaurants = restaurants
-    .filter(restaurant => 
+    .filter(restaurant =>
       restaurant.distance_miles <= MAX_DISTANCE_MILES &&
       restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -87,8 +87,8 @@ const DiscoverFeed: React.FC = () => {
   const handleRowCardPress = (id: string) => {
     const restaurant = restaurants.find(r => r.restaurant_id === id);
     if (restaurant) {
-      (navigation as any).navigate('RestaurantDetail', { 
-        restaurant 
+      (navigation as any).navigate('RestaurantDetail', {
+        restaurant
       });
     }
   };
@@ -98,8 +98,8 @@ const DiscoverFeed: React.FC = () => {
     id: restaurant.restaurant_id,
     title: restaurant.name,
     subtitle: restaurant.address,
-    image: restaurant.logo_image 
-      ? { uri: restaurant.logo_image } 
+    image: restaurant.logo_image
+      ? { uri: restaurant.logo_image }
       : require('../../../img/gallery.jpg'),
     distance: `${restaurant.distance_miles}mi`,
     dealCount: restaurant.deal_count,
@@ -198,9 +198,9 @@ const DiscoverFeed: React.FC = () => {
           styles.searchInputContainer,
           searchQuery.length > 0 && styles.searchInputContainerFocused
         ]}>
-          <Ionicons 
-            name="search" 
-            size={16} 
+          <Ionicons
+            name="search"
+            size={16}
             color="#666"
           />
           <TextInput
@@ -214,7 +214,7 @@ const DiscoverFeed: React.FC = () => {
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setSearchQuery('')}
               style={styles.clearButton}
             >

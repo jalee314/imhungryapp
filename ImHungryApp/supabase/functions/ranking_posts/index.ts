@@ -10,8 +10,8 @@ async function applyBlockedGates(deals, user_id, supabase) {
     return deals;
   }
   if (!blockedUsers || blockedUsers.length === 0) return deals;
-  const blockedUserSet = new Set(blockedUsers.map((record)=>record.user_id));
-  const filteredDeals = deals.filter((deal)=>{
+  const blockedUserSet = new Set(blockedUsers.map((record) => record.user_id));
+  const filteredDeals = deals.filter((deal) => {
     const authorId = deal.deal_template?.user_id;
     return !blockedUserSet.has(authorId);
   });
@@ -20,7 +20,7 @@ async function applyBlockedGates(deals, user_id, supabase) {
 }
 async function applyReportGates(deals, user_id, supabase) {
   if (!deals || deals.length === 0) return [];
-  const dealIds = deals.map((deal)=>deal.deal_id);
+  const dealIds = deals.map((deal) => deal.deal_id);
   const { data: reportCounts, error: reportCountsError } = await supabase.rpc('get_deal_report_counts', {
     deal_ids: dealIds
   });
@@ -30,7 +30,7 @@ async function applyReportGates(deals, user_id, supabase) {
   }
   const reportCountMap = new Map();
   if (reportCounts) {
-    for (const report of reportCounts){
+    for (const report of reportCounts) {
       if (report.deal_id && typeof report.report_count === 'number') {
         reportCountMap.set(report.deal_id, report.report_count);
       }
@@ -41,8 +41,8 @@ async function applyReportGates(deals, user_id, supabase) {
     console.error('Error fetching user-specific reports:', userReportsError.message);
     return deals;
   }
-  const userReportedSet = new Set(userReportedDeals?.map((r)=>r.deal_id) || []);
-  return deals.filter((deal)=>{
+  const userReportedSet = new Set(userReportedDeals?.map((r) => r.deal_id) || []);
+  return deals.filter((deal) => {
     const totalReports = reportCountMap.get(deal.deal_id) || 0;
     const isReportedByUser = userReportedSet.has(deal.deal_id);
     return !(totalReports >= 2 || isReportedByUser);
@@ -62,15 +62,15 @@ function calculatePersonalRelevanceScore(deal, userCuisineSet, market) {
   const marketRules = {
     NYC: {
       halfLife: 2.5,
-      cutoff: 5
+      cutoff: 31
     },
     OC: {
       halfLife: 5,
-      cutoff: 10
+      cutoff: 31
     },
     DEFAULT: {
       halfLife: 5,
-      cutoff: 10
+      cutoff: 31
     }
   };
   const rules = marketRules[market] || marketRules.DEFAULT;
@@ -117,7 +117,7 @@ function applyTimeDecay(daysAgo, halfLife = 15) {
 function getWeightedInteractions(interactions) {
   let weightedPositives = 0;
   let weightedNegatives = 0;
-  for (const action of interactions){
+  for (const action of interactions) {
     const weight = INTERACTION_WEIGHTS[action.interaction_type] || 0;
     const daysAgo = (new Date().getTime() - new Date(action.created_at).getTime()) / (1000 * 60 * 60 * 24);
     const decayFactor = applyTimeDecay(daysAgo);
@@ -136,7 +136,7 @@ function getWeightedInteractions(interactions) {
 function calculateGlobalAvgEfficiency(deals, interactionsByDeal, viewsByDeal) {
   let totalEfficiencySum = 0;
   if (deals.length === 0) return 0;
-  for (const deal of deals){
+  for (const deal of deals) {
     const dealInteractions = interactionsByDeal.get(deal.deal_id) || [];
     const { weightedPositives, weightedNegatives } = getWeightedInteractions(dealInteractions);
     const totalViews = viewsByDeal.get(deal.deal_id) || 0;
@@ -147,13 +147,13 @@ function calculateGlobalAvgEfficiency(deals, interactionsByDeal, viewsByDeal) {
 }
 function findPriorStrength(deals, interactionsByDeal, viewsByDeal) {
   if (!deals || deals.length === 0) return 50; // Default C value if no deals
-  const evidenceArray = deals.map((deal)=>{
+  const evidenceArray = deals.map((deal) => {
     const dealInteractions = interactionsByDeal.get(deal.deal_id) || [];
     const { weightedNegatives } = getWeightedInteractions(dealInteractions);
     const totalViews = viewsByDeal.get(deal.deal_id) || 0;
     return totalViews + Math.abs(weightedNegatives);
   });
-  evidenceArray.sort((a, b)=>a - b);
+  evidenceArray.sort((a, b) => a - b);
   const mid = Math.floor(evidenceArray.length / 2);
   return evidenceArray.length % 2 !== 0 ? evidenceArray[mid] : (evidenceArray[mid - 1] + evidenceArray[mid]) / 2;
 }
@@ -175,26 +175,26 @@ async function calculateQualityScore(deals, supabase) {
     m: 0,
     c: 0
   };
-  const dealIds = deals.map((deal)=>deal.deal_id);
+  const dealIds = deals.map((deal) => deal.deal_id);
   const { data: interactions, error } = await supabase.from('interaction').select('deal_id, interaction_type, created_at').in('deal_id', dealIds);
   if (error) {
     console.error('Error fetching interactions:', error.message);
     return {
-      normalizedScores: new Map(deals.map((d)=>[
-          d.deal_id,
-          0
-        ])),
+      normalizedScores: new Map(deals.map((d) => [
+        d.deal_id,
+        0
+      ])),
       m: 0,
       c: 0
     };
   }
   const interactionsByDeal = new Map();
   const viewsByDeal = new Map();
-  deals.forEach((deal)=>{
+  deals.forEach((deal) => {
     interactionsByDeal.set(deal.deal_id, []);
     viewsByDeal.set(deal.deal_id, deal.view_count || 0);
   });
-  interactions.forEach((interaction)=>{
+  interactions.forEach((interaction) => {
     if (interactionsByDeal.has(interaction.deal_id)) {
       interactionsByDeal.get(interaction.deal_id).push(interaction);
     }
@@ -202,7 +202,7 @@ async function calculateQualityScore(deals, supabase) {
   const m = calculateGlobalAvgEfficiency(deals, interactionsByDeal, viewsByDeal);
   const c = findPriorStrength(deals, interactionsByDeal, viewsByDeal);
   const behScores = new Map();
-  for (const deal of deals){
+  for (const deal of deals) {
     const dealId = deal.deal_id;
     const dealInteractions = interactionsByDeal.get(dealId) || [];
     const totalViews = viewsByDeal.get(dealId) || 0;
@@ -214,7 +214,7 @@ async function calculateQualityScore(deals, supabase) {
   const maxScore = Math.max(...scoresArray);
   const scoreRange = maxScore - minScore;
   const normalizedScores = new Map();
-  for (const [dealId, score] of behScores.entries()){
+  for (const [dealId, score] of behScores.entries()) {
     const normalized = scoreRange < 1e-6 ? 0 : (score - minScore) / scoreRange;
     normalizedScores.set(dealId, normalized);
   }
@@ -233,7 +233,7 @@ function calculateRecencyScore(deal) {
 // ------------------- Ranking & Post-Processing Functions -------------------
 function applyDiversity(deals) {
   const restaurantCount = {};
-  return deals.map((deal)=>{
+  return deals.map((deal) => {
     const restaurantId = deal?.deal_template?.restaurant_id;
     if (!restaurantId || !deal.weightedScore) return deal;
     restaurantCount[restaurantId] = (restaurantCount[restaurantId] || 0) + 1;
@@ -253,7 +253,7 @@ function injectRandomness(rankedDeals) {
   return rankedDeals;
 }
 // ------------------- Edge Function Handler -------------------
-Deno.serve(async (req)=>{
+Deno.serve(async (req) => {
   try {
     const { user_id, location } = await req.json();
     const authHeader = req.headers.get('Authorization');
@@ -266,9 +266,9 @@ Deno.serve(async (req)=>{
     });
     // 1. Fetch Candidate Deals
     let candidateDeals = [];
-    let radiusMiles = 10;
+    let radiusMiles = 31;
     let attempts = 0;
-    while(candidateDeals.length === 0 && attempts < 4){
+    while (candidateDeals.length === 0 && attempts < 4) {
       const { data, error } = await supabase.rpc('nearby_deals', {
         lat: location.latitude,
         long: location.longitude,
@@ -303,10 +303,10 @@ Deno.serve(async (req)=>{
     const { data: preferredCuisines } = await supabase.rpc('get_user_cuisine_preferences', {
       p_user_id: user_id
     });
-    const userCuisineSet = new Set(preferredCuisines?.map((p)=>p.cuisine_id) || []);
+    const userCuisineSet = new Set(preferredCuisines?.map((p) => p.cuisine_id) || []);
     const userMarket = 'OC'; // Example market
     const { normalizedScores: qualityScores, m, c } = await calculateQualityScore(gatedDeals, supabase);
-    const scoredDeals = gatedDeals.map((deal)=>{
+    const scoredDeals = gatedDeals.map((deal) => {
       const relevanceInfo = calculatePersonalRelevanceScore(deal, userCuisineSet, userMarket);
       const quality = qualityScores.get(deal.deal_id) || 0;
       const recency = calculateRecencyScore(deal);
@@ -323,16 +323,16 @@ Deno.serve(async (req)=>{
       };
     });
     // 4. Log Scores for Debugging
-    const scoreLogs = scoredDeals.map((deal)=>({
-        deal_title: deal.deal_template?.title || 'Untitled Deal',
-        deal_id: deal.deal_id,
-        scores: {
-          relevance: deal.relevance ? parseFloat(deal.relevance.toFixed(3)) : 0,
-          quality: deal.quality ? parseFloat(deal.quality.toFixed(3)) : 0,
-          recency: deal.recency ? parseFloat(deal.recency.toFixed(3)) : 0,
-          final_score: deal.weightedScore ? parseFloat(deal.weightedScore.toFixed(3)) : 0
-        }
-      }));
+    const scoreLogs = scoredDeals.map((deal) => ({
+      deal_title: deal.deal_template?.title || 'Untitled Deal',
+      deal_id: deal.deal_id,
+      scores: {
+        relevance: deal.relevance ? parseFloat(deal.relevance.toFixed(3)) : 0,
+        quality: deal.quality ? parseFloat(deal.quality.toFixed(3)) : 0,
+        recency: deal.recency ? parseFloat(deal.recency.toFixed(3)) : 0,
+        final_score: deal.weightedScore ? parseFloat(deal.weightedScore.toFixed(3)) : 0
+      }
+    }));
     const logObject = {
       message: `Scoring analysis for ${scoredDeals.length} deals`,
       qualityScoreParams: {
@@ -344,14 +344,14 @@ Deno.serve(async (req)=>{
     console.log(JSON.stringify(logObject, null, 2));
     // 5. Apply Final Ranking Adjustments
     let rankedDeals = applyDiversity(scoredDeals);
-    rankedDeals.sort((a, b)=>(b.weightedScore || 0) - (a.weightedScore || 0));
+    rankedDeals.sort((a, b) => (b.weightedScore || 0) - (a.weightedScore || 0));
     const finalFeed = injectRandomness(rankedDeals);
     // 6. Return Final Response
-    const responseData = finalFeed.map((deal)=>({
-        deal_id: deal.deal_id,
-        title: deal.deal_template?.title || 'Untitled Deal',
-        distance: deal.distance_miles
-      }));
+    const responseData = finalFeed.map((deal) => ({
+      deal_id: deal.deal_id,
+      title: deal.deal_template?.title || 'Untitled Deal',
+      distance: deal.distance_miles
+    }));
     return new Response(JSON.stringify(responseData), {
       headers: {
         'Content-Type': 'application/json'

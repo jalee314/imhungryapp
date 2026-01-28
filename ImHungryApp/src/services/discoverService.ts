@@ -29,7 +29,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
 
     // Get location for distance calculation
     let locationToUse: { lat: number; lng: number } | null = null;
-    
+
     if (customCoordinates) {
       console.log('📍 Using custom coordinates:', customCoordinates);
       locationToUse = customCoordinates;
@@ -89,7 +89,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     // Fetch the most liked deal's image for each restaurant
     const restaurantIds = restaurants.map(r => r.restaurant_id);
     const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIds);
-    
+
     // Map the images to restaurants
     restaurants.forEach(restaurant => {
       const dealImage = mostLikedDeals.get(restaurant.restaurant_id);
@@ -99,7 +99,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     });
 
     // Filter to 20-mile maximum distance and sort by distance (closest first)
-    const MAX_DISTANCE_MILES = 20;
+    const MAX_DISTANCE_MILES = 31;
     const filteredRestaurants = restaurants
       .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
       .sort((a, b) => a.distance_miles - b.distance_miles);
@@ -133,7 +133,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
 
     // Get location for distance calculation
     let locationToUse: { lat: number; lng: number } | null = null;
-    
+
     if (customCoordinates) {
       console.log('📍 Using custom coordinates:', customCoordinates);
       locationToUse = customCoordinates;
@@ -256,11 +256,11 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
         };
       })
       .filter(restaurant => restaurant.deal_count > 0); // Only include restaurants with deals
-    
+
     // Fetch the most liked deal's image for each restaurant
     const restaurantIdsForImages = result.map(r => r.restaurant_id);
     const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIdsForImages);
-    
+
     // Map the images to restaurants
     result.forEach(restaurant => {
       const dealImage = mostLikedDeals.get(restaurant.restaurant_id);
@@ -268,9 +268,9 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
         restaurant.logo_image = dealImage;
       }
     });
-    
+
     // Filter to 20-mile maximum distance and sort by distance (closest first)
-    const MAX_DISTANCE_MILES = 20;
+    const MAX_DISTANCE_MILES = 31;
     const filteredResult = result
       .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
       .sort((a, b) => a.distance_miles - b.distance_miles);
@@ -350,7 +350,7 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
 
     // Step 3: Count upvotes for all deal_ids
     const dealIds = Object.values(templateToDealMap);
-    
+
     if (dealIds.length === 0) {
       return new Map();
     }
@@ -369,14 +369,14 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
 
     // Step 4: For each restaurant, find the deal with most upvotes
     const mostLikedByRestaurant: Record<string, any> = {};
-    
+
     dealTemplates.forEach(template => {
       const restaurantId = template.restaurant_id;
       const dealId = templateToDealMap[template.template_id];
       const upvoteCount = dealId ? (upvoteCounts[dealId] || 0) : 0;
-      
-      if (!mostLikedByRestaurant[restaurantId] || 
-          upvoteCount > mostLikedByRestaurant[restaurantId].upvote_count) {
+
+      if (!mostLikedByRestaurant[restaurantId] ||
+        upvoteCount > mostLikedByRestaurant[restaurantId].upvote_count) {
         mostLikedByRestaurant[restaurantId] = {
           template,
           upvote_count: upvoteCount
@@ -386,19 +386,19 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
 
     // Step 5: Extract image URLs - prioritize first image by display_order
     const result = new Map<string, string>();
-    
+
     Object.entries(mostLikedByRestaurant).forEach(([restaurantId, data]) => {
       const template = data.template;
-      
+
       // Sort deal_images by display_order and get the first one (which is the cover/thumbnail)
       const dealImages = template.deal_images || [];
-      const sortedDealImages = [...dealImages].sort((a: any, b: any) => 
+      const sortedDealImages = [...dealImages].sort((a: any, b: any) =>
         (a.display_order ?? 999) - (b.display_order ?? 999)
       );
       const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
       // Fallback: check for is_thumbnail flag (for backward compatibility)
       const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
-      
+
       if (firstImageByOrder?.image_metadata?.variants) {
         // Use first image by display_order (preferred - this is the cover)
         const variants = firstImageByOrder.image_metadata.variants;
@@ -408,7 +408,7 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
           return;
         }
       }
-      
+
       if (thumbnailImage?.image_metadata?.variants) {
         // Fallback to is_thumbnail flag
         const variants = thumbnailImage.image_metadata.variants;
@@ -418,12 +418,12 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
           return;
         }
       }
-      
+
       // Fallback: Handle image_metadata from deal_template
-      const imageMetadata = Array.isArray(template.image_metadata) 
-        ? template.image_metadata[0] 
+      const imageMetadata = Array.isArray(template.image_metadata)
+        ? template.image_metadata[0]
         : template.image_metadata;
-      
+
       // Try to get image from Cloudinary variants first
       if (imageMetadata?.variants) {
         const variants = imageMetadata.variants;
