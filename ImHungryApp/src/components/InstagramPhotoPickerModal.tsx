@@ -20,6 +20,8 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withSpring,
+    interpolate,
+    runOnJS,
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -30,6 +32,8 @@ const MAX_PHOTOS = 5;
 
 // Preview area dimensions
 const PREVIEW_HEIGHT = SCREEN_WIDTH; // Square preview like Instagram
+const MIN_PREVIEW_HEIGHT = 100; // Collapsed preview height
+const ALBUM_ROW_HEIGHT = 50; // Height of the album selector row with drag handle
 
 interface InstagramPhotoPickerModalProps {
     visible: boolean;
@@ -76,13 +80,21 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
     const endCursor = useRef<string | undefined>(undefined);
     const PAGE_SIZE = 50;
 
-    // Gesture values for preview
+    // Gesture values for preview zoom/pan
     const scale = useSharedValue(1);
     const savedScale = useSharedValue(1);
     const translateX = useSharedValue(0);
     const translateY = useSharedValue(0);
     const savedTranslateX = useSharedValue(0);
     const savedTranslateY = useSharedValue(0);
+
+    // Expandable preview values
+    const previewHeight = useSharedValue(PREVIEW_HEIGHT);
+    const isExpanded = useSharedValue(false);
+    const dragStartY = useSharedValue(0);
+
+    // Track if expanded for React state (needed for FlatList)
+    const [isGridExpanded, setIsGridExpanded] = useState(false);
 
     // Calculate available slots
     const availableSlots = maxPhotos - existingPhotosCount;
@@ -101,12 +113,15 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         }
     }, [visible]);
 
+
     useEffect(() => {
         if (visible) {
             setSelectedPhotos([]);
             setPreviewPhoto(null);
             setIsMultiSelectEnabled(false);
+            setIsGridExpanded(false);
             resetGestures();
+            resetExpandState();
             endCursor.current = undefined;
             setHasMore(true);
         }
@@ -119,6 +134,12 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         translateY.value = 0;
         savedTranslateX.value = 0;
         savedTranslateY.value = 0;
+    };
+
+    const resetExpandState = () => {
+        previewHeight.value = PREVIEW_HEIGHT;
+        isExpanded.value = false;
+        setIsGridExpanded(false);
     };
 
     // Load albums
@@ -300,6 +321,81 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         ],
     }));
 
+    // Sync expanded state to React
+    const updateExpandedState = useCallback((expanded: boolean) => {
+        setIsGridExpanded(expanded);
+    }, []);
+
+    // Expand/collapse gesture for the divider - swipe up to collapse, swipe down to expand
+    const expandGesture = Gesture.Pan()
+        .onStart(() => {
+            'worklet';
+            dragStartY.value = previewHeight.value;
+        })
+        .onUpdate((event) => {
+            'worklet';
+            // Swipe up (negative translationY) = shrink preview, swipe down = expand preview
+            const newHeight = dragStartY.value + event.translationY;
+            const dampingFactor = 0.4;
+
+            if (newHeight > PREVIEW_HEIGHT) {
+                // Rubber band when trying to expand past max (swiping down past original)
+                const overscroll = newHeight - PREVIEW_HEIGHT;
+                previewHeight.value = PREVIEW_HEIGHT + overscroll * dampingFactor;
+            } else if (newHeight < MIN_PREVIEW_HEIGHT) {
+                // Rubber band when trying to collapse past min
+                const overscroll = MIN_PREVIEW_HEIGHT - newHeight;
+                previewHeight.value = MIN_PREVIEW_HEIGHT - overscroll * dampingFactor;
+            } else {
+                previewHeight.value = newHeight;
+            }
+        })
+        .onEnd((event) => {
+            'worklet';
+            const velocity = event.velocityY;
+            const threshold = PREVIEW_HEIGHT / 2;
+
+            // Spring config that responds to velocity
+            const springConfig = {
+                damping: 20,
+                mass: 1,
+                stiffness: 200,
+                velocity: velocity / 1000,
+            };
+
+            // Snap based on position and velocity
+            // Swipe up fast (negative velocity) or past threshold = collapse
+            if (previewHeight.value < threshold || velocity < -500) {
+                // Collapse
+                previewHeight.value = withSpring(MIN_PREVIEW_HEIGHT, springConfig);
+                isExpanded.value = true;
+                runOnJS(updateExpandedState)(true);
+            } else {
+                // Expand back to original
+                previewHeight.value = withSpring(PREVIEW_HEIGHT, springConfig);
+                isExpanded.value = false;
+                runOnJS(updateExpandedState)(false);
+            }
+        });
+
+    // Animated style for preview container
+    const animatedPreviewContainerStyle = useAnimatedStyle(() => ({
+        height: previewHeight.value,
+    }));
+
+    // Animated style for the preview image to maintain square aspect
+    const animatedPreviewImageStyle = useAnimatedStyle(() => {
+        const imageSize = interpolate(
+            previewHeight.value,
+            [MIN_PREVIEW_HEIGHT, PREVIEW_HEIGHT],
+            [PREVIEW_HEIGHT, PREVIEW_HEIGHT]
+        );
+        return {
+            width: imageSize,
+            height: imageSize,
+        };
+    });
+
     // Render photo grid item
     const renderPhotoItem = ({ item }: { item: PhotoAsset }) => {
         const selectionIndex = getSelectionIndex(item.uri);
@@ -423,7 +519,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                     </View>
 
                     {/* Preview Area */}
-                    <View style={styles.previewContainer}>
+                    <Animated.View style={[styles.previewContainer, animatedPreviewContainerStyle]}>
                         {previewPhoto ? (
                             <GestureDetector gesture={composedGesture}>
                                 <Animated.View style={[styles.previewImageWrapper, animatedPreviewStyle]}>
@@ -439,35 +535,40 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                                 <Ionicons name="image-outline" size={48} color="#CCC" />
                             </View>
                         )}
-                    </View>
+                    </Animated.View>
 
-                    {/* Album Selector Row */}
-                    <View style={styles.albumSelectorRow}>
-                        <TouchableOpacity
-                            style={styles.albumSelector}
-                            onPress={() => setShowAlbumPicker(true)}
-                        >
-                            <Text style={styles.albumSelectorText}>
-                                {albums.find(a => a.id === selectedAlbum)?.title || 'Recents'}
-                            </Text>
-                            <Ionicons name="chevron-down" size={16} color="#000" />
-                        </TouchableOpacity>
+                    {/* Drag Handle + Album Selector Row */}
+                    <GestureDetector gesture={expandGesture}>
+                        <Animated.View style={styles.dragHandleContainer}>
+                            {/* Album Selector Row */}
+                            <View style={styles.albumSelectorRow}>
+                                <TouchableOpacity
+                                    style={styles.albumSelector}
+                                    onPress={() => setShowAlbumPicker(true)}
+                                >
+                                    <Text style={styles.albumSelectorText}>
+                                        {albums.find(a => a.id === selectedAlbum)?.title || 'Recents'}
+                                    </Text>
+                                    <Ionicons name="chevron-down" size={16} color="#000" />
+                                </TouchableOpacity>
 
-                        {/* Multi-select toggle */}
-                        <TouchableOpacity
-                            style={[
-                                styles.multiSelectButton,
-                                isMultiSelectEnabled && styles.multiSelectButtonActive
-                            ]}
-                            onPress={handleToggleMultiSelect}
-                        >
-                            <Ionicons
-                                name="copy-outline"
-                                size={18}
-                                color={isMultiSelectEnabled ? '#FFA05C' : '#666'}
-                            />
-                        </TouchableOpacity>
-                    </View>
+                                {/* Multi-select toggle */}
+                                <TouchableOpacity
+                                    style={[
+                                        styles.multiSelectButton,
+                                        isMultiSelectEnabled && styles.multiSelectButtonActive
+                                    ]}
+                                    onPress={handleToggleMultiSelect}
+                                >
+                                    <Ionicons
+                                        name="copy-outline"
+                                        size={18}
+                                        color={isMultiSelectEnabled ? '#FFA05C' : '#666'}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        </Animated.View>
+                    </GestureDetector>
 
                     {/* Photo Grid */}
                     {isLoading ? (
@@ -525,6 +626,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         backgroundColor: '#FFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
     },
     headerButton: {
         minWidth: 60,
@@ -544,7 +647,6 @@ const styles = StyleSheet.create({
     },
     previewContainer: {
         width: SCREEN_WIDTH,
-        height: PREVIEW_HEIGHT,
         backgroundColor: '#1A1A1A',
         overflow: 'hidden',
     },
@@ -562,6 +664,21 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    dragHandleContainer: {
+        backgroundColor: '#FFF',
+        borderTopWidth: 1,
+        borderTopColor: '#E0E0E0',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+    dragHandle: {
+        width: 36,
+        height: 4,
+        backgroundColor: '#D0D0D0',
+        borderRadius: 2,
+        alignSelf: 'center',
+        marginTop: 8,
     },
     multiSelectButton: {
         flexDirection: 'row',
