@@ -140,6 +140,7 @@ const saveUserLocation = async (userId: string, locationData: any) => {
     lat: locationData.latitude,
     lng: locationData.longitude,
     city: locationData.city,
+    state: locationData.state || null,
   });
 };
 

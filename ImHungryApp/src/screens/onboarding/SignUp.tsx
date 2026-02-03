@@ -27,37 +27,36 @@ export default function SignUpScreen() {
   const { width, height } = useWindowDimensions();
   const { validateEmail } = useAuth();
 
-  const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));   // horizontal page padding
-  const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
-  const GAP = Math.max( 8, Math.min(16, Math.round(height * 0.012)));  // between inputs
+  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));   // horizontal page padding
+  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
+  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));  // between inputs
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
 
   const responsive = {
-    pagePad:        { paddingHorizontal: H, paddingVertical: V },
-    loginLink:      { marginBottom: Math.round(V * 0.2), marginTop: V  },
+    pagePad: { paddingHorizontal: H, paddingVertical: V },
+    loginLink: { marginBottom: Math.round(V * 0.2), marginTop: V },
     welcomeSection: { marginBottom: Math.round(V * 1.5) },
-    welcomeTitle:   { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle:{ marginBottom: -Math.round(V * 0.9) },
-    formContainer:  { marginBottom: Math.round(V * 0.125) },
-    paperInput:     { marginBottom: Math.round(GAP * 0.7)},
+    welcomeTitle: { marginBottom: Math.round(V * 1) },
+    welcomeSubtitle: { marginBottom: -Math.round(V * 0.9) },
+    formContainer: { marginBottom: Math.round(V * 0.125) },
+    paperInput: { marginBottom: Math.round(GAP * 0.7) },
     continueButton: { marginTop: Math.round(V * 0.6), marginBottom: V },
     legalContainer: { marginTop: V * 2 },
   };
   // ----------------------------
 
   const [formData, setFormData] = useState({
-    firstName: existingUserData?.firstName || '', 
-    lastName: existingUserData?.lastName || '', 
-    phoneNumber: existingUserData?.phoneNumber || '', 
-    email: existingUserData?.email || '', 
+    firstName: existingUserData?.firstName || '',
+    lastName: existingUserData?.lastName || '',
+    phoneNumber: existingUserData?.phoneNumber || '',
+    email: existingUserData?.email || '',
     password: existingUserData?.password || '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', phoneNumber: '' });
   const [isChecking, setIsChecking] = useState({ email: false, phoneNumber: false });
   const [showPassword, setShowPassword] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const checkUniqueness = async (field: 'email' | 'phoneNumber', value: string) => {
     if (!value) return;
@@ -70,21 +69,21 @@ export default function SignUpScreen() {
     // format value for DB query
     let queryValue = value;
     if (field === 'phoneNumber') {
-        const digits = value.replace(/\D/g, '');
-        // format to +1xxxxxxxxxx for DB query
-        if (digits.length >= 10) {
-            queryValue = `+1${digits.slice(0, 10)}`;
-        } else {
-            // don't run a query for an incomplete number
-            setIsChecking(prev => ({ ...prev, [field]: false }));
-            return;
-        }
+      const digits = value.replace(/\D/g, '');
+      // format to +1xxxxxxxxxx for DB query
+      if (digits.length >= 10) {
+        queryValue = `+1${digits.slice(0, 10)}`;
+      } else {
+        // don't run a query for an incomplete number
+        setIsChecking(prev => ({ ...prev, [field]: false }));
+        return;
+      }
     }
-    
+
     try {
       // Use database functions that can be called by anonymous users
       let exists = false;
-      
+
       if (field === 'email') {
         // Use the auth hook's email validation to keep logic centralized
         exists = await validateEmail(queryValue);
@@ -109,8 +108,8 @@ export default function SignUpScreen() {
     if (field === 'phoneNumber') {
       const d = value.replace(/\D/g, '');
       if (d.length <= 3) formattedValue = d;
-      else if (d.length <= 6) formattedValue = `(${d.slice(0,3)})${d.slice(3)}`;
-      else formattedValue = `(${d.slice(0,3)})${d.slice(3,6)}-${d.slice(6,10)}`;
+      else if (d.length <= 6) formattedValue = `(${d.slice(0, 3)})${d.slice(3)}`;
+      else formattedValue = `(${d.slice(0, 3)})${d.slice(3, 6)}-${d.slice(6, 10)}`;
     }
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
 
@@ -142,7 +141,7 @@ export default function SignUpScreen() {
     }
     (navigation as any).navigate('Username', {
       userData: { ...formData },
-});
+    });
   };
 
   const fieldConfig = [
@@ -156,17 +155,17 @@ export default function SignUpScreen() {
   const handleLogin = () => {
     (navigation as any).navigate('LogIn');
   };
-  
-  const handleTermsPress = () => {};
-  const handlePrivacyPress = () => {};
+
+  const handleTermsPress = () => { };
+  const handlePrivacyPress = () => { };
 
   return (
-      <View style={{ flex: 1, backgroundColor: 'white' }}>
-        <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-          <ScrollView 
+          <ScrollView
             style={[styles.pagePad, responsive.pagePad]}
             contentContainerStyle={styles.scrollContentContainer}
             keyboardShouldPersistTaps="handled"
@@ -210,20 +209,12 @@ export default function SignUpScreen() {
                       textContentType={cfg.textContentType}
                       secureTextEntry={cfg.field === 'password' ? !showPassword : false}
                       returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
-                      onFocus={cfg.field === 'password' ? () => setIsPasswordFocused(true) : undefined}
-                      onBlur={cfg.field === 'password' ? () => setIsPasswordFocused(false) : undefined}
+
                       right={cfg.field === 'password' ? (
                         <TextInput.Icon
-                          icon={() => (
-                            <Ionicons
-                              name={showPassword ? 'eye-off' : 'eye'}
-                              size={20}
-                              color="#666"
-                              style={{ opacity: isPasswordFocused ? 1 : 0 }}
-                            />
-                          )}
+                          icon={showPassword ? 'eye-off' : 'eye'}
                           onPress={() => setShowPassword(!showPassword)}
-                          style={{ opacity: isPasswordFocused ? 1 : 0 }}
+                          forceTextInputFocus={false}
                         />
                       ) : undefined}
                     />
@@ -253,8 +244,8 @@ export default function SignUpScreen() {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-     </SafeAreaView>
-      </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -272,34 +263,34 @@ const styles = StyleSheet.create({
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
 
   loginLink: { alignSelf: 'flex-end' },
-  loginText: { 
-    fontSize: 16, 
-    color: '#404040', 
+  loginText: {
+    fontSize: 16,
+    color: '#404040',
     fontWeight: '700',
     fontFamily: 'Inter-Bold'
   },
 
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: { 
-    fontSize: 18, 
-    color: '#181619', 
+  welcomeTitle: {
+    fontSize: 18,
+    color: '#181619',
     fontFamily: 'Inter-Bold',
     fontWeight: '700',
     textAlign: 'left'
   },
-  welcomeSubtitle: { 
-    fontSize: 16, 
-    color: '#181619', 
-    lineHeight: 24, 
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#181619',
+    lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
 
   formContainer: { width: '100%' },
-  paperInput: { 
+  paperInput: {
     // Only spacing, no height
   }, // field bg; spacing added responsively
-  
+
   textInputStyle: {
     backgroundColor: 'white',
     minHeight: 56,
@@ -316,25 +307,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '400',
     fontFamily: 'Inter-Regular',
-    lineHeight: 24 
+    lineHeight: 24
   },
 
   legalContainer: { alignItems: 'center' },
-  legalText: { 
-    fontSize: 12, 
-    color: '#181619', 
-    textAlign: 'left', 
+  legalText: {
+    fontSize: 12,
+    color: '#181619',
+    textAlign: 'left',
     lineHeight: 16,
     fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
-  legalLink: { 
-    color: '#FFA05C', 
+  legalLink: {
+    color: '#FFA05C',
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold'
   },
@@ -342,7 +333,7 @@ const styles = StyleSheet.create({
     color: 'red',
     alignSelf: 'flex-start',
     marginLeft: 12,
-    marginTop: 4,    
+    marginTop: 4,
     marginBottom: -12,
   }
 });

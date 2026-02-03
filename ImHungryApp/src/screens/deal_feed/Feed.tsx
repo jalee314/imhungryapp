@@ -45,7 +45,7 @@ const getCurrentUserId = async (): Promise<string | null> => {
 
 const Feed: React.FC = () => {
   const navigation = useNavigation();
-  const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
+  const { getUpdatedDeal, clearUpdatedDeal, postAdded, setPostAdded } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
   const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad, isLoading: isLocationLoading } = useLocation();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
@@ -181,6 +181,61 @@ const Feed: React.FC = () => {
 
   useFocusEffect(
     React.useCallback(() => {
+      // Sync with cache on focus - ensures we have latest data after edits
+      // The cache is updated by invalidateAndRefresh() when deals are edited
+      const syncWithCache = async () => {
+        // If a deal was just edited/added, force refresh from the already-updated cache
+        if (postAdded) {
+          console.log('📸 Feed: postAdded detected, syncing with fresh cache');
+          const cachedDeals = dealCacheService.getCachedDeals();
+          if (cachedDeals.length > 0) {
+            setDeals(cachedDeals);
+          }
+          setPostAdded(false);
+          return;
+        }
+        
+        const cachedDeals = dealCacheService.getCachedDeals();
+        if (cachedDeals.length > 0) {
+          // Compare cached deals with current deals to detect changes
+          // This ensures thumbnail, isAnonymous, and other updates are reflected immediately
+          setDeals(prevDeals => {
+            // Check if any deal has changed (thumbnail, anonymous status, etc.)
+            const hasChanges = cachedDeals.some((cachedDeal) => {
+              const currentDeal = prevDeals.find(d => d.id === cachedDeal.id);
+              if (!currentDeal) return true;
+              
+              // Check isAnonymous and author changes
+              if (cachedDeal.isAnonymous !== currentDeal.isAnonymous) return true;
+              if (cachedDeal.author !== currentDeal.author) return true;
+              
+              // Check title and details changes
+              if (cachedDeal.title !== currentDeal.title) return true;
+              if (cachedDeal.details !== currentDeal.details) return true;
+              
+              // Compare imageVariants to detect thumbnail changes
+              const cachedVariants = cachedDeal.imageVariants;
+              const currentVariants = currentDeal.imageVariants;
+              if (!cachedVariants && !currentVariants) return false;
+              if (!cachedVariants || !currentVariants) return true;
+              // Compare the medium variant URL (commonly used for thumbnails)
+              return cachedVariants.medium !== currentVariants.medium ||
+                     cachedVariants.small !== currentVariants.small ||
+                     cachedVariants.thumbnail !== currentVariants.thumbnail;
+            });
+            
+            // If there are changes or different deal count, use cached data
+            if (hasChanges || cachedDeals.length !== prevDeals.length) {
+              console.log('📸 Feed: Detected deal changes, syncing with cache');
+              return cachedDeals;
+            }
+            return prevDeals;
+          });
+        }
+      };
+      syncWithCache();
+
+      // Also check for individual deal updates from the update store
       const timeoutId = setTimeout(() => {
         setDeals(prevDeals => {
           let hasChanges = false;
@@ -205,7 +260,7 @@ const Feed: React.FC = () => {
         });
       }, 0);
       return () => clearTimeout(timeoutId);
-    }, [getUpdatedDeal, clearUpdatedDeal])
+    }, [getUpdatedDeal, clearUpdatedDeal, postAdded, setPostAdded])
   );
 
   const onRefresh = useCallback(async () => {
@@ -461,7 +516,16 @@ const Feed: React.FC = () => {
                 <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
               </TouchableOpacity>
             </View>
-            <FlatList data={communityDeals} renderItem={renderCommunityDeal} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityList} ItemSeparatorComponent={renderItemSeparator} />
+            <FlatList 
+              data={communityDeals} 
+              renderItem={renderCommunityDeal} 
+              keyExtractor={(item) => item.id} 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.communityList} 
+              ItemSeparatorComponent={renderItemSeparator}
+              extraData={communityDeals.map(d => d.imageVariants?.cloudinary_id).join(',')}
+            />
           </>
         )}
         {communityDeals.length > 0 && dealsForYou.length > 0 && <View style={styles.sectionSeparator} />}

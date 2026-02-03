@@ -34,6 +34,7 @@ export interface Deal {
   details: string;
   image: string | any;
   imageVariants?: any; // Add this field
+  images?: string[]; // Array of image URLs for multiple photos
   votes: number;
   isUpvoted: boolean;
   isDownvoted: boolean;
@@ -497,7 +498,15 @@ const arePropsEqual = (prevProps: DealCardProps, nextProps: DealCardProps) => {
     prevProps.deal.isUpvoted === nextProps.deal.isUpvoted &&
     prevProps.deal.isDownvoted === nextProps.deal.isDownvoted &&
     prevProps.deal.isFavorited === nextProps.deal.isFavorited &&
-    prevProps.variant === nextProps.variant
+    prevProps.deal.imageVariants?.cloudinary_id === nextProps.deal.imageVariants?.cloudinary_id &&
+    prevProps.variant === nextProps.variant &&
+    prevProps.showDelete === nextProps.showDelete &&
+    // Include editable fields that users can modify
+    prevProps.deal.title === nextProps.deal.title &&
+    prevProps.deal.details === nextProps.deal.details &&
+    prevProps.deal.author === nextProps.deal.author &&
+    prevProps.deal.isAnonymous === nextProps.deal.isAnonymous &&
+    prevProps.deal.restaurant === nextProps.deal.restaurant
   );
 };
 

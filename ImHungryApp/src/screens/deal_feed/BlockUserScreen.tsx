@@ -21,7 +21,7 @@ const BlockUserScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<BlockUserRouteProp>();
   const { dealId, uploaderUserId } = route.params;
-  
+
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
 
@@ -33,8 +33,8 @@ const BlockUserScreen: React.FC = () => {
   ];
 
   const toggleOption = (option: string) => {
-    setSelectedOptions(prev => 
-      prev.includes(option) 
+    setSelectedOptions(prev =>
+      prev.includes(option)
         ? prev.filter(item => item !== option)
         : [...prev, option]
     );
@@ -49,15 +49,15 @@ const BlockUserScreen: React.FC = () => {
     try {
       // Check if uploaderUserId is valid (not the fallback UUID)
       let finalUploaderUserId = uploaderUserId;
-      
+
       if (!uploaderUserId || uploaderUserId === "00000000-0000-0000-0000-000000000000") {
         const fetchedUserId = await getDealUploaderId(dealId);
-        
+
         if (!fetchedUserId) {
           Alert.alert('Error', 'Unable to identify the user. Please try again later.');
           return;
         }
-        
+
         finalUploaderUserId = fetchedUserId;
       }
 
@@ -79,7 +79,7 @@ const BlockUserScreen: React.FC = () => {
         Alert.alert(
           'User Blocked',
           'This user has been blocked. You will no longer see their content.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Feed' as never) }]
+          [{ text: 'Done', onPress: () => navigation.goBack() }]
         );
       } else {
         Alert.alert('Error', result.error || 'Failed to block user. Please try again.');
@@ -96,15 +96,15 @@ const BlockUserScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleCancel}>
           <Text style={styles.headerButtonText}>Cancel</Text>
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>Block User</Text>
-        
+
         <TouchableOpacity onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Block</Text>
         </TouchableOpacity>
@@ -117,7 +117,7 @@ const BlockUserScreen: React.FC = () => {
             const isSelected = selectedOptions.includes(option);
             return (
               <React.Fragment key={option}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.optionRow}
                   onPress={() => toggleOption(option)}
                 >

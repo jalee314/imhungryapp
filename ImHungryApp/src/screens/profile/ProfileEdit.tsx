@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, Text, StyleSheet, TouchableOpacity, SafeAreaView, 
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
   ScrollView, TextInput as RNTextInput, Alert
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useDataCache } from '../../hooks/useDataCache';
 import { useProfileEdit } from '../../hooks/useProfileEdit';
+import LocationModal from '../../components/LocationModal';
 
 interface ProfileEditProps {
   route?: {
@@ -21,39 +21,47 @@ interface ProfileEditProps {
 const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
   const navigation = useNavigation<any>();
   const profile = route?.params?.profile;
-  
+
   console.log('ProfileEdit: Component rendered with params:', {
     hasProfile: !!profile,
     updatedCuisines: route?.params?.updatedCuisines,
     city: profile?.location_city
   });
-  
-  const { formData, setField, loading, userCuisines, handleSave, handleCuisinePress } = useProfileEdit({ route });
+
+  const { formData, setField, loading, userCuisines, hasChanges, handleSave, handleCuisinePress } = useProfileEdit({ route });
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  const handleLocationUpdate = (location: { city: string; state: string }) => {
+    const cityDisplay = location.state && location.state !== 'Current Location'
+      ? `${location.city}, ${location.state}`
+      : location.city;
+    setField('city', cityDisplay);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-        
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="chevron-left" size={28} color="#000000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave} disabled={loading}>
-          <Text style={[styles.saveText, loading && styles.saveTextDisabled]}>
+        <TouchableOpacity onPress={handleSave} disabled={loading || !hasChanges}>
+          <Text style={[styles.saveText, (loading || !hasChanges) && styles.saveTextDisabled]}>
             {loading ? 'Saving...' : 'Save'}
           </Text>
         </TouchableOpacity>
       </View>
-          
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          
+
           {/* Personal Information Section */}
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>PERSONAL INFORMATION</Text>
-            
+
             <View style={styles.groupedContainer}>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Name</Text>
@@ -65,9 +73,9 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   placeholderTextColor="#757575"
                 />
               </View>
-              
+
               <View style={styles.divider} />
-              
+
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Username</Text>
                 <RNTextInput
@@ -78,9 +86,9 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   placeholderTextColor="#757575"
                 />
               </View>
-              
+
               <View style={styles.divider} />
-              
+
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Email</Text>
                 <RNTextInput
@@ -93,30 +101,29 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   autoCapitalize="none"
                 />
               </View>
-              
+
               <View style={styles.divider} />
-              
-              <View style={styles.fieldRow}>
+
+              <TouchableOpacity
+                style={styles.fieldRow}
+                onPress={() => setShowLocationModal(true)}
+              >
                 <Text style={styles.fieldLabel}>City</Text>
                 <View style={styles.fieldInputContainer}>
-                  <RNTextInput
-                    style={styles.fieldInput}
-                    value={formData.city}
-                    onChangeText={(text) => setField('city', text)}
-                    placeholder="Fullerton, CA"
-                    placeholderTextColor="#757575"
-                  />
-                  <MaterialCommunityIcons name="chevron-right" size={20} color="#000000" />
+                  <Text style={[styles.cityValue, !formData.city && styles.cityPlaceholder]}>
+                    {formData.city || 'Fullerton, CA'}
+                  </Text>
+                  <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
                 </View>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
 
           {/* Favorite Cuisines Section */}
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>PREFERENCES</Text>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.groupedContainer}
               onPress={handleCuisinePress}
             >
@@ -124,8 +131,8 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                 <View style={styles.cuisineContent}>
                   <Text style={[styles.fieldLabel, { width: 'auto' }]}>Favorite Cuisines</Text>
                   <Text style={styles.cuisineText}>
-                    {userCuisines.length > 0 
-                      ? userCuisines.join(', ') 
+                    {userCuisines.length > 0
+                      ? userCuisines.join(', ')
                       : 'Not set'}
                   </Text>
                 </View>
@@ -136,6 +143,12 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
 
         </View>
       </ScrollView>
+
+      <LocationModal
+        visible={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onLocationUpdate={handleLocationUpdate}
+      />
     </SafeAreaView>
   );
 };
@@ -225,6 +238,17 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     letterSpacing: -0.31,
     fontFamily: 'Inter',
+  },
+  cityValue: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#757575',
+    textAlign: 'right',
+    letterSpacing: -0.31,
+    fontFamily: 'Inter',
+  },
+  cityPlaceholder: {
+    color: '#757575',
   },
   divider: {
     height: 1,

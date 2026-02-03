@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, ScrollView, Modal, TouchableWithoutFeedback } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, ScrollView, Modal, TouchableWithoutFeedback, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,8 +8,9 @@ import DealCard from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import { useProfile } from '../../hooks/useProfile';
+import { useAdmin } from '../../hooks/useAdmin';
 
-interface ProfilePageProps {}
+interface ProfilePageProps { }
 
 interface UserProfile {
   [key: string]: any;
@@ -24,6 +25,184 @@ interface UserProfile {
   signup_date?: string | null;
 }
 
+const CONFIRMATION_PHRASE = 'DELETE ACCOUNT';
+
+interface DeleteAccountModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ visible, onClose, onConfirm }) => {
+  const [confirmationText, setConfirmationText] = useState('');
+  const isConfirmEnabled = confirmationText === CONFIRMATION_PHRASE;
+
+  const handleClose = () => {
+    setConfirmationText('');
+    onClose();
+  };
+
+  const handleConfirm = () => {
+    if (isConfirmEnabled) {
+      setConfirmationText('');
+      onConfirm();
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={handleClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={deleteModalStyles.keyboardAvoid}
+      >
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={deleteModalStyles.overlay}>
+            <TouchableWithoutFeedback onPress={() => { }}>
+              <View style={deleteModalStyles.container}>
+                <View style={deleteModalStyles.content}>
+                  <Text style={deleteModalStyles.title}>Delete Account</Text>
+                  <Text style={deleteModalStyles.warningText}>
+                    ⚠️ This action is permanent and cannot be undone.
+                  </Text>
+                  <Text style={deleteModalStyles.description}>
+                    All your data, posts, and account information will be permanently deleted.
+                  </Text>
+                  <Text style={deleteModalStyles.instructionText}>
+                    To confirm, type <Text style={deleteModalStyles.phraseHighlight}>{CONFIRMATION_PHRASE}</Text> below:
+                  </Text>
+                  <TextInput
+                    style={deleteModalStyles.input}
+                    value={confirmationText}
+                    onChangeText={setConfirmationText}
+                    placeholder="Type DELETE ACCOUNT"
+                    placeholderTextColor="#999"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      deleteModalStyles.deleteButton,
+                      !isConfirmEnabled && deleteModalStyles.deleteButtonDisabled
+                    ]}
+                    onPress={handleConfirm}
+                    disabled={!isConfirmEnabled}
+                  >
+                    <Text style={[
+                      deleteModalStyles.deleteButtonText,
+                      !isConfirmEnabled && deleteModalStyles.deleteButtonTextDisabled
+                    ]}>
+                      Permanently Delete Account
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={deleteModalStyles.cancelButton} onPress={handleClose}>
+                  <Text style={deleteModalStyles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+};
+
+const deleteModalStyles = StyleSheet.create({
+  keyboardAvoid: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end',
+  },
+  container: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  content: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#D32F2F',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  warningText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#D32F2F',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  description: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  instructionText: {
+    fontSize: 14,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  phraseHighlight: {
+    fontWeight: '700',
+    color: '#D32F2F',
+  },
+  input: {
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+    backgroundColor: '#F9F9F9',
+  },
+  deleteButton: {
+    backgroundColor: '#D32F2F',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  deleteButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  deleteButtonTextDisabled: {
+    color: '#999',
+  },
+  cancelButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
+  },
+});
+
 const ProfilePage: React.FC<ProfilePageProps> = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -35,6 +214,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     hasData,
     activeTab,
     postsLoading,
+    postsInitialized,
     postsError,
     displayName,
     joinDateText,
@@ -61,6 +241,9 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     confirmDeleteAccount,
   } = useProfile({ navigation, route });
 
+  // Admin mode for switching between admin portal and standard profile
+  const { isAdmin, isAdminMode, enterAdminMode, exitAdminMode } = useAdmin();
+
   // All data/state/handlers now come from useProfile hook
 
   // Skeleton when no data
@@ -69,7 +252,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          
+
           {/* Loading Skeleton */}
           <View style={styles.userProfileContainer}>
             <View style={styles.header}>
@@ -85,7 +268,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                   </View>
                 </View>
               </View>
-              
+
               <View style={styles.rightSection}>
                 {/* Profile photo skeleton */}
                 <SkeletonLoader width={75} height={75} borderRadius={37.5} />
@@ -122,41 +305,41 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContent} // Add this
       >
-        
+
         {/* User Profile Container */}
         <View style={styles.userProfileContainer}>
-        {/* Back Button for Other Users */}
-        {isViewingOtherUser && (
-          <View style={styles.backButtonContainer}>
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={() => navigation.goBack()}
-            >
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
-            </TouchableOpacity>
-          </View>
-        )}
-        
-        {/* Header Section with Profile Photo */}
-        <View style={styles.header}>
-          <View style={styles.leftSection}>
-            <View style={styles.userInfo}>
-              <View>
-                <Text style={styles.userName}>{displayName}</Text>
-                <Text style={styles.joinDate}>{joinDateText}</Text>
-                <Text style={styles.location}>{locationCity}</Text>
+          {/* Back Button for Other Users */}
+          {isViewingOtherUser && (
+            <View style={styles.backButtonContainer}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Header Section with Profile Photo */}
+          <View style={styles.header}>
+            <View style={styles.leftSection}>
+              <View style={styles.userInfo}>
+                <View>
+                  <Text style={styles.userName}>{displayName}</Text>
+                  <Text style={styles.joinDate}>{joinDateText}</Text>
+                  <Text style={styles.location}>{locationCity}</Text>
+                </View>
               </View>
             </View>
-          </View>
-          
-          <View style={styles.rightSection}>
+
+            <View style={styles.rightSection}>
               {!isViewingOtherUser ? (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.profilePhotoContainer}
                   onPress={onProfilePhotoPress}
                 >
@@ -171,9 +354,9 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               ) : (
                 <View style={styles.profilePhotoContainer}>
                   {photoUrl ? (
-                    <Image 
+                    <Image
                       key={photoUrl} // Force re-render when URL changes
-                      source={{ uri: photoUrl }} 
+                      source={{ uri: photoUrl }}
                       style={styles.profilePhoto}
                       onError={(e) => console.log('❌ Image load error:', e.nativeEvent.error)}
                       onLoad={() => console.log('✅ Image loaded successfully:', photoUrl)}
@@ -185,47 +368,47 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                   )}
                 </View>
               )}
+            </View>
           </View>
-        </View>
         </View>
 
         {/* Tabs Section */}
         <View style={styles.actionButtonsContainer}>
-        <View style={{ flexDirection: 'row', gap: 4 }}>
-          <TouchableOpacity 
-            style={[styles.actionButton, activeTab === 'posts' && styles.activeButton]}
-            onPress={() => setActiveTab('posts')}
-          >
-            <Text style={[styles.actionButtonText, activeTab === 'posts' && styles.activeButtonText]}>
-              {isViewingOtherUser ? 'Posts' : 'My Posts'}
-            </Text>
-          </TouchableOpacity>
-          
-          {!isViewingOtherUser && (
-            <TouchableOpacity 
-              style={[styles.actionButton, activeTab === 'settings' && styles.activeButton]}
-              onPress={() => setActiveTab('settings')}
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            <TouchableOpacity
+              style={[styles.actionButton, activeTab === 'posts' && styles.activeButton]}
+              onPress={() => setActiveTab('posts')}
             >
-              <Text style={[styles.actionButtonText, activeTab === 'settings' && styles.activeButtonText]}>
-                Settings
+              <Text style={[styles.actionButtonText, activeTab === 'posts' && styles.activeButtonText]}>
+                {isViewingOtherUser ? 'Posts' : 'My Posts'}
               </Text>
             </TouchableOpacity>
-          )}
-        </View>
-        
-          <TouchableOpacity 
+
+            {!isViewingOtherUser && (
+              <TouchableOpacity
+                style={[styles.actionButton, activeTab === 'settings' && styles.activeButton]}
+                onPress={() => setActiveTab('settings')}
+              >
+                <Text style={[styles.actionButtonText, activeTab === 'settings' && styles.activeButtonText]}>
+                  Settings
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
             style={styles.shareActionButton}
             onPress={onShareProfile}
           >
-          <Monicon name="mdi-light:share" size={24} color="#000" />
-        </TouchableOpacity>
+            <Monicon name="mdi-light:share" size={24} color="#000" />
+          </TouchableOpacity>
         </View>
 
         {/* Gray Scrollable Content Container */}
         <View style={styles.contentArea}>
           {activeTab === 'posts' && (
             <View style={styles.postsContainer}>
-              {postsLoading ? (
+              {(!postsInitialized || postsLoading) ? (
                 <View style={styles.dealsGrid}>
                   {[1, 2, 3, 4, 5, 6].map((item, index) => (
                     <View key={item} style={[
@@ -238,8 +421,8 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               ) : postsError ? (
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorText}>{postsError}</Text>
-                  <TouchableOpacity 
-                    style={styles.retryButton} 
+                  <TouchableOpacity
+                    style={styles.retryButton}
                     onPress={onRetryLoadPosts}
                   >
                     <Text style={styles.retryButtonText}>Retry</Text>
@@ -275,11 +458,11 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
               )}
             </View>
           )}
-          
+
           {activeTab === 'settings' && !isViewingOtherUser && (
             <View style={styles.settingsList}>
               {/* Add Profile option at the top */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={onEditProfile}
               >
@@ -288,7 +471,25 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              {/* Admin Mode Switch - only visible to admin users */}
+              {isAdmin && (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={isAdminMode ? exitAdminMode : enterAdminMode}
+                >
+                  <MaterialCommunityIcons
+                    name={isAdminMode ? "account" : "shield-account"}
+                    size={20}
+                    color="#000"
+                  />
+                  <Text style={styles.settingText}>
+                    {isAdminMode ? 'Switch to Standard Profile' : 'Switch to Admin Profile'}
+                  </Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={() => navigation.navigate('FAQPage' as never)}
               >
@@ -297,7 +498,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={() => navigation.navigate('PrivacyPolicyPage' as never)}
               >
@@ -305,8 +506,8 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingText}>Privacy & Policy</Text>
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={() => navigation.navigate('TermsConditionsPage' as never)}
               >
@@ -315,7 +516,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={() => (navigation as any).navigate('ContactUsPage')}
               >
@@ -324,7 +525,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={() => (navigation as any).navigate('BlockedUsersPage')}
               >
@@ -333,7 +534,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={openLogoutModal}
               >
@@ -342,7 +543,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingItem}
                 onPress={openDeleteModal}
               >
@@ -350,12 +551,12 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
                 <Text style={styles.settingText}>Delete Account</Text>
                 <Text style={styles.settingArrow}>›</Text>
               </TouchableOpacity>
-              </View>
-            )}
+            </View>
+          )}
         </View>
 
       </ScrollView>
-      
+
 
       {/* Logout Modal */}
       <Modal
@@ -366,7 +567,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       >
         <TouchableWithoutFeedback onPress={closeLogoutModal}>
           <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
+            <TouchableWithoutFeedback onPress={() => { }}>
               <View style={styles.modalViewContainer}>
                 <View style={styles.modalContent}>
                   <TouchableOpacity style={styles.modalOption} onPress={confirmLogout}>
@@ -383,29 +584,11 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       </Modal>
 
       {/* Delete Account Modal */}
-      <Modal
+      <DeleteAccountModal
         visible={showDeleteModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closeDeleteModal}
-      >
-        <TouchableWithoutFeedback onPress={closeDeleteModal}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalViewContainer}>
-                <View style={styles.modalContent}>
-                  <TouchableOpacity style={styles.modalOption} onPress={confirmDeleteAccount}>
-                    <Text style={[styles.modalOptionText, styles.deleteText]}>Delete Account</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity style={styles.cancelButton} onPress={closeDeleteModal}>
-                  <Text style={styles.cancelText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteAccount}
+      />
 
     </SafeAreaView>
   );
@@ -422,7 +605,7 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1, // Add this - allows content to grow and fill space
   },
-  
+
   userProfileContainer: {
     paddingVertical: 16,
     paddingHorizontal: 17,
@@ -430,14 +613,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: '#D8D8D8',
   },
-  
+
   backButtonContainer: {
     paddingHorizontal: 16,
   },
   backButton: {
     padding: 4,
   },
-  
+
   actionButtonsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -447,17 +630,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: '#F5F5F5', // Changed from '#fff' to grey
   },
-  
+
   extraSpacing: {
     width: 20,
   },
-  
+
   contentArea: {
     backgroundColor: '#F5F5F5',
     flex: 1,
     paddingTop: 0,
   },
-  
+
   header: {
     flexDirection: 'row',
     paddingTop: 16,
@@ -584,14 +767,14 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -50 }],
     padding: 16,
   },
-  
+
   contentText: {
     fontSize: 16,
     color: '#333',
     textAlign: 'center',
     lineHeight: 24,
   },
-  
+
   settingsList: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -797,7 +980,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
-},
+  },
   errorText: {
     fontSize: 16,
     color: '#666',

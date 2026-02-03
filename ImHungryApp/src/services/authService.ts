@@ -34,12 +34,12 @@ export type AuthSubscription = ReturnType<typeof supabase.auth.onAuthStateChange
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
-    
+
     if (error) {
       console.error('Error getting current user:', error);
       return null;
     }
-    
+
     return user;
   } catch (error) {
     console.error('Error in getCurrentUser:', error);
@@ -58,12 +58,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
 export const getCurrentSession = async (): Promise<AuthSessionResult> => {
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
-    
+
     if (error) {
       console.error('Error getting session:', error);
       return { isAuthenticated: false, user: null };
     }
-    
+
     return {
       isAuthenticated: !!session,
       user: session?.user || null
@@ -84,12 +84,12 @@ export const getCurrentSession = async (): Promise<AuthSessionResult> => {
  */
 export const signOut = async (): Promise<void> => {
   const { error } = await supabase.auth.signOut();
-  
+
   if (error) {
     console.error('Error signing out:', error);
     throw error;
   }
-  
+
   console.log('✅ User signed out successfully');
 };
 
@@ -158,7 +158,7 @@ export const validateEmailExists = validateEmail;
  * @returns Promise<PasswordResetResult> - Result of the password reset attempt
  */
 export const sendPasswordResetEmail = async (
-  email: string, 
+  email: string,
   redirectTo?: string
 ): Promise<PasswordResetResult> => {
   try {
@@ -185,7 +185,7 @@ export const sendPasswordResetEmail = async (
 
     // If email exists, proceed with password reset
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectTo || 'https://imhungri.netlify.app/',
+      redirectTo: redirectTo || 'https://imhungri.app/reset-password',
     });
 
     if (error) {

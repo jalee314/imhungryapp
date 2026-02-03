@@ -19,6 +19,8 @@ import * as Location from 'expo-location';
 import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
+import PhotoReviewModal from '../../components/PhotoReviewModal';
+import InstagramPhotoPickerModal from '../../components/InstagramPhotoPickerModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -63,7 +65,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const { setPostAdded } = useDealUpdate();
   // Get data from the context (removed 'restaurants')
   const { categories, cuisines, loading: dataLoading, error } = useDataCache();
-  
+
   const [userData, setUserData] = useState({
     username: '',
     profilePicture: null as string | null,
@@ -81,20 +83,27 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const [expirationDate, setExpirationDate] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageUris, setImageUris] = useState<string[]>([]);
+  // Keep original (uncropped) URIs so re-editing always starts from the original
+  const [originalImageUris, setOriginalImageUris] = useState<string[]>([]);
+  const [thumbnailIndex, setThumbnailIndex] = useState(0);
+  const [isPhotoReviewVisible, setIsPhotoReviewVisible] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPosting, setIsPosting] = useState(false);
-  
+  const [isInstagramPickerVisible, setIsInstagramPickerVisible] = useState(false);
+
   // Google Places search state
   const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  
+
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
   const detailsInputRef = useRef(null);
   const titleInputRef = useRef(null);
+  // Reference to abort controller for cancelling in-flight search requests
+  const searchAbortControllerRef = useRef<AbortController | null>(null);
 
   const loadUserData = async () => {
     try {
@@ -119,30 +128,45 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     }, [visible])
   );
 
-  // NEW: Get device's current location (not from database)
+  // Get device's current location with timeout to prevent hangs
   const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    const LOCATION_TIMEOUT_MS = 5000; // 5 second timeout
+
     try {
-      let { status } = await Location.getForegroundPermissionsAsync();
+      // Wrap the entire location process with a timeout
+      const locationPromise = (async () => {
+        let { status } = await Location.getForegroundPermissionsAsync();
 
-      // If permissions are not granted, request them
-      if (status !== 'granted') {
-        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
-        status = newStatus;
-      }
+        // If permissions are not granted, request them
+        if (status !== 'granted') {
+          const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+          status = newStatus;
+        }
 
-      // If permissions are still not granted, return null
-      if (status !== 'granted') {
-        return null;
-      }
+        // If permissions are still not granted, return null
+        if (status !== 'granted') {
+          return null;
+        }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        return {
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+        };
+      })();
+
+      // Race against timeout
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn('getDeviceLocation: Timed out after 5 seconds');
+          resolve(null);
+        }, LOCATION_TIMEOUT_MS);
       });
 
-      return {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      };
+      return await Promise.race([locationPromise, timeoutPromise]);
     } catch (error) {
       console.error('Error getting device location:', error);
       return null;
@@ -158,13 +182,26 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         return;
       }
 
+      // Cancel any previous search
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
+      }
+      // Create new abort controller for this search
+      const abortController = new AbortController();
+      searchAbortControllerRef.current = abortController;
+
       setIsSearching(true);
       setSearchError(null);
 
       try {
         // Get device location for search
         const deviceLocation = await getDeviceLocation();
-        
+
+        // Check if this search was cancelled while we were getting location
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         if (!deviceLocation) {
           setSearchError('Location not available. Please enable location services.');
           setSearchResults([]);
@@ -172,12 +209,18 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           return;
         }
 
-        // Search via Google Places API
+        // Search via Google Places API with abort signal
         const result = await searchRestaurants(
           query,
           deviceLocation.lat,
-          deviceLocation.lng
+          deviceLocation.lng,
+          abortController.signal
         );
+
+        // Check if cancelled before updating state
+        if (abortController.signal.aborted) {
+          return;
+        }
 
         if (!result.success) {
           setSearchError(result.error || 'Failed to search restaurants');
@@ -197,42 +240,65 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
             address: place.address.replace(/, USA$/, ''), // Also clean the address field
             distance_miles: place.distance_miles,
           }));
-          
+
           setSearchResults(transformed);
           setSearchError(null);
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Don't show error if search was cancelled
+        if (abortController.signal.aborted || error?.message?.includes('cancelled')) {
+          return;
+        }
         console.error('Search error:', error);
         setSearchError('An error occurred while searching');
         setSearchResults([]);
       } finally {
-        setIsSearching(false);
+        // Only update loading state if this is still the current search
+        if (!abortController.signal.aborted) {
+          setIsSearching(false);
+        }
       }
     }, 500),
     []
   );
+
+  // Cleanup function to cancel in-flight searches when modal closes
+  useEffect(() => {
+    if (!visible) {
+      // Cancel any in-flight search when modal closes
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
+        searchAbortControllerRef.current = null;
+      }
+      // Reset search state
+      setIsSearching(false);
+      setSearchError(null);
+      setSearchResults([]);
+      setSearchQuery('');
+    }
+  }, [visible]);
 
   // Handle search query change
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
     debouncedSearch(text);
   };
-  
+
   // All existing handler functions remain the same
   const handleAddPhoto = () => setIsCameraModalVisible(true);
   const handleCloseCameraModal = () => setIsCameraModalVisible(false);
 
   const handleTakePhoto = async () => {
     try {
-      console.log('🎥 Starting camera photo process...');
-      
+      console.log('Starting camera photo process...');
+
       // Request camera permissions
-      console.log('📱 Requesting camera permissions...');
+      console.log('Requesting camera permissions...');
       const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
-      console.log('🔐 Camera permission status:', cameraStatus);
-      
+      console.log('Camera permission status:', cameraStatus);
+
       if (cameraStatus.status !== 'granted') {
-        console.log('❌ Camera permission denied');
+        console.log('Camera permission denied');
         handleCloseCameraModal();
         Alert.alert(
           'Camera Permission Required',
@@ -245,62 +311,57 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         return;
       }
 
-      console.log('✅ Camera permission granted, launching camera...');
-      let result = await ImagePicker.launchCameraAsync({ 
-        allowsEditing: true, 
-        aspect: [4, 3], 
+      console.log('Camera permission granted, launching camera...');
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
         quality: 0.7
       });
-      
-      console.log('📸 Camera result:', result);
+
+      console.log('Camera result:', result);
       handleCloseCameraModal();
-      
+
       if (!result.canceled) {
-        console.log('✅ Photo taken successfully:', result.assets[0].uri);
-        setImageUri(result.assets[0].uri);
+        console.log('Photo taken successfully:', result.assets[0].uri);
+        // Append to existing photos (max 5)
+        setImageUris(prev => {
+          if (prev.length >= 5) {
+            Alert.alert('Limit Reached', 'You can only add up to 5 photos.');
+            return prev;
+          }
+          return [...prev, result.assets[0].uri];
+        });
+        setOriginalImageUris(prev => {
+          if (prev.length >= 5) return prev;
+          return [...prev, result.assets[0].uri];
+        });
       } else {
-        console.log('📱 User canceled camera');
+        console.log('User canceled camera');
       }
-    } catch (error) {
+    } catch (error: any) {
       handleCloseCameraModal();
-      console.error('❌ Camera error:', error);
-      Alert.alert('Camera Error', `Unable to open camera: ${error.message}. Please try again.`);
+      console.error('Camera error:', error);
+      Alert.alert('Camera Error', `Unable to open camera: ${error?.message || 'Unknown error'}. Please try again.`);
     }
   };
 
-  const handleChooseFromAlbum = async () => {
-    try {
-      // Request media library permissions
-      const mediaStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (mediaStatus.status !== 'granted') {
-        handleCloseCameraModal();
-        Alert.alert(
-          'Photo Library Permission Required',
-          'Please allow photo library access in your device settings to choose photos.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => ImagePicker.requestMediaLibraryPermissionsAsync() }
-          ]
-        );
-        return;
-      }
+  const handleChooseFromAlbum = () => {
+    handleCloseCameraModal();
+    setIsInstagramPickerVisible(true);
+  };
 
-      let result = await ImagePicker.launchImageLibraryAsync({ 
-        allowsEditing: true, 
-        aspect: [4, 3], 
-        quality: 0.7
+  // Handle photos selected from Instagram-style picker
+  const handleInstagramPickerDone = (photos: string[]) => {
+    setIsInstagramPickerVisible(false);
+    if (photos.length > 0) {
+      setImageUris(prev => {
+        const combined = [...prev, ...photos];
+        return combined.slice(0, 5); // Ensure max 5
       });
-      
-      handleCloseCameraModal();
-      
-      if (!result.canceled) {
-        setImageUri(result.assets[0].uri);
-      }
-    } catch (error) {
-      handleCloseCameraModal();
-      console.error('Photo library error:', error);
-      Alert.alert('Photo Library Error', 'Unable to open photo library. Please try again.');
+      setOriginalImageUris(prev => {
+        const combined = [...prev, ...photos];
+        return combined.slice(0, 5);
+      });
     }
   };
 
@@ -324,10 +385,10 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     if (selectedIds.length > 0) {
       // Get selected restaurant from search results
       const selectedPlace = searchResults.find(r => r.id === selectedIds[0]);
-      
+
       if (selectedPlace && selectedPlace.google_place_id) {
         setIsSearchModalVisible(false);
-        
+
         try {
           // Persist to database and get restaurant_id
           const result = await getOrCreateRestaurant({
@@ -356,7 +417,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         }
       }
     }
-    
+
     // Clear search state
     setSearchQuery('');
     setSearchResults([]);
@@ -364,7 +425,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   };
 
   const handleClearRestaurant = () => setSelectedRestaurant(null);
-  
+
   const handleSearchPress = () => {
     setSearchQuery('');
     setSearchResults([]);
@@ -378,8 +439,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       return;
     }
 
-    if (!imageUri) {
-      Alert.alert("Missing Photo", "Please add a photo to continue.");
+    if (imageUris.length === 0) {
+      Alert.alert("Missing Photo", "Please add at least one photo to continue.");
       return;
     }
 
@@ -404,18 +465,20 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       return;
     }
 
-    if (!imageUri) {
-      Alert.alert("Missing Photo", "Please add a photo to continue.");
+    if (imageUris.length === 0) {
+      Alert.alert("Missing Photo", "Please add at least one photo to continue.");
       return;
     }
 
     setIsPosting(true);
-    
+
     try {
+      // Pass all images and thumbnail index to createDeal
       const dealData = {
         title: dealTitle,
         description: dealDetails,
-        imageUri: imageUri,
+        imageUris: imageUris,
+        thumbnailIndex: thumbnailIndex,
         expirationDate: expirationDate,
         restaurantId: selectedRestaurant.id,
         categoryId: selectedCategory,
@@ -432,32 +495,34 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       }
 
       const result = await createDeal(dealData);
-      
+
       if (result.success) {
         await ProfileCacheService.forceRefresh();
         setPostAdded(true);
-        
+
         Alert.alert(
-          "Success!", 
-          "Your deal has been posted successfully!", 
+          "Success!",
+          "Your deal has been posted successfully!",
           [
             {
               text: "OK",
               onPress: () => {
                 // First close the preview screen
                 setIsPreviewVisible(false);
-                
+
                 // Clear the form after a brief delay
                 setTimeout(() => {
                   setDealTitle('');
                   setDealDetails('');
-                  setImageUri(null);
+                  setImageUris([]);
+                  setOriginalImageUris([]);
+                  setThumbnailIndex(0);
                   setExpirationDate(null);
                   setSelectedCategory(null);
                   setSelectedCuisine(null);
                   setSelectedRestaurant(null);
                   setIsAnonymous(false);
-                  
+
                   // Then close the main modal
                   onClose();
                 }, 200);
@@ -516,7 +581,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
-        
+
         {/* Show a loading indicator when data is being loaded */}
         {dataLoading && (
           <View style={styles.loadingOverlay}>
@@ -537,14 +602,14 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         >
           {/* Back Button and Next Button Row */}
           <View style={styles.topButtonRow}>
-            <TouchableOpacity 
-              style={styles.backButton} 
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={onClose}
             >
               <Ionicons name="arrow-back" size={20} color="#000000" />
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.nextButton, dataLoading ? styles.disabledButton : null]} 
+            <TouchableOpacity
+              style={[styles.nextButton, dataLoading ? styles.disabledButton : null]}
               onPress={handlePreview}
               disabled={dataLoading}
             >
@@ -573,110 +638,117 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           {/* Unified main container - with minimal gap from search */}
           <View style={styles.dealContainerWrapper}>
             <View style={styles.unifiedContainer}>
-            {/* Deal Title Section */}
-            <View style={styles.dealTitleSection}>
-              <Ionicons name="menu-outline" size={20} color="#606060" />
-              <Text style={styles.sectionLabel}>Deal Title *</Text>
-            </View>
-            <View style={styles.dealTitleInputContainer}>
-              <TextInput
-                ref={titleInputRef}
-                style={styles.dealTitleText}
-                value={dealTitle}
-                onChangeText={setDealTitle}
-                placeholder="$10 Sushi before 5pm on M-W"
-                placeholderTextColor="#C1C1C1"
-                multiline
-                maxLength={100}
-                onFocus={handleTitleFocus}
-              />
-              <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
-            </View>
-            
-            <View style={styles.separator} />
+              {/* Deal Title Section */}
+              <View style={styles.dealTitleSection}>
+                <Ionicons name="menu-outline" size={20} color="#606060" />
+                <Text style={styles.sectionLabel}>Deal Title *</Text>
+              </View>
+              <View style={styles.dealTitleInputContainer}>
+                <TextInput
+                  ref={titleInputRef}
+                  style={styles.dealTitleText}
+                  value={dealTitle}
+                  onChangeText={setDealTitle}
+                  placeholder="$10 Sushi before 5pm on M-W"
+                  placeholderTextColor="#C1C1C1"
+                  multiline
+                  maxLength={100}
+                  onFocus={handleTitleFocus}
+                />
+                <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
+              </View>
 
-                        
-            {/* Options Section */}
-            <TouchableOpacity style={styles.optionRow} onPress={handleAddPhoto}>
-              <Ionicons name="camera-outline" size={20} color="#404040" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Add Photo *</Text>
-                {imageUri && <Text style={styles.optionSubText}>Photo Added</Text>}
+              <View style={styles.separator} />
+
+
+              {/* Options Section */}
+              <TouchableOpacity
+                style={styles.optionRow}
+                onPress={imageUris.length > 0 ? () => setIsPhotoReviewVisible(true) : handleAddPhoto}
+              >
+                <Ionicons name="camera-outline" size={20} color="#404040" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Add Photo *</Text>
+                  {imageUris.length > 0 && (
+                    <Text style={styles.optionSubText}>
+                      {imageUris.length} Photo{imageUris.length !== 1 ? 's' : ''} Added
+                    </Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
+                <Ionicons name="time-outline" size={20} color="#4E4E4E" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Expiration Date</Text>
+                  {expirationDate && (
+                    <Text style={styles.optionSubText}>
+                      {expirationDate === 'Unknown' ? 'Not Known' : formatDate(expirationDate)}
+                    </Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
+                <Ionicons name="grid-outline" size={20} color="#606060" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Deal Categories</Text>
+                  {selectedCategory && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryName()}</Text>}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
+                <Ionicons name="pricetag-outline" size={20} color="#606060" />
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionText}>Cuisine Tag</Text>
+                  {selectedCuisine && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineName()}</Text>}
+                </View>
+                <Ionicons name="chevron-forward" size={12} color="black" />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <View style={styles.optionRow}>
+                <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
+                <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
+                <Switch
+                  trackColor={{ false: "#D2D5DA", true: "#FFA05C" }}
+                  thumbColor={"#FFFFFF"}
+                  onValueChange={setIsAnonymous}
+                  value={isAnonymous}
+                />
               </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
-              <Ionicons name="time-outline" size={20} color="#4E4E4E" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Expiration Date</Text>
-                {expirationDate && (
-                  <Text style={styles.optionSubText}>
-                    {expirationDate === 'Unknown' ? 'Not Known' : formatDate(expirationDate)}
-                  </Text>
-                )}
+
+              <View style={styles.separator} />
+
+              <View style={styles.optionRow}>
+                <Ionicons name="menu-outline" size={20} color="#606060" />
+                <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
               </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
-              <Ionicons name="grid-outline" size={20} color="#606060" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Deal Categories</Text>
-                {selectedCategory && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryName()}</Text>}
+
+              <View style={styles.extraDetailsInputContainer}>
+                <TextInput
+                  ref={detailsInputRef}
+                  style={styles.extraDetailsInput}
+                  value={dealDetails}
+                  onChangeText={setDealDetails}
+                  placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Are there any limitations or exclusions?&#10;• Are there any codes or special instructions needed to redeem it?&#10;• Is this a mobile deal or in-person deal?"
+                  placeholderTextColor="#C1C1C1"
+                  multiline
+                  onFocus={handleDetailsFocus}
+                />
               </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
-              <Ionicons name="pricetag-outline" size={20} color="#606060" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Cuisine Tag</Text>
-                {selectedCuisine && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineName()}</Text>}
-              </View>
-              <Ionicons name="chevron-forward" size={12} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.separator} />
-            
-            <View style={styles.optionRow}>
-              <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
-              <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
-              <Switch 
-                trackColor={{ false: "#D2D5DA", true: "#FFA05C" }} 
-                thumbColor={"#FFFFFF"} 
-                onValueChange={setIsAnonymous} 
-                value={isAnonymous} 
-              />
-            </View>
-            
-            <View style={styles.separator} />
-            
-            <View style={styles.optionRow}>
-              <Ionicons name="menu-outline" size={20} color="#606060" />
-              <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
-            </View>
-            
-            <View style={styles.extraDetailsInputContainer}>
-              <TextInput
-                ref={detailsInputRef}
-                style={styles.extraDetailsInput}
-                value={dealDetails}
-                onChangeText={setDealDetails}
-                placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Are there any limitations or exclusions?&#10;• Are there any codes or special instructions needed to redeem it?&#10;• Is this a mobile deal or in-person deal?"
-                placeholderTextColor="#C1C1C1"
-                multiline
-                onFocus={handleDetailsFocus}
-              />
             </View>
           </View>
-        </View>
         </KeyboardAwareScrollView>
       </SafeAreaView>
 
@@ -688,44 +760,44 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onChooseFromAlbum={handleChooseFromAlbum}
       />
       <CalendarModal visible={isCalendarModalVisible} onClose={() => setIsCalendarModalVisible(false)} onConfirm={handleConfirmDate} initialDate={expirationDate} />
-      <ListSelectionModal 
-        visible={isCategoriesModalVisible} 
-        onClose={() => setIsCategoriesModalVisible(false)} 
-        onDone={handleDoneCategories} 
+      <ListSelectionModal
+        visible={isCategoriesModalVisible}
+        onClose={() => setIsCategoriesModalVisible(false)}
+        onDone={handleDoneCategories}
         initialSelected={selectedCategory ? [selectedCategory] : []}
         data={categories}
-        title="Add Deal Category" 
+        title="Add Deal Category"
         singleSelect={true}
       />
-      <ListSelectionModal 
-        visible={isFoodTagsModalVisible} 
-        onClose={() => setIsFoodTagsModalVisible(false)} 
-        onDone={handleDoneCuisines} 
+      <ListSelectionModal
+        visible={isFoodTagsModalVisible}
+        onClose={() => setIsFoodTagsModalVisible(false)}
+        onDone={handleDoneCuisines}
         initialSelected={selectedCuisine ? [selectedCuisine] : []}
         data={cuisines}
-        title="Cuisine Tag" 
+        title="Cuisine Tag"
         singleSelect={true}
       />
-      <ListSelectionModal 
-        visible={isSearchModalVisible} 
+      <ListSelectionModal
+        visible={isSearchModalVisible}
         onClose={() => {
           setIsSearchModalVisible(false);
           setSearchQuery('');
           setSearchResults([]);
           setSearchError(null);
-        }} 
-        onDone={handleDoneSearch} 
+        }}
+        onDone={handleDoneSearch}
         data={
-          isSearching 
+          isSearching
             ? [{ id: 'loading', name: 'Searching restaurants...', subtext: '' }]
             : searchError
-            ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
-            : searchQuery.trim().length > 0
-            ? (searchResults.length > 0 
-                ? searchResults 
-                : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
-            : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
-        } 
+              ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
+              : searchQuery.trim().length > 0
+                ? (searchResults.length > 0
+                  ? searchResults
+                  : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
+                : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
+        }
         title="Search Restaurant"
         onSearchChange={handleSearchChange}
         searchQuery={searchQuery}
@@ -737,13 +809,40 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onPost={handlePost}
         dealTitle={dealTitle}
         dealDetails={dealDetails}
-        imageUri={imageUri}
+        imageUris={imageUris}
+        originalImageUris={originalImageUris}
         expirationDate={expirationDate}
         selectedRestaurant={selectedRestaurant}
         selectedCategory={getSelectedCategoryName()}
         selectedCuisine={getSelectedCuisineName()}
         userData={userData}
         isPosting={isPosting}
+      />
+
+      <PhotoReviewModal
+        visible={isPhotoReviewVisible}
+        photos={imageUris}
+        originalPhotos={originalImageUris}
+        thumbnailIndex={thumbnailIndex}
+        onClose={() => setIsPhotoReviewVisible(false)}
+        onDone={(photos, thumbIdx, originals) => {
+          setImageUris(photos);
+          setOriginalImageUris(originals);
+          setThumbnailIndex(thumbIdx);
+          setIsPhotoReviewVisible(false);
+        }}
+        onAddMore={() => {
+          setIsPhotoReviewVisible(false);
+          setIsCameraModalVisible(true);
+        }}
+      />
+
+      <InstagramPhotoPickerModal
+        visible={isInstagramPickerVisible}
+        onClose={() => setIsInstagramPickerVisible(false)}
+        onDone={handleInstagramPickerDone}
+        maxPhotos={5}
+        existingPhotosCount={imageUris.length}
       />
     </Modal>
   );

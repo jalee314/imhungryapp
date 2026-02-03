@@ -10,6 +10,7 @@ interface AdminState {
   isAdmin: boolean;
   isAdminLoading: boolean;
   isAdminMode: boolean;
+  navigateToProfileSettings: boolean;
 
   // Internals
   _initialized: boolean;
@@ -21,6 +22,8 @@ interface AdminState {
   checkAdminStatus: () => Promise<void>;
   enterAdminMode: () => void;
   exitAdminMode: () => void;
+  exitAdminModeToSettings: () => void;
+  clearNavigateToProfileSettings: () => void;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -28,6 +31,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   isAdmin: false,
   isAdminLoading: true,
   isAdminMode: false,
+  navigateToProfileSettings: false,
   _initialized: false,
   _authSubscription: null,
 
@@ -79,6 +83,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   // Toggle admin mode manually from UI
   enterAdminMode: () => set({ isAdminMode: true }),
   exitAdminMode: () => set({ isAdminMode: false }),
+  exitAdminModeToSettings: () => set({ isAdminMode: false, navigateToProfileSettings: true }),
+  clearNavigateToProfileSettings: () => set({ navigateToProfileSettings: false }),
 }));
 
 // React hook to initialize admin store lifecycle once at app start

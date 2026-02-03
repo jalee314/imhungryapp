@@ -160,7 +160,7 @@ class AdminService {
   }
 
   // === REPORT MANAGEMENT ===
-  
+
   async getReports(status?: string): Promise<Report[]> {
     try {
       let query = supabase
@@ -194,7 +194,7 @@ class AdminService {
 
       const { data, error } = await query;
       if (error) throw error;
-      
+
       // Transform the data to flatten the nested structure and surface useful deal metadata
       const transformedData = (data || []).map((report: any) => {
         const template = report.deal?.deal_template || {};
@@ -217,7 +217,7 @@ class AdminService {
           }
         };
       });
-      
+
       return transformedData;
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -297,7 +297,7 @@ class AdminService {
         .eq('report_id', reportId);
 
       if (error) throw error;
-      
+
       await this.logAction('resolve_report', 'report', reportId, { action: 'dismissed' });
       return { success: true };
     } catch (error: any) {
@@ -306,7 +306,7 @@ class AdminService {
   }
 
   async resolveReportWithAction(
-    reportId: string, 
+    reportId: string,
     action: 'delete_deal' | 'warn_user' | 'ban_user' | 'suspend_user',
     dealId?: string,
     userId?: string,
@@ -389,6 +389,14 @@ class AdminService {
             ),
             image_metadata:image_metadata_id(
               variants
+            ),
+            deal_images (
+              image_metadata_id,
+              display_order,
+              is_thumbnail,
+              image_metadata:image_metadata_id (
+                variants
+              )
             )
           )
         `)
@@ -402,18 +410,33 @@ class AdminService {
       let results = data || [];
       if (searchQuery) {
         const lowerQuery = searchQuery.toLowerCase();
-        results = results.filter((deal: any) => 
+        results = results.filter((deal: any) =>
           deal.deal_template?.title?.toLowerCase().includes(lowerQuery) ||
           deal.deal_template?.description?.toLowerCase().includes(lowerQuery)
         );
       }
 
       return results.map((deal: any) => {
-        // Get image URL from metadata variants
+        // Get image URL - prioritize first image by display_order
         let imageUrl = null;
-        if (deal.deal_template?.image_metadata?.variants) {
+        const dealImages = deal.deal_template?.deal_images || [];
+        // Sort by display_order and get the first one (which is the cover/thumbnail)
+        const sortedDealImages = [...dealImages].sort((a: any, b: any) => 
+          (a.display_order ?? 999) - (b.display_order ?? 999)
+        );
+        const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
+        // Fallback: check for is_thumbnail flag (for backward compatibility)
+        const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
+        
+        if (firstImageByOrder?.image_metadata?.variants) {
+          const variants = firstImageByOrder.image_metadata.variants;
+          imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
+        } else if (thumbnailImage?.image_metadata?.variants) {
+          const variants = thumbnailImage.image_metadata.variants;
+          imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
+        } else if (deal.deal_template?.image_metadata?.variants) {
+          // Fallback to deal_template.image_metadata
           const variants = deal.deal_template.image_metadata.variants;
-          // Try to get medium size, fallback to original or any available variant
           imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
         }
 
@@ -492,6 +515,61 @@ class AdminService {
 
   async deleteDeal(dealInstanceId: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // First, get the deal instance to find image_metadata_id for Cloudinary cleanup
+      const { data: dealInstance, error: fetchError } = await supabase
+        .from('deal_instance')
+        .select(`
+          template_id,
+          deal_template!inner(
+            image_metadata_id
+          )
+        `)
+        .eq('deal_id', dealInstanceId)
+        .single();
+
+      if (fetchError) {
+        console.warn('Could not fetch deal for image cleanup:', fetchError);
+        // Continue with deletion anyway
+      }
+
+      // Clean up Cloudinary image if exists
+      const imageMetadataId = (dealInstance?.deal_template as any)?.image_metadata_id;
+      if (imageMetadataId) {
+        try {
+          // Fetch the cloudinary_public_id from image_metadata table
+          const { data: imageMetadata, error: metadataError } = await supabase
+            .from('image_metadata')
+            .select('cloudinary_public_id')
+            .eq('image_metadata_id', imageMetadataId)
+            .single();
+
+          if (!metadataError && imageMetadata?.cloudinary_public_id) {
+            console.log('Admin deleting Cloudinary image:', imageMetadata.cloudinary_public_id);
+
+            // Call the edge function to delete from Cloudinary
+            const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
+              body: { publicIds: [imageMetadata.cloudinary_public_id] }
+            });
+
+            if (cloudinaryError) {
+              console.warn('Failed to delete image from Cloudinary:', cloudinaryError);
+            } else {
+              console.log('Successfully deleted Cloudinary image');
+            }
+
+            // Also delete the image_metadata record
+            await supabase
+              .from('image_metadata')
+              .delete()
+              .eq('image_metadata_id', imageMetadataId);
+          }
+        } catch (cloudinaryCleanupError) {
+          console.warn('Error during Cloudinary cleanup:', cloudinaryCleanupError);
+          // Continue with database deletion
+        }
+      }
+
+      // Delete the deal instance (cascades to deal_template via database constraints)
       const { error } = await supabase
         .from('deal_instance')
         .delete()

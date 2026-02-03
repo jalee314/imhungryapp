@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ProfileCacheService } from '../services/profileCacheService';
-import { 
-  fetchCurrentUserCuisines, 
-  saveUserCuisines, 
-  updateCurrentUserProfile, 
-  getCurrentUserId 
+import {
+  fetchCurrentUserCuisines,
+  saveUserCuisines,
+  updateCurrentUserProfile,
+  getCurrentUserId
 } from '../services/profileUpdateService';
 
 interface UseProfileEditParams {
@@ -18,6 +18,7 @@ interface UseProfileEditResult {
   setField: (field: keyof UseProfileEditResult['formData'], value: string) => void;
   loading: boolean;
   userCuisines: string[];
+  hasChanges: boolean;
   handleSave: () => Promise<void>;
   handleCuisinePress: () => void;
 }
@@ -28,6 +29,13 @@ export const useProfileEdit = ({ route }: UseProfileEditParams): UseProfileEditR
   const updatedCuisines = route?.params?.updatedCuisines as string[] | undefined;
   const hasUpdatedCuisines = useRef(false);
 
+  const initialFormData = useRef({
+    fullName: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
+    username: profile?.display_name || '',
+    email: profile?.email || '',
+    city: profile?.location_city || '',
+  });
+
   const [formData, setFormData] = useState({
     fullName: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
     username: profile?.display_name || '',
@@ -37,6 +45,14 @@ export const useProfileEdit = ({ route }: UseProfileEditParams): UseProfileEditR
   const [loading, setLoading] = useState(false);
   const [userCuisines, setUserCuisines] = useState<string[]>([]);
   const [savedCuisines, setSavedCuisines] = useState<string[]>([]);
+
+  // Check if any changes were made
+  const hasChanges =
+    formData.fullName !== initialFormData.current.fullName ||
+    formData.username !== initialFormData.current.username ||
+    formData.email !== initialFormData.current.email ||
+    formData.city !== initialFormData.current.city ||
+    JSON.stringify([...userCuisines].sort()) !== JSON.stringify([...savedCuisines].sort());
 
   // Initial fetch
   useEffect(() => { fetchUserCuisines(); }, []);
@@ -86,7 +102,7 @@ export const useProfileEdit = ({ route }: UseProfileEditParams): UseProfileEditR
       if (cuisinesChanged) await saveUserCuisines(userId, userCuisines);
       await ProfileCacheService.clearCache();
       hasUpdatedCuisines.current = false;
-      Alert.alert('Success', 'Profile updated successfully!', [{ text: 'OK', onPress: () => navigation.navigate('ProfileMain') }]);
+      Alert.alert('Success', 'Profile updated successfully!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (err) {
       console.error('Profile update error', err);
       Alert.alert('Error', 'Failed to update profile. Please try again.');
@@ -99,5 +115,5 @@ export const useProfileEdit = ({ route }: UseProfileEditParams): UseProfileEditR
     navigation.navigate('CuisineEdit', { selectedCuisines: userCuisines, profile });
   };
 
-  return { formData, setField, loading, userCuisines, handleSave, handleCuisinePress };
+  return { formData, setField, loading, userCuisines, hasChanges, handleSave, handleCuisinePress };
 };

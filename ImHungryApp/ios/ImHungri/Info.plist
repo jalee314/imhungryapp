@@ -41,15 +41,15 @@
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>12.0</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
     <key>LSApplicationQueriesSchemes</key>
     <array>
       <string>comgooglemaps</string>
       <string>maps</string>
     </array>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
     <key>NSAppTransportSecurity</key>
     <dict>
       <key>NSAllowsArbitraryLoads</key>
@@ -69,6 +69,8 @@
     <string>We use your location to find restaurants and food spots near you.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to save photos</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>We need access to your photos so you can add photos to your posts and update your profile.</string>
     <key>NSUserNotificationsUsageDescription</key>

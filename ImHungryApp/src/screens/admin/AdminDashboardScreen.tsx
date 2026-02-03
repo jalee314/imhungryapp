@@ -18,8 +18,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 const AdminDashboardScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { exitAdminMode } = useAdmin();
+  const { exitAdminMode, exitAdminModeToSettings } = useAdmin();
   const { signOut } = useAuth();
+
   const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -99,7 +100,7 @@ const AdminDashboardScreen: React.FC = () => {
       >
         {/* Statistics Cards */}
         <View style={styles.statsGrid}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigateTo('AdminUsers')}
           >
@@ -109,7 +110,7 @@ const AdminDashboardScreen: React.FC = () => {
             <Text style={styles.statSubtext}>+{analytics?.recentSignups || 0} this week</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigateTo('AdminDeals')}
           >
@@ -119,7 +120,7 @@ const AdminDashboardScreen: React.FC = () => {
             <Text style={styles.statSubtext}>+{analytics?.dealsThisWeek || 0} this week</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigateTo('AdminReports')}
           >
@@ -133,7 +134,7 @@ const AdminDashboardScreen: React.FC = () => {
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
+
           <TouchableOpacity style={styles.actionButton} onPress={() => navigateTo('AdminReports')}>
             <Ionicons name="flag-outline" size={24} color="#333" />
             <View style={styles.actionTextContainer}>
@@ -169,7 +170,18 @@ const AdminDashboardScreen: React.FC = () => {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={exitAdminModeToSettings}>
+
+            <Ionicons name="person-outline" size={24} color="#333" />
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Switch to Standard Profile</Text>
+              <Text style={styles.actionSubtitle}>Return to normal app view</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
+          </TouchableOpacity>
         </View>
+
 
         {/* Most Active Users */}
         <View style={styles.section}>
@@ -180,10 +192,10 @@ const AdminDashboardScreen: React.FC = () => {
                 <View style={styles.rankBadge}>
                   <Text style={styles.rankText}>#{index + 1}</Text>
                 </View>
-              <View style={styles.listItemContent}>
-                <Text style={styles.listItemTitle}>{user.display_name}</Text>
-                <Text style={styles.listItemSubtitle}>{user.deal_count} sessions</Text>
-              </View>
+                <View style={styles.listItemContent}>
+                  <Text style={styles.listItemTitle}>{user.display_name}</Text>
+                  <Text style={styles.listItemSubtitle}>{user.deal_count} sessions</Text>
+                </View>
               </View>
             ))
           ) : (

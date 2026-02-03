@@ -7,14 +7,15 @@ import { UserProfileCache } from '../services/userProfileService';
 import { fetchUserPosts, deleteDeal, transformDealForUI } from '../services/dealService';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../services/voteService';
 import { logClick } from '../services/interactionService';
-import { 
-  uploadProfilePhoto, handleTakePhoto, handleChooseFromLibrary, handleUserLogout, handleAccountDeletion 
+import {
+  uploadProfilePhoto, handleTakePhoto, handleChooseFromLibrary, handleUserLogout, handleAccountDeletion
 } from '../services/profileActionsService';
-import { 
-  formatJoinDate, getDisplayName, getUsernameFontSize, showProfilePhotoOptions, showDeleteAccountConfirmation 
+import {
+  formatJoinDate, getDisplayName, getUsernameFontSize, showProfilePhotoOptions, showDeleteAccountConfirmation
 } from '../services/profileUtilsService';
 import { useDealUpdate } from './useDealUpdate';
 import { useFavorites } from './useFavorites';
+import { useAdminStore } from '../stores/AdminStore';
 
 // Types kept intentionally broad to avoid tight coupling; can refine later
 export interface UseProfileParams {
@@ -31,6 +32,7 @@ export interface UseProfileResult {
   hasData: boolean;
   activeTab: 'posts' | 'settings';
   postsLoading: boolean;
+  postsInitialized: boolean;
   postsError: string | null;
   displayName: string;
   joinDateText: string;
@@ -62,21 +64,38 @@ export interface UseProfileResult {
 // Hook encapsulating all profile/business logic previously in the screen
 export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileResult => {
   const { viewUser, userId } = (route?.params as any) || {};
+
+  // Check if we should navigate to settings tab (from admin mode exit)
+  const navigateToProfileSettings = useAdminStore((s) => s.navigateToProfileSettings);
+  const clearNavigateToProfileSettings = useAdminStore((s) => s.clearNavigateToProfileSettings);
+
+  // Determine initial tab based on navigation flag
+  const getInitialTab = (): 'posts' | 'settings' => {
+    if (navigateToProfileSettings) {
+      // Clear the flag so it doesn't persist
+      setTimeout(() => clearNavigateToProfileSettings(), 0);
+      return 'settings';
+    }
+    return 'posts';
+  };
+
   const [profile, setProfile] = useState<any | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [currentUserPhotoUrl, setCurrentUserPhotoUrl] = useState<string | null>(null);
   const [dealCount, setDealCount] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'posts' | 'settings'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'settings'>(getInitialTab());
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [postsInitialized, setPostsInitialized] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [hasData, setHasData] = useState(false);
   const [userProfileCache, setUserProfileCache] = useState<Map<string, UserProfileCache>>(new Map());
   const postsLoadedRef = useRef(false);
-  const { postAdded, setPostAdded } = useDealUpdate();
+  const { postAdded, setPostAdded, getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
 
   // ---------- Data Loading (current user) ----------
@@ -141,6 +160,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
         console.error('Error loading other user posts (non-critical):', postsErr);
       } finally {
         setPostsLoading(false);
+        setPostsInitialized(true);
       }
     } catch (err) {
       console.error('Error loading other user profile:', err);
@@ -202,6 +222,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
       setPostsError('Failed to load your posts');
     } finally {
       setPostsLoading(false);
+      setPostsInitialized(true);
     }
   }, [viewUser, postsLoading]);
 
@@ -226,16 +247,50 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
       let cancelled = false;
       const run = async () => {
         if (postAdded) {
+          console.log('📸 Profile: postAdded detected, refreshing posts');
           await loadUserPosts();
           if (!cancelled) setPostAdded(false);
         }
+
+        // Also check for individual deal updates from the store (e.g., from DealDetailScreen)
         if (!viewUser) {
+          setUserPosts(prevPosts => {
+            let hasChanges = false;
+            const dealIdsToClear: string[] = [];
+            const updatedPosts = prevPosts.map(post => {
+              const updatedDeal = getUpdatedDeal(post.id);
+              if (updatedDeal) {
+                hasChanges = true;
+                dealIdsToClear.push(post.id);
+                // Merge updated deal data into the post
+                return {
+                  ...post,
+                  title: updatedDeal.title,
+                  details: updatedDeal.details,
+                  isAnonymous: updatedDeal.isAnonymous,
+                  author: updatedDeal.author,
+                  imageVariants: updatedDeal.imageVariants,
+                };
+              }
+              return post;
+            });
+
+            if (hasChanges) {
+              console.log('📸 Profile: Applying deal updates from store');
+              setTimeout(() => {
+                dealIdsToClear.forEach(id => clearUpdatedDeal(id));
+              }, 0);
+            }
+
+            return hasChanges ? updatedPosts : prevPosts;
+          });
+
           await refreshProfile();
         }
       };
       run();
       return () => { cancelled = true; };
-    }, [viewUser, postAdded, refreshProfile, loadUserPosts, setPostAdded])
+    }, [viewUser, postAdded, refreshProfile, loadUserPosts, setPostAdded, getUpdatedDeal, clearUpdatedDeal])
   );
 
   // ---------- Optimistic vote/favorite handlers ----------
@@ -275,10 +330,10 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     const original = userPosts.find(d => d.id === dealId);
     if (!original) return;
     const wasFav = original.isFavorited;
-    
+
     // 1. Optimistic UI update
     setUserPosts(prev => prev.map(d => d.id === dealId ? { ...d, isFavorited: !wasFav } : d));
-    
+
     // 2. Notify global store for instant favorites page update
     if (wasFav) {
       markAsUnfavorited(dealId, 'deal');
@@ -298,7 +353,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
         favoritedAt: new Date().toISOString(),
       });
     }
-    
+
     // 3. Background database save
     toggleFavorite(dealId, wasFav).catch(err => {
       console.error('Failed favorite revert', err);
@@ -311,28 +366,30 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     const selected = userPosts.find(d => d.id === dealId);
     if (!selected) return;
     const pos = userPosts.findIndex(d => d.id === dealId);
-    logClick(dealId, 'profile', pos >= 0 ? pos : undefined).catch(() => {});
+    logClick(dealId, 'profile', pos >= 0 ? pos : undefined).catch(() => { });
     navigation.navigate('DealDetail', { deal: selected });
   };
 
   const onDeletePost = (dealId: string) => {
     Alert.alert('Delete Post', 'Are you sure you want to delete this post? This action cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        try {
-          const result = await deleteDeal(dealId);
-          if (result.success) {
-            setUserPosts(prev => prev.filter(p => p.id !== dealId));
-            setDealCount(prev => Math.max(0, prev - 1));
-            Alert.alert('Success', 'Post deleted successfully');
-          } else {
-            Alert.alert('Error', result.error || 'Failed to delete post');
+      {
+        text: 'Delete', style: 'destructive', onPress: async () => {
+          try {
+            const result = await deleteDeal(dealId);
+            if (result.success) {
+              setUserPosts(prev => prev.filter(p => p.id !== dealId));
+              setDealCount(prev => Math.max(0, prev - 1));
+              Alert.alert('Success', 'Post deleted successfully');
+            } else {
+              Alert.alert('Error', result.error || 'Failed to delete post');
+            }
+          } catch (err) {
+            console.error('Error deleting post:', err);
+            Alert.alert('Error', 'An unexpected error occurred');
           }
-        } catch (err) {
-          console.error('Error deleting post:', err);
-          Alert.alert('Error', 'An unexpected error occurred');
         }
-      }}
+      }
     ]);
   };
 
@@ -357,7 +414,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
   const onProfileTabReselect = () => {
     if (viewUser) {
       // Reset to current user
-      setProfile(null); setPhotoUrl(null); setUserData(null); setUserPosts([]); setDealCount(0); setHasData(false);
+      setProfile(null); setPhotoUrl(null); setUserData(null); setUserPosts([]); setDealCount(0); setHasData(false); setPostsInitialized(false);
       loadProfileData();
     }
   };
@@ -401,6 +458,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     hasData,
     activeTab,
     postsLoading,
+    postsInitialized,
     postsError,
     displayName,
     joinDateText,

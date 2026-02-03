@@ -8,7 +8,7 @@ export interface GooglePlaceResult {
   lat: number;
   lng: number;
   distance_miles: number;
-  types: string[]; // Google Places API types for cuisine mapping
+  types?: string[]; // Google Places API types for cuisine mapping (optional)
 }
 
 export interface RestaurantSearchResult {
@@ -21,20 +21,44 @@ export interface RestaurantSearchResult {
 /**
  * Search restaurants using Google Places API via Edge Function
  * Uses maximum allowed radius (~31 miles / 50km)
+ * Includes 15-second timeout to prevent indefinite hangs
  */
 export const searchRestaurants = async (
   query: string,
   userLat: number,
-  userLng: number
+  userLng: number,
+  abortSignal?: AbortSignal
 ): Promise<RestaurantSearchResult> => {
+  // Timeout duration for search operations (15 seconds)
+  const SEARCH_TIMEOUT_MS = 15000;
+
   try {
     if (!query || query.trim().length === 0) {
       return { success: true, restaurants: [], count: 0 };
     }
 
+    // Check if already aborted
+    if (abortSignal?.aborted) {
+      return { success: false, restaurants: [], count: 0, error: 'Search cancelled' };
+    }
+
     console.log(`🔍 Searching for "${query}" (max radius: ~31 miles)...`);
 
-    const { data, error } = await supabase.functions.invoke('search-restaurants', {
+    // Create a timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Search timed out after 15 seconds'));
+      }, SEARCH_TIMEOUT_MS);
+
+      // Clear timeout if aborted
+      abortSignal?.addEventListener('abort', () => {
+        clearTimeout(timeoutId);
+        reject(new Error('Search cancelled'));
+      });
+    });
+
+    // Race between the actual search and the timeout
+    const searchPromise = supabase.functions.invoke('search-restaurants', {
       body: {
         query: query.trim(),
         userLat,
@@ -42,6 +66,9 @@ export const searchRestaurants = async (
         radius: 31, // 31 miles = ~50km (Google's maximum)
       },
     });
+
+    const result = await Promise.race([searchPromise, timeoutPromise]);
+    const { data, error } = result as { data: any; error: any };
 
     if (error) {
       console.error('Edge function error:', error);
@@ -55,13 +82,22 @@ export const searchRestaurants = async (
 
     console.log(`✅ Found ${data.count} restaurants`);
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error searching restaurants:', error);
+
+    // Provide more specific error messages
+    let errorMessage = 'An unexpected error occurred';
+    if (error?.message?.includes('timed out')) {
+      errorMessage = 'Search timed out. Please try again.';
+    } else if (error?.message?.includes('cancelled')) {
+      errorMessage = 'Search cancelled';
+    }
+
     return {
       success: false,
       restaurants: [],
       count: 0,
-      error: 'An unexpected error occurred',
+      error: errorMessage,
     };
   }
 };
@@ -118,10 +154,10 @@ export const getOrCreateRestaurant = async (
         if (!existingCuisineMapping || existingCuisineMapping.length === 0) {
           console.log('🍽️ Applying cuisine mapping for restaurant:', placeData.name);
           const cuisineMappingSuccess = await mapAndCreateRestaurantCuisine(
-            restaurantId, 
+            restaurantId,
             placeData.types || []
           );
-          
+
           if (cuisineMappingSuccess) {
             console.log('✅ Cuisine mapping applied successfully');
           } else {

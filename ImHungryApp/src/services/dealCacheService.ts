@@ -136,6 +136,11 @@ class DealCacheService {
     return this.fetchAndCache(false, customCoordinates);
   }
 
+  // Get cached deals synchronously (for focus sync without async)
+  getCachedDeals(): Deal[] {
+    return this.cachedDeals;
+  }
+
   // Initialize realtime subscriptions
   async initializeRealtime() {
     if (this.isInitialized) return;
@@ -155,6 +160,18 @@ class DealCacheService {
         },
         () => {
           console.log('⚡ Deal change detected, scheduling refresh...');
+          this.scheduleRefresh();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deal_images',
+        },
+        () => {
+          console.log('⚡ Deal images change detected, scheduling refresh...');
           this.scheduleRefresh();
         }
       )
@@ -205,6 +222,30 @@ class DealCacheService {
     });
     
     // Notify subscribers
+    this.notifySubscribers(this.cachedDeals);
+  }
+
+  // Invalidate cache and force a fresh fetch (call after deal modifications)
+  async invalidateAndRefresh() {
+    console.log('🔄 Invalidating cache and forcing refresh...');
+    // Clear ALL cache data to ensure no stale data
+    this.cachedDeals = [];
+    await AsyncStorage.removeItem(CACHE_KEY);
+    await AsyncStorage.removeItem(CACHE_TIMESTAMP_KEY);
+    // Reset fetching flag in case it's stuck
+    this.isFetching = false;
+    // Fetch fresh data
+    const freshDeals = await this.fetchAndCache(true);
+    console.log(`✅ Cache refreshed with ${freshDeals.length} deals`);
+    return freshDeals;
+  }
+
+  // Remove a specific deal from cache
+  removeDealFromCache(dealId: string) {
+    this.cachedDeals = this.cachedDeals.filter(deal => deal.id !== dealId);
+    AsyncStorage.setItem(CACHE_KEY, JSON.stringify(this.cachedDeals)).catch(err => {
+      console.error('Error updating cache:', err);
+    });
     this.notifySubscribers(this.cachedDeals);
   }
 

@@ -236,7 +236,7 @@ const AdminReportsScreen: React.FC = () => {
 
         <View style={styles.reportInfo}>
           <Text style={styles.reportLabel}>Reason:</Text>
-          <Text style={styles.reportValue}>{item.reason_code?.reason_code || 'Unknown'}</Text>
+          <Text style={styles.reportValue}>{item.reason_code?.description || item.reason_code?.reason_code || 'Unknown'}</Text>
         </View>
 
         <View style={styles.reportInfo}>
@@ -432,7 +432,7 @@ const AdminReportsScreen: React.FC = () => {
                 <Text style={styles.sectionTitle}>Report Details</Text>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Reason:</Text>
-                  <Text style={styles.detailValue}>{selectedReport?.reason_code?.reason_code || 'Unknown'}</Text>
+                  <Text style={styles.detailValue}>{selectedReport?.reason_code?.description || selectedReport?.reason_code?.reason_code || 'Unknown'}</Text>
                 </View>
                 {selectedReport?.reason_text && (
                   <View style={styles.reasonTextBox}>
@@ -519,7 +519,7 @@ const AdminReportsScreen: React.FC = () => {
               {/* Actions */}
               <View style={styles.actionsSection}>
                 <Text style={styles.sectionTitle}>Actions</Text>
-                
+
                 <TouchableOpacity
                   style={[styles.actionButton, styles.dismissButton, isBusy && styles.actionButtonDisabled]}
                   onPress={handleDismiss}
