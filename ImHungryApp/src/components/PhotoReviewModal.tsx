@@ -23,11 +23,17 @@ import Animated, {
     runOnJS,
 } from 'react-native-reanimated';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import {
+    getVisualIndex,
+    getItemOffset,
+    remapIndicesAfterReorder,
+    remapIndicesAfterDelete,
+    THUMBNAIL_SIZE,
+    GAP,
+    ITEM_WIDTH,
+} from '../utils/dragHelpers';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const THUMBNAIL_SIZE = 56;
-const GAP = 8;
-const ITEM_WIDTH = THUMBNAIL_SIZE + GAP;
 const MAX_PHOTOS = 5;
 
 // Crop area width with padding
@@ -59,38 +65,6 @@ interface CropState {
     translateY: number;
 }
 
-// Helper to calculate visual index after theoretical reorder
-function getVisualIndex(itemIndex: number, dragFrom: number, dragTo: number): number {
-    if (itemIndex === dragFrom) return dragTo;
-
-    if (dragFrom < dragTo) {
-        if (itemIndex > dragFrom && itemIndex <= dragTo) {
-            return itemIndex - 1;
-        }
-    } else if (dragFrom > dragTo) {
-        if (itemIndex >= dragTo && itemIndex < dragFrom) {
-            return itemIndex + 1;
-        }
-    }
-    return itemIndex;
-}
-
-// Calculate offset for non-dragged items based on drag position
-function getItemOffset(itemIndex: number, draggingIndex: number | null, targetIndex: number | null): number {
-    if (draggingIndex === null || targetIndex === null) return 0;
-    if (itemIndex === draggingIndex) return 0;
-
-    if (draggingIndex < targetIndex) {
-        if (itemIndex > draggingIndex && itemIndex <= targetIndex) {
-            return -ITEM_WIDTH;
-        }
-    } else if (draggingIndex > targetIndex) {
-        if (itemIndex >= targetIndex && itemIndex < draggingIndex) {
-            return ITEM_WIDTH;
-        }
-    }
-    return 0;
-}
 
 const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     visible,
@@ -169,27 +143,57 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const activeIndex = useSharedValue(-1);
     const currentTarget = useSharedValue(-1);
 
-    // Sync with props when modal opens
+    // Track if modal was previously visible to detect fresh opens vs photo additions
+    const wasVisible = useRef(false);
+    const prevPhotosLength = useRef(photos.length);
+
+    // Sync with props when modal opens or photos change
     React.useEffect(() => {
         if (visible) {
+            const isFirstOpen = !wasVisible.current;
+            const photosWereAdded = photos.length > prevPhotosLength.current;
+            
+            // Always update local photos to reflect prop changes
             setLocalPhotos(photos);
             setLocalOriginalPhotos(propOriginalPhotos || photos);
-            setCurrentIndex(0);
-            setCropStates(new Map());
-            setImageDimensions(new Map());
-            setDisplaySizes(new Map());
-            // Reset crop state
-            scale.value = 1;
-            savedScale.value = 1;
-            translateX.value = 0;
-            translateY.value = 0;
-            savedTranslateX.value = 0;
-            savedTranslateY.value = 0;
-            // Reset display size shared values to safe defaults
-            displayWidth.value = screenWidth;
-            displayHeight.value = screenHeight * 0.6;
+            
+            if (isFirstOpen) {
+                // Fresh modal open - reset everything
+                setCurrentIndex(0);
+                setCropStates(new Map());
+                setImageDimensions(new Map());
+                setDisplaySizes(new Map());
+                // Reset crop state
+                scale.value = 1;
+                savedScale.value = 1;
+                translateX.value = 0;
+                translateY.value = 0;
+                savedTranslateX.value = 0;
+                savedTranslateY.value = 0;
+                // Reset display size shared values to safe defaults
+                displayWidth.value = screenWidth;
+                displayHeight.value = screenHeight * 0.6;
+            } else if (photosWereAdded) {
+                // Photos were added - preserve existing crop states, navigate to new photo
+                const newPhotoIndex = photos.length - 1;
+                saveCropState(); // Save current before switching
+                setCurrentIndex(newPhotoIndex);
+                // Reset crop values for the new image
+                scale.value = 1;
+                savedScale.value = 1;
+                translateX.value = 0;
+                translateY.value = 0;
+                savedTranslateX.value = 0;
+                savedTranslateY.value = 0;
+            }
+            
+            wasVisible.current = true;
+            prevPhotosLength.current = photos.length;
+        } else {
+            wasVisible.current = false;
+            prevPhotosLength.current = photos.length;
         }
-    }, [visible, photos, propOriginalPhotos, thumbnailIndex]);
+    }, [visible, photos, propOriginalPhotos]);
 
     // Load image dimensions for current image
     useEffect(() => {
@@ -305,22 +309,19 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                         setLocalPhotos(newPhotos);
                         setLocalOriginalPhotos(newOriginals);
 
-                        // Update crop states map
-                        setCropStates(prev => {
-                            const newMap = new Map();
-                            prev.forEach((value, key) => {
-                                if (key < index) {
-                                    newMap.set(key, value);
-                                } else if (key > index) {
-                                    newMap.set(key - 1, value);
-                                }
-                            });
-                            return newMap;
-                        });
+                        // Update all index-keyed maps
+                        setCropStates(prev => remapIndicesAfterDelete(prev, index));
+                        setImageDimensions(prev => remapIndicesAfterDelete(prev, index));
+                        setDisplaySizes(prev => remapIndicesAfterDelete(prev, index));
 
                         // Adjust current index if needed
                         if (currentIndex >= newPhotos.length) {
                             const newIdx = Math.max(0, newPhotos.length - 1);
+                            setCurrentIndex(newIdx);
+                            restoreCropState(newIdx);
+                        } else if (currentIndex > index) {
+                            // If we deleted a photo before the current one, shift index
+                            const newIdx = currentIndex - 1;
                             setCurrentIndex(newIdx);
                             restoreCropState(newIdx);
                         }
@@ -352,22 +353,10 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         setLocalPhotos(newPhotos);
         setLocalOriginalPhotos(newOriginals);
 
-        // Update crop states with new indices
-        setCropStates(prev => {
-            const newMap = new Map<number, CropState>();
-            prev.forEach((value, key) => {
-                let newKey = key;
-                if (key === fromIndex) {
-                    newKey = toIndex;
-                } else if (fromIndex < toIndex && key > fromIndex && key <= toIndex) {
-                    newKey = key - 1;
-                } else if (fromIndex > toIndex && key >= toIndex && key < fromIndex) {
-                    newKey = key + 1;
-                }
-                newMap.set(newKey, value);
-            });
-            return newMap;
-        });
+        // Update all index-keyed maps with new indices
+        setCropStates(prev => remapIndicesAfterReorder(prev, fromIndex, toIndex));
+        setImageDimensions(prev => remapIndicesAfterReorder(prev, fromIndex, toIndex));
+        setDisplaySizes(prev => remapIndicesAfterReorder(prev, fromIndex, toIndex));
 
         // Update current index if needed
         let newCurrentIndex = currentIndex;
@@ -482,35 +471,34 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         const allCropStates = new Map(cropStates);
         allCropStates.set(currentIndex, currentState);
 
-        // Helper to check if image was modified (with small tolerance for floating point)
-        const isModified = (state: CropState | undefined): boolean => {
-            if (!state) return false;
-            const tolerance = 0.01;
-            return Math.abs(state.scale - 1) > tolerance ||
-                Math.abs(state.translateX) > tolerance ||
-                Math.abs(state.translateY) > tolerance;
-        };
-
-        // Check if any images need cropping
-        const needsCropping = Array.from({ length: localPhotos.length }, (_, i) =>
-            isModified(allCropStates.get(i)) && imageDimensions.has(i) && displaySizes.has(i)
+        // Check which images can be cropped (have dimensions loaded)
+        // Note: ALL images should be cropped to the frame, not just "modified" ones.
+        // Since images are sized to COVER the crop frame, even unmodified images
+        // extend beyond the frame and need to be cropped to match the preview.
+        const canCrop = Array.from({ length: localPhotos.length }, (_, i) =>
+            imageDimensions.has(i) && displaySizes.has(i)
         );
 
-        const anyCroppingNeeded = needsCropping.some(Boolean);
+        const anyCroppingPossible = canCrop.some(Boolean);
 
-        if (!anyCroppingNeeded) {
-            // No cropping needed, return immediately
+        if (!anyCroppingPossible) {
+            // No dimensions loaded yet, return original photos
             onDone(localPhotos, 0, localOriginalPhotos);
             return;
         }
 
         setIsProcessing(true);
         try {
-            // Apply crops only to images that were modified and have dimensions loaded
+            // Crop all images that have dimensions loaded to match the crop frame preview
             const croppedPhotos = await Promise.all(
                 localPhotos.map(async (photo, index) => {
-                    if (needsCropping[index]) {
-                        const state = allCropStates.get(index)!;
+                    if (canCrop[index]) {
+                        // Use saved crop state if available, otherwise use default (centered)
+                        const state = allCropStates.get(index) || {
+                            scale: 1,
+                            translateX: 0,
+                            translateY: 0,
+                        };
                         return await cropImageWithState(index, state);
                     }
                     return photo;

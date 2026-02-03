@@ -10,10 +10,13 @@ import Animated, {
   useAnimatedReaction,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-
-const THUMBNAIL_SIZE = 56;
-const GAP = 8;
-const ITEM_WIDTH = THUMBNAIL_SIZE + GAP;
+import {
+  getVisualIndex,
+  getItemOffset,
+  THUMBNAIL_SIZE,
+  GAP,
+  ITEM_WIDTH,
+} from '../utils/dragHelpers';
 
 interface ImageItem {
   imageMetadataId: string;
@@ -27,43 +30,6 @@ interface DraggableThumbnailStripProps {
   onReorder: (fromIndex: number, toIndex: number) => void;
   onAddPress: () => void;
   maxPhotos: number;
-}
-
-// Helper to calculate visual index after theoretical reorder
-function getVisualIndex(itemIndex: number, dragFrom: number, dragTo: number): number {
-  if (itemIndex === dragFrom) return dragTo;
-  
-  if (dragFrom < dragTo) {
-    // Dragging right
-    if (itemIndex > dragFrom && itemIndex <= dragTo) {
-      return itemIndex - 1;
-    }
-  } else if (dragFrom > dragTo) {
-    // Dragging left
-    if (itemIndex >= dragTo && itemIndex < dragFrom) {
-      return itemIndex + 1;
-    }
-  }
-  return itemIndex;
-}
-
-// Calculate offset for non-dragged items based on drag position
-function getItemOffset(itemIndex: number, draggingIndex: number | null, targetIndex: number | null): number {
-  if (draggingIndex === null || targetIndex === null) return 0;
-  if (itemIndex === draggingIndex) return 0;
-
-  if (draggingIndex < targetIndex) {
-    // Dragging right: items between shift left
-    if (itemIndex > draggingIndex && itemIndex <= targetIndex) {
-      return -ITEM_WIDTH;
-    }
-  } else if (draggingIndex > targetIndex) {
-    // Dragging left: items between shift right
-    if (itemIndex >= targetIndex && itemIndex < draggingIndex) {
-      return ITEM_WIDTH;
-    }
-  }
-  return 0;
 }
 
 const DraggableThumbnailStrip: React.FC<DraggableThumbnailStripProps> = ({
