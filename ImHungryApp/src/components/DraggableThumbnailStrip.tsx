@@ -7,7 +7,6 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
-  useAnimatedReaction,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {

@@ -500,7 +500,13 @@ const arePropsEqual = (prevProps: DealCardProps, nextProps: DealCardProps) => {
     prevProps.deal.isFavorited === nextProps.deal.isFavorited &&
     prevProps.deal.imageVariants?.cloudinary_id === nextProps.deal.imageVariants?.cloudinary_id &&
     prevProps.variant === nextProps.variant &&
-    prevProps.showDelete === nextProps.showDelete
+    prevProps.showDelete === nextProps.showDelete &&
+    // Include editable fields that users can modify
+    prevProps.deal.title === nextProps.deal.title &&
+    prevProps.deal.details === nextProps.deal.details &&
+    prevProps.deal.author === nextProps.deal.author &&
+    prevProps.deal.isAnonymous === nextProps.deal.isAnonymous &&
+    prevProps.deal.restaurant === nextProps.deal.restaurant
   );
 };
 

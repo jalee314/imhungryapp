@@ -672,14 +672,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#E0E0E0',
     },
-    dragHandle: {
-        width: 36,
-        height: 4,
-        backgroundColor: '#D0D0D0',
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginTop: 8,
-    },
     multiSelectButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -688,13 +680,6 @@ const styles = StyleSheet.create({
     },
     multiSelectButtonActive: {
         backgroundColor: 'rgba(255, 160, 92, 0.15)',
-    },
-    multiSelectText: {
-        fontFamily: 'Inter',
-        fontSize: 12,
-        fontWeight: '500',
-        color: '#666',
-        letterSpacing: 0.5,
     },
     albumSelectorRow: {
         flexDirection: 'row',
@@ -745,15 +730,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
         color: '#FFF',
-    },
-    previewIndicator: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        borderWidth: 3,
-        borderColor: '#FFF',
     },
     loadingContainer: {
         flex: 1,

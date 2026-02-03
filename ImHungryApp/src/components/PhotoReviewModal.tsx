@@ -314,16 +314,21 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                         setImageDimensions(prev => remapIndicesAfterDelete(prev, index));
                         setDisplaySizes(prev => remapIndicesAfterDelete(prev, index));
 
-                        // Adjust current index if needed
+                        // Adjust current index and restore crop state
                         if (currentIndex >= newPhotos.length) {
+                            // Deleted last photo in array, move to new last photo
                             const newIdx = Math.max(0, newPhotos.length - 1);
                             setCurrentIndex(newIdx);
                             restoreCropState(newIdx);
                         } else if (currentIndex > index) {
-                            // If we deleted a photo before the current one, shift index
+                            // Deleted a photo before current one, shift index down
                             const newIdx = currentIndex - 1;
                             setCurrentIndex(newIdx);
                             restoreCropState(newIdx);
+                        } else if (currentIndex === index) {
+                            // Deleted the currently viewed photo - the next photo slides into
+                            // this index position, so restore its crop state (index stays same)
+                            restoreCropState(currentIndex);
                         }
                     },
                 },
