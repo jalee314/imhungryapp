@@ -1,6 +1,15 @@
+/**
+ * ScreenHeader - Screen Navigation Header
+ * 
+ * A reusable header component with back button and optional right action.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Pressable } from '../atoms';
+import { colors } from '../../lib/theme';
 
 type RightConfig = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -24,72 +33,71 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   titleStyle,
 }) => {
   const renderRight = () => {
-    if (!right) return <View style={styles.sidePlaceholder} />;
-    if (React.isValidElement(right)) return right;
+    if (!right) {
+      return <Box width={40} height={32} />;
+    }
+    if (React.isValidElement(right)) {
+      return right;
+    }
     const cfg = right as RightConfig;
     return (
-      <TouchableOpacity onPress={cfg.onPress} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Ionicons name={cfg.icon} size={22} color={cfg.color || '#000'} />
-      </TouchableOpacity>
+      <Pressable
+        onPress={cfg.onPress}
+        center
+        width={40}
+        height={32}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons name={cfg.icon} size={22} color={cfg.color || colors.text} />
+      </Pressable>
     );
   };
 
   return (
-    <View style={[styles.header, containerStyle]}>
+    <Box
+      row
+      alignCenter
+      justifyBetween
+      px="m"
+      py="m"
+      bg="background"
+      borderBottom={1}
+      borderColor="border"
+      style={containerStyle}
+    >
       {onBack ? (
-        <TouchableOpacity onPress={onBack} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="arrow-back" size={22} color="#000" />
-        </TouchableOpacity>
+        <Pressable
+          onPress={onBack}
+          center
+          width={40}
+          height={32}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </Pressable>
       ) : (
-        <View style={styles.sidePlaceholder} />
+        <Box width={40} height={32} />
       )}
 
-      <View style={styles.titleContainer}>
+      <Box flex={1} px="s" alignCenter>
         {typeof title === 'string' ? (
-          <Text style={[styles.title, titleStyle]} numberOfLines={1}>
+          <Text
+            size="lg"
+            weight="bold"
+            color="text"
+            numberOfLines={1}
+            style={titleStyle}
+          >
             {title}
           </Text>
         ) : (
           title
         )}
-      </View>
+      </Box>
 
       {renderRight()}
-    </View>
+    </Box>
   );
 };
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  iconButton: {
-    width: 40,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sidePlaceholder: {
-    width: 40,
-    height: 32,
-  },
-  titleContainer: {
-    flex: 1,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
-  },
-});
 
 export default ScreenHeader;

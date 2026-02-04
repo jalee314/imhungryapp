@@ -1,19 +1,20 @@
+/**
+ * BottomNavigation - Main app navigation bar
+ */
+
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { Image, Dimensions } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Box, Text, Pressable } from './atoms';
 import { fetchUserData } from '../services/userService';
 import { useAuth } from '../hooks/useAuth';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
+import { colors } from '../lib/theme';
 
 const { width: screenWidth } = Dimensions.get('window');
-
-// Base design width (iPhone 15 = 393pt)
 const BASE_WIDTH = 393;
-// Scale factor for responsive sizing
 const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
-
-// Dynamic icon size - 25 on iPhone 15, ~28 on Pro Max
 const ICON_SIZE = Math.round(scale(25));
 const PROFILE_SIZE = Math.round(scale(25));
 
@@ -22,6 +23,14 @@ interface BottomNavigationProps {
   activeTab?: string;
   onTabPress?: (tab: string) => void;
 }
+
+const navItems = [
+  { id: 'feed', icon: 'view-grid', activeIcon: 'view-grid', label: 'Feed', screen: 'Feed' },
+  { id: 'search', icon: 'magnify', activeIcon: 'magnify', label: 'Explore', screen: 'ExploreFeed' },
+  { id: 'contribute', icon: 'plus-circle-outline', activeIcon: 'plus-circle', label: 'Contribute', screen: 'DealCreationScreen' },
+  { id: 'favorites', icon: 'heart-outline', activeIcon: 'heart', label: 'Favorites', screen: 'FavoritesPage' },
+  { id: 'profile', icon: 'account-circle-outline', activeIcon: 'account-circle', label: 'Profile', screen: 'ProfilePage' },
+];
 
 const BottomNavigation: React.FC<BottomNavigationProps> = ({ 
   photoUrl: propPhotoUrl, 
@@ -36,18 +45,15 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   const loadUserData = async (): Promise<boolean> => {
     try {
-      // Check if user is authenticated before fetching data
       if (!isAuthenticated) {
         setUserPhotoUrl(null);
         return false;
       }
-      
       const userData = await fetchUserData();
       const hasProfilePicture = !!userData.profilePicture;
       setUserPhotoUrl(userData.profilePicture);
       return hasProfilePicture;
     } catch (error) {
-      // Handle error silently
       setUserPhotoUrl(null);
       return false;
     }
@@ -59,32 +65,22 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     const attemptLoadWithRetry = async () => {
       if (!isAuthenticated || !isMounted) return;
       
-      // Initial load
       const hasPicture = await loadUserData();
-      
-      // If we already have a profile picture, no need to retry
       if (hasPicture) return;
       
-      // Retry with increasing delays until we get a profile picture or timeout
-      const refreshAttempts = [2000, 5000, 10000, 15000]; // Retry at 2s, 5s, 10s, 15s
+      const refreshAttempts = [2000, 5000, 10000, 15000];
       
       for (const delay of refreshAttempts) {
         if (!isMounted) return;
-        
         await new Promise(resolve => setTimeout(resolve, delay));
-        
         if (!isAuthenticated || !isMounted) return;
-        
         const hasPictureNow = await loadUserData();
-        if (hasPictureNow) break; // Stop retrying once we have a profile picture
+        if (hasPictureNow) break;
       }
     };
     
     attemptLoadWithRetry();
-    
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [isAuthenticated]);
 
   useFocusEffect(
@@ -93,21 +89,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     }, [])
   );
 
-  const navItems = [
-    { id: 'feed', icon: 'view-grid', activeIcon: 'view-grid', label: 'Feed', screen: 'Feed' },
-    { id: 'search', icon: 'magnify', activeIcon: 'magnify', label: 'Explore', screen: 'ExploreFeed' },
-    { id: 'contribute', icon: 'plus-circle-outline', activeIcon: 'plus-circle', label: 'Contribute', screen: 'DealCreationScreen' },
-    { id: 'favorites', icon: 'heart-outline', activeIcon: 'heart', label: 'Favorites', screen: 'FavoritesPage' },
-    { id: 'profile', icon: 'account-circle-outline', activeIcon: 'account-circle', label: 'Profile', screen: 'ProfilePage' },
-  ];
-
   const handleTabPress = (screenName: string) => {
     if (screenName === 'DealCreationScreen') {
       setContributePressed(true);
       setShowContributeModal(true);
-      // Reset opacity after a short delay
       setTimeout(() => setContributePressed(false), 150);
-      // Don't call onTabPress for contribute to avoid tab state change
     } else {
       if (onTabPress) {
         const tab = navItems.find(item => item.screen === screenName);
@@ -115,145 +101,145 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onTabPress(tab.id);
         }
       } else {
-        // Fallback to navigation if onTabPress is not provided (for backward compatibility)
         navigation.navigate(screenName as never);
       }
     }
   };
 
-  const renderNavItem = (item: { id: string; icon: any; activeIcon: any; label: string; screen: string }) => {
-    // Contribute button should never be considered active
+  const renderNavItem = (item: typeof navItems[0]) => {
     const isActive = item.id !== 'contribute' && activeTab === item.id;
     const isContributePressed = item.id === 'contribute' && contributePressed;
+    
+    const navItemStyle = {
+      minWidth: scale(65),
+    };
+
+    const iconContainerStyle = {
+      height: ICON_SIZE,
+      width: ICON_SIZE,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    };
+
+    const profilePhotoStyle = {
+      width: PROFILE_SIZE,
+      height: PROFILE_SIZE,
+      borderRadius: PROFILE_SIZE / 2,
+      borderWidth: 1.5,
+      borderColor: isActive ? colors.text : 'transparent',
+    };
+
+    const placeholderStyle = {
+      width: PROFILE_SIZE,
+      height: PROFILE_SIZE,
+      borderRadius: PROFILE_SIZE / 2,
+      backgroundColor: '#E0E0E0',
+      borderWidth: 1.5,
+      borderColor: isActive ? colors.text : 'transparent',
+    };
     
     if (item.id === 'profile') {
       const displayPhotoUrl = propPhotoUrl || userPhotoUrl;
       
       return (
-        <TouchableOpacity
+        <Pressable
           key={item.id}
-          style={styles.navItem}
           onPress={() => handleTabPress(item.screen)}
+          alignCenter
+          justifyStart
+          flex={1}
+          px="s1"
+          style={navItemStyle}
         >
-          <View style={styles.iconContainer}>
+          <Box style={iconContainerStyle}>
             {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
-              <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+              <Image 
+                source={{ uri: displayPhotoUrl }} 
+                style={profilePhotoStyle} 
+              />
             ) : displayPhotoUrl ? (
-              <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+              <Image 
+                source={displayPhotoUrl} 
+                style={profilePhotoStyle} 
+              />
             ) : (
-              <View style={[styles.navProfilePlaceholder, isActive && styles.activeNavProfilePhoto]}>
-                <Text style={styles.navPlaceholderText}>👤</Text>
-              </View>
+              <Box style={placeholderStyle} center>
+                <Text variant="caption" color="textMuted">👤</Text>
+              </Box>
             )}
-          </View>
-          <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
-        </TouchableOpacity>
+          </Box>
+          <Text 
+            variant="caption" 
+            color={isActive ? 'text' : 'textMuted'}
+            textAlign="center"
+            mt="s1"
+          >
+            {item.label}
+          </Text>
+        </Pressable>
       );
     }
 
     return (
-      <TouchableOpacity
+      <Pressable
         key={item.id}
-        style={[
-          styles.navItem, 
-          isContributePressed && { opacity: 0.5 }
-        ]}
         onPress={() => handleTabPress(item.screen)}
+        alignCenter
+        justifyStart
+        flex={1}
+        px="s1"
+        style={[navItemStyle, isContributePressed && { opacity: 0.5 }]}
       >
-        <View style={styles.iconContainer}>
+        <Box style={iconContainerStyle}>
           <MaterialCommunityIcons
             name={isActive ? item.activeIcon : item.icon} 
             size={ICON_SIZE} 
-            color={isActive ? '#000000' : '#757575'} 
+            color={isActive ? colors.text : colors.textMuted} 
           />
-        </View>
-        <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
-      </TouchableOpacity>
+        </Box>
+        <Text 
+          variant="caption" 
+          color={isActive ? 'text' : 'textMuted'}
+          textAlign="center"
+          mt="s1"
+        >
+          {item.label}
+        </Text>
+      </Pressable>
     );
   };
 
   return (
     <>
-      <View style={styles.bottomNav}>
+      <Box
+        row
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#fdfdfd',
+          borderTopWidth: 0.5,
+          borderTopColor: '#bcbcbc',
+          paddingTop: scale(4),
+          paddingBottom: scale(32),
+          paddingHorizontal: scale(8),
+          justifyContent: 'space-around',
+          alignItems: 'center',
+        }}
+      >
         {navItems.map(renderNavItem)}
-      </View>
+      </Box>
       
       <DealCreationScreen
         visible={showContributeModal}
         onClose={() => {
           setShowContributeModal(false);
-          setContributePressed(false); // Reset pressed state when modal closes
+          setContributePressed(false);
         }}
       />
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    backgroundColor: '#fdfdfd',
-    borderTopWidth: 0.5,
-    borderTopColor: '#bcbcbc',
-    paddingTop: scale(4),
-    paddingBottom: scale(32),
-    paddingHorizontal: scale(8),
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    minWidth: scale(65),
-    paddingHorizontal: scale(4),
-    flex: 1,
-  },
-  iconContainer: {
-    height: ICON_SIZE,
-    width: ICON_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navLabel: {
-    fontSize: scale(12),
-    color: '#757575',
-    fontWeight: '400',
-    marginTop: scale(4),
-    textAlign: 'center',
-    width: '100%',
-  },
-  activeNavLabel: {
-    color: '#000000',
-    fontWeight: '400',
-  },
-  navProfilePhoto: {
-    width: PROFILE_SIZE,
-    height: PROFILE_SIZE,
-    borderRadius: PROFILE_SIZE / 2,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  activeNavProfilePhoto: {
-    borderColor: '#000000',
-  },
-  navProfilePlaceholder: {
-    width: PROFILE_SIZE,
-    height: PROFILE_SIZE,
-    borderRadius: PROFILE_SIZE / 2,
-    backgroundColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  navPlaceholderText: {
-    fontSize: scale(12),
-    color: '#999',
-  },
-});
 
 export default BottomNavigation;

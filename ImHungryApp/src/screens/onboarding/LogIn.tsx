@@ -1,35 +1,39 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, useWindowDimensions, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+/**
+ * LogInScreen - User Login
+ * 
+ * The login screen for existing users.
+ * Uses atomic components for styling while preserving complex form logic.
+ */
 
+import React, { useState, useRef } from 'react';
+import { 
+  SafeAreaView, 
+  KeyboardAvoidingView, 
+  Platform, 
+  useWindowDimensions, 
+  ScrollView,
+  TouchableWithoutFeedback 
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors, spacing, borderRadius } from '../../lib/theme';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function LogInScreen() {
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, signIn } = useAuth();
 
-  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));   // horizontal page padding
-  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
-  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));  // between inputs
+  // Responsive sizing
+  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
+  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
+  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
-
-  const responsive = {
-    pagePad: { paddingHorizontal: H, paddingVertical: V },
-    backButton: { marginBottom: Math.round(V * 0.2), marginTop: V },
-    welcomeSection: { marginBottom: Math.round(V * 1.5), paddingTop: Math.round(height * 0.07) },
-    welcomeTitle: { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle: { marginBottom: -Math.round(V * 0.9) },
-    formContainer: { marginBottom: Math.round(V * 0.125) },
-    paperInput: { marginBottom: Math.round(GAP * 0.7) },
-    continueButton: { marginTop: Math.round(V * 0.6), marginBottom: V },
-    legalContainer: { marginTop: V * 2 },
-  };
 
   const [formData, setFormData] = useState({
     email: '',
@@ -40,15 +44,12 @@ export default function LogInScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tapCount, setTapCount] = useState(0);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const { signIn } = useAuth();
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Error persists until next login attempt (standard UX pattern)
   };
 
   const handleLogin = async () => {
-    // Clear any previous error
     setErrorMessage(null);
 
     if (!formData.email || !formData.password) {
@@ -59,11 +60,8 @@ export default function LogInScreen() {
     setLoading(true);
     try {
       await signIn(formData.email, formData.password);
-      // Auth listeners will update navigation flow automatically
-      console.log('Login successful, auth store will handle navigation');
     } catch (err: any) {
       const message = err?.message || '';
-
       if (message.includes('Invalid login credentials')) {
         setErrorMessage('Login credentials not recognized. Please check your email and password.');
       } else if (message.includes('Email not confirmed')) {
@@ -86,104 +84,105 @@ export default function LogInScreen() {
     (navigation as any).navigate('ForgotPassword');
   };
 
-  const handleTermsPress = () => { };
-  const handlePrivacyPress = () => { };
-
   const handleImTap = () => {
-    // Increment tap count
     const newTapCount = tapCount + 1;
     setTapCount(newTapCount);
 
-    // Clear existing timer
     if (tapTimerRef.current) {
       clearTimeout(tapTimerRef.current);
     }
 
-    // Check if 7 taps achieved
     if (newTapCount >= 7) {
-      // Navigate to admin login
       (navigation as any).navigate('AdminLogin');
-      // Reset counter
       setTapCount(0);
       return;
     }
 
-    // Set new timer to reset counter after 5 seconds
     tapTimerRef.current = setTimeout(() => {
       setTapCount(0);
     }, 5000);
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <SafeAreaView style={styles.container}>
+    <Box flex={1} bg="background">
+      <SafeAreaView style={{ flex: 1 }}>
         <StatusBar style="dark" />
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{ flex: 1 }}
+        >
           <ScrollView
-            style={[styles.pagePad, responsive.pagePad]}
-            contentContainerStyle={styles.scrollContentContainer}
+            style={{ flex: 1, paddingHorizontal: H, paddingVertical: V }}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View>
-              <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-                <Ionicons name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
+            <Box>
+              {/* Back Button */}
+              <Pressable 
+                onPress={handleBack}
+                style={{ alignSelf: 'flex-start', marginBottom: V * 0.2, marginTop: V }}
+              >
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
+              </Pressable>
 
-              <View style={styles.mainContainer}>
-                <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                  <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>
-                    Welcome back to <TouchableWithoutFeedback onPress={handleImTap}><Text suppressHighlighting={true}>Im</Text></TouchableWithoutFeedback>Hungri
+              <Box alignCenter justifyStart>
+                {/* Welcome Section */}
+                <Box 
+                  style={[CONSTRAIN, { marginBottom: V * 1.5, paddingTop: height * 0.07 }]}
+                >
+                  <Text 
+                    size="lg" 
+                    weight="bold" 
+                    color="text" 
+                    style={{ marginBottom: V }}
+                  >
+                    Welcome back to{' '}
+                    <TouchableWithoutFeedback onPress={handleImTap}>
+                      <Text suppressHighlighting>Im</Text>
+                    </TouchableWithoutFeedback>
+                    Hungri
                   </Text>
-                  <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
+                  <Text 
+                    size="md" 
+                    color="text" 
+                    style={{ lineHeight: 24, marginBottom: -V * 0.9 }}
+                  >
                     Sign in with your email address.
                   </Text>
-                </View>
+                </Box>
 
                 {/* Form Fields */}
-                <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
-                  <View style={responsive.paperInput}>
+                <Box width="100%" style={[CONSTRAIN, { marginBottom: V * 0.125 }]}>
+                  <Box mb={GAP * 0.7}>
                     <TextInput
                       label="Email address"
                       mode="outlined"
                       value={formData.email}
                       onChangeText={t => handleInputChange('email', t)}
-                      placeholder=""
-                      outlineColor="#FF8C4C"
-                      activeOutlineColor="#FF8C4C"
-                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                      theme={{
-                        roundness: 8,
-                        colors: {
-                          background: 'white',
-                        },
-                      }}
+                      outlineColor={colors.primaryDark}
+                      activeOutlineColor={colors.primaryDark}
+                      style={{ backgroundColor: colors.background, minHeight: 56, fontSize: 16 }}
+                      theme={{ roundness: 8, colors: { background: colors.background } }}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoComplete="email"
                       textContentType="emailAddress"
                       returnKeyType="next"
                     />
-                  </View>
+                  </Box>
 
-                  <View style={responsive.paperInput}>
+                  <Box mb={GAP * 0.7}>
                     <TextInput
                       label="Password"
                       mode="outlined"
                       value={formData.password}
                       onChangeText={t => handleInputChange('password', t)}
-                      placeholder=""
-                      outlineColor="#FF8C4C"
-                      activeOutlineColor="#FF8C4C"
-                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                      theme={{
-                        roundness: 8,
-                        colors: {
-                          background: 'white',
-                        },
-                      }}
-                      keyboardType="default"
+                      outlineColor={colors.primaryDark}
+                      activeOutlineColor={colors.primaryDark}
+                      style={{ backgroundColor: colors.background, minHeight: 56, fontSize: 16 }}
+                      theme={{ roundness: 8, colors: { background: colors.background } }}
                       autoCapitalize="none"
                       autoComplete="current-password"
                       textContentType="password"
@@ -197,137 +196,52 @@ export default function LogInScreen() {
                         />
                       }
                     />
-                  </View>
-                </View>
+                  </Box>
+                </Box>
 
                 {/* Error Message */}
                 {errorMessage && (
-                  <View style={[styles.errorContainer, CONSTRAIN]}>
-                    <Text style={styles.errorText}>{errorMessage}</Text>
-                  </View>
+                  <Box style={[CONSTRAIN, { marginTop: 8, marginBottom: 4, paddingHorizontal: 4 }]}>
+                    <Text size="sm" color="error" align="center" weight="medium">
+                      {errorMessage}
+                    </Text>
+                  </Box>
                 )}
 
                 {/* Login Button */}
-                <TouchableOpacity
-                  style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+                <Pressable
                   onPress={handleLogin}
                   disabled={loading || authLoading}
+                  bg="primaryDark"
+                  rounded={25}
+                  height={50}
+                  center
+                  style={[CONSTRAIN, { marginTop: V * 0.6, marginBottom: V, opacity: loading ? 0.7 : 1 }]}
                 >
-                  <Text style={styles.continueButtonText}>Log in</Text>
-                </TouchableOpacity>
+                  <Text size="md" color="textInverse">Log in</Text>
+                </Pressable>
 
                 {/* Forgot Password */}
-                <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
-                  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                <Pressable onPress={handleForgotPassword} style={{ marginTop: 16 }}>
+                  <Text size="sm" color="text" weight="medium" underline>
+                    Forgot password?
+                  </Text>
+                </Pressable>
+              </Box>
+            </Box>
 
             {/* Legal */}
-            <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
-              <Text style={styles.legalText} numberOfLines={2}>
+            <Box style={[CONSTRAIN, { marginTop: V * 2 }]} alignCenter>
+              <Text size="xs" color="text" align="left" style={{ lineHeight: 16 }} numberOfLines={2}>
                 By continuing, you agree to ImHungri's{' '}
-                <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
+                <Text size="xs" color="primary" weight="semiBold">Terms & Conditions</Text>{' '}
                 and{' '}
-                <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
+                <Text size="xs" color="primary" weight="semiBold">Privacy Policy</Text>
               </Text>
-            </View>
+            </Box>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
-
-  keyboardAvoidingView: { flex: 1 },
-  pagePad: { flex: 1 },
-  scrollContentContainer: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-  },
-
-  mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
-
-  backButton: { alignSelf: 'flex-start' },
-
-  welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: {
-    fontSize: 18,
-    color: '#181619',
-    fontFamily: 'Inter-Bold',
-    fontWeight: '700',
-    textAlign: 'left'
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: '#181619',
-    lineHeight: 24,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'left'
-  },
-
-  formContainer: { width: '100%' },
-  paperInput: {},
-
-  textInputStyle: {
-    backgroundColor: 'white',
-    minHeight: 56,
-    fontSize: 16,
-    lineHeight: 22,
-    paddingVertical: 0,
-  },
-
-  continueButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular',
-    lineHeight: 24
-  },
-
-  forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: '#000',
-    fontWeight: '500',
-    textDecorationLine: 'underline'
-  },
-
-  legalContainer: { alignItems: 'center' },
-  legalText: {
-    fontSize: 12,
-    color: '#181619',
-    textAlign: 'left',
-    lineHeight: 16,
-    fontFamily: 'Inter-Medium',
-    fontWeight: '500'
-  },
-  legalLink: {
-    color: '#FFA05C',
-    fontWeight: '600',
-    fontFamily: 'Inter-SemiBold'
-  },
-  errorContainer: {
-    marginTop: 8,
-    marginBottom: 4,
-    paddingHorizontal: 4,
-  },
-  errorText: {
-    color: '#DC2626',
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-});

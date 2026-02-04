@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors, typography } from '../../lib/theme';
 
 const FAQPage = () => {
   const navigation = useNavigation();
@@ -134,120 +136,86 @@ const FAQPage = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.titleText}>FAQ</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <Box row justifyBetween alignCenter px="2xl" pt="2xl">
+        <Pressable onPress={handleBack}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+        </Pressable>
+        <Text 
+          size="base" 
+          weight="bold" 
+          color="text" 
+          flex={1} 
+          align="center"
+          style={{ fontFamily: typography.fontFamily.regular, lineHeight: 19 }}
+        >
+          FAQ
+        </Text>
+        <Box width={24} />
+      </Box>
 
       {/* Dotted Line */}
-      <View style={styles.dottedLine} />
+      <Box 
+        mt="3xl"
+        style={{
+          height: 1,
+          borderBottomWidth: 1,
+          borderBottomColor: '#C1C1C1',
+          borderStyle: 'dashed',
+        }}
+      />
 
       {/* Scrollable Content */}
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <Box px="2xl" gap="lg">
           {faqData.map((section, sectionIndex) => (
-            <View key={sectionIndex} style={styles.section}>
-              <Text style={styles.sectionTitle}>
+            <Box key={sectionIndex} flex={1}>
+              <Text 
+                size="base" 
+                weight="bold" 
+                color="text" 
+                mb="xl"
+                style={{ fontFamily: typography.fontFamily.regular, lineHeight: 19 }}
+              >
                 {section.emoji} {section.title}
               </Text>
               {section.questions.map((question, questionIndex) => (
-                <View key={questionIndex} style={styles.questionContainer}>
-                  <Text style={styles.sectionContent}>
+                <Box key={questionIndex} mb="xl">
+                  <Text 
+                    size="xs" 
+                    weight="bold" 
+                    color="text"
+                    style={{ fontFamily: typography.fontFamily.regular, lineHeight: 19 }}
+                  >
                     {question.content}
                   </Text>
                   {question.contentData && (
-                    <Text style={styles.sectionContentData}>
+                    <Text 
+                      size="xs" 
+                      color="text" 
+                      mt="m"
+                      style={{ fontFamily: typography.fontFamily.regular, lineHeight: 19 }}
+                    >
                       {question.contentData}
                     </Text>
                   )}
-                </View>
+                </Box>
               ))}
-              {sectionIndex < faqData.length - 1 && <View style={styles.separator} />}
-            </View>
+              {sectionIndex < faqData.length - 1 && (
+                <Box 
+                  height={0.5} 
+                  bg="border" 
+                  mt="xl"
+                  style={{ backgroundColor: '#C1C1C1' }}
+                />
+              )}
+            </Box>
           ))}
-        </View>
+        </Box>
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  titleText: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 19,
-    color: '#000000',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 24,
-  },
-  dottedLine: {
-    height: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: '#C1C1C1',
-    borderStyle: 'dashed',
-    marginTop: 24,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 24,
-    gap: 18,
-  },
-  section: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 19,
-    color: '#000000',
-    marginBottom: 16,
-  },
-  questionContainer: {
-    marginBottom: 16,
-  },
-  sectionContent: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-  },
-  sectionContentData: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-    marginTop: 8,
-  },
-  separator: {
-    height: 0.5,
-    backgroundColor: '#C1C1C1',
-    marginTop: 16,
-  },
-});
 
 export default FAQPage;

@@ -1,6 +1,15 @@
+/**
+ * Header - App Header Component
+ * 
+ * Displays the Hungri logo and location selector.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Pressable } from './atoms';
+import { colors } from '../lib/theme';
 
 interface HeaderProps {
   onLocationPress?: () => void;
@@ -8,87 +17,68 @@ interface HeaderProps {
   paddingHorizontal?: number;
 }
 
-const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, paddingHorizontal }) => {
-  // Calculate dynamic padding based on screen width
+const Header: React.FC<HeaderProps> = memo(({ 
+  onLocationPress, 
+  currentLocation, 
+  paddingHorizontal 
+}) => {
   const screenWidth = Dimensions.get('window').width;
-  const dynamicPadding = paddingHorizontal || Math.max(10, screenWidth * 0.025); // 2.5% of screen width, minimum 10
+  const dynamicPadding = paddingHorizontal || Math.max(10, screenWidth * 0.025);
+
   return (
-    <View style={styles.header}>
-      <View style={[styles.headerBottomFrame, { paddingHorizontal: dynamicPadding }]}>
-        <View style={styles.logoContainer}>
+    <Box
+      width="100%"
+      height={100}
+      bg="background"
+      borderBottom={0.5}
+      borderColor="border"
+      justifyEnd
+      pb={4}
+    >
+      <Box
+        row
+        justifyBetween
+        alignCenter
+        width="100%"
+        style={{ paddingHorizontal: dynamicPadding }}
+      >
+        {/* Logo */}
+        <Box height={40} justifyCenter>
           <Image
             source={require('../../img/logo/hungri_logo.png')}
-            style={styles.logoImage}
+            style={{ width: 120 }}
             resizeMode="contain"
           />
-        </View>
-        <TouchableOpacity onPress={onLocationPress} style={styles.locationContainer}>
-          <View style={styles.locationInfo}>
-            <Ionicons name="location-sharp" size={16} color="#1D1B20" />
-            <Text style={styles.locationText} numberOfLines={1}>
+        </Box>
+
+        {/* Location Selector */}
+        <Pressable 
+          onPress={onLocationPress}
+          p={4}
+          center
+        >
+          <Box row alignCenter gap={4}>
+            <Ionicons name="location-sharp" size={16} color={colors.text} />
+            <Text 
+              size="sm" 
+              weight="medium" 
+              color="text" 
+              numberOfLines={1}
+              style={{ maxWidth: 120 }}
+            >
               {currentLocation || 'Location'}
             </Text>
-            <Ionicons name="chevron-down" size={16} color="#666" />
-          </View>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <Ionicons name="chevron-down" size={16} color={colors.textLight} />
+          </Box>
+        </Pressable>
+      </Box>
+    </Box>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function to reduce unnecessary re-renders
-  // Only re-render if the currentLocation actually changed meaningfully
   return prevProps.currentLocation === nextProps.currentLocation && 
          prevProps.onLocationPress === nextProps.onLocationPress;
 });
 
-// Add display name for debugging
 Header.displayName = 'Header';
-
-const styles = StyleSheet.create({
-  header: {
-    width: '100%',
-    height: 100,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
-    justifyContent: 'flex-end',
-    paddingBottom: 4,
-  },
-  headerBottomFrame: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  logoContainer: {
-    height: 40,
-    justifyContent: 'center',
-  },
-  logoImage: {
-    width: 120,
-    // Remove height constraint to let it scale naturally
-  },
-  locationContainer: {
-    padding: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  locationInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-    maxWidth: 120,
-  },
-  locationIconContainer: {
-    padding: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
-});
 
 export default Header;

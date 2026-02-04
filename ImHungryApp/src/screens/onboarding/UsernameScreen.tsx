@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
+import { SafeAreaView, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors, typography } from '../../lib/theme';
 import { isUsernameAvailable } from '../../services/onboardingService';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -26,7 +28,7 @@ export default function UsernameScreen() {
   const [isFocused, setIsFocused] = useState(false);
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
-  const [isValidated, setIsValidated] = useState(false); // Track if current username has been validated as available
+  const [isValidated, setIsValidated] = useState(false);
   const [selection, setSelection] = useState<{ start: number; end: number } | undefined>(undefined);
 
   useEffect(() => {
@@ -37,11 +39,9 @@ export default function UsernameScreen() {
     }
   }, [userData, navigation]);
 
-  // Prevent hardware back button (Android) from going back
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        // Return true to prevent default back action
         return true;
       };
 
@@ -75,7 +75,7 @@ export default function UsernameScreen() {
         setError('Username is already taken.');
         setIsValidated(false);
       } else {
-        setIsValidated(true); // Username is confirmed available
+        setIsValidated(true);
       }
     } catch (err) {
       console.error('Error checking username:', err);
@@ -89,7 +89,6 @@ export default function UsernameScreen() {
   const debouncedCheck = useCallback(debounce(checkUsernameUniqueness, 500), []);
 
   const handleUsernameChange = (text: string) => {
-    // Ensure @ prefix
     const withAt = text.startsWith('@') ? text : '@' + text.replace(/^@+/, '');
     const body = withAt.slice(1).replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
     const newValue = '@' + body;
@@ -106,10 +105,8 @@ export default function UsernameScreen() {
     }
   };
 
-  // Prevent cursor from being before the @ symbol
   const handleSelectionChange = (e: any) => {
     const { start, end } = e.nativeEvent.selection;
-    // Force cursor to always be at position 1 or later (after @)
     if (start < 1 || end < 1) {
       setSelection({ start: 1, end: 1 });
     } else {
@@ -117,14 +114,12 @@ export default function UsernameScreen() {
     }
   };
 
-  // Button is only enabled when username is validated and available
   const canContinue = isValidated && !isChecking && !error && username.length >= 3 && username.length <= 20;
 
   const handleContinue = async () => {
     if (!canContinue) return;
     if (!userData) return;
 
-    // Navigate to ProfilePhoto screen with user data including username
     (navigation as any).navigate('ProfilePhoto', {
       userData: { ...userData, username },
       profilePhoto: existingProfilePhoto,
@@ -132,153 +127,108 @@ export default function UsernameScreen() {
   };
 
   return (
-    <View style = {{flex:1, backgroundColor: 'white'}}>
-      <SafeAreaView style={styles.container}>
+    <Box flex={1} bg="background">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <StatusBar style="dark" />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
-          <View style={styles.pagePad}>
-            <View style={styles.headerContainer}>
-              <View style={styles.backButton} />
-            </View>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <Box flex={1} px="2xl" py="2xl">
+            {/* Header */}
+            <Box row justifyBetween alignCenter mb="5xl" height={44}>
+              <Box py="m" px="xs" width={44} />
+            </Box>
 
-            <View style={styles.mainContainer}>
-              <View style={styles.titleSection}>
-                <Text style={styles.usernameTitle}>Choose your username</Text>
-              </View>
-              <View style={styles.formBlock}>
-                    <TextInput
-                      mode="flat"
-                      value={displayUsername}
-                      onChangeText={handleUsernameChange}
-                      placeholder={isFocused ? '' : '@ImHungri'}
-                      placeholderTextColor="#636363"
-                      selection={isFocused ? selection : undefined}
-                      onSelectionChange={isFocused ? handleSelectionChange : undefined}
+            {/* Main Content */}
+            <Box flex={1} alignStart width="100%">
+              {/* Title */}
+              <Box mb="5xl" maxWidth={343} alignCenter style={{ alignSelf: 'center' }}>
+                <Text 
+                  size="2xl" 
+                  weight="bold" 
+                  color="text" 
+                  align="center"
+                  style={{ fontFamily: typography.fontFamily.bold }}
+                >
+                  Choose your username
+                </Text>
+              </Box>
 
-                      underlineColor="transparent"
-                      activeUnderlineColor="transparent"
-                      style={styles.usernameInput}
+              {/* Form */}
+              <Box width="100%" maxWidth={338} style={{ alignSelf: 'center' }} alignCenter>
+                <TextInput
+                  mode="flat"
+                  value={displayUsername}
+                  onChangeText={handleUsernameChange}
+                  placeholder={isFocused ? '' : '@ImHungri'}
+                  placeholderTextColor="#636363"
+                  selection={isFocused ? selection : undefined}
+                  onSelectionChange={isFocused ? handleSelectionChange : undefined}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  style={{
+                    backgroundColor: 'transparent',
+                    fontSize: 32,
+                    textAlign: 'center',
+                    paddingVertical: 0,
+                    paddingHorizontal: 0,
+                    width: '100%',
+                    marginTop: 40,
+                  }}
+                  contentStyle={{ color: '#333' }} 
+                  theme={{
+                    colors: {
+                      onSurface: '#333',          
+                      onSurfaceVariant: '#636363',
+                      background: 'white',
+                      surface: 'white',
+                    },
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={21}
+                  onFocus={() => { 
+                    setIsFocused(true); 
+                    setDisplayUsername(username ? '@' + username : '@');
+                    setSelection({ start: 1, end: 1 });
+                  }}
+                  onBlur={() => { 
+                    setIsFocused(false); 
+                    setSelection(undefined);
+                    if (!username) setDisplayUsername(''); 
+                  }}
+                />
+                {error ? (
+                  <Text color="error" align="center" mt="m">
+                    {error}
+                  </Text>
+                ) : null}
+              </Box>
 
-                      contentStyle={{ color: '#333' }} 
-                      theme={{
-                          colors: {
-                          onSurface: '#333',          
-                          onSurfaceVariant: '#636363',
-                          background: 'white',
-                          surface: 'white',
-                          },
-                      }}
+              {/* Spacer */}
+              <Box flex={1} />
 
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      maxLength={21}
-                      onFocus={() => { 
-                        setIsFocused(true); 
-                        setDisplayUsername(username ? '@' + username : '@');
-                        setSelection({ start: 1, end: 1 });
-                      }}
-                      onBlur={() => { 
-                        setIsFocused(false); 
-                        setSelection(undefined);
-                        if (!username) setDisplayUsername(''); 
-                      }}
-                    />
-                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-                </View>
-              <View style={styles.spacer} />
-              <View style={styles.footer}>
-                <TouchableOpacity 
-                  style={[styles.continueButton, !canContinue && styles.continueButtonDisabled]} 
+              {/* Footer */}
+              <Box width="100%" alignCenter style={{ alignSelf: 'center' }}>
+                <Pressable 
                   onPress={handleContinue}
                   disabled={!canContinue}
+                  width="100%"
+                  maxWidth={343}
+                  height={44}
+                  rounded="full"
+                  alignCenter
+                  justifyCenter
+                  bg={canContinue ? 'primaryDark' : undefined}
+                  style={{ backgroundColor: canContinue ? colors.primaryDark : '#ccc' }}
                 >
-                  <Text style={styles.continueButtonText}>Continue</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+                  <Text color="textInverse" size="base" weight="semiBold">
+                    Continue
+                  </Text>
+                </Pressable>
+              </Box>
+            </Box>
+          </Box>
         </KeyboardAvoidingView>
-    </SafeAreaView>
-</View>
+      </SafeAreaView>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 ,backgroundColor: 'white'},
-  flex1: { flex: 1 },
-  pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
-  
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 40,
-    height: 44
-  },
-  
-  mainContainer: { flex: 1, alignItems: 'flex-start', width: '100%' },
-
-  backButton: { paddingVertical: 8, paddingHorizontal: 4, width: 44 },
-
-  titleSection: { 
-    marginBottom: 40,
-    maxWidth: 343,
-    alignItems: 'center',
-    alignSelf: 'center'
-  },
-  usernameTitle: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
-    textAlign: 'center',
-    fontFamily: 'Inter-Bold'
-  },
-
-  inputContainer: { width: '100%', alignItems: 'center', marginBottom: 30 },
-  usernameInput: {
-    backgroundColor: 'transparent',
-    fontSize: 32,
-    textAlign: 'center',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    width: '100%',
-    marginTop: 40,
-  },
-  formBlock: {
-    width: '100%',
-    maxWidth: 338,      
-    alignSelf: 'center',
-    alignItems: 'center',
-  },
-
-  spacer: { flex: 1 },
-  footer: { 
-    width: '100%', 
-    alignItems: 'center',
-    alignSelf: 'center'
-  },
-
-  continueButton: { 
-    width: '100%', 
-    maxWidth: 343,
-    height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
-    alignItems: 'center', 
-    justifyContent: 'center'
-  },
-  continueButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 6,
-  },
-});

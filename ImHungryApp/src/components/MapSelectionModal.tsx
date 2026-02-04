@@ -1,13 +1,13 @@
+/**
+ * MapSelectionModal - Map App Selection Modal
+ * 
+ * A bottom sheet modal for choosing which map app to open.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Platform,
-} from 'react-native';
+import { Modal, TouchableWithoutFeedback, Platform } from 'react-native';
+import { Box, Text, Pressable, Divider } from './atoms';
 
 interface MapSelectionModalProps {
   visible: boolean;
@@ -30,80 +30,41 @@ const MapSelectionModal: React.FC<MapSelectionModalProps> = ({
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
+        <Box flex={1} bg="overlay" justifyEnd>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
+            <Box px="m" pb={90}>
+              {/* Options */}
+              <Box bg="background" rounded="md" mb="s">
                 {Platform.OS === 'ios' && (
                   <>
-                    <TouchableOpacity style={styles.option} onPress={onSelectAppleMaps}>
-                      <Text style={styles.optionText}>Apple Maps</Text>
-                    </TouchableOpacity>
-
-                    <View style={styles.divider} />
+                    <Pressable onPress={onSelectAppleMaps} py="m" center>
+                      <Text size="md" color="text">
+                        Apple Maps
+                      </Text>
+                    </Pressable>
+                    <Divider />
                   </>
                 )}
 
-                <TouchableOpacity style={styles.option} onPress={onSelectGoogleMaps}>
-                  <Text style={styles.optionText}>Google Maps</Text>
-                </TouchableOpacity>
-              </View>
+                <Pressable onPress={onSelectGoogleMaps} py="m" center>
+                  <Text size="md" color="text">
+                    Google Maps
+                  </Text>
+                </Pressable>
+              </Box>
 
-              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+              {/* Cancel */}
+              <Pressable onPress={onClose} bg="background" rounded="md" py="m" center>
+                <Text size="md" color="text">
+                  Cancel
+                </Text>
+              </Pressable>
+            </Box>
           </TouchableWithoutFeedback>
-        </View>
+        </Box>
       </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 90,
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  option: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  optionText: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#000000',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-  },
-  cancelButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  cancelText: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#000000',
-  },
-});
-
 export default MapSelectionModal;
-
-
-

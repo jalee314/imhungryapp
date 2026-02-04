@@ -1,31 +1,30 @@
+/**
+ * DealCard - Reusable deal card component with horizontal and vertical variants
+ */
+
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
+import { Image, Dimensions } from 'react-native';
 import { Monicon } from '@monicon/native';
+import { Box, Text, Pressable } from './atoms';
 import OptimizedImage, { preloadImage } from './OptimizedImage';
 import VoteButtons from './VoteButtons';
+import { colors, spacing } from '../lib/theme';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 // Base design width (iPhone 15 = 393pt)
 const BASE_WIDTH = 393;
-// Scale factor for larger screens (Pro Max = 430pt)
 const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
 
-// Calculate dynamic card width: subtract horizontal padding (20px = 10px each side) and gap between cards (4px), then divide by 2
-// Use fixed values to match the parent container's fixed padding (not scaled)
-const HORIZONTAL_PADDING = 20; // 10px on each side (fixed, not scaled - matches parent container)
-const CARD_GAP = 4; // 2px margin on each card side (fixed, not scaled - matches parent container)
+// Card dimensions
+const HORIZONTAL_PADDING = 20;
+const CARD_GAP = 4;
 const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
-
-// Calculate horizontal card width to align with header location icon
-// This creates the "peek" effect that hints at horizontal scrolling
-const HORIZONTAL_CARD_PADDING = scale(10); // Left padding for horizontal scroll
+const HORIZONTAL_CARD_PADDING = scale(10);
 const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - scale(20)) / 1.32;
-
-// Dynamic image dimensions
-const HORIZONTAL_IMAGE_WIDTH = HORIZONTAL_CARD_WIDTH - scale(16); // Card padding
-const HORIZONTAL_IMAGE_HEIGHT = HORIZONTAL_IMAGE_WIDTH * 0.64; // Maintain aspect ratio ~260:167
-const VERTICAL_IMAGE_SIZE = VERTICAL_CARD_WIDTH - scale(16); // Square image for vertical cards
+const HORIZONTAL_IMAGE_WIDTH = HORIZONTAL_CARD_WIDTH - scale(16);
+const HORIZONTAL_IMAGE_HEIGHT = HORIZONTAL_IMAGE_WIDTH * 0.64;
+const VERTICAL_IMAGE_SIZE = VERTICAL_CARD_WIDTH - scale(16);
 
 export interface Deal {
   id: string;
@@ -33,15 +32,15 @@ export interface Deal {
   restaurant: string;
   details: string;
   image: string | any;
-  imageVariants?: any; // Add this field
-  images?: string[]; // Array of image URLs for multiple photos
+  imageVariants?: any;
+  images?: string[];
   votes: number;
   isUpvoted: boolean;
   isDownvoted: boolean;
   isFavorited: boolean;
   cuisine?: string;
   cuisineId?: string;
-  dealType?: string; // e.g., "BOGO", "50% Off", "Happy Hour", etc.
+  dealType?: string;
   timeAgo: string;
   author?: string;
   milesAway?: string;
@@ -74,7 +73,6 @@ const DealCard: React.FC<DealCardProps> = ({
   onDownvote,
   onFavorite,
   onPress,
-  hideAuthor = false,
   showDelete = false,
   onDelete,
 }) => {
@@ -94,19 +92,11 @@ const DealCard: React.FC<DealCardProps> = ({
   };
 
   const handlePress = () => {
-    // Start preloading in background without blocking navigation
     if (deal.imageVariants && deal.image) {
-      // Preload the large version for detail view (full screen width)
-      preloadImage(deal.image, deal.imageVariants, { width: screenWidth, height: 400 }).catch(err => {
-        console.error('Failed to preload image:', err);
-      });
-    } else if (deal.image && (typeof deal.image === 'string' ? deal.image.trim() : deal.image)) {
-      preloadImage(deal.image).catch(err => {
-        console.error('Failed to preload image:', err);
-      });
+      preloadImage(deal.image, deal.imageVariants, { width: screenWidth, height: 400 }).catch(() => {});
+    } else if (deal.image) {
+      preloadImage(deal.image).catch(() => {});
     }
-
-    // Navigate immediately - no await, no delay
     onPress?.(deal.id);
   };
 
@@ -115,10 +105,25 @@ const DealCard: React.FC<DealCardProps> = ({
     onDelete?.(deal.id);
   };
 
-  const getImageSource = () => {
+  const horizontalImageStyle = {
+    width: HORIZONTAL_IMAGE_WIDTH,
+    height: HORIZONTAL_IMAGE_HEIGHT,
+    borderRadius: scale(8),
+    marginBottom: spacing.s2,
+    resizeMode: 'cover' as const,
+  };
+
+  const verticalImageStyle = {
+    width: VERTICAL_IMAGE_SIZE,
+    height: VERTICAL_IMAGE_SIZE,
+    borderRadius: scale(8),
+    marginBottom: spacing.s2,
+  };
+
+  const renderImage = () => {
+    const imageStyle = variant === 'horizontal' ? horizontalImageStyle : verticalImageStyle;
+    
     if (deal.imageVariants) {
-      // Use OptimizedImage for database images with variants
-      // Dynamic sizing based on screen width
       const displaySize = variant === 'horizontal'
         ? { width: Math.round(HORIZONTAL_IMAGE_WIDTH), height: Math.round(HORIZONTAL_IMAGE_HEIGHT) }
         : { width: Math.round(VERTICAL_IMAGE_SIZE), height: Math.round(VERTICAL_IMAGE_SIZE) };
@@ -128,50 +133,96 @@ const DealCard: React.FC<DealCardProps> = ({
           variants={deal.imageVariants}
           componentType="deal"
           displaySize={displaySize}
-          style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage}
+          style={imageStyle}
           fallbackSource={typeof deal.image === 'string' && deal.image ? { uri: deal.image } : deal.image}
         />
       );
     } else if (deal.image) {
-      // Fallback to regular Image for static images or simple URIs
-      const imageSource = typeof deal.image === 'string'
-        ? { uri: deal.image }
-        : deal.image;
-
-      return (
-        <Image
-          source={imageSource}
-          style={variant === 'horizontal' ? styles.horizontalImage : styles.verticalImage}
-        />
-      );
+      const imageSource = typeof deal.image === 'string' ? { uri: deal.image } : deal.image;
+      return <Image source={imageSource} style={imageStyle} />;
     }
-    // Return null if no valid image source
     return null;
   };
 
+  const FavoriteButton = () => (
+    <Pressable
+      onPress={handleFavorite}
+      activeOpacity={0.6}
+      bg="background"
+      rounded="full"
+      width={scale(40)}
+      height={scale(28)}
+      center
+      style={{
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      <Monicon
+        name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
+        size={scale(19)}
+        color={deal.isFavorited ? colors.error : colors.text}
+      />
+    </Pressable>
+  );
+
+  const DeleteButton = () => (
+    <Pressable
+      onPress={handleDelete}
+      activeOpacity={0.6}
+      bg="background"
+      rounded="full"
+      width={scale(40)}
+      height={scale(28)}
+      center
+      style={{
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      <Monicon name="uil:trash-alt" size={scale(16)} color={colors.text} />
+    </Pressable>
+  );
+
   if (variant === 'horizontal') {
     return (
-      <TouchableOpacity
-        style={styles.horizontalCard}
+      <Pressable
         onPress={handlePress}
         activeOpacity={0.8}
+        bg="background"
+        rounded="md"
+        py="s3"
+        px="s2"
+        style={{
+          width: HORIZONTAL_CARD_WIDTH,
+          height: HORIZONTAL_IMAGE_HEIGHT + scale(113),
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+        }}
       >
-        {getImageSource()}
-        <View style={styles.horizontalTitleContainer}>
-          <Text style={styles.horizontalTitle} numberOfLines={1} ellipsizeMode="tail">
+        {renderImage()}
+        
+        <Box width="100%" height={scale(20)} justifyStart>
+          <Text 
+            variant="bodySmall" 
+            weight="semiBold" 
+            numberOfLines={1} 
+            style={{ height: scale(30), lineHeight: scale(15) }}
+          >
             {deal.title}
           </Text>
-        </View>
-        <View style={styles.horizontalDetailsContainer}>
-          <Text style={styles.horizontalDetails} numberOfLines={1} ellipsizeMode="tail">
+        </Box>
+        
+        <Box width="100%" mb="s2">
+          <Text variant="caption" color="textMuted" numberOfLines={1}>
             {deal.restaurant}
           </Text>
-          <Text style={styles.horizontalDetails} numberOfLines={1}>
+          <Text variant="caption" color="textMuted" numberOfLines={1}>
             {deal.milesAway || '?mi'} away • {deal.timeAgo} • By {deal.author || 'Unknown'}
           </Text>
-        </View>
+        </Box>
 
-        <View style={styles.horizontalInteractions}>
+        <Box row justifyBetween alignCenter width="100%">
           <VoteButtons
             votes={deal.votes}
             isUpvoted={deal.isUpvoted}
@@ -179,48 +230,71 @@ const DealCard: React.FC<DealCardProps> = ({
             onUpvote={handleUpvote}
             onDownvote={handleDownvote}
           />
-          <View style={styles.horizontalFavoriteWrapper}>
-            <TouchableOpacity
-              style={[styles.horizontalFavoriteButton, deal.isFavorited && styles.favorited]}
+          <Box width={scale(62)} alignEnd>
+            <Pressable
               onPress={handleFavorite}
               activeOpacity={0.6}
+              bg="background"
+              rounded="full"
+              px="s3"
+              height={scale(28)}
+              center
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
             >
               <Monicon
                 name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
                 size={scale(19)}
-                color={deal.isFavorited ? "#FF1E00" : "#000"}
+                color={deal.isFavorited ? colors.error : colors.text}
               />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
+            </Pressable>
+          </Box>
+        </Box>
+      </Pressable>
     );
   }
 
-  // Vertical variant - for the 2-column grid
-  // Build the details line, omitting cuisine if it's not specified or is 'Cuisine'
+  // Vertical variant
   const detailsLine = deal.cuisine && deal.cuisine !== 'Cuisine'
     ? `${deal.cuisine} • ${deal.timeAgo} • ${deal.milesAway || '?mi'} away`
     : `${deal.timeAgo} • ${deal.milesAway || '?mi'} away`;
 
   return (
-    <TouchableOpacity
-      style={styles.verticalCard}
+    <Pressable
       onPress={handlePress}
       activeOpacity={0.8}
+      bg="background"
+      rounded="lg"
+      p="s2"
+      style={{
+        width: VERTICAL_CARD_WIDTH,
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+      }}
     >
-      {getImageSource()}
-      <Text style={styles.verticalTitle} numberOfLines={1} ellipsizeMode="tail">{deal.title}</Text>
-      <View style={styles.verticalDetailsContainer}>
-        <Text style={styles.verticalDetails} numberOfLines={1} ellipsizeMode="tail">
+      {renderImage()}
+      
+      <Text 
+        variant="bodySmall" 
+        weight="semiBold" 
+        numberOfLines={1} 
+        style={{ width: VERTICAL_CARD_WIDTH - scale(24) }}
+      >
+        {deal.title}
+      </Text>
+      
+      <Box width={VERTICAL_CARD_WIDTH - scale(24)} mb="s2">
+        <Text variant="caption" color="textMuted" numberOfLines={1}>
           {deal.restaurant}
         </Text>
-        <Text style={styles.verticalDetails} numberOfLines={1}>
+        <Text variant="caption" color="textMuted" numberOfLines={1}>
           {detailsLine}
         </Text>
-      </View>
+      </Box>
 
-      <View style={styles.verticalInteractions}>
+      <Box row justifyBetween alignCenter width="100%">
         <VoteButtons
           votes={deal.votes}
           isUpvoted={deal.isUpvoted}
@@ -228,269 +302,13 @@ const DealCard: React.FC<DealCardProps> = ({
           onUpvote={handleUpvote}
           onDownvote={handleDownvote}
         />
-
-        {/* Replace favorite button with delete button conditionally */}
-        {showDelete ? (
-          <TouchableOpacity
-            style={styles.verticalDeleteButton}
-            onPress={handleDelete}
-            activeOpacity={0.6}
-          >
-            <Monicon
-              name="uil:trash-alt"
-              size={scale(16)}
-              color="#000000"
-            />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.verticalFavoriteButton, deal.isFavorited && styles.favorited]}
-            onPress={handleFavorite}
-            activeOpacity={0.6}
-          >
-            <Monicon
-              name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
-              size={scale(19)}
-              color={deal.isFavorited ? "#FF1E00" : "#000"}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
+        {showDelete ? <DeleteButton /> : <FavoriteButton />}
+      </Box>
+    </Pressable>
   );
 };
 
-const styles = StyleSheet.create({
-  // Horizontal Card Styles (for community track - actually vertical cards in horizontal scroll)
-  horizontalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: scale(10),
-    paddingVertical: scale(12),
-    paddingHorizontal: scale(8),
-    alignItems: 'flex-start',
-    width: HORIZONTAL_CARD_WIDTH,
-    height: HORIZONTAL_IMAGE_HEIGHT + scale(113), // Image + content below
-    justifyContent: 'center',
-    overflow: 'visible',
-  },
-  horizontalImage: {
-    width: HORIZONTAL_IMAGE_WIDTH,
-    height: HORIZONTAL_IMAGE_HEIGHT,
-    borderRadius: scale(8),
-    marginBottom: scale(8),
-    resizeMode: 'cover',
-  },
-  horizontalTitleContainer: {
-    width: '100%',
-    height: scale(20),
-    justifyContent: 'flex-start',
-  },
-  horizontalTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '600',
-    fontSize: scale(12),
-    lineHeight: scale(15),
-    color: '#000000',
-    textAlign: 'left',
-    height: scale(30),
-  },
-  horizontalDetailsContainer: {
-    width: '100%',
-    marginBottom: scale(8),
-  },
-  horizontalDetails: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: scale(10),
-    lineHeight: scale(12),
-    color: '#757575',
-    textAlign: 'left',
-    width: '100%',
-  },
-  horizontalInteractions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    overflow: 'visible',
-  },
-  horizontalVoteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F7F4F4',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(2),
-    height: scale(28),
-    width: scale(85),
-    justifyContent: 'space-between',
-  },
-  horizontalVoteButton: {
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: scale(20),
-    height: scale(24),
-    borderRadius: 4,
-  },
-  horizontalVoteCount: {
-    fontFamily: 'Inter',
-    fontSize: scale(10),
-    fontWeight: '400',
-    color: '#000000',
-    marginHorizontal: scale(6),
-  },
-  horizontalVoteSeparator: {
-    width: 1,
-    height: scale(12),
-    backgroundColor: '#DEDEDE',
-    marginHorizontal: scale(6),
-  },
-  horizontalFavoriteWrapper: {
-    width: scale(62),
-    alignItems: 'flex-end',
-    overflow: 'visible',
-  },
-  horizontalFavoriteButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    paddingHorizontal: scale(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: scale(28),
-    overflow: 'visible',
-  },
-  // Vertical Card Styles (for 2-column grid)
-  verticalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: scale(16),
-    padding: scale(8),
-    alignItems: 'flex-start',
-    width: VERTICAL_CARD_WIDTH,
-    justifyContent: 'flex-start',
-  },
-  verticalImage: {
-    width: VERTICAL_IMAGE_SIZE,
-    height: VERTICAL_IMAGE_SIZE,
-    borderRadius: scale(8),
-    marginBottom: scale(8),
-  },
-  verticalTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '600',
-    fontSize: scale(12),
-    lineHeight: scale(15),
-    color: '#000000',
-    textAlign: 'left',
-    width: VERTICAL_CARD_WIDTH - scale(24),
-  },
-  verticalDetailsContainer: {
-    width: VERTICAL_CARD_WIDTH - scale(24),
-    marginBottom: scale(8),
-  },
-  verticalDetails: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: scale(10),
-    lineHeight: scale(12),
-    color: '#757575',
-    textAlign: 'left',
-    width: '100%',
-  },
-  verticalInteractions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  verticalVoteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F7F4F4',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(2),
-    height: scale(28),
-    width: scale(85),
-    justifyContent: 'space-between',
-  },
-  verticalVoteButton: {
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: scale(20),
-    height: scale(20),
-    borderRadius: 4,
-  },
-  verticalVoteCount: {
-    fontFamily: 'Inter',
-    fontSize: scale(10),
-    fontWeight: '400',
-    color: '#000000',
-    marginHorizontal: scale(6),
-  },
-  verticalVoteSeparator: {
-    width: 1,
-    height: scale(12),
-    backgroundColor: '#DEDEDE',
-    marginHorizontal: scale(6),
-  },
-  verticalFavoriteButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    width: scale(40),
-    height: scale(28),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  verticalDeleteButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    width: scale(40),
-    height: scale(28),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Shared styles
-  arrowIconContainer: {
-    width: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  upvotedcom: {
-    // No background change - only icon color changes
-    // marginBottom: 2, // Removed to prevent shifting
-  },
-  downvotedcom: {
-    // No background change - only icon color changes
-    // marginBottom: 1, // Removed to prevent shifting
-  },
-  upvoteddeals: {
-    // No background change - only icon color changes
-    // marginBottom: 5, // Removed to prevent shifting
-  },
-  downvoteddeals: {
-    // No background change - only icon color changes
-    // marginBottom: 2, // Removed to prevent shifting
-  },
-  favorited: {
-    // Don't change background - only the heart icon color changes
-  },
-});
-
-// Memoize component with custom comparison
+// Memoize with custom comparison
 const arePropsEqual = (prevProps: DealCardProps, nextProps: DealCardProps) => {
   return (
     prevProps.deal.id === nextProps.deal.id &&
@@ -501,7 +319,6 @@ const arePropsEqual = (prevProps: DealCardProps, nextProps: DealCardProps) => {
     prevProps.deal.imageVariants?.cloudinary_id === nextProps.deal.imageVariants?.cloudinary_id &&
     prevProps.variant === nextProps.variant &&
     prevProps.showDelete === nextProps.showDelete &&
-    // Include editable fields that users can modify
     prevProps.deal.title === nextProps.deal.title &&
     prevProps.deal.details === nextProps.deal.details &&
     prevProps.deal.author === nextProps.deal.author &&

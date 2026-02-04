@@ -1,103 +1,41 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+/**
+ * RowCardSkeleton - Loading State for RowCard
+ * 
+ * A skeleton placeholder for RowCard components.
+ * Uses Skeleton atom and Box for consistent styling.
+ */
+
+import React from 'react';
+import { Box, Skeleton } from './atoms';
 
 const RowCardSkeleton: React.FC = () => {
-  const shimmerAnimation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const startShimmer = () => {
-      Animated.sequence([
-        Animated.timing(shimmerAnimation, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmerAnimation, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]).start(() => startShimmer());
-    };
-
-    startShimmer();
-  }, [shimmerAnimation]);
-
-  const shimmerStyle = {
-    opacity: shimmerAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.3, 0.7],
-    }),
-  };
-
   return (
-    <View style={styles.rowCard}>
-      <View style={styles.content}>
+    <Box
+      bg="background"
+      rounded="md"
+      p="s"
+      mx="m"
+      my="xs"
+      height={86}
+    >
+      <Box row alignCenter gap="m" width="100%" height="100%">
         {/* Image skeleton */}
-        <Animated.View style={[styles.imageSkeleton, styles.skeleton, shimmerStyle]} />
-        
+        <Skeleton width={70} height={70} rounded="s" />
+
         {/* Text content skeleton */}
-        <View style={styles.textFrame}>
+        <Box flex={1} gap="s" justifyCenter pr="s">
           {/* Title skeleton */}
-          <Animated.View style={[styles.titleSkeleton, styles.skeleton, shimmerStyle]} />
+          <Skeleton width="80%" height={14} rounded="xs" />
           
           {/* Subtitle skeleton */}
-          <Animated.View style={[styles.subtitleSkeleton, styles.skeleton, shimmerStyle]} />
-        </View>
-        
+          <Skeleton width="60%" height={12} rounded="xs" />
+        </Box>
+
         {/* Arrow skeleton */}
-        <Animated.View style={[styles.arrowSkeleton, styles.skeleton, shimmerStyle]} />
-      </View>
-    </View>
+        <Skeleton circle size={16} />
+      </Box>
+    </Box>
   );
 };
-
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: '#E0E0E0',
-  },
-  rowCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 8,
-    marginHorizontal: 12,
-    marginVertical: 4,
-    height: 86,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    width: '100%',
-    height: '100%',
-  },
-  imageSkeleton: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
-  },
-  textFrame: {
-    flex: 1,
-    flexDirection: 'column',
-    gap: 8,
-    justifyContent: 'center',
-    paddingRight: 8,
-  },
-  titleSkeleton: {
-    width: '80%',
-    height: 14,
-    borderRadius: 4,
-  },
-  subtitleSkeleton: {
-    width: '60%',
-    height: 12,
-    borderRadius: 4,
-  },
-  arrowSkeleton: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-});
 
 export default RowCardSkeleton;

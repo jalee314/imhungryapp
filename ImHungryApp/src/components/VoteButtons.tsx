@@ -1,12 +1,20 @@
+/**
+ * VoteButtons - Upvote/Downvote Pill Component
+ * 
+ * A compact voting interface with upvote and downvote buttons.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { TouchableOpacity, Dimensions } from 'react-native';
 import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
+import { Box, Text } from './atoms';
+import { colors } from '../lib/theme';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 // Base design width (iPhone 15 = 393pt)
 const BASE_WIDTH = 393;
-// Scale factor for responsive sizing
 const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
 
 // Dynamic sizes
@@ -30,78 +38,72 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
   onDownvote,
 }) => {
   return (
-    <View style={styles.voteContainer}>
+    <Box
+      row
+      alignCenter
+      bg="background"
+      border={1}
+      borderColor="borderLight"
+      rounded={30}
+      height={PILL_HEIGHT}
+      width={PILL_WIDTH}
+      overflow="hidden"
+    >
       {/* Left half - upvote touchable area */}
       <TouchableOpacity
-        style={styles.upvoteArea}
         onPress={onUpvote}
         activeOpacity={0.6}
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          paddingLeft: scale(8),
+          paddingRight: scale(2),
+        }}
       >
         <ArrowBigUp
           size={ARROW_SIZE}
-          color={isUpvoted ? "#FF8C4C" : "#000000"}
-          fill={isUpvoted ? "#FF8C4C" : "transparent"}
+          color={isUpvoted ? colors.primaryDark : colors.text}
+          fill={isUpvoted ? colors.primaryDark : 'transparent'}
         />
-        <Text style={styles.voteCount}>{votes}</Text>
+        <Text 
+          size={scale(10)} 
+          weight="normal" 
+          color="text" 
+          ml={scale(4)}
+        >
+          {votes}
+        </Text>
       </TouchableOpacity>
-      
-      <View style={styles.voteSeparator} />
-      
+
+      {/* Separator */}
+      <Box 
+        width={1} 
+        height={scale(12)} 
+        bg="border" 
+      />
+
       {/* Right half - downvote touchable area */}
       <TouchableOpacity
-        style={styles.downvoteArea}
         onPress={onDownvote}
         activeOpacity={0.6}
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          paddingHorizontal: scale(10),
+        }}
       >
         <ArrowBigDown
           size={ARROW_SIZE}
-          color={isDownvoted ? "#9796FF" : "#000000"}
-          fill={isDownvoted ? "#9796FF" : "transparent"}
+          color={isDownvoted ? '#9796FF' : colors.text}
+          fill={isDownvoted ? '#9796FF' : 'transparent'}
         />
       </TouchableOpacity>
-    </View>
+    </Box>
   );
 };
-
-const styles = StyleSheet.create({
-  voteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    height: PILL_HEIGHT,
-    width: PILL_WIDTH,
-    overflow: 'hidden',
-  },
-  upvoteArea: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    paddingLeft: scale(8),
-    paddingRight: scale(2),
-  },
-  downvoteArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    paddingHorizontal: scale(10),
-  },
-  voteCount: {
-    fontFamily: 'Inter',
-    fontSize: scale(10),
-    fontWeight: '400',
-    color: '#000000',
-    marginLeft: scale(4),
-  },
-  voteSeparator: {
-    width: 1,
-    height: scale(12),
-    backgroundColor: '#DEDEDE',
-  },
-});
 
 export default memo(VoteButtons);

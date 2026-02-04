@@ -1,7 +1,16 @@
+/**
+ * CalendarModal - Date Selection Modal
+ * 
+ * A modal for selecting expiration dates with calendar.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React, { useState, useEffect } from 'react';
-import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, SafeAreaView, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Pressable, Divider } from './atoms';
+import { colors, spacing, borderRadius } from '../lib/theme';
 
 interface CalendarModalProps {
   visible: boolean;
@@ -53,136 +62,88 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.calendarHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.calendarHeaderText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.calendarHeaderTitle}>Expiration Date</Text>
-          <TouchableOpacity onPress={handleConfirm}>
-            <Text style={[styles.calendarHeaderText, { color: '#FF8C4C', fontWeight: 'bold' }]}>Done</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Header */}
+        <Box row justifyBetween alignCenter p="m" borderBottom={1} borderColor="border">
+          <Pressable onPress={onClose}>
+            <Text size="md" color="text">Cancel</Text>
+          </Pressable>
+          <Text size="md" weight="semibold" color="text">Expiration Date</Text>
+          <Pressable onPress={handleConfirm}>
+            <Text size="md" weight="bold" color="primaryDark">Done</Text>
+          </Pressable>
+        </Box>
+
+        {/* Selected Date Pill */}
         {selectedDate && !noExpirationKnown && (
-          <View style={styles.selectedDateContainer}>
-            <View style={styles.selectedDatePill}>
-              <Text style={styles.selectedDateText}>{formatDate(selectedDate)}</Text>
-              <TouchableOpacity onPress={() => setSelectedDate(null)}>
-                <Ionicons name="close-circle" size={16} color="#333" />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Box p="m" alignStart>
+            <Box 
+              row 
+              alignCenter 
+              gap="s"
+              py="s" 
+              px="m"
+              style={{ backgroundColor: '#FF8C4C30' }}
+              rounded="pill"
+            >
+              <Text size="sm" color="text">{formatDate(selectedDate)}</Text>
+              <Pressable onPress={() => setSelectedDate(null)}>
+                <Ionicons name="close-circle" size={16} color={colors.text} />
+              </Pressable>
+            </Box>
+          </Box>
         )}
+
+        {/* Calendar */}
         <Calendar
           onDayPress={(day) => {
-            // Get today's date as a 'YYYY-MM-DD' string.
-            // .toISOString() returns UTC, but splitting at 'T' gives us the correct date part regardless of timezone.
             const todayString = new Date().toISOString().split('T')[0];
-
-            // Compare the strings directly. This is reliable and avoids all timezone issues.
             if (day.dateString < todayString) {
-              // Ignore selection if the selected date string is lexicographically smaller than today's.
               return;
             }
-            
             setSelectedDate(day.dateString);
             if (noExpirationKnown) {
               setNoExpirationKnown(false);
             }
           }}
           markedDates={{
-            [selectedDate || '']: { selected: true, selectedColor: '#FF8C4C' },
+            [selectedDate || '']: { selected: true, selectedColor: colors.primaryDark },
           }}
           theme={{
-            todayTextColor: '#FF8C4C',
-            arrowColor: '#000',
+            todayTextColor: colors.primaryDark,
+            arrowColor: colors.text,
           }}
         />
 
-        {/* Separator line */}
-        <View style={styles.separator} />
+        {/* Separator */}
+        <Box mx="m" my="m">
+          <Divider />
+        </Box>
         
-        {/* No expiration known toggle */}
-        <TouchableOpacity 
-          style={styles.noExpirationContainer}
+        {/* No expiration toggle */}
+        <Pressable 
           onPress={handleToggleNoExpiration}
+          row
+          alignCenter
+          justifyBetween
+          px="m"
+          py="s"
         >
-          <Text style={styles.noExpirationText}>Mark if expiration is unknown</Text>
-          <View style={[
-            styles.checkbox,
-            noExpirationKnown ? styles.checkboxActive : {}
-          ]}>
+          <Text size="xs" color="text">Mark if expiration is unknown</Text>
+          <Box
+            width={20}
+            height={20}
+            rounded="xs"
+            border={1}
+            borderColor={noExpirationKnown ? 'primaryDark' : 'borderDark'}
+            bg={noExpirationKnown ? 'primaryDark' : 'transparent'}
+            center
+          >
             {noExpirationKnown && (
-              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={16} color={colors.textInverse} />
             )}
-          </View>
-        </TouchableOpacity>
+          </Box>
+        </Pressable>
       </SafeAreaView>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
-  },
-  calendarHeaderText: {
-    fontSize: 17,
-    color: '#000000',
-  },
-  calendarHeaderTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  selectedDateContainer: {
-    padding: 16,
-    alignItems: 'flex-start',
-  },
-  selectedDatePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF8C4C30',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  selectedDateText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
-    marginVertical: 16,
-    marginHorizontal: 16,
-  },
-  noExpirationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  noExpirationText: {
-    fontSize: 12,
-    color: '#000000',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#C1C1C1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxActive: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
-  }
-});

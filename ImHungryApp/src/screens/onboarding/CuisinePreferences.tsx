@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Box, Text, Pressable, Skeleton } from '../../components/atoms';
+import { colors, typography } from '../../lib/theme';
 import { useDataCache } from '../../hooks/useDataCache';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -14,28 +16,21 @@ export default function CuisinePreferencesScreen() {
   const [loading, setLoading] = useState(false);
   const { completeSignup, completeSignupSkip } = useAuth();
   
-  // Ref to synchronously track submission state and prevent duplicate submissions
   const isSubmittingRef = useRef(false);
 
   const toggleCuisine = (cuisine: string) => {
     setSelectedCuisines(prev => {
       if (prev.includes(cuisine)) {
-        // Remove if already selected
         return prev.filter(c => c !== cuisine);
       } else if (prev.length < 3) {
-        // Add if less than 3 selected
         return [...prev, cuisine];
       } else {
-        // Replace the first selected item if 3 already selected
         return [prev[1], prev[2], cuisine];
       }
     });
   };
 
-  // Backend operations moved to onboardingService via store actions
-
   const handleFinish = async () => {
-    // Synchronous check to prevent duplicate submissions
     if (isSubmittingRef.current) return;
     
     if (!userData) {
@@ -43,7 +38,6 @@ export default function CuisinePreferencesScreen() {
       return;
     }
 
-    // Set ref immediately (synchronous) to block any subsequent clicks
     isSubmittingRef.current = true;
     setLoading(true);
     
@@ -67,11 +61,8 @@ export default function CuisinePreferencesScreen() {
         }
         return;
       }
-
-      // Let the authentication state change handle navigation
-      // The app will automatically switch to OnboardingStack after signup
     } catch (error) {
-      console.error('Setup failed:', error); // Log the full error
+      console.error('Setup failed:', error);
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
     } finally {
       isSubmittingRef.current = false;
@@ -80,7 +71,6 @@ export default function CuisinePreferencesScreen() {
   };
 
   const handleSkip = async () => {
-    // Synchronous check to prevent duplicate submissions
     if (isSubmittingRef.current) return;
     
     if (!userData) {
@@ -88,7 +78,6 @@ export default function CuisinePreferencesScreen() {
       return;
     }
 
-    // Set ref immediately (synchronous) to block any subsequent clicks
     isSubmittingRef.current = true;
     setLoading(true);
     
@@ -103,10 +92,8 @@ export default function CuisinePreferencesScreen() {
         );
         return;
       }
-      // Let the authentication state change handle navigation
-      // The app will automatically switch to OnboardingStack after signup
     } catch (error) {
-      console.error('Setup failed (skip):', error); // Log the full error
+      console.error('Setup failed (skip):', error);
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
     } finally {
       isSubmittingRef.current = false;
@@ -117,203 +104,133 @@ export default function CuisinePreferencesScreen() {
   const availableCuisines = cuisines.map(c => c.name);
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <SafeAreaView style={styles.container}>
+    <Box flex={1} bg="background">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <StatusBar style="dark" />
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-          <View style={styles.pagePad}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.backButtonText}>←</Text>
-              </TouchableOpacity>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <Box flex={1} px="2xl" py="2xl">
+            {/* Header */}
+            <Box row justifyBetween alignCenter mb="5xl" height={44}>
+              <Pressable py="m" px="xs" onPress={() => navigation.goBack()}>
+                <Text size="xl" weight="medium" color="text">←</Text>
+              </Pressable>
 
-              <TouchableOpacity 
-                style={[styles.skipLink, loading && { opacity: 0.5 }]} 
+              <Pressable 
+                py="m" 
+                px="xs" 
                 onPress={handleSkip}
                 disabled={loading}
+                style={loading ? { opacity: 0.5 } : undefined}
               >
-                <Text style={styles.skipText}>Skip</Text>
-              </TouchableOpacity>
-            </View>
+                <Text 
+                  size="base" 
+                  color="textLight"
+                  style={{ fontFamily: typography.fontFamily.regular }}
+                >
+                  Skip
+                </Text>
+              </Pressable>
+            </Box>
 
-            <View style={styles.mainContainer}>
-              <View style={styles.titleSection}>
-                <Text style={styles.title}>Cuisine Preferences</Text>
-                <Text style={styles.subtitle}>
+            {/* Main Content */}
+            <Box flex={1} alignStart width="100%">
+              {/* Title Section */}
+              <Box alignStart mb="3xl" maxWidth={343}>
+                <Text 
+                  size="2xl" 
+                  weight="bold" 
+                  color="text" 
+                  mb="3xl"
+                  style={{ fontFamily: typography.fontFamily.bold, textAlign: 'left' }}
+                >
+                  Cuisine Preferences
+                </Text>
+                <Text 
+                  size="base" 
+                  color="textLight" 
+                  lineHeight={24}
+                  style={{ fontFamily: typography.fontFamily.regular, textAlign: 'left' }}
+                >
                   What are your favorite cuisines? Choose up to 3.
                 </Text>
-              </View>
+              </Box>
 
-              <View style={styles.cuisineGrid}>
+              {/* Cuisine Grid */}
+              <Box 
+                row 
+                style={{ 
+                  flexWrap: 'wrap', 
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  flex: 1,
+                  paddingBottom: 16,
+                }}
+              >
                 {cuisinesLoading ? (
-                  // Skeleton loading state
                   Array.from({ length: 16 }).map((_, index) => (
-                    <View key={index} style={styles.skeletonButton} />
+                    <Skeleton 
+                      key={index} 
+                      width="48%" 
+                      height={36} 
+                      rounded="lg"
+                      style={{ marginBottom: 8 }}
+                    />
                   ))
                 ) : (
                   availableCuisines.map((cuisine) => {
                     const isSelected = selectedCuisines.includes(cuisine);
                     return (
-                      <TouchableOpacity
+                      <Pressable
                         key={cuisine}
-                        style={[
-                          styles.cuisineButton,
-                          isSelected && styles.cuisineButtonSelected
-                        ]}
                         onPress={() => toggleCuisine(cuisine)}
+                        height={36}
+                        rounded="md"
+                        alignCenter
+                        justifyCenter
+                        mb="m"
+                        style={{
+                          width: '48%',
+                          backgroundColor: isSelected ? colors.primaryDark : '#eaeaea',
+                        }}
                       >
-                        <Text style={[
-                          styles.cuisineButtonText,
-                          isSelected && styles.cuisineButtonTextSelected
-                        ]}>
+                        <Text 
+                          size="md" 
+                          color="text"
+                          align="center"
+                          style={{ fontFamily: typography.fontFamily.regular }}
+                        >
                           {cuisine}
                         </Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     );
                   })
                 )}
-              </View>
+              </Box>
 
-              <View style={styles.footer}>
-                <TouchableOpacity
-                  style={[
-                    styles.continueButton,
-                    loading && { opacity: 0.7 }
-                  ]}
+              {/* Footer */}
+              <Box width="100%" alignCenter>
+                <Pressable
                   onPress={handleFinish}
                   disabled={loading}
+                  width="100%"
+                  maxWidth={343}
+                  height={44}
+                  rounded="full"
+                  alignCenter
+                  justifyCenter
+                  bg="primaryDark"
+                  style={loading ? { opacity: 0.7 } : undefined}
                 >
-                  <Text style={styles.continueButtonText}>
+                  <Text color="textInverse" size="base" weight="semiBold">
                     {loading ? 'Creating Account...' : 'Finish'}
                   </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+                </Pressable>
+              </Box>
+            </Box>
+          </Box>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white'
-  },
-
-  keyboardAvoidingView: { flex: 1 },
-  pagePad: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 20
-  },
-
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 40,
-    height: 44
-  },
-
-  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: {
-    fontSize: 20,
-    color: '#000',
-    fontWeight: '500'
-  },
-
-  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
-  skipText: {
-    fontSize: 16,
-    color: '#404040',
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular'
-  },
-
-  mainContainer: {
-    flex: 1,
-    alignItems: 'flex-start',
-    width: '100%'
-  },
-
-  titleSection: {
-    alignItems: 'flex-start',
-    marginBottom: 24,
-    maxWidth: 343,
-  },
-  title: {
-    fontSize: 24,
-    color: '#000',
-    fontWeight: 'bold',
-    marginBottom: 25,
-    fontFamily: 'Inter-Bold',
-    textAlign: 'left',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#404040',
-    lineHeight: 24,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'left',
-  },
-
-  cuisineGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    width: '100%',
-    flex: 1,
-    paddingBottom: 16,
-  },
-  cuisineButton: {
-    width: '48%',
-    height: 36,
-    backgroundColor: '#eaeaea',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  cuisineButtonSelected: {
-    backgroundColor: '#FF8C4C',
-  },
-  cuisineButtonText: {
-    color: '#000',
-    fontSize: 14,
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular',
-    textAlign: 'center',
-  },
-  cuisineButtonTextSelected: {
-    color: '#000',
-  },
-  footer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-
-  continueButton: {
-    width: '100%',
-    maxWidth: 343,
-    height: 44,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600'
-  },
-  skeletonButton: {
-    width: '48%',
-    height: 36,
-    backgroundColor: '#E1E9EE',
-    borderRadius: 18,
-    marginBottom: 8,
-  },
-});

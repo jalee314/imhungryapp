@@ -1,15 +1,16 @@
+/**
+ * ThreeDotPopup - Action Modal Component
+ * 
+ * A modal popup with actions like Edit, Report, and Block.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  Alert,
-} from 'react-native';
+import { Modal, Pressable as RNPressable, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Box, Text, Pressable, Divider } from './atoms';
+import { colors, borderRadius, shadows } from '../lib/theme';
 
 interface ThreeDotPopupProps {
   visible: boolean;
@@ -32,7 +33,6 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
 }) => {
   const navigation = useNavigation();
 
-  // Check if current user owns this post
   const isOwnPost = currentUserId && uploaderUserId && currentUserId === uploaderUserId;
 
   const handleEditPost = () => {
@@ -45,7 +45,6 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
   const handleReportContent = () => {
     onClose();
     
-    // Check if user is trying to report their own post
     if (isOwnPost) {
       Alert.alert(
         'Cannot Report Own Post',
@@ -62,7 +61,6 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
   const handleBlockUser = () => {
     onClose();
     
-    // Check if user is trying to block themselves
     if (isOwnPost) {
       Alert.alert(
         'Cannot Block Yourself',
@@ -74,6 +72,24 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
     onBlockUser();
   };
 
+  const MenuItem: React.FC<{ label: string; onPress: () => void }> = ({ label, onPress }) => (
+    <Pressable
+      onPress={onPress}
+      row
+      justifyBetween
+      alignCenter
+      px="m"
+      py={2}
+      height={40}
+      gap="m"
+    >
+      <Text size="xs" color="text" weight="normal" flex={1}>
+        {label}
+      </Text>
+      <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textLight} />
+    </Pressable>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -81,76 +97,38 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={styles.popupContainer}>
+      <RNPressable
+        onPress={onClose}
+        style={{
+          flex: 1,
+          backgroundColor: colors.overlayLight,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <Box
+          bg="background"
+          rounded="md"
+          width={369}
+          py="s"
+          gap="s"
+          shadow="md"
+        >
           {/* Edit Post - only shown for own posts */}
           {isOwnPost && (
             <>
-              <TouchableOpacity style={styles.popupItem} onPress={handleEditPost}>
-                <Text style={styles.popupItemText}>Edit Post</Text>
-                <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
-              </TouchableOpacity>
-              <View style={styles.popupDivider} />
+              <MenuItem label="Edit Post" onPress={handleEditPost} />
+              <Divider />
             </>
           )}
-          <TouchableOpacity style={styles.popupItem} onPress={handleReportContent}>
-            <Text style={styles.popupItemText}>Report Content</Text>
-            <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
-          </TouchableOpacity>
-          <View style={styles.popupDivider} />
-          <TouchableOpacity style={styles.popupItem} onPress={handleBlockUser}>
-            <Text style={styles.popupItemText}>Block User</Text>
-            <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
-          </TouchableOpacity>
-        </View>
-      </Pressable>
+          
+          <MenuItem label="Report Content" onPress={handleReportContent} />
+          <Divider />
+          <MenuItem label="Block User" onPress={handleBlockUser} />
+        </Box>
+      </RNPressable>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  popupContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    width: 369,
-    paddingVertical: 8,
-    flexDirection: 'column',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  popupItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 2,
-    height: 40,
-    gap: 16,
-  },
-  popupItemText: {
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '400',
-    flex: 1,
-  },
-  popupDivider: {
-    height: 1.45,
-    backgroundColor: '#E0E0E0',
-    alignSelf: 'stretch',
-  },
-});
 
 export default ThreeDotPopup;

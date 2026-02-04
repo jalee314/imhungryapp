@@ -1,49 +1,48 @@
+/**
+ * LandingScreen - App Entry Point
+ * 
+ * The initial landing screen showing the app logo.
+ * Tapping anywhere navigates to the sign up flow.
+ */
+
 import React from 'react';
-import { StyleSheet, Pressable, View, Image, Dimensions } from 'react-native';
+import { Image, Dimensions, Pressable as RNPressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
+import { Box } from '../../components/atoms';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const logoSize = Math.min(screenWidth * 0.6, screenHeight * 0.3, 300);
+
 export default function LandingScreen() {
   const navigation = useNavigation();
 
   return (
-    <View style={styles.centered}>
+    <Box flex={1} center bg="background">
       <StatusBar style="dark" />
-      <Pressable
-        style={styles.fill}
+      <RNPressable
         onPress={() => navigation.navigate('SignUp' as never)}
         accessibilityRole="button"
         accessibilityLabel="Continue to sign up"
         hitSlop={8}
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+        }}
       >
         <Image 
           source={require('../../../img/logo/hungri_logo.png')} 
-          style={styles.logo}
+          style={{
+            width: logoSize,
+            height: logoSize,
+            maxWidth: '80%',
+            maxHeight: '40%',
+          }}
           resizeMode="contain"
         />
-      </Pressable>
-    </View>
+      </RNPressable>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-  },
-  fill: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  logo: {
-    width: Math.min(screenWidth * 0.6, screenHeight * 0.3, 300),
-    height: Math.min(screenWidth * 0.6, screenHeight * 0.3, 300),
-    maxWidth: '80%',
-    maxHeight: '40%',
-  },
-});

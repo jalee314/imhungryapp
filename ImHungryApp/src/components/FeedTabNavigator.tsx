@@ -1,5 +1,12 @@
+/**
+ * FeedTabNavigator - Feed Screen Container
+ * 
+ * A container component that renders Header and current feed screen.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Box } from './atoms';
 import Header from './Header';
 import LocationModal from './LocationModal';
 import { useLocation } from '../context/LocationContext';
@@ -19,21 +26,23 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
   const [locationModalVisible, setLocationModalVisible] = useState(false);
 
   const handleLocationPress = useCallback(async () => {
-    // Refresh permission status when modal is opened (in case user returned from settings)
     await refreshPermissionStatus();
     setLocationModalVisible(true);
   }, [refreshPermissionStatus]);
 
-  const handleLocationUpdate = useCallback((location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
+  const handleLocationUpdate = useCallback((location: { 
+    id: string; 
+    city: string; 
+    state: string; 
+    coordinates?: { lat: number; lng: number } 
+  }) => {
     updateLocation(location);
-    console.log('Location updated to:', location);
   }, [updateLocation]);
 
   const handleLocationModalClose = useCallback(() => {
     setLocationModalVisible(false);
   }, []);
 
-  // Render the appropriate screen based on currentTab
   const renderCurrentScreen = () => {
     switch (currentTab) {
       case 'feed':
@@ -46,7 +55,7 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <Box flex={1} bg="background">
       {/* Persistent Header */}
       <Header 
         onLocationPress={handleLocationPress} 
@@ -54,9 +63,9 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
       />
       
       {/* Current Screen Content */}
-      <View style={styles.screenContainer}>
+      <Box flex={1}>
         {renderCurrentScreen()}
-      </View>
+      </Box>
 
       {/* Location Modal */}
       <LocationModal
@@ -64,18 +73,8 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
         onClose={handleLocationModalClose}
         onLocationUpdate={handleLocationUpdate}
       />
-    </View>
+    </Box>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  screenContainer: {
-    flex: 1,
-  },
-});
 
 export default FeedTabNavigator;

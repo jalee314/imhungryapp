@@ -1,15 +1,21 @@
+/**
+ * ListSelectionModal - Searchable List Selection Modal
+ * 
+ * A full-screen modal for selecting items from a searchable list.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
-  View,
-  Text,
-  StyleSheet,
   SafeAreaView,
-  TouchableOpacity,
   TextInput,
   FlatList,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Pressable, Divider } from './atoms';
+import { colors, spacing, borderRadius } from '../lib/theme';
 
 interface ListItem {
   id: string;
@@ -28,9 +34,6 @@ interface ListSelectionModalProps {
   onSearchChange?: (query: string) => void;
   searchQuery?: string;
 }
-
-// Create a proper separator component
-const ItemSeparator = () => <View style={styles.separator} />;
 
 const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   visible,
@@ -84,182 +87,141 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
     (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
   );
 
-  const renderItem = ({ item }: { item: ListItem }) => {
-    const isInfoItem = ['prompt', 'loading', 'error', 'empty'].includes(item.id);
-
-    return (
-      <TouchableOpacity
-        style={styles.itemContainer}
-        onPress={() => handleSelectItem(item.id)}
-        disabled={isInfoItem}
-      >
-        {isSearchModal && !isInfoItem && (
-          <Ionicons name="location-sharp" size={28} color="#FF8C4C" style={styles.locationIcon} />
-        )}
-        <View style={styles.textContainer}>
-          {isSearchModal ? (
-            <>
-              <Text style={(isInfoItem && item.id !== 'prompt') ? styles.itemText : styles.itemTextBold}>{item.name}</Text>
-              {item.subtext && <Text style={styles.itemSubtext}>{item.subtext}</Text>}
-            </>
-          ) : (
-            <Text style={styles.itemText}>{item.name}</Text>
-          )}
-        </View>
-        {selectedItems.includes(item.id) && !isInfoItem ? (
-          <View style={styles.checkmark}>
-            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-          </View>
-        ) : (
-          <View style={styles.checkmarkPlaceholder} />
-        )}
-      </TouchableOpacity>
-    );
-  };
-
   const cleanTitle = title.replace('Select ', '').replace('Search ', '');
   const placeholderText = `Search for ${cleanTitle}`;
 
-  const isSingleInfoItem = filteredData.length === 1 && ['prompt', 'loading', 'error', 'empty'].includes(filteredData[0].id);
+  const isSingleInfoItem = filteredData.length === 1 && 
+    ['prompt', 'loading', 'error', 'empty'].includes(filteredData[0].id);
+
+  const renderItem = ({ item }: { item: ListItem }) => {
+    const isInfoItem = ['prompt', 'loading', 'error', 'empty'].includes(item.id);
+    const isSelected = selectedItems.includes(item.id);
+
+    return (
+      <Pressable
+        onPress={() => handleSelectItem(item.id)}
+        disabled={isInfoItem}
+        row
+        justifyBetween
+        alignCenter
+        py="s"
+        px="l"
+        bg="background"
+      >
+        {isSearchModal && !isInfoItem && (
+          <Ionicons 
+            name="location-sharp" 
+            size={28} 
+            color={colors.primary} 
+            style={{ marginRight: spacing.xs }} 
+          />
+        )}
+        <Box flex={1}>
+          {isSearchModal ? (
+            <>
+              <Text 
+                size="xs" 
+                color="text" 
+                weight={isInfoItem && item.id !== 'prompt' ? 'normal' : 'bold'}
+                style={{ paddingLeft: 2, paddingTop: isInfoItem ? 0 : 5 }}
+              >
+                {item.name}
+              </Text>
+              {item.subtext && (
+                <Text 
+                  size="xs" 
+                  color="text" 
+                  style={{ paddingLeft: 2, paddingBottom: 5 }}
+                >
+                  {item.subtext}
+                </Text>
+              )}
+            </>
+          ) : (
+            <Text size="xs" color="text" style={{ paddingLeft: 2 }}>
+              {item.name}
+            </Text>
+          )}
+        </Box>
+        {isSelected && !isInfoItem ? (
+          <Box
+            width={24}
+            height={24}
+            rounded="xs"
+            bg="primary"
+            center
+          >
+            <Ionicons name="checkmark" size={16} color={colors.textInverse} />
+          </Box>
+        ) : (
+          <Box width={24} height={24} />
+        )}
+      </Pressable>
+    );
+  };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.headerButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{title}</Text>
-          <TouchableOpacity onPress={() => onDone(selectedItems)}>
-            <Text style={[styles.headerButtonText, styles.doneButton]}>Done</Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Header */}
+        <Box row justifyBetween alignCenter px="l" py="m" mb="s">
+          <Pressable onPress={onClose}>
+            <Text size="md" color="text">Cancel</Text>
+          </Pressable>
+          <Text size="md" weight="bold" color="text">{title}</Text>
+          <Pressable onPress={() => onDone(selectedItems)}>
+            <Text size="md" weight="bold" color="primaryDark">Done</Text>
+          </Pressable>
+        </Box>
 
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#8E8E93" />
+        {/* Search */}
+        <Box
+          row
+          alignCenter
+          bg="background"
+          rounded="pill"
+          mx="s"
+          mb="s"
+          px="s"
+          height={36}
+          border={1}
+          borderColor="borderLight"
+        >
+          <Ionicons name="search" size={20} color={colors.textMuted} />
           <TextInput
-            style={styles.searchInput}
+            style={{
+              flex: 1,
+              marginLeft: spacing.s,
+              fontSize: 14,
+              color: colors.text,
+            }}
             placeholder={placeholderText}
-            placeholderTextColor="#3c3c4399"
+            placeholderTextColor={colors.textMuted}
             value={searchText}
             onChangeText={handleSearchChange}
           />
-        </View>
+        </Box>
 
+        {/* List */}
         <FlatList
           data={filteredData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
-          ItemSeparatorComponent={ItemSeparator}
-          ListFooterComponent={isSingleInfoItem ? null : ItemSeparator}
-          contentContainerStyle={styles.listContentContainer}
+          ItemSeparatorComponent={() => (
+            <Box mx="s">
+              <Divider />
+            </Box>
+          )}
+          ListFooterComponent={isSingleInfoItem ? null : () => (
+            <Box mx="s">
+              <Divider />
+            </Box>
+          )}
+          contentContainerStyle={{ paddingBottom: spacing.m }}
         />
       </SafeAreaView>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  headerButtonText: {
-    fontSize: 16,
-    color: '#000000',
-  },
-  doneButton: {
-    fontWeight: '700',
-    color: '#FF8C4C',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000000',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 30,
-    marginHorizontal: 10,
-    marginBottom: 8,
-    paddingHorizontal: 10,
-    height: 36,
-    borderColor: '#D8D8D8',
-    borderWidth: 1,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: '#000000',
-    fontWeight: '400',
-  },
-  listContentContainer: {
-    paddingBottom: 16,
-  },
-  itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  locationIcon: {
-    marginRight: 5,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  itemText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    paddingLeft: 2,
-  },
-  itemTextBold: {
-    paddingTop: 5,
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '700',
-    paddingLeft: 2,
-  },
-  itemSubtext: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    paddingLeft: 2,
-    paddingBottom: 5,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
-    marginHorizontal: 10,
-  },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    backgroundColor: '#FFA05C',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkPlaceholder: {
-    width: 24,
-    height: 24,
-  },
-});
 
 export default ListSelectionModal;

@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors, typography } from '../../lib/theme';
 
 const TermsConditionsPage = () => {
   const navigation = useNavigation();
@@ -52,146 +54,73 @@ const TermsConditionsPage = () => {
     { type: 'paragraph', text: 'If you have questions about these Terms, please contact us at:\nimhungri.app@gmail.com' },
   ];
 
+  const getTextStyle = (type: string) => {
+    switch (type) {
+      case 'main_title':
+        return { weight: 'bold' as const, marginBottom: 12, marginTop: 0 };
+      case 'effective_date':
+        return { weight: 'regular' as const, marginBottom: 12, marginTop: 0 };
+      case 'heading':
+        return { weight: 'bold' as const, marginBottom: 8, marginTop: 16 };
+      case 'subheading':
+        return { weight: 'bold' as const, marginBottom: 4, marginTop: 12 };
+      case 'list_item':
+        return { weight: 'regular' as const, marginBottom: 4, marginTop: 0, marginLeft: 16 };
+      case 'paragraph':
+      default:
+        return { weight: 'regular' as const, marginBottom: 8, marginTop: 0 };
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.titleText}>Terms & Conditions</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <Box row justifyBetween alignCenter px="2xl" pt="2xl" pb="3xl">
+        <Pressable onPress={handleBack}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+        </Pressable>
+        <Text 
+          size="base" 
+          weight="bold" 
+          color="text" 
+          flex={1} 
+          align="center"
+          style={{ fontFamily: typography.fontFamily.regular, lineHeight: 19 }}
+        >
+          Terms & Conditions
+        </Text>
+        <Box width={24} />
+      </Box>
 
       {/* Content */}
-      <View style={styles.content}>
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.textContainer}>
+      <Box flex={1} px="2xl" pb="2xl">
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          <Box>
             {termsData.map((item, index) => {
-              let textStyle;
-              switch (item.type) {
-                case 'main_title':
-                  textStyle = styles.mainTitle;
-                  break;
-                case 'effective_date':
-                  textStyle = styles.effectiveDate;
-                  break;
-                case 'heading':
-                  textStyle = styles.heading;
-                  break;
-                case 'subheading':
-                  textStyle = styles.subheading;
-                  break;
-                case 'list_item':
-                  textStyle = styles.listItem;
-                  return (
-                    <Text key={index} style={textStyle}>
-                      • {item.text}
-                    </Text>
-                  );
-                case 'paragraph':
-                default:
-                  textStyle = styles.paragraph;
-                  break;
-              }
+              const style = getTextStyle(item.type);
               return (
-                <Text key={index} style={textStyle}>
-                  {item.text}
+                <Text 
+                  key={index}
+                  size="xs" 
+                  weight={style.weight}
+                  color="text"
+                  style={{ 
+                    fontFamily: typography.fontFamily.regular, 
+                    lineHeight: 19,
+                    marginBottom: style.marginBottom,
+                    marginTop: style.marginTop,
+                    marginLeft: item.type === 'list_item' ? style.marginLeft : 0,
+                  }}
+                >
+                  {item.type === 'list_item' ? `• ${item.text}` : item.text}
                 </Text>
               );
             })}
-          </View>
+          </Box>
         </ScrollView>
-      </View>
+      </Box>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
-  },
-  titleText: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 19,
-    color: '#000000',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 24,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  textContainer: {},
-  mainTitle: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-    marginBottom: 12,
-  },
-  effectiveDate: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-    marginBottom: 12,
-  },
-  heading: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  subheading: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  paragraph: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-    marginBottom: 8,
-  },
-  listItem: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 19,
-    color: '#000000',
-    marginLeft: 16,
-    marginBottom: 4,
-  },
-});
 
 export default TermsConditionsPage;

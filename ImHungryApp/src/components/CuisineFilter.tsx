@@ -1,14 +1,23 @@
+/**
+ * CuisineFilter - Horizontal Filter Pill List
+ * 
+ * A scrollable list of filter pills for cuisine selection.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
+
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { FlatList, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { Box, Text } from './atoms';
+import { colors, spacing, borderRadius } from '../lib/theme';
 
 export interface CuisineFilterProps {
   filters: string[];
   selectedFilter?: string;
-  selectedFilters?: string[]; // For multi-select support
+  selectedFilters?: string[];
   multiSelect?: boolean;
   onFilterSelect: (filter: string) => void;
-  onFiltersSelect?: (filters: string[]) => void; // For multi-select
-  style?: any;
+  onFiltersSelect?: (filters: string[]) => void;
+  style?: StyleProp<ViewStyle>;
   showAllOption?: boolean;
 }
 
@@ -50,7 +59,7 @@ const CuisineFilter: React.FC<CuisineFilterProps> = ({
       }
       
       onFiltersSelect?.(newFilters);
-      onFilterSelect(newFilters[0] || 'All'); // Fallback for single select compatibility
+      onFilterSelect(newFilters[0] || 'All');
     } else {
       onFilterSelect(filter);
     }
@@ -61,80 +70,50 @@ const CuisineFilter: React.FC<CuisineFilterProps> = ({
     
     return (
       <TouchableOpacity
-        style={[
-          styles.filterCell,
-          selected && styles.selectedFilterCell
-        ]}
         onPress={() => handleFilterPress(item)}
         activeOpacity={0.7}
+        style={{
+          backgroundColor: selected ? colors.primaryDark : colors.background,
+          borderWidth: 1,
+          borderColor: selected ? colors.primaryDark : colors.borderLight,
+          borderRadius: borderRadius.pill,
+          paddingHorizontal: spacing.m,
+          paddingVertical: spacing.s,
+          marginRight: spacing.xs,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.xs,
+        }}
       >
-        <Text style={[
-          styles.filterCellText,
-          selected && styles.selectedFilterCellText
-        ]}>
+        <Text
+          size="xs"
+          weight="normal"
+          color={selected ? 'textInverse' : 'text'}
+          align="center"
+        >
           {item}
         </Text>
         {multiSelect && selected && item !== 'All' && (
-          <Text style={styles.selectedIndicator}>✓</Text>
+          <Text size={10} color="textInverse" weight="bold">
+            ✓
+          </Text>
         )}
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, style]}>
+    <Box my={4} style={style}>
       <FlatList
         data={allFilters}
         renderItem={renderFilter}
         keyExtractor={(item) => item}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterList}
+        contentContainerStyle={{ paddingLeft: 18.5 }}
       />
-    </View>
+    </Box>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  filterList: {
-    paddingLeft: 18.5,
-  },
-  filterCell: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 4,
-  },
-  selectedFilterCell: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
-  },
-  filterCellText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000000',
-    textAlign: 'center',
-  },
-  selectedFilterCellText: {
-    color: '#FFFFFF',
-  },
-  selectedIndicator: {
-    marginLeft: 4,
-    fontSize: 10,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-});
 export default CuisineFilter;

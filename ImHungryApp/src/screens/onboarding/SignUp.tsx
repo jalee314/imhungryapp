@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
 import type { ViewStyle } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors, typography } from '../../lib/theme';
 import { checkPhoneExists } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -19,7 +19,6 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
   };
 };
 
-
 export default function SignUpScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -27,9 +26,9 @@ export default function SignUpScreen() {
   const { width, height } = useWindowDimensions();
   const { validateEmail } = useAuth();
 
-  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));   // horizontal page padding
-  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));   // vertical rhythm
-  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));  // between inputs
+  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
+  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
+  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
 
@@ -44,7 +43,6 @@ export default function SignUpScreen() {
     continueButton: { marginTop: Math.round(V * 0.6), marginBottom: V },
     legalContainer: { marginTop: V * 2 },
   };
-  // ----------------------------
 
   const [formData, setFormData] = useState({
     firstName: existingUserData?.firstName || '',
@@ -64,28 +62,21 @@ export default function SignUpScreen() {
     setIsChecking(prev => ({ ...prev, [field]: true }));
     setErrors(prev => ({ ...prev, [field]: '' }));
 
-    const dbField = field === 'phoneNumber' ? 'phone_number' : field;
-
-    // format value for DB query
     let queryValue = value;
     if (field === 'phoneNumber') {
       const digits = value.replace(/\D/g, '');
-      // format to +1xxxxxxxxxx for DB query
       if (digits.length >= 10) {
         queryValue = `+1${digits.slice(0, 10)}`;
       } else {
-        // don't run a query for an incomplete number
         setIsChecking(prev => ({ ...prev, [field]: false }));
         return;
       }
     }
 
     try {
-      // Use database functions that can be called by anonymous users
       let exists = false;
 
       if (field === 'email') {
-        // Use the auth hook's email validation to keep logic centralized
         exists = await validateEmail(queryValue);
       } else if (field === 'phoneNumber') {
         exists = await checkPhoneExists(queryValue);
@@ -160,33 +151,55 @@ export default function SignUpScreen() {
   const handlePrivacyPress = () => { };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <SafeAreaView style={styles.container}>
+    <Box flex={1} bg="background">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <StatusBar style="dark" />
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <ScrollView
-            style={[styles.pagePad, responsive.pagePad]}
-            contentContainerStyle={styles.scrollContentContainer}
+            style={[{ flex: 1 }, responsive.pagePad]}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <TouchableOpacity style={[styles.loginLink, responsive.loginLink]} onPress={handleLogin}>
-              <Text style={styles.loginText}>Log in</Text>
-            </TouchableOpacity>
+            <Pressable 
+              onPress={handleLogin}
+              style={[{ alignSelf: 'flex-end' }, responsive.loginLink]}
+            >
+              <Text 
+                size="base" 
+                weight="bold" 
+                color="textLight"
+                style={{ fontFamily: typography.fontFamily.bold }}
+              >
+                Log in
+              </Text>
+            </Pressable>
 
-            <View style={styles.mainContainer}>
-              <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome to ImHungri</Text>
-                <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
+            <Box alignCenter justifyStart>
+              <Box style={[responsive.welcomeSection, CONSTRAIN]}>
+                <Text 
+                  size="lg" 
+                  weight="bold" 
+                  color="text"
+                  style={[{ fontFamily: typography.fontFamily.bold, textAlign: 'left' }, responsive.welcomeTitle]}
+                >
+                  Welcome to ImHungri
+                </Text>
+                <Text 
+                  size="base" 
+                  color="text" 
+                  lineHeight={24}
+                  style={[{ fontFamily: typography.fontFamily.regular, textAlign: 'left' }, responsive.welcomeSubtitle]}
+                >
                   Create an account to get curated deals from local restaurants, food franchises and more!
                 </Text>
-              </View>
+              </Box>
 
               {/* Form Fields */}
-              <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
+              <Box style={[responsive.formContainer, CONSTRAIN]}>
                 {fieldConfig.map((cfg, i) => (
-                  <View key={cfg.field} style={responsive.paperInput}>
+                  <Box key={cfg.field} style={responsive.paperInput}>
                     <TextInput
                       label={cfg.label}
                       mode="outlined"
@@ -195,11 +208,17 @@ export default function SignUpScreen() {
                       placeholder={cfg.placeholder}
                       outlineColor="#FFA05C"
                       activeOutlineColor="#FFA05C"
-                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                      style={{
+                        backgroundColor: 'white',
+                        minHeight: 56,
+                        fontSize: 16,
+                        lineHeight: 22,
+                        paddingVertical: 0,
+                      }}
                       theme={{
                         roundness: 8,
                         colors: {
-                          background: 'white',   // Paper uses this to paint the notch
+                          background: 'white',
                           outline: '#FFA05C',
                         },
                       }}
@@ -209,7 +228,6 @@ export default function SignUpScreen() {
                       textContentType={cfg.textContentType}
                       secureTextEntry={cfg.field === 'password' ? !showPassword : false}
                       returnKeyType={i === fieldConfig.length - 1 ? 'done' : 'next'}
-
                       right={cfg.field === 'password' ? (
                         <TextInput.Icon
                           icon={showPassword ? 'eye-off' : 'eye'}
@@ -218,122 +236,77 @@ export default function SignUpScreen() {
                         />
                       ) : undefined}
                     />
-                    {errors[cfg.field as keyof typeof errors] ? <Text style={styles.errorText}>{errors[cfg.field as keyof typeof errors]}</Text> : null}
-                  </View>
+                    {errors[cfg.field as keyof typeof errors] ? (
+                      <Text 
+                        color="error" 
+                        style={{ alignSelf: 'flex-start', marginLeft: 12, marginTop: 4, marginBottom: -12 }}
+                      >
+                        {errors[cfg.field as keyof typeof errors]}
+                      </Text>
+                    ) : null}
+                  </Box>
                 ))}
-              </View>
+              </Box>
 
               {/* Continue */}
-              <TouchableOpacity
-                style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+              <Pressable
                 onPress={handleContinue}
                 disabled={loading}
+                style={[
+                  {
+                    width: '100%',
+                    height: 50,
+                    backgroundColor: colors.primaryDark,
+                    borderRadius: 25,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                  responsive.continueButton,
+                  CONSTRAIN,
+                  loading && { opacity: 0.7 }
+                ]}
               >
-                <Text style={styles.continueButtonText}>Continue</Text>
-              </TouchableOpacity>
-            </View>
+                <Text 
+                  color="textInverse" 
+                  size="base"
+                  style={{ fontFamily: typography.fontFamily.regular, lineHeight: 24 }}
+                >
+                  Continue
+                </Text>
+              </Pressable>
+            </Box>
 
             {/* Legal */}
-            <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
-              <Text style={styles.legalText}>
+            <Box style={[responsive.legalContainer, CONSTRAIN]} alignCenter>
+              <Text 
+                size="xs" 
+                color="text" 
+                lineHeight={16}
+                style={{ fontFamily: typography.fontFamily.medium, textAlign: 'left' }}
+              >
                 By continuing, you agree to ImHungri's{' '}
-                <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
+                <Text 
+                  color="primaryDark" 
+                  weight="semiBold"
+                  onPress={handleTermsPress}
+                  style={{ fontFamily: typography.fontFamily.semiBold }}
+                >
+                  Terms & Conditions
+                </Text>{' '}
                 and{' '}
-                <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
+                <Text 
+                  color="primaryDark" 
+                  weight="semiBold"
+                  onPress={handlePrivacyPress}
+                  style={{ fontFamily: typography.fontFamily.semiBold }}
+                >
+                  Privacy Policy
+                </Text>
               </Text>
-            </View>
+            </Box>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
-  container: { flex: 1, backgroundColor: 'white' },
-
-  keyboardAvoidingView: { flex: 1 },
-  pagePad: { flex: 1 }, // responsive padding applied at runtime
-  scrollContentContainer: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-  },
-
-  mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
-
-  loginLink: { alignSelf: 'flex-end' },
-  loginText: {
-    fontSize: 16,
-    color: '#404040',
-    fontWeight: '700',
-    fontFamily: 'Inter-Bold'
-  },
-
-  welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: {
-    fontSize: 18,
-    color: '#181619',
-    fontFamily: 'Inter-Bold',
-    fontWeight: '700',
-    textAlign: 'left'
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: '#181619',
-    lineHeight: 24,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'left'
-  },
-
-  formContainer: { width: '100%' },
-  paperInput: {
-    // Only spacing, no height
-  }, // field bg; spacing added responsively
-
-  textInputStyle: {
-    backgroundColor: 'white',
-    minHeight: 56,
-    fontSize: 16,
-    lineHeight: 22,
-    paddingVertical: 0,
-  },
-
-  continueButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular',
-    lineHeight: 24
-  },
-
-  legalContainer: { alignItems: 'center' },
-  legalText: {
-    fontSize: 12,
-    color: '#181619',
-    textAlign: 'left',
-    lineHeight: 16,
-    fontFamily: 'Inter-Medium',
-    fontWeight: '500'
-  },
-  legalLink: {
-    color: '#FFA05C',
-    fontWeight: '600',
-    fontFamily: 'Inter-SemiBold'
-  },
-  errorText: {
-    color: 'red',
-    alignSelf: 'flex-start',
-    marginLeft: 12,
-    marginTop: 4,
-    marginBottom: -12,
-  }
-});

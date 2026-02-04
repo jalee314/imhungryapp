@@ -1,35 +1,36 @@
+/**
+ * ForgotPasswordScreen - Password Reset Request
+ * 
+ * Allows users to request a password reset email.
+ * Uses atomic components for styling.
+ */
+
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
+import { 
+  SafeAreaView, 
+  KeyboardAvoidingView, 
+  Platform, 
+  Alert, 
+  useWindowDimensions 
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors } from '../../lib/theme';
 import { sendPasswordResetEmail } from '../../services/authService';
 
 export default function ForgotPasswordScreen() {
-  
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
 
-  const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));
-  const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));
-  const GAP = Math.max( 8, Math.min(16, Math.round(height * 0.012)));
+  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
+  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
+  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
-
-  const responsive = {
-    pagePad: { paddingHorizontal: H, paddingVertical: V },
-    backButton: { marginBottom: Math.round(V * 1.5), marginTop: V },
-    welcomeSection: { marginBottom: Math.round(V * 1.5) },
-    welcomeTitle: { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle: { marginBottom: -Math.round(V * 0.35) },
-    formContainer: { marginBottom: Math.round(V * 0.125) },
-    paperInput: { marginBottom: Math.round(GAP * 1.5) },
-    resetButton: { marginTop: V, marginBottom: V },
-    legalContainer: { marginTop: V * 2 },
-  };
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,31 +64,47 @@ export default function ForgotPasswordScreen() {
     navigation.goBack();
   };
 
-  const handleTermsPress = () => {};
-  const handlePrivacyPress = () => {};
-
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <SafeAreaView style={styles.container}>
+    <Box flex={1} bg="background">
+      <SafeAreaView style={{ flex: 1 }}>
         <StatusBar style="dark" />
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-          <View style={[styles.pagePad, responsive.pagePad]}>
-            <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{ flex: 1 }}
+        >
+          <Box flex={1} px={H} py={V}>
+            {/* Back Button */}
+            <Pressable 
+              onPress={handleBack} 
+              style={{ alignSelf: 'flex-start', marginBottom: V * 1.5, marginTop: V }}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </Pressable>
 
-            <View style={styles.mainContainer}>
-              <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to ImHungri</Text>
-                <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
+            <Box alignCenter justifyStart>
+              {/* Welcome Section */}
+              <Box style={[CONSTRAIN, { marginBottom: V * 1.5 }]}>
+                <Text 
+                  size="xl" 
+                  weight="bold" 
+                  color="text" 
+                  style={{ marginBottom: V }}
+                >
+                  Welcome Back to ImHungri
+                </Text>
+                <Text 
+                  size="md" 
+                  color="text" 
+                  style={{ lineHeight: 24, marginBottom: -V * 0.35 }}
+                >
                   Reset Your Password
                 </Text>
-              </View>
+              </Box>
 
               {/* Email Input */}
-              <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
-                <View style={responsive.paperInput}>
+              <Box width="100%" style={[CONSTRAIN, { marginBottom: V * 0.125 }]}>
+                <Box mb={GAP * 1.5}>
                   <TextInput
                     label="Email address"
                     mode="outlined"
@@ -96,88 +113,52 @@ export default function ForgotPasswordScreen() {
                       setEmail(text);
                       if (successMessage) setSuccessMessage('');
                     }}
-                    placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                    theme={{
-                      roundness: 12,
-                      colors: {
-                        background: 'white',
-                      },
-                    }}
+                    outlineColor={colors.primaryDark}
+                    activeOutlineColor={colors.primaryDark}
+                    style={{ backgroundColor: colors.background, minHeight: 56, fontSize: 16 }}
+                    theme={{ roundness: 12, colors: { background: colors.background } }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
                     textContentType="emailAddress"
                     returnKeyType="done"
                   />
-                </View>
+                </Box>
                 {successMessage ? (
-                  <Text style={styles.successText}>{successMessage}</Text>
+                  <Text size="sm" color="success" align="center" style={{ marginTop: 10 }}>
+                    {successMessage}
+                  </Text>
                 ) : null}
-              </View>
+              </Box>
 
               {/* Reset Password Button */}
-              <TouchableOpacity
-                style={[styles.resetButton, responsive.resetButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+              <Pressable
                 onPress={handleResetPassword}
                 disabled={loading}
+                bg="primaryDark"
+                rounded={22}
+                height={44}
+                center
+                style={[CONSTRAIN, { marginTop: V, marginBottom: V, opacity: loading ? 0.7 : 1 }]}
               >
-                <Text style={styles.resetButtonText}>Reset Password</Text>
-              </TouchableOpacity>
-            </View>
+                <Text size="lg" weight="semiBold" color="textInverse">
+                  Reset Password
+                </Text>
+              </Pressable>
+            </Box>
 
             {/* Legal */}
-            <View style={[styles.legalContainer, responsive.legalContainer, CONSTRAIN]}>
-              <Text style={styles.legalText}>
+            <Box style={[CONSTRAIN, { marginTop: V * 2 }]} alignCenter>
+              <Text size="sm" color="text" align="center" style={{ lineHeight: 20 }}>
                 By continuing, you agree to ImHungri's{' '}
-                <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
+                <Text size="sm" color="warning" weight="medium">Terms & Conditions</Text>{' '}
                 and{' '}
-                <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
+                <Text size="sm" color="warning" weight="medium">Privacy Policy</Text>
               </Text>
-            </View>
-          </View>
+            </Box>
+          </Box>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
-  keyboardAvoidingView: { flex: 1 },
-  pagePad: { flex: 1 },
-  mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
-  backButton: { alignSelf: 'flex-start' },
-  welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: { fontSize: 20, color: '#000', fontFamily: 'Inter-Bold' },
-  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Inter-Regular' },
-  formContainer: { width: '100%' },
-  paperInput: { backgroundColor: 'white' },
-  textInputStyle: {
-    backgroundColor: 'white',
-    minHeight: 56,
-    fontSize: 16,
-    lineHeight: 22,
-    paddingVertical: 0,
-  },
-  resetButton: {
-    width: '100%',
-    height: 44,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resetButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  legalContainer: { alignItems: 'center' },
-  legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
-  legalLink: { color: '#FF9800', fontWeight: '500' },
-  successText: {
-    marginTop: 10,
-    color: '#2E7D32', // A shade of green
-    fontFamily: 'Inter-Regular',
-    textAlign: 'center',
-  },
-});

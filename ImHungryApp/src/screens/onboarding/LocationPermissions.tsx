@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  KeyboardAvoidingView, Platform, Alert, Image
-} from 'react-native';
+import { SafeAreaView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors, typography } from '../../lib/theme';
 
 interface LocationData {
   latitude: number;
@@ -20,7 +19,6 @@ export default function LocationPermissionsScreen() {
   
   const [loading, setLoading] = useState(false);
 
-  // Function to get city from coordinates using reverse geocoding
   const getCityFromCoordinates = async (latitude: number, longitude: number): Promise<string> => {
     try {
       const reverseGeocode = await Location.reverseGeocodeAsync({
@@ -41,17 +39,15 @@ export default function LocationPermissionsScreen() {
   const handleLocationPermission = async () => {
     setLoading(true);
     try {
-      // Request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       let locationData: LocationData | null = null;
       
       if (status === 'granted') {
         try {
-          // Get current location
           const location = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Balanced,
-            timeInterval: 10000, // 10 seconds timeout
+            timeInterval: 10000,
           });
           
           const { latitude, longitude } = location.coords;
@@ -66,11 +62,9 @@ export default function LocationPermissionsScreen() {
           console.log('Location captured:', locationData);
         } catch (locationError) {
           console.warn('Failed to get location:', locationError);
-          // Continue without location data
         }
       }
       
-      // Pass location data (or null) to next screen
       (navigation as any).navigate('InstantNotifications', { 
         userData: {
           ...userData,
@@ -80,7 +74,6 @@ export default function LocationPermissionsScreen() {
       
     } catch (error) {
       console.error('Location permission error:', error);
-      // Continue without location data
       (navigation as any).navigate('InstantNotifications', { userData });
     } finally {
       setLoading(false);
@@ -88,167 +81,104 @@ export default function LocationPermissionsScreen() {
   };
 
   const handleSkip = () => {
-    // Continue without location data
     (navigation as any).navigate('InstantNotifications', { userData });
   };
 
-  return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="dark" />
-
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
-          <View style={styles.pagePad}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.backButtonText}>←</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.skipLink} onPress={handleSkip}>
-                <Text style={styles.skipText}>Skip</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.mainContainer}>
-              <View style={styles.titleSection}>
-                <Text style={styles.title}>Location Permissions</Text>
-                <Text style={styles.subtitle}>
-                  Enable location access so we can show you the best food deals, restaurants, and offers around you.
-                </Text>
-              </View>
-
-              <View style={styles.imageSection}>
-                <View style={styles.imagePlaceholder}>
-                  <Image source={require('../../../img/onboarding/location.png')} style={styles.locationIcon} />
-                </View>
-              </View>
-
-              <View style={styles.spacer} />
-
-              <View style={styles.footer}>
-                <TouchableOpacity
-                  style={[
-                    styles.continueButton, 
-                    loading && { opacity: 0.7 }
-                  ]}
-                  onPress={handleLocationPermission}
-                  disabled={loading}
-                >
-                  <Text style={styles.continueButtonText}>
-                    {loading ? 'Getting location...' : 'Location Permissions'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: 'white' 
-  },
-
-  keyboardAvoidingView: { flex: 1 },
-  pagePad: { 
-    flex: 1, 
-    paddingHorizontal: 24, 
-    paddingVertical: 20 
-  },
-
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 40,
-    height: 44
-  },
-
-  backButton: { paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { 
-    fontSize: 20, 
-    color: '#000', 
-    fontWeight: '500' 
-  },
-
-  skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
-  skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular'
-  },
-
-  mainContainer: { 
-    flex: 1, 
-    alignItems: 'flex-start', 
-    width: '100%'
-  },
-
-  titleSection: { 
-    marginBottom: 40,
-    maxWidth: 343,
-    alignItems: 'flex-start'
-  },
-  title: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
-    marginBottom: 25,
-    fontFamily: 'Inter-Bold',
-    textAlign: 'left'
-  },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#404040', 
-    lineHeight: 24,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'left'
-  },
-
-  imageSection: { 
-    alignItems: 'center', 
-    marginBottom: 40,
-    alignSelf: 'center'
-  },
-  imagePlaceholder: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: '#000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden'
-  },
-  locationIcon: {
+  const locationIconStyle = {
     width: 120,
     height: 120,
-    resizeMode: 'contain'
-  },
+    resizeMode: 'contain' as const,
+  };
 
-  spacer: { flex: 1 },
-  footer: { 
-    width: '100%', 
-    alignItems: 'center',
-    alignSelf: 'center'
-  },
+  return (
+    <Box flex={1} bg="background">
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <StatusBar style="dark" />
 
-  continueButton: { 
-    width: '100%', 
-    maxWidth: 343,
-    height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
-    alignItems: 'center', 
-    justifyContent: 'center'
-  },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
-  },
-});
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <Box flex={1} px="2xl" py="2xl">
+            {/* Header */}
+            <Box row justifyBetween alignCenter mb="5xl" height={44}>
+              <Pressable py="m" px="xs" onPress={() => navigation.goBack()}>
+                <Text size="xl" weight="medium" color="text">←</Text>
+              </Pressable>
+
+              <Pressable py="m" px="xs" onPress={handleSkip}>
+                <Text 
+                  size="base" 
+                  color="textLight"
+                  style={{ fontFamily: typography.fontFamily.regular }}
+                >
+                  Skip
+                </Text>
+              </Pressable>
+            </Box>
+
+            {/* Main Content */}
+            <Box flex={1} alignStart width="100%">
+              {/* Title Section */}
+              <Box mb="5xl" maxWidth={343} alignStart>
+                <Text 
+                  size="2xl" 
+                  weight="bold" 
+                  color="text" 
+                  mb="3xl"
+                  style={{ fontFamily: typography.fontFamily.bold, textAlign: 'left' }}
+                >
+                  Location Permissions
+                </Text>
+                <Text 
+                  size="base" 
+                  color="textLight" 
+                  lineHeight={24}
+                  style={{ fontFamily: typography.fontFamily.regular, textAlign: 'left' }}
+                >
+                  Enable location access so we can show you the best food deals, restaurants, and offers around you.
+                </Text>
+              </Box>
+
+              {/* Image Section */}
+              <Box alignCenter mb="5xl" style={{ alignSelf: 'center' }}>
+                <Box
+                  width={200}
+                  height={200}
+                  rounded="full"
+                  center
+                  style={{
+                    backgroundColor: '#000',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Image source={require('../../../img/onboarding/location.png')} style={locationIconStyle} />
+                </Box>
+              </Box>
+
+              {/* Spacer */}
+              <Box flex={1} />
+
+              {/* Footer */}
+              <Box width="100%" alignCenter style={{ alignSelf: 'center' }}>
+                <Pressable
+                  onPress={handleLocationPermission}
+                  disabled={loading}
+                  width="100%"
+                  maxWidth={343}
+                  height={44}
+                  rounded="full"
+                  alignCenter
+                  justifyCenter
+                  bg="primaryDark"
+                  style={loading ? { opacity: 0.7 } : undefined}
+                >
+                  <Text color="textInverse" size="base" weight="semiBold">
+                    {loading ? 'Getting location...' : 'Location Permissions'}
+                  </Text>
+                </Pressable>
+              </Box>
+            </Box>
+          </Box>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </Box>
+  );
+}

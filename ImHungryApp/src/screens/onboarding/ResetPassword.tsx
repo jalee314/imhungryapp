@@ -1,35 +1,39 @@
+/**
+ * ResetPasswordScreen - Create New Password
+ * 
+ * Allows users to create a new password after clicking reset link.
+ * Uses atomic components for styling.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
+import { 
+  SafeAreaView, 
+  KeyboardAvoidingView, 
+  Platform, 
+  Alert, 
+  useWindowDimensions, 
+  ScrollView 
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors } from '../../lib/theme';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function ResetPasswordScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { width, height } = useWindowDimensions();
-  const { setPasswordResetMode } = useAuth();
+  const { setPasswordResetMode, resetPasswordWithTokens } = useAuth();
 
   const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
   const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
   const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
-
-  const responsive = {
-    pagePad: { paddingHorizontal: H, paddingVertical: V },
-    backButton: { marginBottom: Math.round(V * 1.5), marginTop: V },
-    welcomeSection: { marginBottom: Math.round(V * 1.5) },
-    welcomeTitle: { marginBottom: Math.round(V * 1) },
-    welcomeSubtitle: { marginBottom: -Math.round(V * 0.35) },
-    formContainer: { marginBottom: Math.round(V * 0.125) },
-    paperInput: { marginBottom: Math.round(GAP * 1.5) },
-    resetButton: { marginTop: V, marginBottom: V },
-    legalContainer: { marginTop: V * 2 },
-  };
 
   const [formData, setFormData] = useState({
     newPassword: '',
@@ -45,29 +49,19 @@ export default function ResetPasswordScreen() {
   const hasInitializedRef = useRef(false);
 
   useEffect(() => {
-    // Prevent multiple initializations
     if (hasInitializedRef.current) {
-      console.log('ResetPassword: Already initialized, skipping');
       return;
     }
     
     hasInitializedRef.current = true;
-    
-    // Enable password reset mode FIRST to prevent AuthContext from reacting to session changes
-    console.log('ResetPassword: Enabling password reset mode');
     setPasswordResetMode(true);
 
-    // React Navigation passes the URL query params to the route.
-    // We can access them directly here.
     const params = route.params as { access_token?: string; refresh_token?: string };
     const accessToken = params?.access_token;
     const refreshToken = params?.refresh_token;
 
     if (accessToken && refreshToken) {
-      // For password reset, we validate the tokens without establishing a persistent session
-      // We'll store them temporarily for the password update process
       try {
-        // Basic token validation - check if they exist and have the right format
         if (accessToken.length > 0 && refreshToken.length > 0) {
           setSessionReady(true);
         } else {
@@ -80,23 +74,16 @@ export default function ResetPasswordScreen() {
         setSessionReady(false);
       }
     } else {
-      // If no tokens, the link is invalid.
       setSessionReady(false);
     }
 
-    // Cleanup: disable password reset mode when component unmounts
-    // But only if we're not in the middle of a password update
     return () => {
-      // Only disable password reset mode if not currently updating
       if (!isUpdatingRef.current) {
-        console.log('ResetPassword: Component unmounting, disabling password reset mode');
         setPasswordResetMode(false);
-        hasInitializedRef.current = false; // Reset for potential remount
-      } else {
-        console.log('ResetPassword: Component unmounting but update in progress, keeping password reset mode active');
+        hasInitializedRef.current = false;
       }
     };
-  }, []); // Empty dependency array - only run once on mount
+  }, []);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -126,7 +113,6 @@ export default function ResetPasswordScreen() {
     setLoading(true);
     isUpdatingRef.current = true;
     try {
-      // Get the reset tokens
       const params = route.params as { access_token?: string; refresh_token?: string };
       const accessToken = params?.access_token;
       const refreshToken = params?.refresh_token;
@@ -137,37 +123,27 @@ export default function ResetPasswordScreen() {
         return;
       }
 
-      // Use store-backed helper to set session, update password, and sign out locally
-      const { resetPasswordWithTokens } = useAuth();
       const result = await resetPasswordWithTokens(accessToken, refreshToken, formData.newPassword);
       if ((result as any).error) {
         Alert.alert('Error', 'This password reset link is invalid or has expired.');
         isUpdatingRef.current = false;
       } else {
-        // Success - sign out FIRST (synchronously), then disable password reset mode, then navigate
-        console.log('Password updated successfully, signing out...');
-        
-        // Wait a moment for the sign out to propagate
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        console.log('Disabling password reset mode...');
         setPasswordResetMode(false);
         isUpdatingRef.current = false;
         
-        // Wait another moment before navigation to ensure clean state
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        console.log('Navigating to login screen...');
         (navigation as any).navigate('LogIn');
         
-        // Show success message after navigation
         setTimeout(() => {
           Alert.alert(
             'Success',
             'Your password has been updated successfully! Please log in with your new password.'
           );
         }, 300);
-  }
+      }
     } catch (err) {
       console.error('Password update error:', err);
       Alert.alert('Error', 'An unexpected error occurred');
@@ -181,206 +157,151 @@ export default function ResetPasswordScreen() {
     navigation.goBack();
   };
 
-  const handleTermsPress = () => {};
-  const handlePrivacyPress = () => {};
-
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <SafeAreaView style={styles.container}>
+    <Box flex={1} bg="background">
+      <SafeAreaView style={{ flex: 1 }}>
         <StatusBar style="dark" />
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{ flex: 1 }}
+        >
           <ScrollView
-            style={[styles.pagePad, responsive.pagePad]}
-            contentContainerStyle={styles.scrollContentContainer}
+            style={{ flex: 1, paddingHorizontal: H, paddingVertical: V }}
+            contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Top Content */}
-            <View>
-              <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-                <Ionicons name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
+            <Box>
+              {/* Back Button */}
+              <Pressable 
+                onPress={handleBack} 
+                style={{ alignSelf: 'flex-start', marginBottom: V * 1.5, marginTop: V }}
+              >
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
+              </Pressable>
 
-              <View style={styles.mainContainer}>
-                <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to ImHungri</Text>
-                <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                  Create a New Password
-                </Text>
-              </View>
+              <Box alignCenter justifyStart style={{ paddingTop: 30 }}>
+                {/* Welcome Section */}
+                <Box style={[CONSTRAIN, { marginBottom: V * 1.5 }]}>
+                  <Text 
+                    size="lg" 
+                    weight="bold" 
+                    color="text" 
+                    style={{ marginBottom: V }}
+                  >
+                    Welcome Back to ImHungri
+                  </Text>
+                  <Text 
+                    size="md" 
+                    color="text" 
+                    style={{ lineHeight: 24, marginBottom: -V * 0.35 }}
+                  >
+                    Create a New Password
+                  </Text>
+                </Box>
 
-              {/* Form Fields */}
-              <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
-                <View style={responsive.paperInput}>
-                  <TextInput
-                    label="New Password"
-                    mode="outlined"
-                    value={formData.newPassword}
-                    onChangeText={t => handleInputChange('newPassword', t)}
-                    placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                    theme={{
-                      roundness: 12,
-                      colors: {
-                        background: 'white',
-                      },
-                    }}
-                    secureTextEntry={!showNewPassword}
-                    returnKeyType="next"
-                    onFocus={() => setIsNewPasswordFocused(true)}
-                    onBlur={() => setIsNewPasswordFocused(false)}
-                    right={(
-                      <TextInput.Icon
-                        icon={() => (
-                          <Ionicons
-                            name={showNewPassword ? 'eye-off' : 'eye'}
-                            size={20}
-                            color="#666"
-                            style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
-                          />
-                        )}
-                        onPress={() => setShowNewPassword(!showNewPassword)}
-                        style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
-                      />
-                    )}
-                  />
-                </View>
+                {/* Form Fields */}
+                <Box width="100%" style={[CONSTRAIN, { marginBottom: V * 0.125 }]}>
+                  <Box mb={GAP * 1.5}>
+                    <TextInput
+                      label="New Password"
+                      mode="outlined"
+                      value={formData.newPassword}
+                      onChangeText={t => handleInputChange('newPassword', t)}
+                      outlineColor={colors.primaryDark}
+                      activeOutlineColor={colors.primaryDark}
+                      style={{ backgroundColor: colors.background, minHeight: 56, fontSize: 16 }}
+                      theme={{ roundness: 12, colors: { background: colors.background } }}
+                      secureTextEntry={!showNewPassword}
+                      returnKeyType="next"
+                      onFocus={() => setIsNewPasswordFocused(true)}
+                      onBlur={() => setIsNewPasswordFocused(false)}
+                      right={
+                        <TextInput.Icon
+                          icon={() => (
+                            <Ionicons
+                              name={showNewPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color={colors.textLight}
+                              style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                            />
+                          )}
+                          onPress={() => setShowNewPassword(!showNewPassword)}
+                          style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                        />
+                      }
+                    />
+                  </Box>
 
-                <View style={responsive.paperInput}>
-                  <TextInput
-                    label="Confirm New Password"
-                    mode="outlined"
-                    value={formData.confirmPassword}
-                    onChangeText={t => handleInputChange('confirmPassword', t)}
-                    placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                    theme={{
-                      roundness: 12,
-                      colors: {
-                        background: 'white',
-                      },
-                    }}
-                    secureTextEntry={!showConfirmPassword}
-                    returnKeyType="done"
-                    onFocus={() => setIsConfirmPasswordFocused(true)}
-                    onBlur={() => setIsConfirmPasswordFocused(false)}
-                    right={(
-                      <TextInput.Icon
-                        icon={() => (
-                          <Ionicons
-                            name={showConfirmPassword ? 'eye-off' : 'eye'}
-                            size={20}
-                            color="#666"
-                            style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
-                          />
-                        )}
-                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                        style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
-                      />
-                    )}
-                  />
-                </View>
-              </View>
+                  <Box mb={GAP * 1.5}>
+                    <TextInput
+                      label="Confirm New Password"
+                      mode="outlined"
+                      value={formData.confirmPassword}
+                      onChangeText={t => handleInputChange('confirmPassword', t)}
+                      outlineColor={colors.primaryDark}
+                      activeOutlineColor={colors.primaryDark}
+                      style={{ backgroundColor: colors.background, minHeight: 56, fontSize: 16 }}
+                      theme={{ roundness: 12, colors: { background: colors.background } }}
+                      secureTextEntry={!showConfirmPassword}
+                      returnKeyType="done"
+                      onFocus={() => setIsConfirmPasswordFocused(true)}
+                      onBlur={() => setIsConfirmPasswordFocused(false)}
+                      right={
+                        <TextInput.Icon
+                          icon={() => (
+                            <Ionicons
+                              name={showConfirmPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color={colors.textLight}
+                              style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                            />
+                          )}
+                          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                          style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                        />
+                      }
+                    />
+                  </Box>
+                </Box>
 
-              {/* Update Password Button */}
-              <TouchableOpacity
-                  style={[styles.resetButton, responsive.resetButton, CONSTRAIN, (!sessionReady || loading) && { opacity: 0.7 }]}
+                {/* Update Password Button */}
+                <Pressable
                   onPress={handleUpdatePassword}
                   disabled={!sessionReady || loading}
+                  bg="primaryDark"
+                  rounded={22}
+                  height={44}
+                  center
+                  style={[CONSTRAIN, { 
+                    marginTop: V, 
+                    marginBottom: V, 
+                    opacity: (!sessionReady || loading) ? 0.7 : 1 
+                  }]}
                 >
-                  <Text style={styles.resetButtonText}>Update Password</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                  <Text size="md" color="textInverse">
+                    Update Password
+                  </Text>
+                </Pressable>
+              </Box>
+            </Box>
 
-            {/* Spacer to push legal to bottom */}
-            <View style={styles.spacer} />
+            {/* Spacer */}
+            <Box flex={1} minHeight={20} />
 
             {/* Legal */}
-            <View style={[styles.legalContainer, CONSTRAIN]}>
-              <Text style={styles.legalText} numberOfLines={2}>
+            <Box style={CONSTRAIN} alignCenter>
+              <Text size="xs" color="text" style={{ lineHeight: 16 }} numberOfLines={2}>
                 By continuing, you agree to ImHungri's{' '}
-                <Text style={styles.legalLink} onPress={handleTermsPress}>Terms & Conditions</Text>{' '}
+                <Text size="xs" color="primary" weight="semiBold">Terms & Conditions</Text>{' '}
                 and{' '}
-                <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>
+                <Text size="xs" color="primary" weight="semiBold">Privacy Policy</Text>
               </Text>
-            </View>
+            </Box>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
-  keyboardAvoidingView: { flex: 1 },
-  pagePad: { flex: 1 },
-  scrollContentContainer: {
-    flexGrow: 1,
-  },
-  mainContainer: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 30,
-  },
-  spacer: {
-    flex: 1,
-    minHeight: 20,
-  },
-  backButton: { alignSelf: 'flex-start' },
-  welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: {
-    fontSize: 18,
-    color: '#181619',
-    fontFamily: 'Inter-Bold',
-    fontWeight: '700',
-    textAlign: 'left'
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: '#181619',
-    lineHeight: 24,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'left'
-  },
-  formContainer: { width: '100%' },
-  paperInput: { backgroundColor: 'white' },
-  textInputStyle: {
-    backgroundColor: 'white',
-    minHeight: 56,
-    fontSize: 16,
-    lineHeight: 22,
-    paddingVertical: 0,
-  },
-  resetButton: {
-    width: '100%',
-    height: 44,
-    backgroundColor: '#FF8C4C',
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resetButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '400',
-    fontFamily: 'Inter-Regular',
-    lineHeight: 24
-  },
-  legalContainer: { alignItems: 'center' },
-  legalText: {
-    fontSize: 12,
-    color: '#181619',
-    textAlign: 'left',
-    lineHeight: 16,
-    fontFamily: 'Inter-Medium',
-    fontWeight: '500'
-  },
-  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Inter-SemiBold' },
-});

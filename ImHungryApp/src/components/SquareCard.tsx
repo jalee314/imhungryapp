@@ -1,8 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+/**
+ * SquareCard - Compact Square Card Component
+ * 
+ * A small square card for displaying restaurants or categories.
+ * Uses atomic components and theme tokens for consistent styling.
+ */
 
-const { width: screenWidth } = Dimensions.get('window');
-const cardWidth = 107; // Fixed width to match Figma design
+import React from 'react';
+import { TouchableOpacity, Image } from 'react-native';
+import { Box, Text } from './atoms';
+import { colors, borderRadius, spacing } from '../lib/theme';
+
+const CARD_WIDTH = 107;
+const CARD_HEIGHT = 124;
 
 export interface SquareCardData {
   id: string;
@@ -23,93 +32,66 @@ const SquareCard: React.FC<SquareCardProps> = ({ data, onPress }) => {
     onPress?.(data.id);
   };
 
+  const subtitle = data.distance && data.dealCount 
+    ? `${data.distance} • ${data.dealCount} Deals`
+    : data.subtitle;
+
   return (
-    <TouchableOpacity 
-      style={styles.container} 
+    <TouchableOpacity
       onPress={handlePress}
       activeOpacity={0.7}
+      style={{
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        backgroundColor: colors.background,
+        borderRadius: borderRadius.md,
+        marginBottom: spacing.m,
+        borderWidth: 0.5,
+        borderColor: '#757575',
+        padding: spacing.xs,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
     >
-      <View style={styles.imageContainer}>
-        <Image source={data.image} style={styles.image} />
-      </View>
-      
-      <View style={styles.contentContainer}>
-        <Text style={styles.title} numberOfLines={2}>
+      {/* Image */}
+      <Box
+        width={80}
+        height={80}
+        rounded="s"
+        overflow="hidden"
+      >
+        <Image
+          source={data.image}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+        />
+      </Box>
+
+      {/* Content */}
+      <Box width="100%" alignCenter>
+        <Text
+          size="xs"
+          weight="bold"
+          color="text"
+          align="center"
+          numberOfLines={2}
+          style={{ lineHeight: 14, marginBottom: 0 }}
+        >
           {data.title}
         </Text>
-        
-        <Text style={styles.subtitle} numberOfLines={1}>
-          {data.distance && data.dealCount 
-            ? `${data.distance} • ${data.dealCount} Deals`
-            : data.subtitle
-          }
+
+        <Text
+          size={10}
+          color="text"
+          align="center"
+          numberOfLines={1}
+          style={{ lineHeight: 12 }}
+        >
+          {subtitle}
         </Text>
-      </View>
+      </Box>
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    width: cardWidth,
-    height: 124, // Fixed height to match Figma design
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    marginBottom: 16,
-    borderWidth: 0.5,
-    borderColor: '#757575',
-    padding: 4,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  imageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  contentContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#000',
-    fontFamily: 'Inter',
-    textAlign: 'center',
-    marginBottom: 0,
-    lineHeight: 14,
-  },
-  subtitle: {
-    fontSize: 10,
-    color: '#000',
-    fontFamily: 'Inter',
-    textAlign: 'center',
-    lineHeight: 12,
-  },
-  distance: {
-    fontSize: 11,
-    color: '#999',
-    fontFamily: 'Inter',
-    textAlign: 'center', // Add this to center the distance
-    letterSpacing: 0,
-    lineHeight: 14,
-  },
-  dealCount: {
-    fontSize: 11,
-    color: '#FFA05C',
-    fontFamily: 'Inter',
-    fontWeight: '500',
-    textAlign: 'center', // Add this to center the deal count
-    letterSpacing: 0,
-    lineHeight: 14,
-  },
-});
 
 export default SquareCard;

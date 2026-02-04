@@ -1,14 +1,23 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+/**
+ * DealCardSkeleton - Loading State for DealCard
+ * 
+ * A skeleton placeholder for DealCard components.
+ * Supports both horizontal and vertical variants.
+ * Uses Skeleton atom and Box for consistent styling.
+ */
+
+import React from 'react';
+import { Dimensions } from 'react-native';
+import { Box, Skeleton } from './atoms';
+import { borderRadius, spacing } from '../lib/theme';
 
 const { width: screenWidth } = Dimensions.get('window');
-// Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (4px), then divide by 2
-const HORIZONTAL_PADDING = 20; // 10px on each side
-const CARD_GAP = 4; // 2px padding on each card (halved for tighter spacing)
-const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
 
-// Calculate horizontal card width to align with header location icon
-const HORIZONTAL_CARD_PADDING = 10; // Left padding for horizontal scroll
+// Card dimensions matching DealCard
+const HORIZONTAL_PADDING = 20;
+const CARD_GAP = 4;
+const VERTICAL_CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING - CARD_GAP) / 2;
+const HORIZONTAL_CARD_PADDING = 10;
 const HORIZONTAL_CARD_WIDTH = (screenWidth - HORIZONTAL_CARD_PADDING - 20) / 1.32;
 
 interface DealCardSkeletonProps {
@@ -16,178 +25,74 @@ interface DealCardSkeletonProps {
 }
 
 const DealCardSkeleton: React.FC<DealCardSkeletonProps> = ({ variant = 'vertical' }) => {
-  const shimmerAnimation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const startShimmer = () => {
-      Animated.sequence([
-        Animated.timing(shimmerAnimation, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmerAnimation, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]).start(() => startShimmer());
-    };
-
-    startShimmer();
-  }, [shimmerAnimation]);
-
-  const shimmerStyle = {
-    opacity: shimmerAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.3, 0.7],
-    }),
-  };
-
   if (variant === 'horizontal') {
     return (
-      <View style={styles.horizontalCard}>
+      <Box
+        bg="background"
+        rounded="md"
+        py="m"
+        px="s"
+        alignStart
+        width={HORIZONTAL_CARD_WIDTH}
+        height={280}
+        justifyCenter
+      >
         {/* Image skeleton */}
-        <Animated.View style={[styles.horizontalImage, styles.skeleton, shimmerStyle]} />
+        <Skeleton width={260} height={167} rounded="s" style={{ marginBottom: spacing.s }} />
         
         {/* Title skeleton */}
-        <View style={styles.horizontalTitleContainer}>
-          <Animated.View style={[styles.horizontalTitleSkeleton, styles.skeleton, shimmerStyle]} />
-        </View>
+        <Box width="100%" mb="s" height={30} justifyStart>
+          <Skeleton width="90%" height={12} rounded="sm" />
+        </Box>
         
         {/* Details skeleton */}
-        <Animated.View style={[styles.horizontalDetailsSkeleton, styles.skeleton, shimmerStyle]} />
+        <Skeleton width="100%" height={24} rounded="xs" style={{ marginBottom: spacing.s }} />
         
         {/* Interactions skeleton */}
-        <View style={styles.horizontalInteractions}>
-          <Animated.View style={[styles.horizontalVoteContainerSkeleton, styles.skeleton, shimmerStyle]} />
-          <Animated.View style={[styles.horizontalFavoriteSkeleton, styles.skeleton, shimmerStyle]} />
-        </View>
-      </View>
+        <Box row justifyBetween alignCenter width="100%">
+          <Skeleton width={80} height={28} rounded={30} />
+          <Skeleton width={62} height={28} rounded={30} />
+        </Box>
+      </Box>
     );
   }
 
   // Vertical variant
   return (
-    <View style={styles.verticalCard}>
+    <Box
+      bg="background"
+      rounded="lg"
+      p="s"
+      alignStart
+      width={VERTICAL_CARD_WIDTH}
+      justifyStart
+    >
       {/* Image skeleton */}
-      <Animated.View style={[styles.verticalImage, styles.skeleton, shimmerStyle]} />
+      <Skeleton width="100%" height={175} rounded="s" style={{ marginBottom: spacing.s }} />
       
       {/* Title skeleton */}
-      <Animated.View style={[styles.verticalTitleSkeleton, styles.skeleton, shimmerStyle]} />
+      <Skeleton 
+        width={VERTICAL_CARD_WIDTH - 24} 
+        height={30} 
+        rounded="xs" 
+        style={{ marginBottom: spacing.s }} 
+      />
       
       {/* Details skeleton */}
-      <Animated.View style={[styles.verticalDetailsSkeleton, styles.skeleton, shimmerStyle]} />
+      <Skeleton 
+        width={VERTICAL_CARD_WIDTH - 24} 
+        height={24} 
+        rounded="xs" 
+        style={{ marginBottom: spacing.s }} 
+      />
       
       {/* Interactions skeleton */}
-      <View style={styles.verticalInteractions}>
-        <Animated.View style={[styles.verticalVoteContainerSkeleton, styles.skeleton, shimmerStyle]} />
-        <Animated.View style={[styles.verticalFavoriteSkeleton, styles.skeleton, shimmerStyle]} />
-      </View>
-    </View>
+      <Box row justifyBetween alignCenter width="100%">
+        <Skeleton width={70} height={28} rounded={30} />
+        <Skeleton width={40} height={28} rounded={30} />
+      </Box>
+    </Box>
   );
 };
-
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: '#E0E0E0',
-  },
-  
-  // Horizontal Card Styles (matching DealCard dimensions exactly)
-  horizontalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'flex-start',
-    width: HORIZONTAL_CARD_WIDTH,
-    height: 280,
-    justifyContent: 'center',
-  },
-  horizontalImage: {
-    width: 260,
-    height: 167,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  horizontalTitleContainer: {
-    width: '100%',
-    marginBottom: 8,
-    height: 30,
-    justifyContent: 'flex-start',
-  },
-  horizontalTitleSkeleton: {
-    width: '90%',
-    height: 12,
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  horizontalDetailsSkeleton: {
-    width: '100%',
-    height: 24,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  horizontalInteractions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  horizontalVoteContainerSkeleton: {
-    width: 80,
-    height: 28,
-    borderRadius: 30,
-  },
-  horizontalFavoriteSkeleton: {
-    width: 62,
-    height: 28,
-    borderRadius: 30,
-  },
-
-  // Vertical Card Styles (matching DealCard dimensions exactly)
-  verticalCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 8,
-    alignItems: 'flex-start',
-    width: VERTICAL_CARD_WIDTH,
-    justifyContent: 'flex-start',
-  },
-  verticalImage: {
-    width: '100%',
-    height: 175,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  verticalTitleSkeleton: {
-    width: VERTICAL_CARD_WIDTH - 24,
-    height: 30,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  verticalDetailsSkeleton: {
-    width: VERTICAL_CARD_WIDTH - 24,
-    height: 24,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  verticalInteractions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  verticalVoteContainerSkeleton: {
-    width: 70,
-    height: 28,
-    borderRadius: 30,
-  },
-  verticalFavoriteSkeleton: {
-    width: 40,
-    height: 28,
-    borderRadius: 30,
-  },
-});
 
 export default DealCardSkeleton;

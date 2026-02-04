@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { Box, Text, Pressable } from '../../components/atoms';
+import { colors, typography } from '../../lib/theme';
 import { getBlockedUsers, unblockUser } from '../../services/blockService';
 
 interface BlockedUser {
@@ -32,7 +34,6 @@ const BlockedUsersPage = () => {
       setLoading(true);
       const users = await getBlockedUsers();
       setBlockedUsers(users);
-      // Initialize all users as selected (checked) by default
       setSelectedUsers(new Set(users.map(user => user.blocked_user_id)));
     } catch (error) {
       Alert.alert('Error', 'Failed to load blocked users');
@@ -62,19 +63,16 @@ const BlockedUsersPage = () => {
     }
 
     try {
-      // Unblock all users who are NOT selected (unchecked)
       const unblockPromises = usersToUnblock.map(user => unblockUser(user.blocked_user_id));
       const results = await Promise.all(unblockPromises);
       
       const successCount = results.filter(result => result.success).length;
       
       if (successCount > 0) {
-        // Remove successfully unblocked users from the list
         setBlockedUsers(prevUsers => 
           prevUsers.filter(user => selectedUsers.has(user.blocked_user_id))
         );
         
-        // Update selected users to only include remaining blocked users
         setSelectedUsers(new Set(blockedUsers.filter(user => selectedUsers.has(user.blocked_user_id)).map(user => user.blocked_user_id)));
         
         Alert.alert('Success', `${successCount} user(s) have been unblocked`, [
@@ -92,179 +90,136 @@ const BlockedUsersPage = () => {
     const isSelected = selectedUsers.has(user.blocked_user_id);
     
     return (
-      <View key={user.block_id}>
-        <TouchableOpacity 
-          style={styles.userItem} 
+      <Box key={user.block_id}>
+        <Pressable 
+          row
+          alignCenter
+          py="2xl"
+          px="xl"
           onPress={() => toggleUserSelection(user.blocked_user_id)}
           activeOpacity={1}
         >
-          <Text style={styles.userName}>
+          <Text 
+            size="md" 
+            color="text" 
+            flex={1}
+            mr="xl"
+            style={{ fontFamily: typography.fontFamily.regular }}
+          >
             {user.blocked_user.display_name || 'Unknown User'}
           </Text>
-          <TouchableOpacity 
-            style={[styles.checkbox, isSelected ? styles.checkedBox : styles.uncheckedBox]}
+          <Pressable 
             onPress={() => toggleUserSelection(user.blocked_user_id)}
             activeOpacity={1}
+            width={20}
+            height={20}
+            rounded="xs"
+            center
+            style={{
+              backgroundColor: isSelected ? colors.primaryDark : 'transparent',
+              borderWidth: isSelected ? 0 : 1,
+              borderColor: '#CCCCCC',
+            }}
           >
             {isSelected && (
               <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
             )}
-          </TouchableOpacity>
-        </TouchableOpacity>
-        {index < blockedUsers.length - 1 && <View style={styles.separator} />}
-      </View>
+          </Pressable>
+        </Pressable>
+        {index < blockedUsers.length - 1 && (
+          <Box width="100%" height={0.5} style={{ backgroundColor: '#C1C1C1', alignSelf: 'center' }} />
+        )}
+      </Box>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.titleText}>Block Users</Text>
-        <TouchableOpacity onPress={handleUpdate}>
-          <Text style={styles.updateText}>Update</Text>
-        </TouchableOpacity>
-      </View>
+      <Box row justifyBetween alignCenter px="2xl" py="l">
+        <Pressable onPress={() => navigation.goBack()}>
+          <Text 
+            size="base" 
+            color="text" 
+            flex={1}
+            style={{ fontFamily: typography.fontFamily.regular, textAlign: 'left' }}
+          >
+            Cancel
+          </Text>
+        </Pressable>
+        <Text 
+          size="base" 
+          weight="bold" 
+          color="text" 
+          flex={1}
+          align="center"
+          style={{ fontFamily: typography.fontFamily.regular }}
+        >
+          Block Users
+        </Text>
+        <Pressable onPress={handleUpdate}>
+          <Text 
+            size="base" 
+            weight="bold" 
+            color="primaryDark" 
+            flex={1}
+            style={{ fontFamily: typography.fontFamily.regular, textAlign: 'right' }}
+          >
+            Update
+          </Text>
+        </Pressable>
+      </Box>
 
       {/* Content */}
-      <View style={styles.content}>
+      <Box flex={1} alignCenter px="2xl">
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FFA05C" />
-            <Text style={styles.loadingText}>Loading blocked users...</Text>
-          </View>
+          <Box flex={1} center py="7xl">
+            <ActivityIndicator size="large" color={colors.primaryDark} />
+            <Text 
+              size="base" 
+              color="textMuted" 
+              mt="xl"
+              style={{ fontFamily: typography.fontFamily.regular }}
+            >
+              Loading blocked users...
+            </Text>
+          </Box>
         ) : blockedUsers.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No blocked users</Text>
-            <Text style={styles.emptySubtext}>You haven't blocked any users yet</Text>
-          </View>
+          <Box flex={1} center py="7xl">
+            <Text 
+              size="lg" 
+              weight="semiBold" 
+              color="textMuted" 
+              align="center"
+              mb="m"
+              style={{ fontFamily: typography.fontFamily.regular }}
+            >
+              No blocked users
+            </Text>
+            <Text 
+              size="md" 
+              color="textMuted" 
+              align="center"
+              style={{ fontFamily: typography.fontFamily.regular }}
+            >
+              You haven't blocked any users yet
+            </Text>
+          </Box>
         ) : (
-          <View style={styles.userList}>
+          <Box 
+            width="100%"
+            rounded="lg"
+            style={{
+              borderWidth: 1,
+              borderColor: '#D7D7D7',
+            }}
+          >
             {blockedUsers.map((user, index) => renderUserItem(user, index))}
-          </View>
+          </Box>
         )}
-      </View>
+      </Box>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  cancelText: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 16,
-    color: '#000000',
-    flex: 1,
-    textAlign: 'left',
-  },
-  titleText: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    color: '#000000',
-    flex: 1,
-    textAlign: 'center',
-  },
-  updateText: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    color: '#FFA05C',
-    flex: 1,
-    textAlign: 'right',
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  userList: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 14,
-  },
-  userItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-  },
-  userName: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 14,
-    color: '#000000',
-    flex: 1,
-    marginRight: 16,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkedBox: {
-    backgroundColor: '#FFA05C',
-  },
-  uncheckedBox: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-    fontFamily: 'Inter',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 8,
-    fontFamily: 'Inter',
-    fontWeight: '600',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    fontFamily: 'Inter',
-  },
-  separator: {
-    width: '100%',
-    height: 0.5,
-    backgroundColor: '#C1C1C1',
-    alignSelf: 'center',
-  },
-});
 
 export default BlockedUsersPage;
