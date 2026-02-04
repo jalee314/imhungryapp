@@ -20,7 +20,7 @@ import CalendarModal from '../../components/CalendarModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import PhotoReviewModal from '../../components/PhotoReviewModal';
-import InstagramPhotoPickerModal from '../../components/InstagramPhotoPickerModal';
+import InstagramPhotoPickerModal, { PhotoWithCrop, CropRegion } from '../../components/InstagramPhotoPickerModal';
 import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -86,6 +86,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const [imageUris, setImageUris] = useState<string[]>([]);
   // Keep original (uncropped) URIs so re-editing always starts from the original
   const [originalImageUris, setOriginalImageUris] = useState<string[]>([]);
+  // Store crop regions from Instagram picker for initial positioning in PhotoReviewModal
+  const [cropRegions, setCropRegions] = useState<CropRegion[]>([]);
   const [thumbnailIndex, setThumbnailIndex] = useState(0);
   const [isPhotoReviewVisible, setIsPhotoReviewVisible] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -351,15 +353,22 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   };
 
   // Handle photos selected from Instagram-style picker
-  const handleInstagramPickerDone = (photos: string[]) => {
+  const handleInstagramPickerDone = (photos: PhotoWithCrop[]) => {
     setIsInstagramPickerVisible(false);
     if (photos.length > 0) {
+      const uris = photos.map(p => p.uri);
+      const regions = photos.map(p => p.cropRegion);
+      
       setImageUris(prev => {
-        const combined = [...prev, ...photos];
+        const combined = [...prev, ...uris];
         return combined.slice(0, 5); // Ensure max 5
       });
       setOriginalImageUris(prev => {
-        const combined = [...prev, ...photos];
+        const combined = [...prev, ...uris];
+        return combined.slice(0, 5);
+      });
+      setCropRegions(prev => {
+        const combined = [...prev, ...regions];
         return combined.slice(0, 5);
       });
     }
@@ -823,6 +832,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         visible={isPhotoReviewVisible}
         photos={imageUris}
         originalPhotos={originalImageUris}
+        initialCropRegions={cropRegions}
         thumbnailIndex={thumbnailIndex}
         onClose={() => setIsPhotoReviewVisible(false)}
         onDone={(photos, thumbIdx, originals) => {

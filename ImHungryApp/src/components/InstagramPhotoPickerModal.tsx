@@ -20,9 +20,34 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withSpring,
-    interpolate,
     runOnJS,
 } from 'react-native-reanimated';
+
+// Transform state for each photo's crop
+interface PhotoTransformState {
+    scale: number;
+    translateX: number;
+    translateY: number;
+    imageScaledHeight: number;
+    isPortrait: boolean;
+}
+
+// Crop region in normalized coordinates (0-1) for passing to other components
+export interface CropRegion {
+    // Normalized coordinates (0-1) relative to the original image
+    x: number;      // Left edge (0 = left, 1 = right)
+    y: number;      // Top edge (0 = top, 1 = bottom)
+    width: number;  // Width as fraction of original (0-1)
+    height: number; // Height as fraction of original (0-1)
+}
+
+// Photo with crop information
+export interface PhotoWithCrop {
+    uri: string;
+    originalWidth: number;
+    originalHeight: number;
+    cropRegion: CropRegion;
+}
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const GRID_COLUMNS = 4;
@@ -31,14 +56,14 @@ const THUMBNAIL_SIZE = (SCREEN_WIDTH - (GRID_COLUMNS + 1) * GRID_SPACING) / GRID
 const MAX_PHOTOS = 5;
 
 // Preview area dimensions
-const PREVIEW_HEIGHT = SCREEN_WIDTH; // Square preview like Instagram
+const MAX_PREVIEW_HEIGHT = SCREEN_WIDTH; // Maximum preview height
 const MIN_PREVIEW_HEIGHT = 100; // Collapsed preview height
 const ALBUM_ROW_HEIGHT = 50; // Height of the album selector row with drag handle
 
 interface InstagramPhotoPickerModalProps {
     visible: boolean;
     onClose: () => void;
-    onDone: (photos: string[]) => void;
+    onDone: (photos: PhotoWithCrop[]) => void;
     maxPhotos?: number;
     existingPhotosCount?: number;
 }
@@ -75,6 +100,11 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
     const [previewPhoto, setPreviewPhoto] = useState<PhotoAsset | null>(null);
     const [showAlbumPicker, setShowAlbumPicker] = useState(false);
     const [isMultiSelectEnabled, setIsMultiSelectEnabled] = useState(false);
+    const [isCurrentPhotoPortrait, setIsCurrentPhotoPortrait] = useState(false);
+    const [isCropping, setIsCropping] = useState(false);
+    
+    // Store transform state per photo ID for preserving crops
+    const photoTransforms = useRef<Map<string, PhotoTransformState>>(new Map());
 
     // Pagination
     const endCursor = useRef<string | undefined>(undefined);
@@ -88,8 +118,12 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
     const savedTranslateX = useSharedValue(0);
     const savedTranslateY = useSharedValue(0);
 
+    // Image dimensions (scaled to fill width) for pan bounds calculation
+    const imageScaledHeight = useSharedValue(MAX_PREVIEW_HEIGHT);
+    const isPortrait = useSharedValue(false); // true if image is taller than container
+
     // Expandable preview values
-    const previewHeight = useSharedValue(PREVIEW_HEIGHT);
+    const previewHeight = useSharedValue(MAX_PREVIEW_HEIGHT);
     const isExpanded = useSharedValue(false);
     const dragStartY = useSharedValue(0);
 
@@ -120,10 +154,12 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
             setPreviewPhoto(null);
             setIsMultiSelectEnabled(false);
             setIsGridExpanded(false);
+            setIsCropping(false);
             resetGestures();
             resetExpandState();
             endCursor.current = undefined;
             setHasMore(true);
+            photoTransforms.current.clear(); // Clear saved transforms
         }
     }, [visible]);
 
@@ -136,8 +172,56 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         savedTranslateY.value = 0;
     };
 
+    // Save current transform state for a photo
+    const saveTransformState = (photoId: string) => {
+        photoTransforms.current.set(photoId, {
+            scale: scale.value,
+            translateX: translateX.value,
+            translateY: translateY.value,
+            imageScaledHeight: imageScaledHeight.value,
+            isPortrait: isPortrait.value,
+        });
+    };
+
+    // Restore transform state for a photo (or reset if none saved)
+    const restoreTransformState = (photoId: string, photo: PhotoAsset) => {
+        const saved = photoTransforms.current.get(photoId);
+        if (saved) {
+            scale.value = saved.scale;
+            savedScale.value = saved.scale;
+            translateX.value = saved.translateX;
+            translateY.value = saved.translateY;
+            savedTranslateX.value = saved.translateX;
+            savedTranslateY.value = saved.translateY;
+            imageScaledHeight.value = saved.imageScaledHeight;
+            isPortrait.value = saved.isPortrait;
+            setIsCurrentPhotoPortrait(saved.isPortrait);
+        } else {
+            // No saved state, calculate fresh dimensions and reset gestures
+            resetGestures();
+            updateImageDimensions(photo);
+        }
+    };
+
+    // Update image dimensions when photo changes (for proper pan bounds)
+    const updateImageDimensions = (photo: PhotoAsset) => {
+        if (!photo.width || !photo.height) {
+            imageScaledHeight.value = MAX_PREVIEW_HEIGHT;
+            isPortrait.value = false;
+            setIsCurrentPhotoPortrait(false);
+            return;
+        }
+        // Scale image to fill width
+        const aspectRatio = photo.height / photo.width;
+        const scaledHeight = SCREEN_WIDTH * aspectRatio;
+        imageScaledHeight.value = scaledHeight;
+        const photoIsPortrait = scaledHeight > MAX_PREVIEW_HEIGHT;
+        isPortrait.value = photoIsPortrait;
+        setIsCurrentPhotoPortrait(photoIsPortrait);
+    };
+
     const resetExpandState = () => {
-        previewHeight.value = PREVIEW_HEIGHT;
+        previewHeight.value = MAX_PREVIEW_HEIGHT;
         isExpanded.value = false;
         setIsGridExpanded(false);
     };
@@ -198,6 +282,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                 setPhotos(formattedPhotos);
                 if (formattedPhotos.length > 0) {
                     setPreviewPhoto(formattedPhotos[0]);
+                    updateImageDimensions(formattedPhotos[0]);
                 }
             } else {
                 setPhotos(prev => [...prev, ...formattedPhotos]);
@@ -214,26 +299,33 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         }
     };
 
-    // Handle photo selection
+    // Handle photo selection - store asset IDs for later retrieval of original photos
     const handlePhotoPress = (photo: PhotoAsset) => {
+        // Save current photo's transform state before switching
+        if (previewPhoto) {
+            saveTransformState(previewPhoto.id);
+        }
+        
         setPreviewPhoto(photo);
-        resetGestures();
+        
+        // Restore saved transform state for this photo, or initialize fresh
+        restoreTransformState(photo.id, photo);
 
         if (isMultiSelectEnabled) {
-            // Multi-select mode: toggle selection
-            const isSelected = selectedPhotos.includes(photo.uri);
+            // Multi-select mode: toggle selection (using asset ID)
+            const isSelected = selectedPhotos.includes(photo.id);
             if (isSelected) {
-                setSelectedPhotos(prev => prev.filter(uri => uri !== photo.uri));
+                setSelectedPhotos(prev => prev.filter(id => id !== photo.id));
             } else {
                 if (selectedPhotos.length < availableSlots) {
-                    setSelectedPhotos(prev => [...prev, photo.uri]);
+                    setSelectedPhotos(prev => [...prev, photo.id]);
                 } else {
                     Alert.alert('Limit Reached', `You can only select up to ${availableSlots} photo${availableSlots !== 1 ? 's' : ''}.`);
                 }
             }
         } else {
-            // Single select mode: replace selection
-            setSelectedPhotos([photo.uri]);
+            // Single select mode: replace selection (using asset ID)
+            setSelectedPhotos([photo.id]);
         }
     };
 
@@ -255,13 +347,117 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         loadPhotos(albumId || undefined, true);
     };
 
-    // Handle done
-    const handleDone = () => {
+    // Calculate normalized crop region (0-1) for a photo based on its transform state
+    const calculateCropRegion = (
+        photo: PhotoAsset,
+        transform: PhotoTransformState
+    ): CropRegion => {
+        const { scale: photoScale, translateX: tx, translateY: ty, imageScaledHeight: scaledHeight } = transform;
+        
+        // Conversion factor from displayed coordinates to original image coordinates
+        const conversionFactor = photo.width / (SCREEN_WIDTH * photoScale);
+        
+        // Calculate crop origin in displayed image coordinates, then convert to original
+        const displayCropX = (SCREEN_WIDTH * photoScale - SCREEN_WIDTH) / 2 - tx;
+        const displayCropY = (scaledHeight * photoScale - MAX_PREVIEW_HEIGHT) / 2 - ty;
+        
+        let originX = displayCropX * conversionFactor;
+        let originY = displayCropY * conversionFactor;
+        let cropWidth = SCREEN_WIDTH * conversionFactor;
+        let cropHeight = MAX_PREVIEW_HEIGHT * conversionFactor;
+        
+        // Clamp to image bounds
+        originX = Math.max(0, Math.min(originX, photo.width - cropWidth));
+        originY = Math.max(0, Math.min(originY, photo.height - cropHeight));
+        cropWidth = Math.min(cropWidth, photo.width - originX);
+        cropHeight = Math.min(cropHeight, photo.height - originY);
+        
+        // Convert to normalized coordinates (0-1)
+        return {
+            x: originX / photo.width,
+            y: originY / photo.height,
+            width: cropWidth / photo.width,
+            height: cropHeight / photo.height,
+        };
+    };
+
+    // Handle done - return full original images with crop information
+    const handleDone = async () => {
         if (selectedPhotos.length === 0) {
             Alert.alert('No Photos Selected', 'Please select at least one photo.');
             return;
         }
-        onDone(selectedPhotos);
+        
+        // Save current preview photo's transform state
+        if (previewPhoto) {
+            saveTransformState(previewPhoto.id);
+        }
+        
+        setIsCropping(true);
+        
+        try {
+            const photosWithCrop = await Promise.all(
+                selectedPhotos.map(async (assetId) => {
+                    try {
+                        // Get the photo asset and its saved transform state
+                        const photo = photos.find(p => p.id === assetId);
+                        if (!photo) {
+                            throw new Error(`Photo not found: ${assetId}`);
+                        }
+                        
+                        // Fetch the full asset info to get localUri (full original image)
+                        const assetInfo = await MediaLibrary.getAssetInfoAsync(assetId);
+                        const sourceUri = assetInfo.localUri || assetInfo.uri;
+                        
+                        // Get the saved transform state for this photo
+                        let transform = photoTransforms.current.get(assetId);
+                        
+                        // If no saved transform, create a default one (center crop for portrait, full for landscape)
+                        if (!transform) {
+                            const aspectRatio = photo.height / photo.width;
+                            const scaledHeight = SCREEN_WIDTH * aspectRatio;
+                            const photoIsPortrait = scaledHeight > MAX_PREVIEW_HEIGHT;
+                            transform = {
+                                scale: 1,
+                                translateX: 0,
+                                translateY: 0,
+                                imageScaledHeight: scaledHeight,
+                                isPortrait: photoIsPortrait,
+                            };
+                        }
+                        
+                        // Calculate normalized crop region
+                        const cropRegion = calculateCropRegion(photo, transform);
+                        
+                        return {
+                            uri: sourceUri,
+                            originalWidth: photo.width,
+                            originalHeight: photo.height,
+                            cropRegion,
+                        } as PhotoWithCrop;
+                    } catch (err) {
+                        console.error(`Error processing photo ${assetId}:`, err);
+                        // Fallback with default crop
+                        const photo = photos.find(p => p.id === assetId);
+                        return {
+                            uri: photo?.uri || '',
+                            originalWidth: photo?.width || 0,
+                            originalHeight: photo?.height || 0,
+                            cropRegion: { x: 0, y: 0, width: 1, height: 1 },
+                        } as PhotoWithCrop;
+                    }
+                })
+            );
+            
+            // Filter out any with empty URIs
+            const validPhotos = photosWithCrop.filter(p => p.uri.length > 0);
+            onDone(validPhotos);
+        } catch (error) {
+            console.error('Error processing photos:', error);
+            Alert.alert('Error', 'Failed to process photos. Please try again.');
+        } finally {
+            setIsCropping(false);
+        }
     };
 
     // Load more photos on scroll
@@ -271,9 +467,9 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         }
     };
 
-    // Get selection index for a photo
-    const getSelectionIndex = (uri: string): number => {
-        return selectedPhotos.indexOf(uri) + 1;
+    // Get selection index for a photo (using asset ID)
+    const getSelectionIndex = (id: string): number => {
+        return selectedPhotos.indexOf(id) + 1;
     };
 
     // Gestures for preview
@@ -300,10 +496,23 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         })
         .onEnd(() => {
             'worklet';
-            // Simple bounds clamping
-            const maxTranslate = (scale.value - 1) * PREVIEW_HEIGHT / 2;
-            const clampedX = Math.min(maxTranslate, Math.max(-maxTranslate, translateX.value));
-            const clampedY = Math.min(maxTranslate, Math.max(-maxTranslate, translateY.value));
+            const containerHeight = previewHeight.value;
+            const scaledImgHeight = imageScaledHeight.value * scale.value;
+            const scaledImgWidth = SCREEN_WIDTH * scale.value;
+
+            // Calculate max pan for X (horizontal)
+            // Only allow horizontal pan if scaled image is wider than container
+            const overflowX = Math.max(0, scaledImgWidth - SCREEN_WIDTH);
+            const maxTranslateX = overflowX / 2;
+
+            // Calculate max pan for Y (vertical)
+            // For portrait images: allow panning even at scale 1 since image is taller
+            // The image overflows the container, so we can pan to see top/bottom
+            const overflowY = Math.max(0, scaledImgHeight - containerHeight);
+            const maxTranslateY = overflowY / 2;
+
+            const clampedX = Math.min(maxTranslateX, Math.max(-maxTranslateX, translateX.value));
+            const clampedY = Math.min(maxTranslateY, Math.max(-maxTranslateY, translateY.value));
 
             translateX.value = withSpring(clampedX);
             translateY.value = withSpring(clampedY);
@@ -338,10 +547,10 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
             const newHeight = dragStartY.value + event.translationY;
             const dampingFactor = 0.4;
 
-            if (newHeight > PREVIEW_HEIGHT) {
-                // Rubber band when trying to expand past max (swiping down past original)
-                const overscroll = newHeight - PREVIEW_HEIGHT;
-                previewHeight.value = PREVIEW_HEIGHT + overscroll * dampingFactor;
+            if (newHeight > MAX_PREVIEW_HEIGHT) {
+                // Rubber band when trying to expand past max
+                const overscroll = newHeight - MAX_PREVIEW_HEIGHT;
+                previewHeight.value = MAX_PREVIEW_HEIGHT + overscroll * dampingFactor;
             } else if (newHeight < MIN_PREVIEW_HEIGHT) {
                 // Rubber band when trying to collapse past min
                 const overscroll = MIN_PREVIEW_HEIGHT - newHeight;
@@ -353,7 +562,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         .onEnd((event) => {
             'worklet';
             const velocity = event.velocityY;
-            const threshold = PREVIEW_HEIGHT / 2;
+            const threshold = MAX_PREVIEW_HEIGHT / 2;
 
             // Spring config that responds to velocity
             const springConfig = {
@@ -371,8 +580,8 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                 isExpanded.value = true;
                 runOnJS(updateExpandedState)(true);
             } else {
-                // Expand back to original
-                previewHeight.value = withSpring(PREVIEW_HEIGHT, springConfig);
+                // Expand back to max height
+                previewHeight.value = withSpring(MAX_PREVIEW_HEIGHT, springConfig);
                 isExpanded.value = false;
                 runOnJS(updateExpandedState)(false);
             }
@@ -383,22 +592,28 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         height: previewHeight.value,
     }));
 
-    // Animated style for the preview image to maintain square aspect
+    // Animated style for the preview image
+    // For portrait images: fill width, height exceeds container (allows vertical panning)
+    // For landscape images: fit within container (centered with letterboxing)
     const animatedPreviewImageStyle = useAnimatedStyle(() => {
-        const imageSize = interpolate(
-            previewHeight.value,
-            [MIN_PREVIEW_HEIGHT, PREVIEW_HEIGHT],
-            [PREVIEW_HEIGHT, PREVIEW_HEIGHT]
-        );
-        return {
-            width: imageSize,
-            height: imageSize,
-        };
+        if (isPortrait.value) {
+            // Portrait: fill width, use actual scaled height (taller than container)
+            return {
+                width: SCREEN_WIDTH,
+                height: imageScaledHeight.value,
+            };
+        } else {
+            // Landscape/square: use contain behavior - full image visible
+            return {
+                width: SCREEN_WIDTH,
+                height: MAX_PREVIEW_HEIGHT,
+            };
+        }
     });
 
     // Render photo grid item
     const renderPhotoItem = ({ item }: { item: PhotoAsset }) => {
-        const selectionIndex = getSelectionIndex(item.uri);
+        const selectionIndex = getSelectionIndex(item.id);
         const isSelected = selectionIndex > 0;
 
         return (
@@ -506,15 +721,24 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <TouchableOpacity style={styles.headerButton} onPress={onClose}>
-                            <Ionicons name="close" size={28} color="#000" />
+                        <TouchableOpacity 
+                            style={styles.headerButton} 
+                            onPress={onClose}
+                            disabled={isCropping}
+                        >
+                            <Ionicons name="close" size={28} color={isCropping ? "#CCC" : "#000"} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>New Post</Text>
                         <TouchableOpacity
                             style={styles.headerButton}
                             onPress={handleDone}
+                            disabled={isCropping}
                         >
-                            <Text style={styles.nextText}>Next</Text>
+                            {isCropping ? (
+                                <ActivityIndicator size="small" color="#FFA05C" />
+                            ) : (
+                                <Text style={styles.nextText}>Next</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
 
@@ -523,10 +747,10 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                         {previewPhoto ? (
                             <GestureDetector gesture={composedGesture}>
                                 <Animated.View style={[styles.previewImageWrapper, animatedPreviewStyle]}>
-                                    <Image
+                                    <Animated.Image
                                         source={{ uri: previewPhoto.uri }}
-                                        style={styles.previewImage}
-                                        resizeMode="cover"
+                                        style={[styles.previewImage, animatedPreviewImageStyle]}
+                                        resizeMode={isCurrentPhotoPortrait ? "cover" : "contain"}
                                     />
                                 </Animated.View>
                             </GestureDetector>
@@ -657,8 +881,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     previewImage: {
-        width: SCREEN_WIDTH,
-        height: PREVIEW_HEIGHT,
+        // Dimensions controlled by animatedPreviewImageStyle
     },
     previewPlaceholder: {
         flex: 1,

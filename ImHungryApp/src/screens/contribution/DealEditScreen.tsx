@@ -22,7 +22,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import CalendarModal from '../../components/CalendarModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import ImageCropperModal from '../../components/ImageCropperModal';
-import InstagramPhotoPickerModal from '../../components/InstagramPhotoPickerModal';
+import InstagramPhotoPickerModal, { PhotoWithCrop } from '../../components/InstagramPhotoPickerModal';
 import DraggableThumbnailStrip from '../../components/DraggableThumbnailStrip';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { ProfileCacheService } from '../../services/profileCacheService';
@@ -191,11 +191,11 @@ export default function DealEditScreen() {
   };
 
   // Handle photos selected from Instagram-style picker
-  const handleInstagramPickerDone = (photos: string[]) => {
+  const handleInstagramPickerDone = (photos: PhotoWithCrop[]) => {
     setIsInstagramPickerVisible(false);
     if (photos.length > 0) {
-      // Open cropper for the first photo
-      setPendingCropUri(photos[0]);
+      // Open cropper for the first photo (using the full original URI)
+      setPendingCropUri(photos[0].uri);
       setEditingImageId(null);
       setIsCropperVisible(true);
       // Store remaining photos for subsequent cropping if needed

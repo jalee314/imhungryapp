@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   loginLink: { alignSelf: 'flex-end' },
   loginText: {
     fontSize: 16,
-    color: '#404040',
+    color: '#000000',
     fontWeight: '700',
     fontFamily: 'Inter-Bold'
   },

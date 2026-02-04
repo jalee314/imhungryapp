@@ -60,6 +60,8 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 
     // Calculate initial display size to fit the image in the available area
     const [displaySize, setDisplaySize] = useState({ width: CROP_WIDTH, height: CROP_HEIGHT });
+    // Minimum scale to ensure crop frame is covered (needed for valid crop)
+    const [minScale, setMinScale] = useState(1);
 
     // Reset on open
     useEffect(() => {
@@ -82,21 +84,29 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                     setImageDimensions({ width, height });
                     
                     const imageAspect = width / height;
+                    const availableWidth = SCREEN_WIDTH - 40;
+                    const availableHeight = IMAGE_AREA_HEIGHT - 40;
                     
-                    // Calculate display size to fit in available area while covering crop frame
+                    // Calculate display size to CONTAIN the entire image (fit mode)
+                    // This shows the full image at scale 1
                     let displayWidth: number;
                     let displayHeight: number;
                     
-                    // Image should at minimum cover the crop frame
-                    if (imageAspect > aspectRatio) {
-                        // Image is wider than crop - fit by height to cover
-                        displayHeight = Math.max(CROP_HEIGHT, Math.min(IMAGE_AREA_HEIGHT, CROP_HEIGHT));
-                        displayWidth = displayHeight * imageAspect;
-                    } else {
-                        // Image is taller than crop - fit by width to cover
-                        displayWidth = Math.max(CROP_WIDTH, SCREEN_WIDTH - 40);
+                    if (imageAspect > (availableWidth / availableHeight)) {
+                        // Image is wider - constrain by width
+                        displayWidth = availableWidth;
                         displayHeight = displayWidth / imageAspect;
+                    } else {
+                        // Image is taller - constrain by height
+                        displayHeight = availableHeight;
+                        displayWidth = displayHeight * imageAspect;
                     }
+                    
+                    // Calculate minimum scale needed to cover the crop frame
+                    const minScaleX = CROP_WIDTH / displayWidth;
+                    const minScaleY = CROP_HEIGHT / displayHeight;
+                    const calculatedMinScale = Math.max(minScaleX, minScaleY, 1);
+                    setMinScale(calculatedMinScale);
                     
                     setDisplaySize({ width: displayWidth, height: displayHeight });
                 },
@@ -107,7 +117,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
         }
     }, [visible, imageUri]);
 
-    // Pinch gesture for zoom
+    // Pinch gesture for zoom - allow zooming from 1 (full image) to 4x
     const pinchGesture = Gesture.Pinch()
         .onUpdate((event) => {
             'worklet';
@@ -347,7 +357,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                     {/* Footer */}
                     <View style={styles.footer}>
                         <Text style={styles.instructionText}>
-                            Pinch to zoom, drag to adjust
+                            Pinch to zoom in and position your crop
                         </Text>
                     </View>
                 </SafeAreaView>
