@@ -158,6 +158,17 @@ const CustomTabBar = ({ state, navigation }: any) => {
       // The BottomNavigation component will handle showing the modal
       return;
     }
+    
+    // Special handling for Profile tab - always reset to own profile
+    if (tab === 'profile') {
+      // Reset the ProfileStack to ProfileMain with no params (shows own profile)
+      navigation.navigate('ProfilePage', {
+        screen: 'ProfileMain',
+        params: { viewUser: false, userId: undefined },
+      });
+      return;
+    }
+    
     if (tabIndex !== -1 && tabIndex !== state.index) {
       navigation.navigate(state.routeNames[tabIndex]);
     }

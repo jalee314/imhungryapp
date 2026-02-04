@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -13,6 +13,9 @@ export default function CuisinePreferencesScreen() {
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { completeSignup, completeSignupSkip } = useAuth();
+  
+  // Ref to synchronously track submission state and prevent duplicate submissions
+  const isSubmittingRef = useRef(false);
 
   const toggleCuisine = (cuisine: string) => {
     setSelectedCuisines(prev => {
@@ -32,12 +35,18 @@ export default function CuisinePreferencesScreen() {
   // Backend operations moved to onboardingService via store actions
 
   const handleFinish = async () => {
+    // Synchronous check to prevent duplicate submissions
+    if (isSubmittingRef.current) return;
+    
     if (!userData) {
       Alert.alert('Error', 'User data not found');
       return;
     }
 
+    // Set ref immediately (synchronous) to block any subsequent clicks
+    isSubmittingRef.current = true;
     setLoading(true);
+    
     try {
       try {
         await completeSignup(userData, selectedCuisines);
@@ -65,17 +74,24 @@ export default function CuisinePreferencesScreen() {
       console.error('Setup failed:', error); // Log the full error
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
 
   const handleSkip = async () => {
+    // Synchronous check to prevent duplicate submissions
+    if (isSubmittingRef.current) return;
+    
     if (!userData) {
       Alert.alert('Error', 'User data not found');
       return;
     }
 
+    // Set ref immediately (synchronous) to block any subsequent clicks
+    isSubmittingRef.current = true;
     setLoading(true);
+    
     try {
       try {
         await completeSignupSkip(userData);
@@ -93,6 +109,7 @@ export default function CuisinePreferencesScreen() {
       console.error('Setup failed (skip):', error); // Log the full error
       Alert.alert('Error', 'Failed to complete setup. Please try again.');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -111,7 +128,11 @@ export default function CuisinePreferencesScreen() {
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.skipLink} onPress={handleSkip}>
+              <TouchableOpacity 
+                style={[styles.skipLink, loading && { opacity: 0.5 }]} 
+                onPress={handleSkip}
+                disabled={loading}
+              >
                 <Text style={styles.skipText}>Skip</Text>
               </TouchableOpacity>
             </View>
