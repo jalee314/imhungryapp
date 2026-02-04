@@ -1,19 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { isUsernameAvailable } from '../../services/onboardingService';
-
-const debounce = (func: (...args: any[]) => void, delay: number) => {
-  let timeoutId: NodeJS.Timeout;
-  return (...args: any[]) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      func(...args);
-    }, delay);
-  };
-};
 
 export default function UsernameScreen() {
   const navigation = useNavigation();
@@ -28,6 +18,10 @@ export default function UsernameScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const [isValidated, setIsValidated] = useState(false); // Track if current username has been validated as available
   const [selection, setSelection] = useState<{ start: number; end: number } | undefined>(undefined);
+  
+  // Track which username is currently being validated to prevent race conditions
+  const validatingUsernameRef = useRef<string>('');
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!userData) {
@@ -36,6 +30,14 @@ export default function UsernameScreen() {
       ]);
     }
   }, [userData, navigation]);
+
+  // Auto-validate pre-existing username when returning to this screen
+  useEffect(() => {
+    if (userData?.username && username === userData.username && !isValidated && !isChecking) {
+      // We have a pre-filled username from navigation, validate it
+      checkUsernameUniqueness(userData.username);
+    }
+  }, []); // Run once on mount
 
   // Prevent hardware back button (Android) from going back
   useFocusEffect(
@@ -65,12 +67,22 @@ export default function UsernameScreen() {
       return;
     }
 
+    // Track which username we're validating to prevent race conditions
+    validatingUsernameRef.current = name;
+    
     setIsChecking(true);
     setError('');
     setIsValidated(false);
 
     try {
       const available = await isUsernameAvailable(name);
+      
+      // Only apply result if this is still the username we're validating
+      // (prevents race condition when user types while API call is in flight)
+      if (validatingUsernameRef.current !== name) {
+        return; // Stale response, ignore it
+      }
+      
       if (!available) {
         setError('Username is already taken.');
         setIsValidated(false);
@@ -78,15 +90,38 @@ export default function UsernameScreen() {
         setIsValidated(true); // Username is confirmed available
       }
     } catch (err) {
-      console.error('Error checking username:', err);
-      setError('Error checking username. Please try again.');
-      setIsValidated(false);
+      // Only apply error if this is still the username we're validating
+      if (validatingUsernameRef.current === name) {
+        console.error('Error checking username:', err);
+        setError('Error checking username. Please try again.');
+        setIsValidated(false);
+      }
     } finally {
-      setIsChecking(false);
+      // Only clear checking state if this is still the username we're validating
+      if (validatingUsernameRef.current === name) {
+        setIsChecking(false);
+      }
     }
   };
 
-  const debouncedCheck = useCallback(debounce(checkUsernameUniqueness, 500), []);
+  // Debounced check that properly cancels previous timeouts
+  const debouncedCheck = useCallback((name: string) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      checkUsernameUniqueness(name);
+    }, 500);
+  }, []);
+
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleUsernameChange = (text: string) => {
     // Ensure @ prefix
