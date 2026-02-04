@@ -22,10 +22,12 @@ export default function UsernameScreen() {
   const existingProfilePhoto = (route.params as any)?.profilePhoto;
 
   const [username, setUsername] = useState(userData?.username || ''); 
-  const [displayUsername, setDisplayUsername] = useState(userData?.username ? '@' + userData.username : '');  
+  const [displayUsername, setDisplayUsername] = useState(userData?.username ? '@' + userData.username : '');
   const [isFocused, setIsFocused] = useState(false);
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
+  const [isValidated, setIsValidated] = useState(false); // Track if current username has been validated as available
+  const [selection, setSelection] = useState<{ start: number; end: number } | undefined>(undefined);
 
   useEffect(() => {
     if (!userData) {
@@ -53,25 +55,32 @@ export default function UsernameScreen() {
     if (!name || name.length < 3) {
       setError(name.length > 0 ? 'Username must be at least 3 characters.' : '');
       setIsChecking(false);
+      setIsValidated(false);
       return;
     }
     if (name.length > 20) {
       setError('Username must be less than 20 characters.');
       setIsChecking(false);
+      setIsValidated(false);
       return;
     }
 
     setIsChecking(true);
     setError('');
+    setIsValidated(false);
 
     try {
       const available = await isUsernameAvailable(name);
       if (!available) {
         setError('Username is already taken.');
+        setIsValidated(false);
+      } else {
+        setIsValidated(true); // Username is confirmed available
       }
     } catch (err) {
       console.error('Error checking username:', err);
       setError('Error checking username. Please try again.');
+      setIsValidated(false);
     } finally {
       setIsChecking(false);
     }
@@ -80,19 +89,39 @@ export default function UsernameScreen() {
   const debouncedCheck = useCallback(debounce(checkUsernameUniqueness, 500), []);
 
   const handleUsernameChange = (text: string) => {
+    // Ensure @ prefix
     const withAt = text.startsWith('@') ? text : '@' + text.replace(/^@+/, '');
     const body = withAt.slice(1).replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+    const newValue = '@' + body;
+    
+    setDisplayUsername(newValue);
     setUsername(body);
-    setDisplayUsername('@' + body);
-    debouncedCheck(body);
+    setIsValidated(false);
+    
+    if (body) {
+      debouncedCheck(body);
+    } else {
+      setIsChecking(false);
+      setError('');
+    }
   };
 
+  // Prevent cursor from being before the @ symbol
+  const handleSelectionChange = (e: any) => {
+    const { start, end } = e.nativeEvent.selection;
+    // Force cursor to always be at position 1 or later (after @)
+    if (start < 1 || end < 1) {
+      setSelection({ start: 1, end: 1 });
+    } else {
+      setSelection({ start, end });
+    }
+  };
+
+  // Button is only enabled when username is validated and available
+  const canContinue = isValidated && !isChecking && !error && username.length >= 3 && username.length <= 20;
+
   const handleContinue = async () => {
-    if (isChecking) return;
-    if (error) return Alert.alert('Error', error);
-    if (!username.trim()) return Alert.alert('Error', 'Please enter a username');
-    if (username.length < 3) return Alert.alert('Error', 'Username must be at least 3 characters long');
-    if (username.length > 20) return Alert.alert('Error', 'Username must be less than 20 characters');
+    if (!canContinue) return;
     if (!userData) return;
 
     // Navigate to ProfilePhoto screen with user data including username
@@ -118,38 +147,52 @@ export default function UsernameScreen() {
               </View>
               <View style={styles.formBlock}>
                     <TextInput
-                    mode="flat"
-                    value={displayUsername}
-                    onChangeText={handleUsernameChange}
-                    placeholder="@ImHungri"
-                    placeholderTextColor="#636363"
+                      mode="flat"
+                      value={displayUsername}
+                      onChangeText={handleUsernameChange}
+                      placeholder={isFocused ? '' : '@ImHungri'}
+                      placeholderTextColor="#636363"
+                      selection={isFocused ? selection : undefined}
+                      onSelectionChange={isFocused ? handleSelectionChange : undefined}
 
-                    underlineColor="transparent"
-                    activeUnderlineColor="transparent"
-                    style={styles.usernameInput}
+                      underlineColor="transparent"
+                      activeUnderlineColor="transparent"
+                      style={styles.usernameInput}
 
-                    contentStyle={{ color: '#333' }} 
-                    theme={{
-                        colors: {
-                        onSurface: '#333',          
-                        onSurfaceVariant: '#636363',
-                        background: 'white',
-                        surface: 'white',
-                        },
-                    }}
+                      contentStyle={{ color: '#333' }} 
+                      theme={{
+                          colors: {
+                          onSurface: '#333',          
+                          onSurfaceVariant: '#636363',
+                          background: 'white',
+                          surface: 'white',
+                          },
+                      }}
 
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    maxLength={21}
-                    onFocus={() => { setIsFocused(true); if (!displayUsername) setDisplayUsername('@'); }}
-                    onBlur={() => { setIsFocused(false); if (!username) setDisplayUsername(''); }}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      maxLength={21}
+                      onFocus={() => { 
+                        setIsFocused(true); 
+                        setDisplayUsername(username ? '@' + username : '@');
+                        setSelection({ start: 1, end: 1 });
+                      }}
+                      onBlur={() => { 
+                        setIsFocused(false); 
+                        setSelection(undefined);
+                        if (!username) setDisplayUsername(''); 
+                      }}
                     />
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 </View>
               <View style={styles.spacer} />
               <View style={styles.footer}>
-                <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+                <TouchableOpacity 
+                  style={[styles.continueButton, !canContinue && styles.continueButtonDisabled]} 
+                  onPress={handleContinue}
+                  disabled={!canContinue}
+                >
                   <Text style={styles.continueButtonText}>Continue</Text>
                 </TouchableOpacity>
               </View>
@@ -201,7 +244,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     width: '100%',
     marginTop: 40,
-    
   },
   formBlock: {
     width: '100%',
@@ -225,6 +267,9 @@ const styles = StyleSheet.create({
     borderRadius: 22, 
     alignItems: 'center', 
     justifyContent: 'center'
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#ccc',
   },
   continueButtonText: { 
     color: '#fff', 

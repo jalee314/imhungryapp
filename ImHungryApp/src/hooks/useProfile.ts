@@ -53,6 +53,7 @@ export interface UseProfileResult {
   onProfilePhotoPress: () => void;
   onProfileTabReselect: () => void;
   onShareProfile: () => void;
+  onGoBack: () => void;
   openLogoutModal: () => void;
   closeLogoutModal: () => void;
   confirmLogout: () => Promise<void>;
@@ -169,24 +170,60 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     }
   }, [currentUserPhotoUrl]);
 
-  // Initial load
+  // Track previous viewUser state and userId to detect profile switches
+  const prevViewUserRef = useRef<boolean | undefined>(undefined);
+  const prevUserIdRef = useRef<string | undefined>(undefined);
+
+  // Initial load and handle switching between own profile and other user's profile
   useEffect(() => {
+    const wasViewingOther = prevViewUserRef.current;
+    const prevUserId = prevUserIdRef.current;
+    prevViewUserRef.current = viewUser;
+    prevUserIdRef.current = userId;
+
     if (viewUser && userId) {
+      // Viewing another user's profile
+      // Always reset state first to show skeleton while loading (whether switching from own profile or different user)
+      const isNewUser = prevUserId !== userId || !wasViewingOther;
+      if (isNewUser) {
+        console.log('📸 Profile: Loading other user profile, showing skeleton');
+        setProfile(null);
+        setPhotoUrl(null);
+        setUserData(null);
+        setUserPosts([]);
+        setDealCount(0);
+        setHasData(false);
+        setPostsInitialized(false);
+        postsLoadedRef.current = false;
+      }
       loadOtherUserProfile(userId);
     } else {
+      // Viewing own profile
+      // If we were previously viewing another user, reset all state first
+      if (wasViewingOther) {
+        console.log('📸 Profile: Switching from other user to own profile, resetting state');
+        setProfile(null);
+        setPhotoUrl(null);
+        setUserData(null);
+        setUserPosts([]);
+        setDealCount(0);
+        setHasData(false);
+        setPostsInitialized(false);
+        postsLoadedRef.current = false;
+      }
       loadProfileData();
     }
     // Intentionally exclude function identities to avoid effect re-triggers on state changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewUser, userId]);
 
-  // Focus refresh
+  // Focus refresh - only for own profile
   useFocusEffect(
     useCallback(() => {
-      if (!hasData) {
+      if (!hasData && !viewUser) {
         loadProfileData();
       }
-    }, [hasData, loadProfileData])
+    }, [hasData, viewUser, loadProfileData])
   );
 
   // Refresh after post added & for current user only
@@ -430,6 +467,18 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     }
   };
 
+  // ---------- Back navigation ----------
+  const onGoBack = () => {
+    if (navigation.canGoBack()) {
+      // Standard goBack - works correctly now that UserProfile is in AppStack
+      navigation.goBack();
+    } else {
+      // Fallback: navigate to Feed tab
+      console.log('📸 Profile: No back route available, navigating to Feed');
+      navigation.navigate('MainTabs', { screen: 'Feed' });
+    }
+  };
+
   // ---------- Auth / account modals ----------
   const openLogoutModal = () => setShowLogoutModal(true);
   const closeLogoutModal = () => setShowLogoutModal(false);
@@ -477,6 +526,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     onProfilePhotoPress,
     onProfileTabReselect,
     onShareProfile,
+    onGoBack,
     openLogoutModal,
     closeLogoutModal,
     confirmLogout,
