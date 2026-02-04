@@ -653,16 +653,12 @@ const DealDetailScreen: React.FC = () => {
     if (dealData.isAnonymous || !dealData.userId || !dealData.userDisplayName) {
       return;
     }
-    (navigation as any).navigate('MainTabs', {
-      screen: 'ProfilePage',
-      params: {
-        screen: 'ProfileMain',
-        params: {
-          viewUser: true,
-          username: dealData.userDisplayName,
-          userId: dealData.userId,
-        },
-      },
+    // Navigate to UserProfile screen (in AppStack, not a tab)
+    // This allows proper back navigation with goBack()
+    (navigation as any).navigate('UserProfile', {
+      viewUser: true,
+      username: dealData.userDisplayName,
+      userId: dealData.userId,
     });
   };
 

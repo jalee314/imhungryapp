@@ -233,6 +233,7 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     onProfilePhotoPress,
     onProfileTabReselect,
     onShareProfile,
+    onGoBack,
     openLogoutModal,
     closeLogoutModal,
     confirmLogout,
@@ -313,23 +314,20 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
 
         {/* User Profile Container */}
         <View style={styles.userProfileContainer}>
-          {/* Back Button for Other Users */}
-          {isViewingOtherUser && (
-            <View style={styles.backButtonContainer}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
-              </TouchableOpacity>
-            </View>
-          )}
-
           {/* Header Section with Profile Photo */}
           <View style={styles.header}>
             <View style={styles.leftSection}>
               <View style={styles.userInfo}>
                 <View>
+                  {/* Back Button for Other Users - right above the name */}
+                  {isViewingOtherUser && (
+                    <TouchableOpacity
+                      style={styles.backButton}
+                      onPress={onGoBack}
+                    >
+                      <MaterialCommunityIcons name="chevron-left" size={28} color="#000000" />
+                    </TouchableOpacity>
+                  )}
                   <Text style={styles.userName}>{displayName}</Text>
                   <Text style={styles.joinDate}>{joinDateText}</Text>
                   <Text style={styles.location}>{locationCity}</Text>
@@ -614,11 +612,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#D8D8D8',
   },
 
-  backButtonContainer: {
-    paddingHorizontal: 16,
-  },
   backButton: {
-    padding: 4,
+    marginLeft: -8,
+    marginBottom: 10,
   },
 
   actionButtonsContainer: {

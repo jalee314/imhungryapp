@@ -239,6 +239,8 @@ const AppStack = () => (
       <Stack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
       <Stack.Screen name="ReportContent" component={ReportContentScreen} />
       <Stack.Screen name="BlockUser" component={BlockUserScreen} />
+      {/* UserProfile screen for viewing other users (separate from Profile tab) */}
+      <Stack.Screen name="UserProfile" component={ProfilePage} />
     </Stack.Navigator>
   </AuthGuard>
 );

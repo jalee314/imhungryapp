@@ -406,10 +406,12 @@ const FavoritesPage: React.FC = () => {
     // Find the deal to get the username
     const deal = deals.find(d => d.userId === userId);
     if (deal && deal.userDisplayName) {
-      (navigation as any).navigate('ProfilePage', {
+      // Navigate to UserProfile screen (in AppStack, not a tab)
+      // This allows proper back navigation with goBack()
+      (navigation as any).navigate('UserProfile', {
         viewUser: true,
         username: deal.userDisplayName,
-        userId: userId
+        userId: userId,
       });
     }
   };
