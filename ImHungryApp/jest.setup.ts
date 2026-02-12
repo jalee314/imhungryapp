@@ -106,7 +106,7 @@ jest.mock('lucide-react-native', () => mockLucideReactNative);
 // Mock react-native-get-random-values
 jest.mock('react-native-get-random-values', () => ({}));
 
-// Silence console warnings during tests
+// Only silence React Native require cycle warnings
 const originalWarn = console.warn;
 console.warn = (...args: unknown[]) => {
   if (
