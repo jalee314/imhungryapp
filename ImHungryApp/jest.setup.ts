@@ -1,4 +1,34 @@
 import '@testing-library/jest-native/extend-expect';
+import {
+  mockSupabase,
+  resetSupabaseMocks,
+} from './src/test-utils/mocks/supabaseMock';
+import {
+  mockImagePicker,
+  mockMediaLibrary,
+  mockFileSystem,
+  mockNotifications,
+  mockLinking,
+  mockImageManipulator,
+  mockSafeAreaContext,
+  mockGestureHandler,
+  mockLucideReactNative,
+  mockGetRandomValues,
+} from './src/test-utils/mocks/expoMocks';
+
+// Apply crypto polyfill for react-native-get-random-values
+mockGetRandomValues();
+
+// Mock Supabase client
+jest.mock('./lib/supabase', () => ({
+  supabase: mockSupabase,
+  clearAuthStorage: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Reset Supabase mocks between tests
+afterEach(() => {
+  resetSupabaseMocks();
+});
 
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
@@ -45,6 +75,36 @@ jest.mock('expo-location', () => ({
   ),
   watchPositionAsync: jest.fn(),
 }));
+
+// Mock expo-image-picker
+jest.mock('expo-image-picker', () => mockImagePicker);
+
+// Mock expo-media-library
+jest.mock('expo-media-library', () => mockMediaLibrary);
+
+// Mock expo-file-system
+jest.mock('expo-file-system', () => mockFileSystem);
+
+// Mock expo-notifications
+jest.mock('expo-notifications', () => mockNotifications);
+
+// Mock expo-linking
+jest.mock('expo-linking', () => mockLinking);
+
+// Mock expo-image-manipulator
+jest.mock('expo-image-manipulator', () => mockImageManipulator);
+
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => mockSafeAreaContext);
+
+// Mock react-native-gesture-handler
+jest.mock('react-native-gesture-handler', () => mockGestureHandler);
+
+// Mock lucide-react-native icons
+jest.mock('lucide-react-native', () => mockLucideReactNative);
+
+// Mock react-native-get-random-values
+jest.mock('react-native-get-random-values', () => ({}));
 
 // Silence console warnings during tests
 const originalWarn = console.warn;
