@@ -62,6 +62,33 @@ import { useInitializeDataCache } from './src/stores/DataCacheStore';
 import { useInitializeLocation } from './src/stores/LocationStore';
 import { useInitializeAdmin } from './src/stores/AdminStore';
 
+// Navigation constants - exported for testability
+import {
+  ONBOARDING_ROUTES,
+  ADMIN_ROUTES,
+  APP_STACK_ROUTES,
+  TAB_ROUTES,
+  FEED_STACK_ROUTES,
+  DISCOVER_STACK_ROUTES,
+  CONTRIBUTE_STACK_ROUTES,
+  FAVORITES_STACK_ROUTES,
+  PROFILE_STACK_ROUTES,
+  DEEP_LINK_CONFIG,
+} from './src/app/navigation';
+
+// Re-export route constants for external consumers
+export {
+  ONBOARDING_ROUTES,
+  ADMIN_ROUTES,
+  APP_STACK_ROUTES,
+  TAB_ROUTES,
+  FEED_STACK_ROUTES,
+  DISCOVER_STACK_ROUTES,
+  CONTRIBUTE_STACK_ROUTES,
+  FAVORITES_STACK_ROUTES,
+  PROFILE_STACK_ROUTES,
+  DEEP_LINK_CONFIG,
+} from './src/app/navigation';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
