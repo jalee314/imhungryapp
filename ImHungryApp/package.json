@@ -18,7 +18,10 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --reporters=default --reporters=jest-junit",
     "verify": "npm run lint && npm run typecheck && npm run test",
-    "e2e:smoke": "maestro test e2e/smoke.yaml"
+    "e2e:smoke": "./scripts/run-e2e-smoke.sh",
+    "e2e:smoke:ios": "./scripts/run-e2e-smoke.sh --ios",
+    "e2e:smoke:android": "./scripts/run-e2e-smoke.sh --android",
+    "e2e:smoke:ci": "./scripts/run-e2e-smoke.sh --ci"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
