@@ -1,0 +1,84 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Mock Data Shape Snapshots should snapshot Deal interface shape 1`] = `
+{
+  "author": "SnapshotUser",
+  "cuisine": "Italian",
+  "cuisineId": "cuisine-italian",
+  "details": "50% off all items - test snapshot",
+  "expirationDate": "2026-12-31",
+  "id": "deal-snapshot-1",
+  "image": {
+    "uri": "https://example.com/deal-image.jpg",
+  },
+  "isAnonymous": false,
+  "isDownvoted": false,
+  "isFavorited": false,
+  "isUpvoted": false,
+  "milesAway": "1.5 mi",
+  "restaurant": "Snapshot Restaurant",
+  "restaurantAddress": "123 Snapshot St",
+  "timeAgo": "2h ago",
+  "title": "Snapshot Test Deal",
+  "userDisplayName": "Snapshot User",
+  "userId": "user-snapshot-1",
+  "userProfilePhoto": "https://example.com/avatar.jpg",
+  "votes": 42,
+}
+`;
+
+exports[`Mock Data Shape Snapshots should snapshot RowCardData interface shape 1`] = `
+{
+  "dealCount": 5,
+  "distance": "2.0 mi",
+  "expiresIn": "3 days",
+  "id": "row-snapshot-1",
+  "image": {
+    "uri": "https://example.com/row-image.jpg",
+  },
+  "postedDate": "Today",
+  "subtitle": "Test subtitle for snapshot",
+  "title": "Snapshot Row Card",
+  "views": 100,
+}
+`;
+
+exports[`UI Component Snapshots DealCard should match snapshot for anonymous post 1`] = `null`;
+
+exports[`UI Component Snapshots DealCard should match snapshot for horizontal variant 1`] = `null`;
+
+exports[`UI Component Snapshots DealCard should match snapshot for vertical variant 1`] = `null`;
+
+exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`] = `null`;
+
+exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] = `null`;
+
+exports[`UI Component Snapshots DealCard should match snapshot with delete button 1`] = `null`;
+
+exports[`UI Component Snapshots DealCardSkeleton should match snapshot for horizontal variant 1`] = `null`;
+
+exports[`UI Component Snapshots DealCardSkeleton should match snapshot for vertical variant 1`] = `null`;
+
+exports[`UI Component Snapshots RowCard should match snapshot for explore-deal-card variant 1`] = `null`;
+
+exports[`UI Component Snapshots RowCard should match snapshot for favorites-deal-card variant 1`] = `null`;
+
+exports[`UI Component Snapshots RowCard should match snapshot for rest-deal variant 1`] = `null`;
+
+exports[`UI Component Snapshots RowCardSkeleton should match snapshot 1`] = `null`;
+
+exports[`UI Component Snapshots SkeletonLoader should match snapshot with custom dimensions 1`] = `null`;
+
+exports[`UI Component Snapshots SkeletonLoader should match snapshot with default props 1`] = `null`;
+
+exports[`UI Component Snapshots SkeletonLoader should match snapshot with percentage width 1`] = `null`;
+
+exports[`UI Component Snapshots VoteButtons should match snapshot for default state 1`] = `null`;
+
+exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted 1`] = `null`;
+
+exports[`UI Component Snapshots VoteButtons should match snapshot when favorited 1`] = `null`;
+
+exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1`] = `null`;
+
+exports[`UI Component Snapshots VoteButtons should match snapshot with all states active 1`] = `null`;
