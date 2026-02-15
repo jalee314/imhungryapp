@@ -227,11 +227,26 @@ export const mockGestureHandler = {
   GestureHandlerRootView: ({ children }: { children: React.ReactNode }) => children,
 };
 
-// lucide-react-native icons mock
+// lucide-react-native icons mock - returns valid React components
+// Uses dynamic require to ensure React is available at render time
 export const mockLucideReactNative = new Proxy(
   {},
   {
-    get: () => 'Icon',
+    get: (_target, prop) => {
+      if (typeof prop === 'string') {
+        // Return a functional component that requires React at render time
+        const MockIcon = function (props: Record<string, unknown>) {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const ReactRN = require('react');
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { View } = require('react-native');
+          return ReactRN.createElement(View, { testID: `lucide-${prop}`, ...props });
+        };
+        MockIcon.displayName = prop;
+        return MockIcon;
+      }
+      return undefined;
+    },
   }
 );
 

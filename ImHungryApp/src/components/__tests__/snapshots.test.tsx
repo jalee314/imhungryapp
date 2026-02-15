@@ -12,12 +12,28 @@
  */
 
 import React from 'react';
-import { create } from 'react-test-renderer';
+import { render } from '@testing-library/react-native';
 
-// Mock @monicon/native
-jest.mock('@monicon/native', () => ({
-  Monicon: () => null,
-}));
+// Mock react-native Switch component (doesn't work in jest environment)
+jest.mock('react-native/Libraries/Components/Switch/Switch', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: (props: any) =>
+      React.createElement(View, { testID: 'mock-switch', ...props }),
+  };
+});
+
+// Mock @monicon/native to return a renderable element
+jest.mock('@monicon/native', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    Monicon: (props: any) =>
+      React.createElement(View, { testID: `icon-${props.name || 'unknown'}`, ...props }),
+  };
+});
 
 // Mock OptimizedImage
 jest.mock('../OptimizedImage', () => {
@@ -77,47 +93,47 @@ const mockRowCardData: RowCardData = {
 describe('UI Component Snapshots', () => {
   describe('DealCard', () => {
     it('should match snapshot for vertical variant', () => {
-      const tree = create(
+      const { toJSON } = render(
         <DealCard deal={mockDeal} variant="vertical" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot for horizontal variant', () => {
-      const tree = create(
+      const { toJSON } = render(
         <DealCard deal={mockDeal} variant="horizontal" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot when upvoted', () => {
       const upvotedDeal = { ...mockDeal, isUpvoted: true, votes: 43 };
-      const tree = create(
+      const { toJSON } = render(
         <DealCard deal={upvotedDeal} variant="vertical" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot when favorited', () => {
       const favoritedDeal = { ...mockDeal, isFavorited: true };
-      const tree = create(
+      const { toJSON } = render(
         <DealCard deal={favoritedDeal} variant="vertical" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot for anonymous post', () => {
       const anonymousDeal = { ...mockDeal, isAnonymous: true, author: 'Anonymous' };
-      const tree = create(
+      const { toJSON } = render(
         <DealCard deal={anonymousDeal} variant="vertical" hideAuthor={false} />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot with delete button', () => {
-      const tree = create(
+      const { toJSON } = render(
         <DealCard deal={mockDeal} variant="vertical" showDelete={true} />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
   });
@@ -130,9 +146,9 @@ describe('UI Component Snapshots', () => {
         postedDate: 'Yesterday',
         expiresIn: '2 days',
       };
-      const tree = create(
+      const { toJSON } = render(
         <RowCard data={exploreData} variant="explore-deal-card" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
@@ -142,9 +158,9 @@ describe('UI Component Snapshots', () => {
         dealCount: 3,
         distance: '0.5 mi',
       };
-      const tree = create(
+      const { toJSON } = render(
         <RowCard data={restData} variant="rest-deal" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
@@ -155,60 +171,60 @@ describe('UI Component Snapshots', () => {
         userDisplayName: 'Favorite User',
         userProfilePhoto: 'https://example.com/fav-avatar.jpg',
       };
-      const tree = create(
+      const { toJSON } = render(
         <RowCard data={favData} variant="favorites-deal-card" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
   });
 
   describe('DealCardSkeleton', () => {
     it('should match snapshot for vertical variant', () => {
-      const tree = create(
+      const { toJSON } = render(
         <DealCardSkeleton variant="vertical" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot for horizontal variant', () => {
-      const tree = create(
+      const { toJSON } = render(
         <DealCardSkeleton variant="horizontal" />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
   });
 
   describe('RowCardSkeleton', () => {
     it('should match snapshot', () => {
-      const tree = create(<RowCardSkeleton />).toJSON();
+      const { toJSON } = render(<RowCardSkeleton />); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
   });
 
   describe('SkeletonLoader', () => {
     it('should match snapshot with default props', () => {
-      const tree = create(<SkeletonLoader />).toJSON();
+      const { toJSON } = render(<SkeletonLoader />); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot with custom dimensions', () => {
-      const tree = create(
+      const { toJSON } = render(
         <SkeletonLoader width={200} height={40} borderRadius={8} />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot with percentage width', () => {
-      const tree = create(
+      const { toJSON } = render(
         <SkeletonLoader width="80%" height={16} />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
   });
 
   describe('VoteButtons', () => {
     it('should match snapshot for default state', () => {
-      const tree = create(
+      const { toJSON } = render(
         <VoteButtons
           votes={10}
           isUpvoted={false}
@@ -218,12 +234,12 @@ describe('UI Component Snapshots', () => {
           onDownvote={() => {}}
           onFavorite={() => {}}
         />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot when upvoted', () => {
-      const tree = create(
+      const { toJSON } = render(
         <VoteButtons
           votes={11}
           isUpvoted={true}
@@ -233,12 +249,12 @@ describe('UI Component Snapshots', () => {
           onDownvote={() => {}}
           onFavorite={() => {}}
         />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot when downvoted', () => {
-      const tree = create(
+      const { toJSON } = render(
         <VoteButtons
           votes={9}
           isUpvoted={false}
@@ -248,12 +264,12 @@ describe('UI Component Snapshots', () => {
           onDownvote={() => {}}
           onFavorite={() => {}}
         />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot when favorited', () => {
-      const tree = create(
+      const { toJSON } = render(
         <VoteButtons
           votes={10}
           isUpvoted={false}
@@ -263,12 +279,12 @@ describe('UI Component Snapshots', () => {
           onDownvote={() => {}}
           onFavorite={() => {}}
         />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
 
     it('should match snapshot with all states active', () => {
-      const tree = create(
+      const { toJSON } = render(
         <VoteButtons
           votes={15}
           isUpvoted={true}
@@ -278,7 +294,7 @@ describe('UI Component Snapshots', () => {
           onDownvote={() => {}}
           onFavorite={() => {}}
         />
-      ).toJSON();
+      ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
     });
   });
