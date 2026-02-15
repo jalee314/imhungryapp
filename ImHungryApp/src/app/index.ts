@@ -4,6 +4,7 @@
  * Central export for app-layer modules including:
  * - AppRoot: Main application shell component
  * - AppProviders: Provider composition
+ * - Gates: FontGate, SplashGate for startup control
  * - hooks: Bootstrap and lifecycle hooks
  * - navigation: Route constants and utilities
  */
@@ -15,6 +16,10 @@ export type { AppRootProps } from './AppRoot';
 // Providers
 export { AppProviders } from './providers';
 export type { AppProvidersProps } from './providers';
+
+// Gates (PR-022)
+export { FontGate, SplashGate } from './gates';
+export type { FontGateProps, SplashGateProps } from './gates';
 
 // Hooks
 export { useBootstrap } from './hooks';
