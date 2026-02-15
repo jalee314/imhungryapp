@@ -9,10 +9,10 @@
  */
 
 import React, { ReactNode } from 'react';
-import { useInitializeAuth } from '../../stores/AuthStore';
-import { useInitializeAdmin } from '../../stores/AdminStore';
-import { useInitializeDataCache } from '../../stores/DataCacheStore';
-import { useInitializeLocation } from '../../stores/LocationStore';
+import { useInitializeAuth } from '@stores/AuthStore';
+import { useInitializeAdmin } from '@stores/AdminStore';
+import { useInitializeDataCache } from '@stores/DataCacheStore';
+import { useInitializeLocation } from '@stores/LocationStore';
 
 export interface AppProvidersProps {
   children: ReactNode;

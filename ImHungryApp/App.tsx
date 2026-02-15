@@ -2,19 +2,19 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 
-// App shell modules (PR-019, PR-022)
-import { AppRoot, SplashGate } from './src/app';
+// App shell modules (PR-019, PR-022, PR-024)
+import { AppRoot, SplashGate } from '@app/index';
 
-// Auth hooks
-import { useAuth } from './src/hooks/useAuth';
-import { useAdmin } from './src/hooks/useAdmin';
+// Auth hooks (PR-024: using path aliases)
+import { useAuth } from '@hooks/useAuth';
+import { useAdmin } from '@hooks/useAdmin';
 
 // Navigation stacks (PR-021) - extracted from App.tsx
 import {
   OnboardingStack,
   AdminStack,
   AppStack,
-} from './src/app/navigation/stacks';
+} from '@app/navigation/stacks';
 
 // Navigation constants - exported for testability
 import {
@@ -28,7 +28,7 @@ import {
   FAVORITES_STACK_ROUTES,
   PROFILE_STACK_ROUTES,
   DEEP_LINK_CONFIG,
-} from './src/app/navigation';
+} from '@app/navigation';
 
 // Re-export route constants for external consumers
 export {
@@ -42,7 +42,7 @@ export {
   FAVORITES_STACK_ROUTES,
   PROFILE_STACK_ROUTES,
   DEEP_LINK_CONFIG,
-} from './src/app/navigation';
+} from '@app/navigation';
 
 // Deep linking configuration
 const prefix = Linking.createURL('/', { scheme: 'imhungri' });
