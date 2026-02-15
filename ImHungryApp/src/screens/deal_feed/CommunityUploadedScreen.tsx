@@ -13,17 +13,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import DealCard, { Deal } from '../../components/DealCard';
 import DealCardSkeleton from '../../components/DealCardSkeleton';
-import { toggleUpvote, toggleDownvote, toggleFavorite, getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
+import { getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { supabase } from '../../../lib/supabase';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
-import { useFavorites } from '../../hooks/useFavorites';
+import { useFeedInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
 
 const CommunityUploadedScreen: React.FC = () => {
   const navigation = useNavigation();
   const { getUpdatedDeal, clearUpdatedDeal } = useDealUpdate();
-  const { markAsUnfavorited, markAsFavorited } = useFavorites();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,6 +31,12 @@ const CommunityUploadedScreen: React.FC = () => {
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
   const currentUserId = useRef<string | null>(null);
+
+  // Use shared interaction handlers for optimistic updates
+  const { handleUpvote, handleDownvote, handleFavorite } = useFeedInteractionHandlers({
+    deals,
+    setDeals,
+  });
 
   useEffect(() => {
     const loadDeals = async () => {
@@ -235,128 +240,7 @@ const CommunityUploadedScreen: React.FC = () => {
     }
   }, []);
 
-  const handleUpvote = (dealId: string) => {
-    let originalDeal: Deal | undefined;
-    
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          const wasUpvoted = d.isUpvoted;
-          const wasDownvoted = d.isDownvoted;
-          
-          return {
-            ...d,
-            isUpvoted: !wasUpvoted,
-            isDownvoted: false,
-            votes: wasUpvoted 
-              ? d.votes - 1
-              : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-          };
-        }
-        return d;
-      });
-    });
-
-    toggleUpvote(dealId).catch((err) => {
-      console.error('Failed to save upvote, reverting:', err);
-      if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
-      }
-    });
-  };
-
-  const handleDownvote = (dealId: string) => {
-    let originalDeal: Deal | undefined;
-    
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          const wasDownvoted = d.isDownvoted;
-          const wasUpvoted = d.isUpvoted;
-          
-          return {
-            ...d,
-            isDownvoted: !wasDownvoted,
-            isUpvoted: false,
-            votes: wasDownvoted 
-              ? d.votes + 1
-              : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-          };
-        }
-        return d;
-      });
-    });
-
-    toggleDownvote(dealId).catch((err) => {
-      console.error('Failed to save downvote, reverting:', err);
-      if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => 
-          d.id === dealId ? originalDeal! : d
-        ));
-      }
-    });
-  };
-
-  const handleFavorite = (dealId: string) => {
-    // FIRST: Find and capture the original deal state
-    const originalDeal = deals.find(d => d.id === dealId);
-    if (!originalDeal) {
-      console.error('Deal not found:', dealId);
-      return;
-    }
-
-    const wasFavorited = originalDeal.isFavorited;
-    console.log('🔄 Toggling favorite for deal:', dealId, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
-    
-    // SECOND: Optimistically update the UI
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          return {
-            ...d,
-            isFavorited: !wasFavorited
-          };
-        }
-        return d;
-      });
-    });
-
-    // THIRD: Notify global store for instant favorites page update
-    if (wasFavorited) {
-      markAsUnfavorited(dealId, 'deal');
-    } else {
-      // Pass full deal data for instant display in favorites
-      markAsFavorited(dealId, 'deal', {
-        id: originalDeal.id,
-        title: originalDeal.title,
-        description: originalDeal.details || '',
-        imageUrl: typeof originalDeal.image === 'object' ? originalDeal.image.uri : '',
-        restaurantName: originalDeal.restaurant,
-        restaurantAddress: originalDeal.restaurantAddress || '',
-        distance: originalDeal.milesAway || '',
-        userId: originalDeal.userId,
-        userDisplayName: originalDeal.userDisplayName,
-        userProfilePhoto: originalDeal.userProfilePhoto,
-        isAnonymous: originalDeal.isAnonymous,
-        favoritedAt: new Date().toISOString(),
-      });
-    }
-
-    // FOURTH: Save to database with the original state
-    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
-    
-    toggleFavorite(dealId, wasFavorited).catch((err) => {
-      console.error('Failed to save favorite, reverting:', err);
-      // Revert to original state
-      setDeals(prevDeals => prevDeals.map(d => 
-        d.id === dealId ? originalDeal : d
-      ));
-    });
-  };
+  // Note: handleUpvote, handleDownvote, handleFavorite are provided by useFeedInteractionHandlers
 
   const handleDealPress = (dealId: string) => {
     const selectedDeal = deals.find(deal => deal.id === dealId);
