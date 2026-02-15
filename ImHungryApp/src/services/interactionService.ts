@@ -1,3 +1,14 @@
+/**
+ * Interaction Service (Facade)
+ *
+ * Public API for interaction logging operations. This service maintains
+ * backward compatibility with existing callers while the underlying logic
+ * is being consolidated in src/features/interactions.
+ *
+ * For new code, consider using the interactions feature module directly:
+ * @see src/features/interactions for centralized interaction logging utilities
+ */
+
 import { supabase } from '../../lib/supabase';
 import { getCurrentDatabaseSessionId } from './sessionService';
 

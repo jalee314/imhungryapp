@@ -1,3 +1,14 @@
+/**
+ * Vote Service (Facade)
+ *
+ * Public API for vote-related operations. This service maintains backward
+ * compatibility with existing callers while the underlying logic is being
+ * consolidated in src/features/interactions.
+ *
+ * For new code, consider using the interactions feature module directly:
+ * @see src/features/interactions for centralized vote selectors and mutations
+ */
+
 import { supabase } from '../../lib/supabase';
 import { logInteraction, removeFavoriteInteractions } from './interactionService';
 import { clearFavoritesCache } from './favoritesService';
