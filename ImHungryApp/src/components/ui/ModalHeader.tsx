@@ -1,13 +1,5 @@
-/**
- * ModalHeader
- * 
- * A reusable modal header component with Cancel, title, and optional Done action.
- * Migrated to use ALF primitives (PR-027).
- */
-
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { Box, Text } from '../../ui/primitives';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 interface ModalHeaderProps {
   title: string | React.ReactNode;
@@ -29,52 +21,64 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({
   rightContent,
 }) => {
   return (
-    <Box
-      row
-      justify="space-between"
-      px="lg"
-      py="md"
-      borderColor="borderSubtle"
-      style={[styles.headerBorder, containerStyle]}
-    >
+    <View style={[styles.header, containerStyle]}>
       <TouchableOpacity onPress={onCancel} disabled={false} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Text size="md" color="text">Cancel</Text>
+        <Text style={styles.headerText}>Cancel</Text>
       </TouchableOpacity>
 
-      <Box flex={1} px="sm" align="center">
+      <View style={styles.titleContainer}>
         {typeof title === 'string' ? (
-          <Text size="md" weight="semibold" color="text" numberOfLines={1} style={titleStyle}>
+          <Text style={[styles.headerTitle, titleStyle]} numberOfLines={1}>
             {title}
           </Text>
         ) : (
           title
         )}
-      </Box>
+      </View>
 
       {rightContent ? (
         rightContent
       ) : onDone ? (
         <TouchableOpacity onPress={onDone} disabled={doneDisabled} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text 
-            size="md" 
-            weight="bold" 
-            color="primary"
-            opacity={doneDisabled ? 0.5 : 1}
-          >
-            Done
-          </Text>
+          <Text style={[styles.headerText, styles.doneText, doneDisabled && styles.doneDisabled]}>Done</Text>
         </TouchableOpacity>
       ) : (
-        <Box w={50} />
+        <View style={{ width: 50 }} />
       )}
-    </Box>
+    </View>
   );
 };
 
-// Minimal legacy styles for border that requires borderBottomWidth
 const styles = StyleSheet.create({
-  headerBorder: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
+    borderBottomColor: '#EAEAEA',
+  },
+  headerText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000',
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  doneText: {
+    color: '#FF8C4C',
+    fontWeight: '700',
+  },
+  doneDisabled: {
+    opacity: 0.5,
   },
 });
 

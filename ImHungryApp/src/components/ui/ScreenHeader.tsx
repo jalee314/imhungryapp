@@ -1,15 +1,6 @@
-/**
- * ScreenHeader
- * 
- * A reusable screen header component with back button, title, and optional right action.
- * Migrated to use ALF primitives (PR-027).
- */
-
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Box, Text } from '../../ui/primitives';
-import { SPACING, GRAY, STATIC } from '../../ui/alf/tokens';
 
 type RightConfig = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -33,59 +24,71 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   titleStyle,
 }) => {
   const renderRight = () => {
-    if (!right) return <Box w={40} h={32} />;
+    if (!right) return <View style={styles.sidePlaceholder} />;
     if (React.isValidElement(right)) return right;
     const cfg = right as RightConfig;
     return (
       <TouchableOpacity onPress={cfg.onPress} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Ionicons name={cfg.icon} size={22} color={cfg.color || GRAY[900]} />
+        <Ionicons name={cfg.icon} size={22} color={cfg.color || '#000'} />
       </TouchableOpacity>
     );
   };
 
   return (
-    <Box
-      row
-      justify="space-between"
-      px="lg"
-      py="md"
-      bg="background"
-      borderColor="border"
-      style={[styles.headerBorder, containerStyle]}
-    >
+    <View style={[styles.header, containerStyle]}>
       {onBack ? (
         <TouchableOpacity onPress={onBack} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="arrow-back" size={22} color={GRAY[900]} />
+          <Ionicons name="arrow-back" size={22} color="#000" />
         </TouchableOpacity>
       ) : (
-        <Box w={40} h={32} />
+        <View style={styles.sidePlaceholder} />
       )}
 
-      <Box flex={1} px="sm" align="center">
+      <View style={styles.titleContainer}>
         {typeof title === 'string' ? (
-          <Text size="lg" weight="bold" color="text" numberOfLines={1} style={titleStyle}>
+          <Text style={[styles.title, titleStyle]} numberOfLines={1}>
             {title}
           </Text>
         ) : (
           title
         )}
-      </Box>
+      </View>
 
       {renderRight()}
-    </Box>
+    </View>
   );
 };
 
-// Minimal legacy styles for properties not yet in primitives
 const styles = StyleSheet.create({
-  headerBorder: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFF',
     borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
   iconButton: {
     width: 40,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  sidePlaceholder: {
+    width: 40,
+    height: 32,
+  },
+  titleContainer: {
+    flex: 1,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
   },
 });
 
