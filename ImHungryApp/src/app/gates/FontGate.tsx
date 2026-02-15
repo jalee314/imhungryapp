@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
-import { useBootstrap, UseBootstrapOptions } from '../hooks';
+import { useBootstrap, UseBootstrapOptions } from '@app/hooks';
 
 export interface FontGateProps {
   /** Content to render when fonts are ready */
