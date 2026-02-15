@@ -13,6 +13,7 @@ import { useInitializeAuth } from '@stores/AuthStore';
 import { useInitializeAdmin } from '@stores/AdminStore';
 import { useInitializeDataCache } from '@stores/DataCacheStore';
 import { useInitializeLocation } from '@stores/LocationStore';
+import { ThemeProvider } from '../../ui/primitives';
 
 export interface AppProvidersProps {
   children: ReactNode;
@@ -48,9 +49,11 @@ const StoreInitializer: React.FC<AppProvidersProps> = ({ children }) => {
  */
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
-    <StoreInitializer>
-      {children}
-    </StoreInitializer>
+    <ThemeProvider>
+      <StoreInitializer>
+        {children}
+      </StoreInitializer>
+    </ThemeProvider>
   );
 };
 
