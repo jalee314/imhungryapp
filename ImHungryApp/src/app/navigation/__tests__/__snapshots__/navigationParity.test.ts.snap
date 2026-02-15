@@ -1,0 +1,99 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Regression Snapshot Tests should match admin routes snapshot 1`] = `
+{
+  "AdminDashboard": "AdminDashboard",
+  "AdminDeals": "AdminDeals",
+  "AdminMassUpload": "AdminMassUpload",
+  "AdminReports": "AdminReports",
+  "AdminUsers": "AdminUsers",
+}
+`;
+
+exports[`Regression Snapshot Tests should match app stack routes snapshot 1`] = `
+{
+  "BlockUser": "BlockUser",
+  "DealDetail": "DealDetail",
+  "DealEdit": "DealEdit",
+  "MainTabs": "MainTabs",
+  "ReportContent": "ReportContent",
+  "RestaurantDetail": "RestaurantDetail",
+  "UserProfile": "UserProfile",
+}
+`;
+
+exports[`Regression Snapshot Tests should match contribute stack routes snapshot 1`] = `
+{
+  "ContributeMain": "ContributeMain",
+}
+`;
+
+exports[`Regression Snapshot Tests should match deep link config snapshot 1`] = `
+{
+  "prefixes": [
+    "com.imhungri://",
+    "imhungri://",
+  ],
+  "screens": {
+    "ResetPassword": "reset-password",
+  },
+}
+`;
+
+exports[`Regression Snapshot Tests should match discover stack routes snapshot 1`] = `
+{
+  "DiscoverMain": "DiscoverMain",
+}
+`;
+
+exports[`Regression Snapshot Tests should match favorites stack routes snapshot 1`] = `
+{
+  "FavoritesMain": "FavoritesMain",
+}
+`;
+
+exports[`Regression Snapshot Tests should match feed stack routes snapshot 1`] = `
+{
+  "CommunityUploaded": "CommunityUploaded",
+  "FeedMain": "Feed Main",
+}
+`;
+
+exports[`Regression Snapshot Tests should match onboarding routes snapshot 1`] = `
+{
+  "AdminLogin": "AdminLogin",
+  "CuisinePreferences": "CuisinePreferences",
+  "ForgotPassword": "ForgotPassword",
+  "InstantNotifications": "InstantNotifications",
+  "Landing": "Landing",
+  "LocationPermissions": "LocationPermissions",
+  "LogIn": "LogIn",
+  "ProfilePhoto": "ProfilePhoto",
+  "ResetPassword": "ResetPassword",
+  "SignUp": "SignUp",
+  "Username": "Username",
+}
+`;
+
+exports[`Regression Snapshot Tests should match profile stack routes snapshot 1`] = `
+{
+  "BlockedUsersPage": "BlockedUsersPage",
+  "ContactUsPage": "ContactUsPage",
+  "CuisineEdit": "CuisineEdit",
+  "FAQPage": "FAQPage",
+  "PrivacyPolicyPage": "PrivacyPolicyPage",
+  "ProfileEdit": "ProfileEdit",
+  "ProfileMain": "ProfileMain",
+  "TermsConditionsPage": "TermsConditionsPage",
+}
+`;
+
+exports[`Regression Snapshot Tests should match tab routes snapshot 1`] = `
+{
+  "DealCreationScreen": "DealCreationScreen",
+  "DiscoverFeed": "DiscoverFeed",
+  "FavoritesPage": "FavoritesPage",
+  "Feed": "Feed",
+  "ProfilePage": "ProfilePage",
+}
+`;
