@@ -170,17 +170,20 @@ exports[`UI Component Snapshots DealCard should match snapshot for anonymous pos
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#D7D7D7",
-          "borderRadius": 30,
-          "borderWidth": 1,
-          "flexDirection": "row",
-          "height": 53.4351145038168,
-          "overflow": "hidden",
-          "width": 162.21374045801528,
-        }
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 53.4351145038168,
+            "overflow": "hidden",
+            "width": 162.21374045801528,
+          },
+          undefined,
+        ]
       }
     >
       <View
@@ -204,7 +207,9 @@ exports[`UI Component Snapshots DealCard should match snapshot for anonymous pos
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -212,16 +217,18 @@ exports[`UI Component Snapshots DealCard should match snapshot for anonymous pos
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "flex": 1,
-            "flexDirection": "row",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingLeft": 15.267175572519085,
-            "paddingRight": 3.816793893129771,
-          }
+          [
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 15.267175572519085,
+              "paddingRight": 3.816793893129771,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -232,13 +239,18 @@ exports[`UI Component Snapshots DealCard should match snapshot for anonymous pos
         />
         <Text
           style={
-            {
-              "color": "#000000",
-              "fontFamily": "Inter",
-              "fontSize": 19.083969465648856,
-              "fontWeight": "400",
-              "marginLeft": 7.633587786259542,
-            }
+            [
+              {
+                "color": "#212121",
+              },
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 19.083969465648856,
+                "fontWeight": "400",
+                "marginLeft": 7.633587786259542,
+              },
+            ]
           }
         >
           42
@@ -246,11 +258,14 @@ exports[`UI Component Snapshots DealCard should match snapshot for anonymous pos
       </View>
       <View
         style={
-          {
-            "backgroundColor": "#DEDEDE",
-            "height": 22.900763358778626,
-            "width": 1,
-          }
+          [
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 22.900763358778626,
+              "width": 1,
+            },
+            undefined,
+          ]
         }
       />
       <View
@@ -274,7 +289,9 @@ exports[`UI Component Snapshots DealCard should match snapshot for anonymous pos
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -282,13 +299,15 @@ exports[`UI Component Snapshots DealCard should match snapshot for anonymous pos
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingHorizontal": 19.083969465648856,
-          }
+          [
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 19.083969465648856,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -498,17 +517,20 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#D7D7D7",
-          "borderRadius": 30,
-          "borderWidth": 1,
-          "flexDirection": "row",
-          "height": 53.4351145038168,
-          "overflow": "hidden",
-          "width": 162.21374045801528,
-        }
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 53.4351145038168,
+            "overflow": "hidden",
+            "width": 162.21374045801528,
+          },
+          undefined,
+        ]
       }
     >
       <View
@@ -532,7 +554,9 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -540,16 +564,18 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "flex": 1,
-            "flexDirection": "row",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingLeft": 15.267175572519085,
-            "paddingRight": 3.816793893129771,
-          }
+          [
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 15.267175572519085,
+              "paddingRight": 3.816793893129771,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -560,13 +586,18 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
         />
         <Text
           style={
-            {
-              "color": "#000000",
-              "fontFamily": "Inter",
-              "fontSize": 19.083969465648856,
-              "fontWeight": "400",
-              "marginLeft": 7.633587786259542,
-            }
+            [
+              {
+                "color": "#212121",
+              },
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 19.083969465648856,
+                "fontWeight": "400",
+                "marginLeft": 7.633587786259542,
+              },
+            ]
           }
         >
           42
@@ -574,11 +605,14 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
       </View>
       <View
         style={
-          {
-            "backgroundColor": "#DEDEDE",
-            "height": 22.900763358778626,
-            "width": 1,
-          }
+          [
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 22.900763358778626,
+              "width": 1,
+            },
+            undefined,
+          ]
         }
       />
       <View
@@ -602,7 +636,9 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -610,13 +646,15 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingHorizontal": 19.083969465648856,
-          }
+          [
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 19.083969465648856,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -818,17 +856,20 @@ exports[`UI Component Snapshots DealCard should match snapshot for vertical vari
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#D7D7D7",
-          "borderRadius": 30,
-          "borderWidth": 1,
-          "flexDirection": "row",
-          "height": 53.4351145038168,
-          "overflow": "hidden",
-          "width": 162.21374045801528,
-        }
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 53.4351145038168,
+            "overflow": "hidden",
+            "width": 162.21374045801528,
+          },
+          undefined,
+        ]
       }
     >
       <View
@@ -852,7 +893,9 @@ exports[`UI Component Snapshots DealCard should match snapshot for vertical vari
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -860,16 +903,18 @@ exports[`UI Component Snapshots DealCard should match snapshot for vertical vari
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "flex": 1,
-            "flexDirection": "row",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingLeft": 15.267175572519085,
-            "paddingRight": 3.816793893129771,
-          }
+          [
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 15.267175572519085,
+              "paddingRight": 3.816793893129771,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -880,13 +925,18 @@ exports[`UI Component Snapshots DealCard should match snapshot for vertical vari
         />
         <Text
           style={
-            {
-              "color": "#000000",
-              "fontFamily": "Inter",
-              "fontSize": 19.083969465648856,
-              "fontWeight": "400",
-              "marginLeft": 7.633587786259542,
-            }
+            [
+              {
+                "color": "#212121",
+              },
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 19.083969465648856,
+                "fontWeight": "400",
+                "marginLeft": 7.633587786259542,
+              },
+            ]
           }
         >
           42
@@ -894,11 +944,14 @@ exports[`UI Component Snapshots DealCard should match snapshot for vertical vari
       </View>
       <View
         style={
-          {
-            "backgroundColor": "#DEDEDE",
-            "height": 22.900763358778626,
-            "width": 1,
-          }
+          [
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 22.900763358778626,
+              "width": 1,
+            },
+            undefined,
+          ]
         }
       />
       <View
@@ -922,7 +975,9 @@ exports[`UI Component Snapshots DealCard should match snapshot for vertical vari
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -930,13 +985,15 @@ exports[`UI Component Snapshots DealCard should match snapshot for vertical vari
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingHorizontal": 19.083969465648856,
-          }
+          [
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 19.083969465648856,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -1127,17 +1184,20 @@ exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#D7D7D7",
-          "borderRadius": 30,
-          "borderWidth": 1,
-          "flexDirection": "row",
-          "height": 53.4351145038168,
-          "overflow": "hidden",
-          "width": 162.21374045801528,
-        }
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 53.4351145038168,
+            "overflow": "hidden",
+            "width": 162.21374045801528,
+          },
+          undefined,
+        ]
       }
     >
       <View
@@ -1161,7 +1221,9 @@ exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -1169,16 +1231,18 @@ exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "flex": 1,
-            "flexDirection": "row",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingLeft": 15.267175572519085,
-            "paddingRight": 3.816793893129771,
-          }
+          [
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 15.267175572519085,
+              "paddingRight": 3.816793893129771,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -1189,13 +1253,18 @@ exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`
         />
         <Text
           style={
-            {
-              "color": "#000000",
-              "fontFamily": "Inter",
-              "fontSize": 19.083969465648856,
-              "fontWeight": "400",
-              "marginLeft": 7.633587786259542,
-            }
+            [
+              {
+                "color": "#212121",
+              },
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 19.083969465648856,
+                "fontWeight": "400",
+                "marginLeft": 7.633587786259542,
+              },
+            ]
           }
         >
           42
@@ -1203,11 +1272,14 @@ exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`
       </View>
       <View
         style={
-          {
-            "backgroundColor": "#DEDEDE",
-            "height": 22.900763358778626,
-            "width": 1,
-          }
+          [
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 22.900763358778626,
+              "width": 1,
+            },
+            undefined,
+          ]
         }
       />
       <View
@@ -1231,7 +1303,9 @@ exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -1239,13 +1313,15 @@ exports[`UI Component Snapshots DealCard should match snapshot when favorited 1`
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingHorizontal": 19.083969465648856,
-          }
+          [
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 19.083969465648856,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -1436,17 +1512,20 @@ exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] 
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#D7D7D7",
-          "borderRadius": 30,
-          "borderWidth": 1,
-          "flexDirection": "row",
-          "height": 53.4351145038168,
-          "overflow": "hidden",
-          "width": 162.21374045801528,
-        }
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 53.4351145038168,
+            "overflow": "hidden",
+            "width": 162.21374045801528,
+          },
+          undefined,
+        ]
       }
     >
       <View
@@ -1470,7 +1549,9 @@ exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] 
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -1478,16 +1559,18 @@ exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] 
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "flex": 1,
-            "flexDirection": "row",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingLeft": 15.267175572519085,
-            "paddingRight": 3.816793893129771,
-          }
+          [
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 15.267175572519085,
+              "paddingRight": 3.816793893129771,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -1498,13 +1581,18 @@ exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] 
         />
         <Text
           style={
-            {
-              "color": "#000000",
-              "fontFamily": "Inter",
-              "fontSize": 19.083969465648856,
-              "fontWeight": "400",
-              "marginLeft": 7.633587786259542,
-            }
+            [
+              {
+                "color": "#212121",
+              },
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 19.083969465648856,
+                "fontWeight": "400",
+                "marginLeft": 7.633587786259542,
+              },
+            ]
           }
         >
           43
@@ -1512,11 +1600,14 @@ exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] 
       </View>
       <View
         style={
-          {
-            "backgroundColor": "#DEDEDE",
-            "height": 22.900763358778626,
-            "width": 1,
-          }
+          [
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 22.900763358778626,
+              "width": 1,
+            },
+            undefined,
+          ]
         }
       />
       <View
@@ -1540,7 +1631,9 @@ exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] 
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -1548,13 +1641,15 @@ exports[`UI Component Snapshots DealCard should match snapshot when upvoted 1`] 
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingHorizontal": 19.083969465648856,
-          }
+          [
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 19.083969465648856,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -1745,17 +1840,20 @@ exports[`UI Component Snapshots DealCard should match snapshot with delete butto
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "backgroundColor": "#FFFFFF",
-          "borderColor": "#D7D7D7",
-          "borderRadius": 30,
-          "borderWidth": 1,
-          "flexDirection": "row",
-          "height": 53.4351145038168,
-          "overflow": "hidden",
-          "width": 162.21374045801528,
-        }
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#D7D7D7",
+            "borderRadius": 30,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "height": 53.4351145038168,
+            "overflow": "hidden",
+            "width": 162.21374045801528,
+          },
+          undefined,
+        ]
       }
     >
       <View
@@ -1779,7 +1877,9 @@ exports[`UI Component Snapshots DealCard should match snapshot with delete butto
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -1787,16 +1887,18 @@ exports[`UI Component Snapshots DealCard should match snapshot with delete butto
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "flex": 1,
-            "flexDirection": "row",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingLeft": 15.267175572519085,
-            "paddingRight": 3.816793893129771,
-          }
+          [
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingLeft": 15.267175572519085,
+              "paddingRight": 3.816793893129771,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -1807,13 +1909,18 @@ exports[`UI Component Snapshots DealCard should match snapshot with delete butto
         />
         <Text
           style={
-            {
-              "color": "#000000",
-              "fontFamily": "Inter",
-              "fontSize": 19.083969465648856,
-              "fontWeight": "400",
-              "marginLeft": 7.633587786259542,
-            }
+            [
+              {
+                "color": "#212121",
+              },
+              {
+                "color": "#000000",
+                "fontFamily": "Inter",
+                "fontSize": 19.083969465648856,
+                "fontWeight": "400",
+                "marginLeft": 7.633587786259542,
+              },
+            ]
           }
         >
           42
@@ -1821,11 +1928,14 @@ exports[`UI Component Snapshots DealCard should match snapshot with delete butto
       </View>
       <View
         style={
-          {
-            "backgroundColor": "#DEDEDE",
-            "height": 22.900763358778626,
-            "width": 1,
-          }
+          [
+            {
+              "backgroundColor": "#DEDEDE",
+              "height": 22.900763358778626,
+              "width": 1,
+            },
+            undefined,
+          ]
         }
       />
       <View
@@ -1849,7 +1959,9 @@ exports[`UI Component Snapshots DealCard should match snapshot with delete butto
         accessible={true}
         collapsable={false}
         focusable={true}
+        onBlur={[Function]}
         onClick={[Function]}
+        onFocus={[Function]}
         onResponderGrant={[Function]}
         onResponderMove={[Function]}
         onResponderRelease={[Function]}
@@ -1857,13 +1969,15 @@ exports[`UI Component Snapshots DealCard should match snapshot with delete butto
         onResponderTerminationRequest={[Function]}
         onStartShouldSetResponder={[Function]}
         style={
-          {
-            "alignItems": "center",
-            "height": "100%",
-            "justifyContent": "center",
-            "opacity": 1,
-            "paddingHorizontal": 19.083969465648856,
-          }
+          [
+            {
+              "alignItems": "center",
+              "height": "100%",
+              "justifyContent": "center",
+              "paddingHorizontal": 19.083969465648856,
+            },
+            undefined,
+          ]
         }
       >
         <View
@@ -2725,17 +2839,20 @@ exports[`UI Component Snapshots SkeletonLoader should match snapshot with percen
 exports[`UI Component Snapshots VoteButtons should match snapshot for default state 1`] = `
 <View
   style={
-    {
-      "alignItems": "center",
-      "backgroundColor": "#FFFFFF",
-      "borderColor": "#D7D7D7",
-      "borderRadius": 30,
-      "borderWidth": 1,
-      "flexDirection": "row",
-      "height": 53.4351145038168,
-      "overflow": "hidden",
-      "width": 162.21374045801528,
-    }
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -2759,7 +2876,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot for default st
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -2767,16 +2886,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot for default st
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "flex": 1,
-        "flexDirection": "row",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingLeft": 15.267175572519085,
-        "paddingRight": 3.816793893129771,
-      }
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -2787,13 +2908,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot for default st
     />
     <Text
       style={
-        {
-          "color": "#000000",
-          "fontFamily": "Inter",
-          "fontSize": 19.083969465648856,
-          "fontWeight": "400",
-          "marginLeft": 7.633587786259542,
-        }
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
       }
     >
       10
@@ -2801,11 +2927,14 @@ exports[`UI Component Snapshots VoteButtons should match snapshot for default st
   </View>
   <View
     style={
-      {
-        "backgroundColor": "#DEDEDE",
-        "height": 22.900763358778626,
-        "width": 1,
-      }
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
     }
   />
   <View
@@ -2829,7 +2958,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot for default st
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -2837,13 +2968,15 @@ exports[`UI Component Snapshots VoteButtons should match snapshot for default st
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingHorizontal": 19.083969465648856,
-      }
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -2859,17 +2992,20 @@ exports[`UI Component Snapshots VoteButtons should match snapshot for default st
 exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted 1`] = `
 <View
   style={
-    {
-      "alignItems": "center",
-      "backgroundColor": "#FFFFFF",
-      "borderColor": "#D7D7D7",
-      "borderRadius": 30,
-      "borderWidth": 1,
-      "flexDirection": "row",
-      "height": 53.4351145038168,
-      "overflow": "hidden",
-      "width": 162.21374045801528,
-    }
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -2893,7 +3029,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -2901,16 +3039,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "flex": 1,
-        "flexDirection": "row",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingLeft": 15.267175572519085,
-        "paddingRight": 3.816793893129771,
-      }
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -2921,13 +3061,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted
     />
     <Text
       style={
-        {
-          "color": "#000000",
-          "fontFamily": "Inter",
-          "fontSize": 19.083969465648856,
-          "fontWeight": "400",
-          "marginLeft": 7.633587786259542,
-        }
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
       }
     >
       9
@@ -2935,11 +3080,14 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted
   </View>
   <View
     style={
-      {
-        "backgroundColor": "#DEDEDE",
-        "height": 22.900763358778626,
-        "width": 1,
-      }
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
     }
   />
   <View
@@ -2963,7 +3111,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -2971,13 +3121,15 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingHorizontal": 19.083969465648856,
-      }
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -2993,17 +3145,20 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when downvoted
 exports[`UI Component Snapshots VoteButtons should match snapshot when favorited 1`] = `
 <View
   style={
-    {
-      "alignItems": "center",
-      "backgroundColor": "#FFFFFF",
-      "borderColor": "#D7D7D7",
-      "borderRadius": 30,
-      "borderWidth": 1,
-      "flexDirection": "row",
-      "height": 53.4351145038168,
-      "overflow": "hidden",
-      "width": 162.21374045801528,
-    }
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -3027,7 +3182,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when favorited
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -3035,16 +3192,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when favorited
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "flex": 1,
-        "flexDirection": "row",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingLeft": 15.267175572519085,
-        "paddingRight": 3.816793893129771,
-      }
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -3055,13 +3214,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when favorited
     />
     <Text
       style={
-        {
-          "color": "#000000",
-          "fontFamily": "Inter",
-          "fontSize": 19.083969465648856,
-          "fontWeight": "400",
-          "marginLeft": 7.633587786259542,
-        }
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
       }
     >
       10
@@ -3069,11 +3233,14 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when favorited
   </View>
   <View
     style={
-      {
-        "backgroundColor": "#DEDEDE",
-        "height": 22.900763358778626,
-        "width": 1,
-      }
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
     }
   />
   <View
@@ -3097,7 +3264,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when favorited
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -3105,13 +3274,15 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when favorited
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingHorizontal": 19.083969465648856,
-      }
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -3127,17 +3298,20 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when favorited
 exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1`] = `
 <View
   style={
-    {
-      "alignItems": "center",
-      "backgroundColor": "#FFFFFF",
-      "borderColor": "#D7D7D7",
-      "borderRadius": 30,
-      "borderWidth": 1,
-      "flexDirection": "row",
-      "height": 53.4351145038168,
-      "overflow": "hidden",
-      "width": 162.21374045801528,
-    }
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -3161,7 +3335,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -3169,16 +3345,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "flex": 1,
-        "flexDirection": "row",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingLeft": 15.267175572519085,
-        "paddingRight": 3.816793893129771,
-      }
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -3189,13 +3367,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1
     />
     <Text
       style={
-        {
-          "color": "#000000",
-          "fontFamily": "Inter",
-          "fontSize": 19.083969465648856,
-          "fontWeight": "400",
-          "marginLeft": 7.633587786259542,
-        }
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
       }
     >
       11
@@ -3203,11 +3386,14 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1
   </View>
   <View
     style={
-      {
-        "backgroundColor": "#DEDEDE",
-        "height": 22.900763358778626,
-        "width": 1,
-      }
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
     }
   />
   <View
@@ -3231,7 +3417,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -3239,13 +3427,15 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingHorizontal": 19.083969465648856,
-      }
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -3261,17 +3451,20 @@ exports[`UI Component Snapshots VoteButtons should match snapshot when upvoted 1
 exports[`UI Component Snapshots VoteButtons should match snapshot with all states active 1`] = `
 <View
   style={
-    {
-      "alignItems": "center",
-      "backgroundColor": "#FFFFFF",
-      "borderColor": "#D7D7D7",
-      "borderRadius": 30,
-      "borderWidth": 1,
-      "flexDirection": "row",
-      "height": 53.4351145038168,
-      "overflow": "hidden",
-      "width": 162.21374045801528,
-    }
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -3295,7 +3488,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot with all state
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -3303,16 +3498,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot with all state
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "flex": 1,
-        "flexDirection": "row",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingLeft": 15.267175572519085,
-        "paddingRight": 3.816793893129771,
-      }
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
     }
   >
     <View
@@ -3323,13 +3520,18 @@ exports[`UI Component Snapshots VoteButtons should match snapshot with all state
     />
     <Text
       style={
-        {
-          "color": "#000000",
-          "fontFamily": "Inter",
-          "fontSize": 19.083969465648856,
-          "fontWeight": "400",
-          "marginLeft": 7.633587786259542,
-        }
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
       }
     >
       15
@@ -3337,11 +3539,14 @@ exports[`UI Component Snapshots VoteButtons should match snapshot with all state
   </View>
   <View
     style={
-      {
-        "backgroundColor": "#DEDEDE",
-        "height": 22.900763358778626,
-        "width": 1,
-      }
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
     }
   />
   <View
@@ -3365,7 +3570,9 @@ exports[`UI Component Snapshots VoteButtons should match snapshot with all state
     accessible={true}
     collapsable={false}
     focusable={true}
+    onBlur={[Function]}
     onClick={[Function]}
+    onFocus={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -3373,13 +3580,15 @@ exports[`UI Component Snapshots VoteButtons should match snapshot with all state
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "height": "100%",
-        "justifyContent": "center",
-        "opacity": 1,
-        "paddingHorizontal": 19.083969465648856,
-      }
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
     }
   >
     <View
