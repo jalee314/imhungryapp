@@ -1,10 +1,19 @@
+/**
+ * BottomNavigation
+ *
+ * A bottom navigation bar component with tab icons and profile photo.
+ * Migrated to use ALF primitives (PR-029).
+ */
+
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons'; // CHANGED: Back to original
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchUserData } from '../services/userService';
 import { useAuth } from '../hooks/useAuth';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
+import { Box, Text } from '../ui/primitives';
+import { GRAY, STATIC } from '../ui/alf/tokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -135,18 +144,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
           style={styles.navItem}
           onPress={() => handleTabPress(item.screen)}
         >
-          <View style={styles.iconContainer}>
+          <Box w={ICON_SIZE} h={ICON_SIZE} center>
             {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
               <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
             ) : displayPhotoUrl ? (
               <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
             ) : (
-              <View style={[styles.navProfilePlaceholder, isActive && styles.activeNavProfilePhoto]}>
-                <Text style={styles.navPlaceholderText}>👤</Text>
-              </View>
+              <Box w={PROFILE_SIZE} h={PROFILE_SIZE} rounded="full" bg={GRAY[300]} center style={[styles.navProfilePlaceholderBorder, isActive && styles.activeNavProfilePhoto]}>
+                <Text size="xs" color="textMuted">👤</Text>
+              </Box>
             )}
-          </View>
-          <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
+          </Box>
+          <Text size="xs" color={isActive ? 'text' : 'textMuted'} style={styles.navLabelMargin}>{item.label}</Text>
         </TouchableOpacity>
       );
     }
@@ -160,23 +169,33 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         ]}
         onPress={() => handleTabPress(item.screen)}
       >
-        <View style={styles.iconContainer}>
+        <Box w={ICON_SIZE} h={ICON_SIZE} center>
           <MaterialCommunityIcons
             name={isActive ? item.activeIcon : item.icon} 
             size={ICON_SIZE} 
-            color={isActive ? '#000000' : '#757575'} 
+            color={isActive ? STATIC.black : GRAY[600]} 
           />
-        </View>
-        <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>{item.label}</Text>
+        </Box>
+        <Text size="xs" color={isActive ? 'text' : 'textMuted'} style={styles.navLabelMargin}>{item.label}</Text>
       </TouchableOpacity>
     );
   };
 
   return (
     <>
-      <View style={styles.bottomNav}>
+      <Box
+        row
+        position="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        justify="space-around"
+        align="center"
+        bg="background"
+        style={styles.bottomNavBorder}
+      >
         {navItems.map(renderNavItem)}
-      </View>
+      </Box>
       
       <DealCreationScreen
         visible={showContributeModal}
@@ -189,21 +208,14 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   );
 };
 
+// Minimal legacy styles for properties not yet in primitives
 const styles = StyleSheet.create({
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    backgroundColor: '#fdfdfd',
+  bottomNavBorder: {
     borderTopWidth: 0.5,
     borderTopColor: '#bcbcbc',
     paddingTop: scale(4),
     paddingBottom: scale(32),
     paddingHorizontal: scale(8),
-    justifyContent: 'space-around',
-    alignItems: 'center',
   },
   navItem: {
     alignItems: 'center',
@@ -212,23 +224,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(4),
     flex: 1,
   },
-  iconContainer: {
-    height: ICON_SIZE,
-    width: ICON_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navLabel: {
-    fontSize: scale(12),
-    color: '#757575',
-    fontWeight: '400',
+  navLabelMargin: {
     marginTop: scale(4),
     textAlign: 'center',
     width: '100%',
-  },
-  activeNavLabel: {
-    color: '#000000',
-    fontWeight: '400',
   },
   navProfilePhoto: {
     width: PROFILE_SIZE,
@@ -238,21 +237,11 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   activeNavProfilePhoto: {
-    borderColor: '#000000',
+    borderColor: STATIC.black,
   },
-  navProfilePlaceholder: {
-    width: PROFILE_SIZE,
-    height: PROFILE_SIZE,
-    borderRadius: PROFILE_SIZE / 2,
-    backgroundColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
+  navProfilePlaceholderBorder: {
     borderWidth: 1.5,
     borderColor: 'transparent',
-  },
-  navPlaceholderText: {
-    fontSize: scale(12),
-    color: '#999',
   },
 });
 
