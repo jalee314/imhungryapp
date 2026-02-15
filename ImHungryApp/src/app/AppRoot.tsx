@@ -3,7 +3,7 @@
  * 
  * Main application root component that composes:
  * - AppProviders for store initialization
- * - Bootstrap hook for font loading
+ * - FontGate for font loading gate
  * - AppContent for main navigation
  * 
  * This module extracts the app shell structure from App.tsx to enable
@@ -11,9 +11,8 @@
  */
 
 import React from 'react';
-import { View, Image } from 'react-native';
 import { AppProviders } from './providers';
-import { useBootstrap } from './hooks';
+import { FontGate } from './gates';
 
 export interface AppRootProps {
   /** Content to render after bootstrap (AppContent component) */
@@ -21,34 +20,10 @@ export interface AppRootProps {
 }
 
 /**
- * LoadingScreen - Displayed during app bootstrap
- */
-const LoadingScreen: React.FC = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
-    <Image
-      source={require('../../assets/images/icon_splash.png')}
-      style={{ width: 200, height: 200, resizeMode: 'contain' }}
-    />
-  </View>
-);
-
-/**
- * Internal component that handles bootstrap state and renders content
- */
-const BootstrapGate: React.FC<AppRootProps> = ({ children }) => {
-  const { isReady } = useBootstrap();
-
-  if (!isReady) {
-    return <LoadingScreen />;
-  }
-
-  return <>{children}</>;
-};
-
-/**
  * AppRoot - Main application root component
  * 
  * Composes providers and bootstrap logic to create the app shell.
+ * Uses FontGate to block rendering until fonts are loaded.
  * 
  * @example
  * ```tsx
@@ -65,17 +40,19 @@ const BootstrapGate: React.FC<AppRootProps> = ({ children }) => {
 export const AppRoot: React.FC<AppRootProps> = ({ children }) => {
   return (
     <AppProviders>
-      <BootstrapGate>
+      <FontGate>
         {children}
-      </BootstrapGate>
+      </FontGate>
     </AppProviders>
   );
 };
 
 export default AppRoot;
 
-// Re-export providers and hooks for convenience
+// Re-export providers, hooks, and gates for convenience
 export { AppProviders } from './providers';
 export { useBootstrap } from './hooks';
+export { FontGate, SplashGate } from './gates';
 export type { BootstrapState, UseBootstrapOptions } from './hooks';
 export type { AppProvidersProps } from './providers';
+export type { FontGateProps, SplashGateProps } from './gates';
