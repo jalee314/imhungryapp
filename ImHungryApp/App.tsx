@@ -11,6 +11,9 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
+
+// App shell modules (PR-019)
+import { AppRoot } from './src/app';
 import * as Linking from 'expo-linking';
 import { useAuth } from './src/hooks/useAuth';
 import { useInitializeAuth } from './src/stores/AuthStore';
@@ -357,9 +360,16 @@ const AppContent = () => {
   );
 };
 
+// Feature flag for app shell transition (PR-019)
+// Set to true to use new app shell, false to use legacy bootstrap
+// Keep old code path reachable during transition
+const USE_APP_SHELL = true;
 
-
-export default function App() {
+/**
+ * Legacy App component - preserves original bootstrap behavior
+ * Kept for rollback capability during app shell transition
+ */
+function AppLegacy() {
   // Initialize Zustand auth store once at app start
   useInitializeAuth();
   // Initialize admin store once at app start
@@ -413,5 +423,26 @@ export default function App() {
   );
 }
 
+/**
+ * New App component using app shell (PR-019)
+ * Delegates to AppRoot for provider composition and bootstrap
+ */
+function AppWithShell() {
+  return (
+    <AppRoot>
+      <AppContent />
+    </AppRoot>
+  );
+}
 
+/**
+ * Main App entry point
+ * Routes to app shell or legacy bootstrap based on feature flag
+ */
+export default function App() {
+  return USE_APP_SHELL ? <AppWithShell /> : <AppLegacy />;
+}
+
+// Export legacy component for testing/rollback
+export { AppLegacy, AppWithShell };
 
