@@ -34,5 +34,8 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Run style guardrails
+        run: npm run style-guardrails
+
       - name: Run tests
         run: npm run test:ci
