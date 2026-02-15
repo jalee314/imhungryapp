@@ -21,14 +21,14 @@ import DealCardSkeleton from '../../components/DealCardSkeleton';
 import CuisineFilter from '../../components/CuisineFilter';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import { fetchRankedDeals, transformDealForUI } from '../../services/dealService';
-import { toggleUpvote, toggleDownvote, toggleFavorite, calculateVoteCounts } from '../../services/voteService';
+import { calculateVoteCounts } from '../../services/voteService';
 import { supabase } from '../../../lib/supabase';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useDataCache } from '../../hooks/useDataCache';
 import { useLocation } from '../../context/LocationContext';
-import { useFavorites } from '../../hooks/useFavorites';  
+import { useFeedInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';  
 
 /**
  * Get the current authenticated user's ID
@@ -48,13 +48,18 @@ const Feed: React.FC = () => {
   const { getUpdatedDeal, clearUpdatedDeal, postAdded, setPostAdded } = useDealUpdate();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
   const { currentLocation, updateLocation, selectedCoordinates, hasLocationSet, hasLocationPermission, isInitialLoad, isLoading: isLocationLoading } = useLocation();
-  const { markAsUnfavorited, markAsFavorited } = useFavorites();
   
   const [selectedCuisineId, setSelectedCuisineId] = useState<string>('All');
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Use shared interaction handlers for optimistic updates
+  const { handleUpvote, handleDownvote, handleFavorite } = useFeedInteractionHandlers({
+    deals,
+    setDeals,
+  });
 
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
@@ -275,102 +280,7 @@ const Feed: React.FC = () => {
     }
   }, []);
 
-  // Handlers - optimistic updates happen synchronously to prevent flickering
-  const handleUpvote = (dealId: string) => {
-    let originalDeal: Deal | undefined;
-    
-    // Synchronous optimistic update - no setTimeout to prevent flicker
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          const wasUpvoted = d.isUpvoted;
-          const wasDownvoted = d.isDownvoted;
-          return {
-            ...d,
-            isUpvoted: !wasUpvoted,
-            isDownvoted: false,
-            votes: wasUpvoted ? d.votes - 1 : (wasDownvoted ? d.votes + 2 : d.votes + 1)
-          };
-        }
-        return d;
-      });
-    });
-    
-    // Background database save
-    toggleUpvote(dealId).catch((err) => {
-      console.error('Failed to save upvote, reverting:', err);
-      if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
-      }
-    });
-  };
-
-  const handleDownvote = (dealId: string) => {
-    let originalDeal: Deal | undefined;
-    
-    // Synchronous optimistic update - no setTimeout to prevent flicker
-    setDeals(prevDeals => {
-      return prevDeals.map(d => {
-        if (d.id === dealId) {
-          originalDeal = d;
-          const wasDownvoted = d.isDownvoted;
-          const wasUpvoted = d.isUpvoted;
-          return {
-            ...d,
-            isDownvoted: !wasDownvoted,
-            isUpvoted: false,
-            votes: wasDownvoted ? d.votes + 1 : (wasUpvoted ? d.votes - 2 : d.votes - 1)
-          };
-        }
-        return d;
-      });
-    });
-    
-    // Background database save
-    toggleDownvote(dealId).catch((err) => {
-      console.error('Failed to save downvote, reverting:', err);
-      if (originalDeal) {
-        setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal! : d));
-      }
-    });
-  };
-
-  const handleFavorite = (dealId: string) => {
-    const originalDeal = deals.find(d => d.id === dealId);
-    if (!originalDeal) return;
-    const wasFavorited = originalDeal.isFavorited;
-    
-    // 1. Instant UI update
-    setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? { ...d, isFavorited: !wasFavorited } : d));
-    
-    // 2. Notify global store for instant favorites page update
-    if (wasFavorited) {
-      markAsUnfavorited(dealId, 'deal');
-    } else {
-      // Pass full deal data for instant display in favorites
-      markAsFavorited(dealId, 'deal', {
-        id: originalDeal.id,
-        title: originalDeal.title,
-        description: originalDeal.details || '',
-        imageUrl: typeof originalDeal.image === 'object' ? originalDeal.image.uri : '',
-        restaurantName: originalDeal.restaurant,
-        restaurantAddress: originalDeal.restaurantAddress || '',
-        distance: originalDeal.milesAway || '',
-        userId: originalDeal.userId,
-        userDisplayName: originalDeal.userDisplayName,
-        userProfilePhoto: originalDeal.userProfilePhoto,
-        isAnonymous: originalDeal.isAnonymous,
-        favoritedAt: new Date().toISOString(),
-      });
-    }
-    
-    // 3. Background database save
-    toggleFavorite(dealId, wasFavorited).catch((err) => {
-      console.error('Failed to save favorite, reverting:', err);
-      setDeals(prevDeals => prevDeals.map(d => d.id === dealId ? originalDeal : d));
-    });
-  };
+  // Note: handleUpvote, handleDownvote, handleFavorite are provided by useFeedInteractionHandlers
   
   const handleDealPress = (dealId: string) => {
     const selectedDeal = deals.find(deal => deal.id === dealId);
