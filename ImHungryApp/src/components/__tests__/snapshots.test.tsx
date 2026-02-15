@@ -229,10 +229,8 @@ describe('UI Component Snapshots', () => {
           votes={10}
           isUpvoted={false}
           isDownvoted={false}
-          isFavorited={false}
           onUpvote={() => {}}
           onDownvote={() => {}}
-          onFavorite={() => {}}
         />
       ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
@@ -244,10 +242,8 @@ describe('UI Component Snapshots', () => {
           votes={11}
           isUpvoted={true}
           isDownvoted={false}
-          isFavorited={false}
           onUpvote={() => {}}
           onDownvote={() => {}}
-          onFavorite={() => {}}
         />
       ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
@@ -259,10 +255,8 @@ describe('UI Component Snapshots', () => {
           votes={9}
           isUpvoted={false}
           isDownvoted={true}
-          isFavorited={false}
           onUpvote={() => {}}
           onDownvote={() => {}}
-          onFavorite={() => {}}
         />
       ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
@@ -274,10 +268,8 @@ describe('UI Component Snapshots', () => {
           votes={10}
           isUpvoted={false}
           isDownvoted={false}
-          isFavorited={true}
           onUpvote={() => {}}
           onDownvote={() => {}}
-          onFavorite={() => {}}
         />
       ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
@@ -289,10 +281,8 @@ describe('UI Component Snapshots', () => {
           votes={15}
           isUpvoted={true}
           isDownvoted={false}
-          isFavorited={true}
           onUpvote={() => {}}
           onDownvote={() => {}}
-          onFavorite={() => {}}
         />
       ); const tree = toJSON();
       expect(tree).toMatchSnapshot();
