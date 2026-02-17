@@ -23,10 +23,9 @@ import { Monicon } from '@monicon/native';
 import { Deal } from '../../components/DealCard';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
 import VoteButtons from '../../components/VoteButtons';
-import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../services/voteService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
-import { useFavorites } from '../../hooks/useFavorites';
+import { useSingleDealInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
 import SkeletonLoader from '../../components/SkeletonLoader';
 import OptimizedImage from '../../components/OptimizedImage';
 import MapSelectionModal from '../../components/MapSelectionModal';
@@ -49,7 +48,6 @@ const DealDetailScreen: React.FC = () => {
   const route = useRoute<DealDetailRouteProp>();
   const { deal } = route.params;
   const { updateDeal, postAdded, setPostAdded } = useDealUpdate();
-  const { markAsUnfavorited, markAsFavorited } = useFavorites();
 
   // Local state for deal interactions
   const [dealData, setDealData] = useState<Deal>(deal);
@@ -448,91 +446,11 @@ const DealDetailScreen: React.FC = () => {
     return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
   };
 
-  const handleUpvote = () => {
-    const previousState = { ...dealData };
-    const wasUpvoted = previousState.isUpvoted;
-    const wasDownvoted = previousState.isDownvoted;
-
-    // 1. INSTANT UI update (synchronous)
-    setDealData({
-      ...previousState,
-      votes: wasUpvoted
-        ? previousState.votes - 1
-        : (wasDownvoted ? previousState.votes + 2 : previousState.votes + 1),
-      isUpvoted: !wasUpvoted,
-      isDownvoted: false,
-    });
-
-    // 2. Background database save (async, fire and forget)
-    toggleUpvote(previousState.id).catch((err) => {
-      console.error('Failed to save upvote, reverting:', err);
-      setDealData(previousState);
-    });
-  };
-
-  const handleDownvote = () => {
-    const previousState = { ...dealData };
-    const wasDownvoted = previousState.isDownvoted;
-    const wasUpvoted = previousState.isUpvoted;
-
-    // 1. INSTANT UI update
-    setDealData({
-      ...previousState,
-      votes: wasDownvoted
-        ? previousState.votes + 1
-        : (wasUpvoted ? previousState.votes - 2 : previousState.votes - 1),
-      isDownvoted: !wasDownvoted,
-      isUpvoted: false,
-    });
-
-    // 2. Background database save
-    toggleDownvote(previousState.id).catch((err) => {
-      console.error('Failed to save downvote, reverting:', err);
-      setDealData(previousState);
-    });
-  };
-
-  const handleFavorite = () => {
-    const previousState = { ...dealData };
-    const wasFavorited = previousState.isFavorited;
-
-    console.log('🔄 Toggling favorite for deal:', previousState.id, 'was favorited:', wasFavorited, '-> will be:', !wasFavorited);
-
-    // 1. INSTANT UI update
-    setDealData({
-      ...previousState,
-      isFavorited: !wasFavorited,
-    });
-
-    // 2. Notify global store immediately so FavoritesPage updates instantly
-    if (wasFavorited) {
-      // Unfavoriting - mark as removed
-      markAsUnfavorited(previousState.id, 'deal');
-    } else {
-      // Favoriting - pass full deal data for instant UI in favorites page
-      markAsFavorited(previousState.id, 'deal', {
-        id: previousState.id,
-        title: previousState.title,
-        description: previousState.details || '',
-        imageUrl: typeof previousState.image === 'object' ? previousState.image.uri : '',
-        restaurantName: previousState.restaurant,
-        restaurantAddress: previousState.restaurantAddress || '',
-        distance: previousState.milesAway || '',
-        userId: previousState.userId,
-        userDisplayName: previousState.userDisplayName,
-        userProfilePhoto: previousState.userProfilePhoto,
-        isAnonymous: previousState.isAnonymous,
-        favoritedAt: new Date().toISOString(),
-      });
-    }
-
-    // 3. Background database save
-    console.log('💾 Calling toggleFavorite with wasFavorited:', wasFavorited);
-    toggleFavorite(previousState.id, wasFavorited).catch((err) => {
-      console.error('Failed to save favorite, reverting:', err);
-      setDealData(previousState);
-    });
-  };
+  // Use shared interaction handlers for optimistic updates
+  const { handleUpvote, handleDownvote, handleFavorite } = useSingleDealInteractionHandlers({
+    deal: dealData,
+    setDeal: setDealData,
+  });
 
   const handleShare = async () => {
     try {

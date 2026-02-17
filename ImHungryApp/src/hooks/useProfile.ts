@@ -16,6 +16,7 @@ import {
 import { useDealUpdate } from './useDealUpdate';
 import { useFavorites } from './useFavorites';
 import { useAdminStore } from '../stores/AdminStore';
+import { calculateUpvoteToggle, calculateDownvoteToggle } from './useFeedInteractionHandlers';
 
 // Types kept intentionally broad to avoid tight coupling; can refine later
 export interface UseProfileParams {
@@ -330,14 +331,14 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     }, [viewUser, postAdded, refreshProfile, loadUserPosts, setPostAdded, getUpdatedDeal, clearUpdatedDeal])
   );
 
-  // ---------- Optimistic vote/favorite handlers ----------
+  // ---------- Optimistic vote/favorite handlers (using shared calculation utilities) ----------
   const onUpvote = (dealId: string) => {
     let original: any | undefined;
     setUserPosts(prev => prev.map(d => {
       if (d.id === dealId) {
         original = d;
-        const wasUp = d.isUpvoted; const wasDown = d.isDownvoted;
-        return { ...d, isUpvoted: !wasUp, isDownvoted: false, votes: wasUp ? d.votes - 1 : (wasDown ? d.votes + 2 : d.votes + 1) };
+        const changes = calculateUpvoteToggle(d);
+        return { ...d, ...changes };
       }
       return d;
     }));
@@ -352,8 +353,8 @@ export const useProfile = ({ navigation, route }: UseProfileParams): UseProfileR
     setUserPosts(prev => prev.map(d => {
       if (d.id === dealId) {
         original = d;
-        const wasDown = d.isDownvoted; const wasUp = d.isUpvoted;
-        return { ...d, isDownvoted: !wasDown, isUpvoted: false, votes: wasDown ? d.votes + 1 : (wasUp ? d.votes - 2 : d.votes - 1) };
+        const changes = calculateDownvoteToggle(d);
+        return { ...d, ...changes };
       }
       return d;
     }));
