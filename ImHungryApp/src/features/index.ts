@@ -9,3 +9,6 @@ export * from './interactions';
 
 // Contribution form engine & sections
 export * from './contribution';
+
+// Deal-detail feature (decomposed DealDetailScreen)
+export * from './deal-detail';

@@ -27,9 +27,13 @@ export const BRAND = {
  */
 export const GRAY = {
   50: '#FAFAFA',
+  75: '#F8F8F8',
   100: '#F5F5F5',
+  150: '#F0F0F0',
   200: '#EEEEEE',
+  250: '#DEDEDE',
   300: '#E0E0E0',
+  325: '#D7D7D7',
   350: '#C1C1C1',
   400: '#BDBDBD',
   500: '#9E9E9E',
