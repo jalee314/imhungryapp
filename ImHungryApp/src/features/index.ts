@@ -6,3 +6,6 @@
 
 // Interactions feature
 export * from './interactions';
+
+// Contribution form engine & sections
+export * from './contribution';
