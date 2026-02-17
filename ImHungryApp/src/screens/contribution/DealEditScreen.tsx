@@ -1,12 +1,19 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+/**
+ * @file DealEditScreen — Edit an existing deal
+ *
+ * Migrated to the shared contribution form engine (useDealForm) for text
+ * fields, validation, and dirty tracking.  Image management remains
+ * screen-specific because the edit flow operates on remote images with
+ * metadata IDs, pending removals, uploads, and display-order updates.
+ *
+ * UI uses ALF primitives (Box, Text) and design tokens instead of raw
+ * StyleSheet / inline literals.
+ */
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  TextInput,
-  Switch,
   Alert,
   ActivityIndicator,
   Image,
@@ -39,65 +46,58 @@ import {
   updateDealImageOrder,
   DealEditData,
 } from '../../services/dealService';
+import { Box, Text } from '../../ui/primitives';
+import {
+  BRAND,
+  GRAY,
+  STATIC,
+  ALPHA_COLORS,
+  SPACING,
+  RADIUS,
+  OPACITY,
+  ICON_SIZE,
+  DIMENSION,
+  SEMANTIC,
+  SHADOW,
+  CAMERA,
+} from '../../ui/alf';
+import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
+import {
+  TitleSection,
+  DetailsSection,
+  DateRow,
+  AnonymousToggle,
+  FormDivider,
+} from '../../features/contribution/sections';
 
 const { width: screenWidth } = Dimensions.get('window');
-const MAX_PHOTOS = 5;
 
 type DealEditRouteProp = RouteProp<{ DealEdit: { dealId: string } }, 'DealEdit'>;
+
+/** Image shape used by the edit screen's image management state. */
+interface EditImage {
+  imageMetadataId: string;
+  url: string;
+  isNew?: boolean;
+  localUri?: string;
+  /** The source image we always re-crop from (never changes once set). */
+  originalUri?: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Outer Shell — handles loading, error states, and data fetching
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export default function DealEditScreen() {
   const navigation = useNavigation();
   const route = useRoute<DealEditRouteProp>();
   const { dealId } = route.params;
-  const { setPostAdded } = useDealUpdate();
 
-  // Loading states
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  // Deal data
   const [dealData, setDealData] = useState<DealEditData | null>(null);
-  const [dealTitle, setDealTitle] = useState('');
-  const [dealDetails, setDealDetails] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [expirationDate, setExpirationDate] = useState<string | null>(null);
 
-  // Image management
-  const [images, setImages] = useState<Array<{
-    imageMetadataId: string;
-    url: string;
-    isNew?: boolean;
-    localUri?: string;
-    // The source image we always re-crop from (never changes once set)
-    originalUri?: string;
-  }>>([]);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [pendingNewImages, setPendingNewImages] = useState<string[]>([]);
-  // Parallel array to keep track of which temp image each pendingNewImages entry belongs to
-  const [pendingNewImageTempIds, setPendingNewImageTempIds] = useState<string[]>([]);
-  const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
-
-  // Modal states
-  const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
-  const [isCameraModalVisible, setIsCameraModalVisible] = useState(false);
-
-  // Cropping state
-  const [isCropperVisible, setIsCropperVisible] = useState(false);
-  const [pendingCropUri, setPendingCropUri] = useState<string | null>(null);
-  // Track the image by ID (not list index) so filtering doesn't break edits
-  const [editingImageId, setEditingImageId] = useState<string | null>(null);
-  const [isInstagramPickerVisible, setIsInstagramPickerVisible] = useState(false);
-
-  // Ref for carousel
-  const carouselRef = React.useRef<FlatList>(null);
-
-  // Load deal data
-  useEffect(() => {
-    loadDealData();
-  }, [dealId]);
-
-  const loadDealData = async () => {
+  const loadDealData = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
 
@@ -111,52 +111,190 @@ export default function DealEditScreen() {
       return;
     }
 
-    const data = result.data;
     console.log('DealEditScreen: Deal loaded successfully:', {
-      title: data.title,
-      imageCount: data.images.length,
+      title: result.data.title,
+      imageCount: result.data.images.length,
     });
 
-    setDealData(data);
-    setDealTitle(data.title);
-    setDealDetails(data.description || '');
-    setIsAnonymous(data.isAnonymous);
-    setExpirationDate(data.expirationDate);
-
-    // Set images - sorted by display order, first image is the cover/thumbnail
-    const loadedImages = data.images
-      .sort((a, b) => a.displayOrder - b.displayOrder)
-      .map(img => ({
-        imageMetadataId: img.imageMetadataId,
-        url: img.url,
-        isNew: false,
-        originalUri: img.url,
-      }));
-    console.log('DealEditScreen: Setting images:', loadedImages.length);
-    setImages(loadedImages);
-
+    setDealData(result.data);
     setIsLoading(false);
-  };
+  }, [dealId]);
 
-  // Handle date selection
-  const handleDateSelect = (date: string) => {
-    setExpirationDate(date);
+  useEffect(() => {
+    loadDealData();
+  }, [loadDealData]);
+
+  // ── Loading state ─────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+        <StatusBar style="dark" />
+        <Box flex={1} center>
+          <ActivityIndicator size="large" color={BRAND.accent} />
+          <Text
+            size="xs"
+            color={GRAY[600]}
+            mt="lg"
+            style={{ fontFamily: 'Inter' }}
+          >
+            Loading deal...
+          </Text>
+        </Box>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Error state ───────────────────────────────────────────────────────────
+  if (loadError) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+        <StatusBar style="dark" />
+        <Box flex={1} center px="2xl">
+          <MaterialCommunityIcons name="alert-circle" size={48} color={SEMANTIC.error} />
+          <Text
+            size="xs"
+            color={GRAY[600]}
+            mt="lg"
+            style={{ textAlign: 'center', fontFamily: 'Inter' }}
+          >
+            {loadError}
+          </Text>
+          <TouchableOpacity
+            style={{
+              marginTop: SPACING['2xl'],
+              backgroundColor: ALPHA_COLORS.brandPrimary80,
+              paddingHorizontal: SPACING['3xl'],
+              paddingVertical: SPACING.md,
+              borderRadius: RADIUS.pill,
+            }}
+            onPress={loadDealData}
+          >
+            <Text size="xs" color={STATIC.black} style={{ fontFamily: 'Inter' }}>
+              Retry
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginTop: SPACING.md, paddingVertical: SPACING.md }}
+            onPress={() => navigation.goBack()}
+          >
+            <Text size="xs" color={GRAY[600]} style={{ fontFamily: 'Inter' }}>
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        </Box>
+      </SafeAreaView>
+    );
+  }
+
+  return <DealEditForm dealId={dealId} dealData={dealData!} />;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Inner Form — uses the shared form engine for state + validation
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function DealEditForm({
+  dealId,
+  dealData,
+}: {
+  dealId: string;
+  dealData: DealEditData;
+}) {
+  const navigation = useNavigation();
+  const { setPostAdded } = useDealUpdate();
+
+  // ── Build initial image list from loaded data ─────────────────────────────
+  const initialImages = useMemo<EditImage[]>(
+    () =>
+      [...dealData.images]
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map((img) => ({
+          imageMetadataId: img.imageMetadataId,
+          url: img.url,
+          isNew: false,
+          originalUri: img.url,
+        })),
+    [dealData],
+  );
+
+  // ── Form engine (replaces local title / details / anonymous / date state) ─
+  const form = useDealForm({
+    mode: 'edit',
+    initialValues: {
+      title: dealData.title,
+      details: dealData.description || '',
+      isAnonymous: dealData.isAnonymous,
+      expirationDate: dealData.expirationDate,
+      imageUris: initialImages.map((img) => img.url),
+    },
+  });
+
+  // ── Image management (edit-specific: metadata IDs, pending ops) ───────────
+  const [images, setImages] = useState<EditImage[]>(initialImages);
+  const [pendingNewImages, setPendingNewImages] = useState<string[]>([]);
+  const [pendingNewImageTempIds, setPendingNewImageTempIds] = useState<string[]>([]);
+  const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // ── UI / modal states ─────────────────────────────────────────────────────
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
+  const [isCameraModalVisible, setIsCameraModalVisible] = useState(false);
+  const [isCropperVisible, setIsCropperVisible] = useState(false);
+  const [pendingCropUri, setPendingCropUri] = useState<string | null>(null);
+  const [editingImageId, setEditingImageId] = useState<string | null>(null);
+  const [isInstagramPickerVisible, setIsInstagramPickerVisible] = useState(false);
+
+  const carouselRef = useRef<FlatList>(null);
+
+  // ── Derived: active images (exclude pending removals) ─────────────────────
+  const activeImages = useMemo(
+    () => images.filter((img) => !pendingRemovals.includes(img.imageMetadataId)),
+    [images, pendingRemovals],
+  );
+
+  // ── Keep form.values.imageUris in sync with active images ─────────────────
+  const activeImageUrls = useMemo(
+    () => activeImages.map((img) => img.url),
+    [activeImages],
+  );
+
+  const prevUrlsRef = useRef(activeImageUrls);
+
+  useEffect(() => {
+    const prev = prevUrlsRef.current;
+    const curr = activeImageUrls;
+    if (prev.length !== curr.length || prev.some((u, i) => u !== curr[i])) {
+      prevUrlsRef.current = curr;
+      form.setField('imageUris', curr);
+    }
+  }, [activeImageUrls]);
+
+  // ── Dirty / changes detection ─────────────────────────────────────────────
+  const hasImageChanges = useMemo(() => {
+    if (pendingNewImages.length > 0) return true;
+    if (pendingRemovals.length > 0) return true;
+    const originalOrder = dealData.images?.map((img) => img.imageMetadataId) || [];
+    const currentOrder = activeImages
+      .filter((img) => !img.isNew)
+      .map((img) => img.imageMetadataId);
+    return JSON.stringify(originalOrder) !== JSON.stringify(currentOrder);
+  }, [pendingNewImages, pendingRemovals, activeImages, dealData]);
+
+  const hasChanges = form.dirty || hasImageChanges;
+
+  // ── Date handlers ─────────────────────────────────────────────────────────
+  const handleConfirmDate = (date: string | null) => {
+    form.setField('expirationDate', date);
     setIsCalendarModalVisible(false);
   };
 
   const handleClearDate = () => {
-    setExpirationDate(null);
+    form.setField('expirationDate', null);
     setIsCalendarModalVisible(false);
   };
 
-  // Format date for display
-  const formatDisplayDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Not set';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  // Photo handling
+  // ── Photo handlers ────────────────────────────────────────────────────────
   const handleTakePhoto = async () => {
     setIsCameraModalVisible(false);
     try {
@@ -169,12 +307,11 @@ export default function DealEditScreen() {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: 'images',
         allowsEditing: false, // We'll use our own cropper
-        aspect: [4, 3],
-        quality: 0.8,
+        aspect: CAMERA.aspectRatio as [number, number],
+        quality: CAMERA.quality,
       });
 
       if (!result.canceled && result.assets[0]) {
-        // Start cropping flow
         setPendingCropUri(result.assets[0].uri);
         setEditingImageId(null); // New image, not editing
         setIsCropperVisible(true);
@@ -198,15 +335,13 @@ export default function DealEditScreen() {
       setPendingCropUri(photos[0].uri);
       setEditingImageId(null);
       setIsCropperVisible(true);
-      // Store remaining photos for subsequent cropping if needed
-      // For now, we'll just crop the first one
     }
   };
 
   // Handle crop completion
   const handleCropComplete = (croppedUri: string) => {
     if (editingImageId) {
-      const idx = images.findIndex(img => img.imageMetadataId === editingImageId);
+      const idx = images.findIndex((img) => img.imageMetadataId === editingImageId);
       if (idx === -1) {
         addNewImage(croppedUri, pendingCropUri || croppedUri);
       } else {
@@ -214,8 +349,8 @@ export default function DealEditScreen() {
         const originalUri = target.originalUri || target.localUri || target.url;
 
         if (target.isNew) {
-          // Re-cropping a local (not yet uploaded) image: keep originalUri, just update display/localUri
-          setImages(prev => {
+          // Re-cropping a local (not yet uploaded) image
+          setImages((prev) => {
             const copy = [...prev];
             copy[idx] = {
               ...copy[idx],
@@ -227,27 +362,28 @@ export default function DealEditScreen() {
           });
 
           // Replace the pending upload URI for this temp image
-          setPendingNewImages(prev => {
+          setPendingNewImages((prev) => {
             const copy = [...prev];
-            const i = copy.findIndex(u => u === target.localUri);
+            const i = copy.findIndex((u) => u === target.localUri);
             if (i !== -1) copy[i] = croppedUri;
             return copy;
           });
         } else {
-          // Cropping an already-uploaded image: mark old for removal and add a new temp replacement
+          // Cropping an already-uploaded image: mark old for removal and add temp replacement
           const tempId = `new_${Date.now()}`;
+          const targetIndex = images.findIndex(
+            (img) => img.imageMetadataId === target.imageMetadataId,
+          );
 
-          // Find the index of the image being replaced to maintain its position
-          const targetIndex = images.findIndex(img => img.imageMetadataId === target.imageMetadataId);
-
-          setPendingRemovals(prev => (prev.includes(target.imageMetadataId) ? prev : [...prev, target.imageMetadataId]));
-          setPendingNewImages(prev => [...prev, croppedUri]);
-          setPendingNewImageTempIds(prev => [...prev, tempId]);
+          setPendingRemovals((prev) =>
+            prev.includes(target.imageMetadataId) ? prev : [...prev, target.imageMetadataId],
+          );
+          setPendingNewImages((prev) => [...prev, croppedUri]);
+          setPendingNewImageTempIds((prev) => [...prev, tempId]);
 
           // Insert the new image at the same position as the old one
-          setImages(prev => {
+          setImages((prev) => {
             const newImages = [...prev];
-            // Insert the new image right after the old one (which will be filtered out as pending removal)
             const insertIndex = targetIndex !== -1 ? targetIndex + 1 : prev.length;
             newImages.splice(insertIndex, 0, {
               imageMetadataId: tempId,
@@ -285,146 +421,146 @@ export default function DealEditScreen() {
 
   const addNewImage = (displayUri: string, originalUri?: string) => {
     const totalImages = images.length - pendingRemovals.length + pendingNewImages.length;
-    if (totalImages >= MAX_PHOTOS) {
-      Alert.alert('Limit Reached', `You can only have up to ${MAX_PHOTOS} photos.`);
+    if (totalImages >= IMAGES_MAX_COUNT) {
+      Alert.alert('Limit Reached', `You can only have up to ${IMAGES_MAX_COUNT} photos.`);
       return;
     }
 
-    // Add as a temporary new image
     const tempId = `new_${Date.now()}`;
-    setImages(prev => [...prev, {
-      imageMetadataId: tempId,
-      url: displayUri,
-      isNew: true,
-      localUri: displayUri,
-      originalUri: originalUri || displayUri,
-    }]);
-    setPendingNewImages(prev => [...prev, displayUri]);
-    setPendingNewImageTempIds(prev => [...prev, tempId]);
+    setImages((prev) => [
+      ...prev,
+      {
+        imageMetadataId: tempId,
+        url: displayUri,
+        isNew: true,
+        localUri: displayUri,
+        originalUri: originalUri || displayUri,
+      },
+    ]);
+    setPendingNewImages((prev) => [...prev, displayUri]);
+    setPendingNewImageTempIds((prev) => [...prev, tempId]);
   };
 
   const handleRemoveImage = (imageMetadataId: string) => {
-    const activeImages = images.filter(img => !pendingRemovals.includes(img.imageMetadataId));
     if (activeImages.length <= 1) {
       Alert.alert('Cannot Remove', 'Your deal must have at least one photo.');
       return;
     }
 
-    Alert.alert(
-      'Remove Photo',
-      'Are you sure you want to remove this photo?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            const imageToRemove = images.find(img => img.imageMetadataId === imageMetadataId);
+    Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          const imageToRemove = images.find((img) => img.imageMetadataId === imageMetadataId);
 
-            if (imageToRemove?.isNew) {
-              // Remove from pending new images
-              setPendingNewImages(prevUris => {
-                const idx = prevUris.findIndex(u => u === imageToRemove.localUri);
-                if (idx === -1) return prevUris;
-                setPendingNewImageTempIds(prevTempIds => prevTempIds.filter((_, i) => i !== idx));
-                return prevUris.filter((_, i) => i !== idx);
-              });
-              setImages(prev => prev.filter(img => img.imageMetadataId !== imageMetadataId));
-            } else {
-              // Mark for removal (will be deleted on save)
-              setPendingRemovals(prev => [...prev, imageMetadataId]);
-            }
-
-            // Adjust current index if needed
-            const remainingImages = images.filter(
-              img => img.imageMetadataId !== imageMetadataId && !pendingRemovals.includes(img.imageMetadataId)
+          if (imageToRemove?.isNew) {
+            // Remove from pending new images
+            setPendingNewImages((prevUris) => {
+              const idx = prevUris.findIndex((u) => u === imageToRemove.localUri);
+              if (idx === -1) return prevUris;
+              setPendingNewImageTempIds((prevTempIds) =>
+                prevTempIds.filter((_, i) => i !== idx),
+              );
+              return prevUris.filter((_, i) => i !== idx);
+            });
+            setImages((prev) =>
+              prev.filter((img) => img.imageMetadataId !== imageMetadataId),
             );
-            if (currentImageIndex >= remainingImages.length) {
-              setCurrentImageIndex(Math.max(0, remainingImages.length - 1));
-            }
-          },
+          } else {
+            // Mark for removal (will be deleted on save)
+            setPendingRemovals((prev) => [...prev, imageMetadataId]);
+          }
+
+          // Adjust current index if needed
+          const remainingImages = images.filter(
+            (img) =>
+              img.imageMetadataId !== imageMetadataId &&
+              !pendingRemovals.includes(img.imageMetadataId),
+          );
+          if (currentImageIndex >= remainingImages.length) {
+            setCurrentImageIndex(Math.max(0, remainingImages.length - 1));
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   // Handle drag-and-drop reorder from thumbnail strip
-  const handleReorderImages = useCallback((fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex) return;
+  const handleReorderImages = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex) return;
 
-    // Set the target index immediately so the FlatList knows where to stay
-    const targetIdx = toIndex;
+      const targetIdx = toIndex;
 
-    setImages(prev => {
-      // Get only active images (not pending removal)
-      const currentActiveImages = prev.filter(img => !pendingRemovals.includes(img.imageMetadataId));
+      setImages((prev) => {
+        const currentActiveImages = prev.filter(
+          (img) => !pendingRemovals.includes(img.imageMetadataId),
+        );
 
-      // Validate indices
-      if (fromIndex < 0 || fromIndex >= currentActiveImages.length ||
-        toIndex < 0 || toIndex >= currentActiveImages.length) {
-        console.warn('Invalid reorder indices:', { fromIndex, toIndex, activeCount: currentActiveImages.length });
-        return prev;
-      }
+        if (
+          fromIndex < 0 ||
+          fromIndex >= currentActiveImages.length ||
+          toIndex < 0 ||
+          toIndex >= currentActiveImages.length
+        ) {
+          console.warn('Invalid reorder indices:', {
+            fromIndex,
+            toIndex,
+            activeCount: currentActiveImages.length,
+          });
+          return prev;
+        }
 
-      // Get the image being moved
-      const fromImage = currentActiveImages[fromIndex];
-      if (!fromImage) {
-        console.warn('Could not find image at fromIndex:', fromIndex);
-        return prev;
-      }
+        const fromImage = currentActiveImages[fromIndex];
+        if (!fromImage) {
+          console.warn('Could not find image at fromIndex:', fromIndex);
+          return prev;
+        }
 
-      // Create new array with reordered active images
-      const newActiveImages = [...currentActiveImages];
-      newActiveImages.splice(fromIndex, 1);
-      newActiveImages.splice(toIndex, 0, fromImage);
+        const newActiveImages = [...currentActiveImages];
+        newActiveImages.splice(fromIndex, 1);
+        newActiveImages.splice(toIndex, 0, fromImage);
 
-      // Reconstruct full array: removed images stay at end (they'll be deleted on save)
-      const removedImages = prev.filter(img => pendingRemovals.includes(img.imageMetadataId));
-      return [...newActiveImages, ...removedImages];
-    });
+        const removedImages = prev.filter((img) =>
+          pendingRemovals.includes(img.imageMetadataId),
+        );
+        return [...newActiveImages, ...removedImages];
+      });
 
-    // Update index after state update - use InteractionManager to wait for render
-    setCurrentImageIndex(targetIdx);
-    // Schedule scroll after React has processed the state update
-    requestAnimationFrame(() => {
-      carouselRef.current?.scrollToIndex({ index: targetIdx, animated: false });
-    });
-  }, [pendingRemovals]);
+      setCurrentImageIndex(targetIdx);
+      requestAnimationFrame(() => {
+        carouselRef.current?.scrollToIndex({ index: targetIdx, animated: false });
+      });
+    },
+    [pendingRemovals],
+  );
 
   const handleThumbnailPress = (index: number) => {
     setCurrentImageIndex(index);
     carouselRef.current?.scrollToIndex({ index, animated: true });
   };
 
-  // Validate form
-  const validateForm = (): boolean => {
-    if (!dealTitle.trim()) {
-      Alert.alert('Missing Title', 'Please enter a deal title.');
-      return false;
-    }
-
-    const activeImages = images.filter(img => !pendingRemovals.includes(img.imageMetadataId));
-    if (activeImages.length === 0 && pendingNewImages.length === 0) {
-      Alert.alert('Missing Photo', 'Your deal must have at least one photo.');
-      return false;
-    }
-
-    return true;
-  };
-
-  // Save changes
+  // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!validateForm() || !dealData) return;
+    const result = form.validate();
+    if (!result.valid) {
+      Alert.alert('Missing Information', result.errors[0].message);
+      return;
+    }
 
     setIsSaving(true);
 
     try {
+      const { values } = form;
+
       // 1. Update text fields
       const fieldsResult = await updateDealFields(dealId, {
-        title: dealTitle,
-        description: dealDetails || undefined,
-        expirationDate,
-        isAnonymous,
+        title: values.title,
+        description: values.details || undefined,
+        expirationDate: values.expirationDate,
+        isAnonymous: values.isAnonymous,
       });
 
       if (!fieldsResult.success) {
@@ -439,7 +575,7 @@ export default function DealEditScreen() {
       }
 
       // 3. Add new images - track uploaded IDs for order update
-      const uploadedImageMap = new Map<string, string>(); // tempId -> uploadedId
+      const uploadedImageMap = new Map<string, string>(); // tempId → uploadedId
 
       if (pendingNewImages.length > 0) {
         const addResult = await addDealImages(dealId, pendingNewImages);
@@ -447,19 +583,22 @@ export default function DealEditScreen() {
           console.warn('Some images failed to upload:', addResult.error);
         } else if (addResult.newImages && addResult.newImages.length > 0) {
           // Map temp IDs to uploaded IDs
-          const mappedCount = Math.min(addResult.newImages.length, pendingNewImageTempIds.length);
+          const mappedCount = Math.min(
+            addResult.newImages.length,
+            pendingNewImageTempIds.length,
+          );
           for (let i = 0; i < mappedCount; i++) {
             const tempId = pendingNewImageTempIds[i];
             const uploaded = addResult.newImages[i];
             uploadedImageMap.set(tempId, uploaded.imageMetadataId);
           }
 
-          setImages(prev => {
+          setImages((prev) => {
             const updated = [...prev];
             for (let i = 0; i < mappedCount; i++) {
               const tempId = pendingNewImageTempIds[i];
               const uploaded = addResult.newImages![i];
-              const idx = updated.findIndex(img => img.imageMetadataId === tempId);
+              const idx = updated.findIndex((img) => img.imageMetadataId === tempId);
               if (idx !== -1) {
                 updated[idx] = {
                   ...updated[idx],
@@ -476,16 +615,16 @@ export default function DealEditScreen() {
       }
 
       // 4. Update display_order for all images based on current array order
-      // Get active images (not pending removal) in their current order
-      const currentActiveImages = images.filter(img => !pendingRemovals.includes(img.imageMetadataId));
-      const imageOrder = currentActiveImages.map((img, index) => {
-        // Resolve temp IDs to uploaded IDs
-        const resolvedId = uploadedImageMap.get(img.imageMetadataId) || img.imageMetadataId;
-        return {
-          imageMetadataId: resolvedId,
-          displayOrder: index,
-        };
-      }).filter(item => !item.imageMetadataId.startsWith('new_')); // Skip any unresolved temp IDs
+      const currentActiveImages = images.filter(
+        (img) => !pendingRemovals.includes(img.imageMetadataId),
+      );
+      const imageOrder = currentActiveImages
+        .map((img, index) => {
+          const resolvedId =
+            uploadedImageMap.get(img.imageMetadataId) || img.imageMetadataId;
+          return { imageMetadataId: resolvedId, displayOrder: index };
+        })
+        .filter((item) => !item.imageMetadataId.startsWith('new_'));
 
       if (imageOrder.length > 0) {
         await updateDealImageOrder(dealId, imageOrder);
@@ -500,22 +639,13 @@ export default function DealEditScreen() {
       clearAllPostsCache();
       clearFavoritesCache();
 
-      // Success - refresh both profile and deal caches
-      // IMPORTANT: Wait for these to complete before navigating back
-      // so the Feed has fresh data when it gains focus
       await ProfileCacheService.forceRefresh();
-
-      // Force a complete refresh of the deal cache with fresh data from DB
-      // This ensures the new thumbnail/display_order is reflected
       await dealCacheService.invalidateAndRefresh();
 
       setPostAdded(true);
 
       Alert.alert('Success', 'Your deal has been updated!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
+        { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       console.error('Error saving deal:', error);
@@ -525,134 +655,135 @@ export default function DealEditScreen() {
     }
   };
 
-  // Get active images (excluding pending removals)
-  const activeImages = images.filter(img => !pendingRemovals.includes(img.imageMetadataId));
-
-  // Check if any changes have been made from original
-  const hasChanges = useMemo(() => {
-    if (!dealData) return false;
-
-    // Check text field changes
-    const titleChanged = dealTitle !== dealData.title;
-    const detailsChanged = (dealDetails || '') !== (dealData.description || '');
-    const anonymousChanged = isAnonymous !== dealData.isAnonymous;
-    const dateChanged = expirationDate !== dealData.expirationDate;
-
-    // Check image changes
-    const hasNewImages = pendingNewImages.length > 0;
-    const hasRemovedImages = pendingRemovals.length > 0;
-
-    // Check image order changes
-    const originalOrder = dealData.images?.map(img => img.imageMetadataId) || [];
-    const currentOrder = activeImages.filter(img => !img.isNew).map(img => img.imageMetadataId);
-    const orderChanged = JSON.stringify(originalOrder) !== JSON.stringify(currentOrder);
-
-    return titleChanged || detailsChanged || anonymousChanged || dateChanged || hasNewImages || hasRemovedImages || orderChanged;
-  }, [dealData, dealTitle, dealDetails, isAnonymous, expirationDate, pendingNewImages, pendingRemovals, activeImages]);
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="dark" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FF8C4C" />
-          <Text style={styles.loadingText}>Loading deal...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Error state
-  if (loadError) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="dark" />
-        <View style={styles.errorContainer}>
-          <MaterialCommunityIcons name="alert-circle" size={48} color="#FF3B30" />
-          <Text style={styles.errorText}>{loadError}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadDealData}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backButtonError} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonErrorText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
       <StatusBar style="dark" />
 
       <KeyboardAwareScrollView
-        style={styles.mainFrame}
-        contentContainerStyle={styles.mainFrameContentContainer}
+        style={{ flex: 1, width: '100%' }}
+        contentContainerStyle={{
+          paddingBottom: SPACING.xl,
+          paddingHorizontal: SPACING.md,
+        }}
         showsVerticalScrollIndicator={false}
         enableOnAndroid={true}
-        extraScrollHeight={100}
+        extraScrollHeight={DIMENSION.extraScrollHeight}
       >
         {/* Top Button Row */}
-        <View style={styles.topButtonRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#000000" />
+        <Box row justify="space-between" align="center" mb="sm">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              width: DIMENSION.hitArea,
+              height: DIMENSION.hitArea,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: RADIUS.circle,
+            }}
+          >
+            <Ionicons name="arrow-back" size={ICON_SIZE.sm} color={STATIC.black} />
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={handleSave}
-            style={[styles.saveButton, (isSaving || !hasChanges) && styles.disabledButton]}
+            style={{
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingVertical: SPACING.sm,
+              paddingHorizontal: SPACING.lg,
+              backgroundColor: ALPHA_COLORS.brandPrimary80,
+              borderRadius: RADIUS.pill,
+              minWidth: DIMENSION.buttonMinWidth,
+              opacity: isSaving || !hasChanges ? OPACITY.disabled : OPACITY.full,
+            }}
             disabled={isSaving || !hasChanges}
           >
             {isSaving ? (
-              <ActivityIndicator size="small" color="#000" />
+              <ActivityIndicator size="small" color={STATIC.black} />
             ) : (
-              <Text style={[styles.saveButtonText, !hasChanges && styles.disabledButtonText]}>Save</Text>
+              <Text
+                size="xs"
+                color={!hasChanges ? GRAY[500] : STATIC.black}
+                style={{ fontFamily: 'Inter', fontWeight: '400' }}
+              >
+                Save
+              </Text>
             )}
           </TouchableOpacity>
-        </View>
+        </Box>
 
         {/* Restaurant Info (read-only) */}
-        <View style={styles.selectedRestaurantContainer}>
-          <View style={styles.restaurantTextContainer}>
-            <Text style={styles.selectedRestaurantName}>{dealData?.restaurantName}</Text>
-            <Text style={styles.selectedRestaurantAddress} numberOfLines={1}>
-              {dealData?.restaurantAddress}
+        <Box
+          row
+          align="center"
+          py="lg"
+          px="lg"
+          h={DIMENSION.restaurantBarHeight}
+          bg={ALPHA_COLORS.whiteCard93}
+          rounded={RADIUS.card}
+        >
+          <Box flex={1} mr="lg">
+            <Text
+              size="xs"
+              weight="bold"
+              color={STATIC.black}
+              style={{
+                lineHeight: DIMENSION.compactLineHeight,
+                marginBottom: SPACING['2xs'],
+              }}
+            >
+              {dealData.restaurantName}
             </Text>
-          </View>
-          <MaterialCommunityIcons name="store" size={20} color="#FF8C4C" />
-        </View>
+            <Text
+              size="xs"
+              color={STATIC.black}
+              style={{ lineHeight: DIMENSION.compactLineHeight }}
+            >
+              {dealData.restaurantAddress}
+            </Text>
+          </Box>
+          <MaterialCommunityIcons name="store" size={ICON_SIZE.sm} color={BRAND.primary} />
+        </Box>
 
         {/* Main Content Container */}
-        <View style={styles.dealContainerWrapper}>
-          <View style={styles.unifiedContainer}>
+        <Box mt={6} flex={1}>
+          <Box
+            bg={STATIC.white}
+            rounded={RADIUS.card}
+            py="md"
+            flex={1}
+            minH={DIMENSION.formMinHeight}
+          >
             {/* Deal Title Section */}
-            <View style={styles.optionRow}>
-              <Ionicons name="menu-outline" size={20} color="#606060" />
-              <Text style={styles.optionText}>Deal Title</Text>
-            </View>
-            <View style={styles.dealTitleInputContainer}>
-              <TextInput
-                style={styles.dealTitleText}
-                value={dealTitle}
-                onChangeText={setDealTitle}
-                placeholder="e.g., 50% off all pizzas"
-                placeholderTextColor="#C1C1C1"
-                multiline
-                maxLength={100}
-              />
-              <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
-            </View>
+            <TitleSection
+              value={form.values.title}
+              onChangeText={(text) => form.setField('title', text)}
+              placeholder="e.g., 50% off all pizzas"
+            />
 
-            <View style={styles.separator} />
+            <FormDivider />
 
-            {/* Photos Section */}
-            <View style={styles.optionRow}>
-              <Ionicons name="camera-outline" size={20} color="#404040" />
-              <Text style={styles.optionText}>Photos ({activeImages.length}/{MAX_PHOTOS})</Text>
-            </View>
+            {/* Photos Section Header */}
+            <Box row gap="lg" py={6} px="lg" align="center" style={{ minHeight: 38 }}>
+              <Ionicons name="camera-outline" size={ICON_SIZE.sm} color="#404040" />
+              <Text size="xs" color={STATIC.black}>
+                Photos ({activeImages.length}/{IMAGES_MAX_COUNT})
+              </Text>
+            </Box>
 
             {/* Photo Carousel */}
-            <View style={styles.photoCarouselContainer}>
+            <Box
+              mx="lg"
+              rounded={RADIUS.card}
+              style={{
+                height: 350,
+                overflow: 'hidden',
+                backgroundColor: GRAY[100],
+                borderWidth: 0.5,
+                borderColor: '#AAAAAA',
+              }}
+            >
               {activeImages.length > 0 ? (
                 <FlatList
                   ref={carouselRef}
@@ -668,7 +799,9 @@ export default function DealEditScreen() {
                   maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
                   onMomentumScrollEnd={(event) => {
                     const carouselWidth = screenWidth - 48;
-                    const index = Math.round(event.nativeEvent.contentOffset.x / carouselWidth);
+                    const index = Math.round(
+                      event.nativeEvent.contentOffset.x / carouselWidth,
+                    );
                     if (index >= 0 && index < activeImages.length) {
                       setCurrentImageIndex(index);
                     }
@@ -681,37 +814,75 @@ export default function DealEditScreen() {
                     index,
                   })}
                   renderItem={({ item, index }) => (
-                    <View style={[styles.carouselItem, { width: screenWidth - 48 }]}>
-                      <Image source={{ uri: item.url }} style={styles.carouselImage} resizeMode="cover" />
-
+                    <Box
+                      style={{
+                        width: screenWidth - 48,
+                        height: 350,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Image
+                        source={{ uri: item.url }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
                       {/* Delete button */}
                       <TouchableOpacity
-                        style={styles.deleteImageButton}
+                        style={{
+                          position: 'absolute',
+                          top: SPACING.md,
+                          right: SPACING.md,
+                          ...SHADOW.sm,
+                        }}
                         onPress={() => handleRemoveImage(item.imageMetadataId)}
                       >
                         <Ionicons name="close-circle" size={26} color="#FF3B30" />
                       </TouchableOpacity>
-
-                      {/* Edit/Crop button */}
+                      {/* Edit / Crop button */}
                       <TouchableOpacity
-                        style={styles.editImageButton}
+                        style={{
+                          position: 'absolute',
+                          top: SPACING.sm,
+                          left: SPACING.sm,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 14,
+                          gap: SPACING.xs,
+                        }}
                         onPress={() => handleEditImage(index)}
                       >
-                        <Ionicons name="crop" size={14} color="#FFF" />
-                        <Text style={styles.editButtonText}>Edit</Text>
+                        <Ionicons name="crop" size={14} color={STATIC.white} />
+                        <Text
+                          size="xs"
+                          color={STATIC.white}
+                          style={{ fontSize: 11, fontWeight: '500', fontFamily: 'Inter' }}
+                        >
+                          Edit
+                        </Text>
                       </TouchableOpacity>
-                    </View>
+                    </Box>
                   )}
                 />
               ) : (
-                <View style={styles.noPhotosContainer}>
-                  <Ionicons name="image-outline" size={40} color="#CCC" />
-                  <Text style={styles.noPhotosText}>No photos</Text>
-                </View>
+                <Box flex={1} center>
+                  <Ionicons name="image-outline" size={40} color={GRAY[350]} />
+                  <Text
+                    size="xs"
+                    color={GRAY[500]}
+                    mt="sm"
+                    style={{ fontFamily: 'Inter' }}
+                  >
+                    No photos
+                  </Text>
+                </Box>
               )}
-            </View>
+            </Box>
 
-            {/* Draggable thumbnail strip - drag to reorder, first image is cover */}
+            {/* Draggable thumbnail strip — drag to reorder, first image is cover */}
             <GestureHandlerRootView>
               <DraggableThumbnailStrip
                 images={activeImages}
@@ -719,76 +890,45 @@ export default function DealEditScreen() {
                 onThumbnailPress={handleThumbnailPress}
                 onReorder={handleReorderImages}
                 onAddPress={() => setIsCameraModalVisible(true)}
-                maxPhotos={MAX_PHOTOS}
+                maxPhotos={IMAGES_MAX_COUNT}
               />
             </GestureHandlerRootView>
 
-            <View style={styles.separator} />
+            <FormDivider />
 
             {/* Expiration Date */}
-            <TouchableOpacity
-              style={styles.optionRow}
+            <DateRow
+              expirationDate={form.values.expirationDate}
               onPress={() => setIsCalendarModalVisible(true)}
-            >
-              <Ionicons name="time-outline" size={20} color="#4E4E4E" />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionText}>Expiration Date</Text>
-                {expirationDate && (
-                  <Text style={styles.optionSubText}>{formatDisplayDate(expirationDate)}</Text>
-                )}
-              </View>
-              {expirationDate ? (
-                <TouchableOpacity onPress={handleClearDate}>
-                  <Ionicons name="close-circle" size={18} color="#888889" />
-                </TouchableOpacity>
-              ) : (
-                <Ionicons name="chevron-forward" size={12} color="black" />
-              )}
-            </TouchableOpacity>
+              onClear={handleClearDate}
+            />
 
-            <View style={styles.separator} />
+            <FormDivider />
 
             {/* Anonymous Toggle */}
-            <View style={styles.optionRow}>
-              <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
-              <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
-              <Switch
-                value={isAnonymous}
-                onValueChange={setIsAnonymous}
-                trackColor={{ false: '#D2D5DA', true: '#FFA05C' }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
+            <AnonymousToggle
+              value={form.values.isAnonymous}
+              onValueChange={(val) => form.setField('isAnonymous', val)}
+            />
 
-            <View style={styles.separator} />
+            <FormDivider />
 
-            {/* Extra Details Section */}
-            <View style={styles.optionRow}>
-              <Ionicons name="menu-outline" size={20} color="#606060" />
-              <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
-            </View>
-
-            <View style={styles.extraDetailsInputContainer}>
-              <TextInput
-                style={styles.extraDetailsInput}
-                value={dealDetails}
-                onChangeText={setDealDetails}
-                placeholder="Add more details about the deal..."
-                placeholderTextColor="#C1C1C1"
-                multiline
-                maxLength={500}
-              />
-            </View>
-          </View>
-        </View>
+            {/* Extra Details */}
+            <DetailsSection
+              value={form.values.details}
+              onChangeText={(text) => form.setField('details', text)}
+              placeholder="Add more details about the deal..."
+            />
+          </Box>
+        </Box>
       </KeyboardAwareScrollView>
 
       {/* Calendar Modal */}
       <CalendarModal
         visible={isCalendarModalVisible}
         onClose={() => setIsCalendarModalVisible(false)}
-        onConfirm={handleDateSelect}
-        initialDate={expirationDate}
+        onConfirm={handleConfirmDate}
+        initialDate={form.values.expirationDate}
       />
 
       {/* Photo Action Modal */}
@@ -813,273 +953,9 @@ export default function DealEditScreen() {
         visible={isInstagramPickerVisible}
         onClose={() => setIsInstagramPickerVisible(false)}
         onDone={handleInstagramPickerDone}
-        maxPhotos={MAX_PHOTOS}
+        maxPhotos={IMAGES_MAX_COUNT}
         existingPhotosCount={activeImages.length}
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#666',
-    fontFamily: 'Inter',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    fontFamily: 'Inter',
-  },
-  retryButton: {
-    marginTop: 24,
-    backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 30,
-  },
-  retryButtonText: {
-    color: '#000',
-    fontSize: 12,
-    fontWeight: '400',
-    fontFamily: 'Inter',
-  },
-  backButtonError: {
-    marginTop: 12,
-    paddingVertical: 12,
-  },
-  backButtonErrorText: {
-    color: '#666',
-    fontSize: 12,
-    fontFamily: 'Inter',
-  },
-  mainFrame: {
-    flex: 1,
-    width: '100%',
-  },
-  mainFrameContentContainer: {
-    paddingBottom: 20,
-    paddingHorizontal: 12,
-  },
-  topButtonRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  saveButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: 30,
-    minWidth: 90,
-  },
-  saveButtonText: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    color: '#000000',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  disabledButtonText: {
-    color: '#888888',
-  },
-  selectedRestaurantContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    height: 59,
-    backgroundColor: 'rgba(255, 255, 255, 0.93)',
-    borderRadius: 10,
-  },
-  restaurantTextContainer: {
-    flex: 1,
-    marginRight: 16,
-  },
-  selectedRestaurantName: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 17,
-    color: '#000000',
-    marginBottom: 2,
-  },
-  selectedRestaurantAddress: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 17,
-    color: '#000000',
-  },
-  dealContainerWrapper: {
-    marginTop: 6,
-    flex: 1,
-    width: '100%',
-  },
-  unifiedContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 12,
-    flex: 1,
-    minHeight: 600,
-  },
-  dealTitleInputContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 4,
-    minHeight: 70,
-  },
-  dealTitleText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    minHeight: 50,
-    textAlignVertical: 'top',
-    lineHeight: 20,
-    paddingTop: 0,
-    paddingLeft: 4,
-    includeFontPadding: false,
-  },
-  characterCount: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#888889',
-    alignSelf: 'flex-end',
-    marginTop: 4,
-  },
-  extraDetailsInputContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 4,
-    flex: 1,
-    minHeight: 200,
-  },
-  extraDetailsInput: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    flex: 1,
-    minHeight: 180,
-    textAlignVertical: 'top',
-    paddingHorizontal: 0,
-    paddingTop: 0,
-    paddingLeft: 2,
-    paddingBottom: 12,
-    lineHeight: 20,
-    includeFontPadding: false,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
-    marginVertical: 4,
-  },
-  photoCarouselContainer: {
-    height: 350,
-    marginHorizontal: 16,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#F0F0F0',
-    borderWidth: 0.5,
-    borderColor: '#AAAAAA',
-  },
-  carouselItem: {
-    height: 350,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  carouselImage: {
-    width: '100%',
-    height: '100%',
-  },
-  deleteImageButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 1,
-    elevation: 2,
-  },
-  editImageButton: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
-    gap: 4,
-  },
-  editButtonText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#FFF',
-    fontFamily: 'Inter',
-  },
-  noPhotosContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noPhotosText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#999',
-    fontFamily: 'Inter',
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    minHeight: 38,
-    paddingVertical: 6,
-    gap: 16,
-  },
-  optionTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  optionText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-  },
-  optionSubText: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    color: '#888889',
-    marginTop: 2,
-  },
-});

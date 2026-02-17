@@ -16,13 +16,18 @@ export interface TitleSectionProps {
   onChangeText: (text: string) => void;
   onFocus?: () => void;
   inputRef?: React.RefObject<TextInput | null>;
+  /** Custom placeholder (defaults to "$10 Sushi before 5pm on M-W"). */
+  placeholder?: string;
 }
+
+const DEFAULT_PLACEHOLDER = '$10 Sushi before 5pm on M-W';
 
 export function TitleSection({
   value,
   onChangeText,
   onFocus,
   inputRef,
+  placeholder = DEFAULT_PLACEHOLDER,
 }: TitleSectionProps) {
   return (
     <>
@@ -46,7 +51,7 @@ export function TitleSection({
           }}
           value={value}
           onChangeText={onChangeText}
-          placeholder="$10 Sushi before 5pm on M-W"
+          placeholder={placeholder}
           placeholderTextColor="#C1C1C1"
           multiline
           maxLength={TITLE_MAX_LENGTH}
