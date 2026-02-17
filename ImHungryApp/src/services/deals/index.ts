@@ -4,6 +4,14 @@
  *
  * This module serves as the public API for deal operations.
  * Import from this file to access any deal functionality.
+ *
+ * @see ./read.ts - Read operations (fetch, get)
+ * @see ./write.ts - Core write operations (create, delete)
+ * @see ./dealEditing.ts - Edit operations (fetchDealForEdit, updateDealFields)
+ * @see ./dealImages.ts - Image operations (add, remove, reorder, thumbnail)
+ * @see ./transform.ts - Data transformation
+ * @see ./moderation.ts - Content moderation
+ * @see ./types.ts - Shared types and interfaces
  */
 
 // Types
@@ -22,20 +30,28 @@ export type {
 export {
   fetchRankedDeals,
   fetchUserPosts,
-  fetchDealForEdit,
   getDealUploaderId,
 } from './read';
 
-// Write operations
+// Core write operations
 export {
   createDeal,
   deleteDeal,
+} from './write';
+
+// Editing operations
+export {
+  fetchDealForEdit,
   updateDealFields,
+} from './dealEditing';
+
+// Image operations
+export {
   addDealImages,
   removeDealImage,
   setDealThumbnail,
   updateDealImageOrder,
-} from './write';
+} from './dealImages';
 
 // Transform operations
 export {
