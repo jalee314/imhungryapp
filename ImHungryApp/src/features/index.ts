@@ -19,5 +19,11 @@ export * from './feed';
 // Community feature (decomposed CommunityUploadedScreen)
 export * from './community';
 
+// Favorites feature (decomposed FavoritesPage)
+export * from './favorites';
+
+// Discover feature (decomposed DiscoverFeed)
+export * from './discover';
+
 // Profile feature (decomposed Profile screen & hook)
 export * from './profile';

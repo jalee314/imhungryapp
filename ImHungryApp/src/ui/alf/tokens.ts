@@ -314,8 +314,11 @@ export const OPACITY = {
  * Standard icon sizes
  */
 export const ICON_SIZE = {
+  xs: 16,
   sm: 20,
   md: 24,
+  lg: 48,
+  xl: 64,
 } as const;
 
 // ============================================================================
