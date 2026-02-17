@@ -32,11 +32,16 @@ export interface FeedInteractionHandlers {
   handleFavorite: (dealId: string) => void;
 }
 
+// ==========================================
+// Exported Calculation Utilities
+// ==========================================
+
 /**
  * Calculate new interaction state when toggling upvote
  * Mirrors calculateUpvoteToggle from useOptimisticDealInteractions
+ * Exported for use in single-deal surfaces (DealDetailScreen, etc.)
  */
-const calculateUpvoteToggle = (deal: Deal): Partial<Deal> => {
+export const calculateUpvoteToggle = (deal: Deal): Partial<Deal> => {
   if (deal.isUpvoted) {
     // Remove upvote: -1 to vote count
     return {
@@ -62,8 +67,9 @@ const calculateUpvoteToggle = (deal: Deal): Partial<Deal> => {
 /**
  * Calculate new interaction state when toggling downvote
  * Mirrors calculateDownvoteToggle from useOptimisticDealInteractions
+ * Exported for use in single-deal surfaces (DealDetailScreen, etc.)
  */
-const calculateDownvoteToggle = (deal: Deal): Partial<Deal> => {
+export const calculateDownvoteToggle = (deal: Deal): Partial<Deal> => {
   if (deal.isDownvoted) {
     // Remove downvote: +1 to vote count
     return {
@@ -209,6 +215,111 @@ export function useFeedInteractionHandlers(
     },
     [deals, setDeals, markAsUnfavorited, markAsFavorited]
   );
+
+  return {
+    handleUpvote,
+    handleDownvote,
+    handleFavorite,
+  };
+}
+
+// ==========================================
+// Single-Deal Interaction Handlers
+// ==========================================
+
+export interface UseSingleDealInteractionHandlersOptions {
+  /** Current deal state */
+  deal: Deal;
+  /** State setter for the deal */
+  setDeal: React.Dispatch<React.SetStateAction<Deal>>;
+}
+
+export interface SingleDealInteractionHandlers {
+  handleUpvote: () => void;
+  handleDownvote: () => void;
+  handleFavorite: () => void;
+}
+
+/**
+ * Hook for creating interaction handlers for single-deal surfaces (DealDetailScreen).
+ * Encapsulates optimistic update logic with automatic rollback on server failure.
+ */
+export function useSingleDealInteractionHandlers(
+  options: UseSingleDealInteractionHandlersOptions
+): SingleDealInteractionHandlers {
+  const { deal, setDeal } = options;
+  const { markAsUnfavorited, markAsFavorited } = useFavorites();
+
+  /**
+   * Handle upvote with optimistic update and rollback on failure
+   */
+  const handleUpvote = useCallback(() => {
+    const previousState = { ...deal };
+    const changes = calculateUpvoteToggle(deal);
+
+    // Synchronous optimistic update
+    setDeal({ ...previousState, ...changes });
+
+    // Background database save with rollback on error
+    toggleUpvote(deal.id).catch((err) => {
+      console.error('Failed to save upvote, reverting:', err);
+      setDeal(previousState);
+    });
+  }, [deal, setDeal]);
+
+  /**
+   * Handle downvote with optimistic update and rollback on failure
+   */
+  const handleDownvote = useCallback(() => {
+    const previousState = { ...deal };
+    const changes = calculateDownvoteToggle(deal);
+
+    // Synchronous optimistic update
+    setDeal({ ...previousState, ...changes });
+
+    // Background database save with rollback on error
+    toggleDownvote(deal.id).catch((err) => {
+      console.error('Failed to save downvote, reverting:', err);
+      setDeal(previousState);
+    });
+  }, [deal, setDeal]);
+
+  /**
+   * Handle favorite with optimistic update, FavoritesStore sync, and rollback on failure
+   */
+  const handleFavorite = useCallback(() => {
+    const previousState = { ...deal };
+    const wasFavorited = deal.isFavorited;
+
+    // 1. Optimistic UI update
+    setDeal({ ...previousState, isFavorited: !wasFavorited });
+
+    // 2. Notify global store for instant favorites page update
+    if (wasFavorited) {
+      markAsUnfavorited(deal.id, 'deal');
+    } else {
+      markAsFavorited(deal.id, 'deal', {
+        id: deal.id,
+        title: deal.title,
+        description: deal.details || '',
+        imageUrl: typeof deal.image === 'object' ? deal.image.uri : '',
+        restaurantName: deal.restaurant,
+        restaurantAddress: deal.restaurantAddress || '',
+        distance: deal.milesAway || '',
+        userId: deal.userId,
+        userDisplayName: deal.userDisplayName,
+        userProfilePhoto: deal.userProfilePhoto,
+        isAnonymous: deal.isAnonymous,
+        favoritedAt: new Date().toISOString(),
+      });
+    }
+
+    // 3. Background database save with rollback on error
+    toggleFavorite(deal.id, wasFavorited).catch((err) => {
+      console.error('Failed to save favorite, reverting:', err);
+      setDeal(previousState);
+    });
+  }, [deal, setDeal, markAsUnfavorited, markAsFavorited]);
 
   return {
     handleUpvote,
