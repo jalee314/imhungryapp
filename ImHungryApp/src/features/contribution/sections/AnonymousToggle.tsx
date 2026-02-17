@@ -8,7 +8,6 @@ import React from 'react';
 import { Switch } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Box, Text } from '../../../ui/primitives';
-import { BRAND, GRAY } from '../../../ui/alf/tokens';
 
 export interface AnonymousToggleProps {
   value: boolean;
@@ -20,13 +19,13 @@ export function AnonymousToggle({
   onValueChange,
 }: AnonymousToggleProps) {
   return (
-    <Box row gap="sm" py={14} px="md">
-      <MaterialCommunityIcons name="incognito" size={20} color={GRAY[700]} />
-      <Text size="sm" weight="medium" color="textMuted" flex={1}>
+    <Box row gap="lg" py={6} px="lg" minH={38} align="center">
+      <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
+      <Text size="xs" color="#000000" flex={1}>
         Anonymous
       </Text>
       <Switch
-        trackColor={{ false: GRAY[400], true: BRAND.primary }}
+        trackColor={{ false: '#D2D5DA', true: '#FFA05C' }}
         thumbColor="#FFFFFF"
         onValueChange={onValueChange}
         value={value}

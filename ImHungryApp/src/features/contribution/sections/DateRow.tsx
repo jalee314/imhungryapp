@@ -7,7 +7,6 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Box, Text, Pressable } from '../../../ui/primitives';
-import { GRAY, STATIC } from '../../../ui/alf/tokens';
 
 export interface DateRowProps {
   /** Current expiration date value (ISO string, 'Unknown', or null). */
@@ -38,15 +37,15 @@ export function DateRow({ expirationDate, onPress }: DateRowProps) {
   const displayText = formatDisplayDate(expirationDate);
 
   return (
-    <Pressable row gap="sm" py={14} px="md" onPress={onPress}>
-      <Ionicons name="time-outline" size={20} color={GRAY[700]} />
+    <Pressable row gap="lg" py={6} px="lg" align="center" style={{ minHeight: 38 }} onPress={onPress}>
+      <Ionicons name="time-outline" size={20} color="#4E4E4E" />
       <Box flex={1}>
-        <Text size="sm" weight="medium" color="textMuted">Expiration Date</Text>
+        <Text size="xs" color="#000000">Expiration Date</Text>
         {displayText && (
-          <Text size="xs" color="textSubtle" mt="2xs">{displayText}</Text>
+          <Text style={{ fontSize: 11 }} color="#888889" mt="2xs">{displayText}</Text>
         )}
       </Box>
-      <Ionicons name="chevron-forward" size={12} color={STATIC.black} />
+      <Ionicons name="chevron-forward" size={12} color="black" />
     </Pressable>
   );
 }

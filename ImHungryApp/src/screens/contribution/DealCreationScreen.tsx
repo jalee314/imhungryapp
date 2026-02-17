@@ -1,18 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  Switch,
   Alert,
   ActivityIndicator,
   Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -21,16 +17,40 @@ import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import PhotoReviewModal from '../../components/PhotoReviewModal';
 import InstagramPhotoPickerModal, { PhotoWithCrop, CropRegion } from '../../components/InstagramPhotoPickerModal';
-import Header from '../../components/Header';
 import DealPreviewScreen from './DealPreviewScreen';
 import { useDataCache } from '../../hooks/useDataCache';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
-import { fetchUserData, clearUserCache } from '../../services/userService';
+import { fetchUserData } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { ProfileCacheService } from '../../services/profileCacheService';
 import { searchRestaurants, getOrCreateRestaurant, GooglePlaceResult } from '../../services/restaurantService';
-import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
+import { Box, Text, Pressable } from '../../ui/primitives';
+import {
+  BRAND,
+  GRAY,
+  STATIC,
+  ALPHA_COLORS,
+  SPACING,
+  RADIUS,
+  OPACITY,
+  ICON_SIZE,
+  TIMING,
+  DIMENSION,
+  CAMERA,
+  Z_INDEX,
+} from '../../ui/alf';
+import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
+import type { FormRestaurant } from '../../features/contribution/engine';
+import {
+  TitleSection,
+  DetailsSection,
+  PhotoRow,
+  DateRow,
+  PickerRow,
+  AnonymousToggle,
+  FormDivider,
+} from '../../features/contribution/sections';
 
 // --- Debounce Helper Function ---
 function debounce<T extends (...args: any[]) => any>(
@@ -44,8 +64,8 @@ function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-// --- Interfaces and Data ---
-interface Restaurant {
+// --- Interfaces ---
+interface SearchRestaurant {
   id: string;
   name: string;
   subtext: string;
@@ -63,47 +83,41 @@ interface DealCreationScreenProps {
 
 export default function DealCreationScreen({ visible, onClose }: DealCreationScreenProps) {
   const { setPostAdded } = useDealUpdate();
-  // Get data from the context (removed 'restaurants')
-  const { categories, cuisines, loading: dataLoading, error } = useDataCache();
+  const { categories, cuisines, loading: dataLoading } = useDataCache();
 
+  // ── Form engine ──────────────────────────────────────────────────────────
+  const form = useDealForm({ mode: 'create' });
+
+  // ── Non-form local state ─────────────────────────────────────────────────
   const [userData, setUserData] = useState({
     username: '',
     profilePicture: null as string | null,
     city: '',
     state: ''
   });
-  const [dealTitle, setDealTitle] = useState('');
-  const [dealDetails, setDealDetails] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
   const [isCameraModalVisible, setIsCameraModalVisible] = useState(false);
   const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
   const [isCategoriesModalVisible, setIsCategoriesModalVisible] = useState(false);
   const [isFoodTagsModalVisible, setIsFoodTagsModalVisible] = useState(false);
   const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
-  const [expirationDate, setExpirationDate] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
-  const [imageUris, setImageUris] = useState<string[]>([]);
   // Keep original (uncropped) URIs so re-editing always starts from the original
   const [originalImageUris, setOriginalImageUris] = useState<string[]>([]);
   // Store crop regions from Instagram picker for initial positioning in PhotoReviewModal
   const [cropRegions, setCropRegions] = useState<CropRegion[]>([]);
-  const [thumbnailIndex, setThumbnailIndex] = useState(0);
   const [isPhotoReviewVisible, setIsPhotoReviewVisible] = useState(false);
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [isInstagramPickerVisible, setIsInstagramPickerVisible] = useState(false);
 
   // Google Places search state
-  const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchRestaurant[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const scrollViewRef = useRef<KeyboardAwareScrollView>(null);
-  const detailsInputRef = useRef(null);
-  const titleInputRef = useRef(null);
+  const detailsInputRef = useRef<TextInput>(null);
+  const titleInputRef = useRef<TextInput>(null);
   // Reference to abort controller for cancelling in-flight search requests
   const searchAbortControllerRef = useRef<AbortController | null>(null);
 
@@ -132,7 +146,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
   // Get device's current location with timeout to prevent hangs
   const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
-    const LOCATION_TIMEOUT_MS = 5000; // 5 second timeout
+    const LOCATION_TIMEOUT_MS = TIMING.locationTimeout;
 
     try {
       // Wrap the entire location process with a timeout
@@ -260,7 +274,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           setIsSearching(false);
         }
       }
-    }, 500),
+    }, TIMING.debounce),
     []
   );
 
@@ -316,8 +330,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       console.log('Camera permission granted, launching camera...');
       let result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7
+        aspect: CAMERA.aspectRatio as [number, number],
+        quality: CAMERA.quality
       });
 
       console.log('Camera result:', result);
@@ -326,17 +340,13 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       if (!result.canceled) {
         console.log('Photo taken successfully:', result.assets[0].uri);
         // Append to existing photos (max 5)
-        setImageUris(prev => {
-          if (prev.length >= 5) {
-            Alert.alert('Limit Reached', 'You can only add up to 5 photos.');
-            return prev;
-          }
-          return [...prev, result.assets[0].uri];
-        });
-        setOriginalImageUris(prev => {
-          if (prev.length >= 5) return prev;
-          return [...prev, result.assets[0].uri];
-        });
+        const currentUris = form.values.imageUris;
+        if (currentUris.length >= IMAGES_MAX_COUNT) {
+          Alert.alert('Limit Reached', 'You can only add up to 5 photos.');
+        } else {
+          form.setField('imageUris', [...currentUris, result.assets[0].uri]);
+          setOriginalImageUris(prev => [...prev, result.assets[0].uri]);
+        }
       } else {
         console.log('User canceled camera');
       }
@@ -359,33 +369,24 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       const uris = photos.map(p => p.uri);
       const regions = photos.map(p => p.cropRegion);
       
-      setImageUris(prev => {
-        const combined = [...prev, ...uris];
-        return combined.slice(0, 5); // Ensure max 5
-      });
-      setOriginalImageUris(prev => {
-        const combined = [...prev, ...uris];
-        return combined.slice(0, 5);
-      });
-      setCropRegions(prev => {
-        const combined = [...prev, ...regions];
-        return combined.slice(0, 5);
-      });
+      form.setField('imageUris', [...form.values.imageUris, ...uris].slice(0, IMAGES_MAX_COUNT));
+      setOriginalImageUris(prev => [...prev, ...uris].slice(0, IMAGES_MAX_COUNT));
+      setCropRegions(prev => [...prev, ...regions].slice(0, IMAGES_MAX_COUNT));
     }
   };
 
   const handleConfirmDate = (date: string | null) => {
-    setExpirationDate(date);
+    form.setField('expirationDate', date);
     setIsCalendarModalVisible(false);
   };
 
   const handleDoneCategories = (categoryIds: string[]) => {
-    setSelectedCategory(categoryIds.length > 0 ? categoryIds[0] : null);
+    form.setField('categoryId', categoryIds.length > 0 ? categoryIds[0] : null);
     setIsCategoriesModalVisible(false);
   };
 
   const handleDoneCuisines = (cuisineIds: string[]) => {
-    setSelectedCuisine(cuisineIds.length > 0 ? cuisineIds[0] : null);
+    form.setField('cuisineId', cuisineIds.length > 0 ? cuisineIds[0] : null);
     setIsFoodTagsModalVisible(false);
   };
 
@@ -410,13 +411,13 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           });
 
           if (result.success && result.restaurant_id) {
-            setSelectedRestaurant({
+            form.setField('restaurant', {
               id: result.restaurant_id,
               name: selectedPlace.name,
-              subtext: selectedPlace.subtext,
-              lat: selectedPlace.lat!, // Add lat
-              lng: selectedPlace.lng!, // Add lng
-            });
+              address: selectedPlace.subtext,
+              lat: selectedPlace.lat!,
+              lng: selectedPlace.lng!,
+            } as FormRestaurant);
           } else {
             Alert.alert('Error', 'Failed to save restaurant. Please try again.');
           }
@@ -433,7 +434,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     setSearchError(null);
   };
 
-  const handleClearRestaurant = () => setSelectedRestaurant(null);
+  const handleClearRestaurant = () => form.setField('restaurant', null);
 
   const handleSearchPress = () => {
     setSearchQuery('');
@@ -443,19 +444,15 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   };
 
   const handlePreview = async () => {
-    if (!selectedRestaurant || !dealTitle) {
-      Alert.alert("Missing Information", "Please select a restaurant and add a deal title to continue.");
-      return;
-    }
-
-    if (imageUris.length === 0) {
-      Alert.alert("Missing Photo", "Please add at least one photo to continue.");
+    const result = form.validate();
+    if (!result.valid) {
+      Alert.alert("Missing Information", result.errors[0].message);
       return;
     }
 
     // Check for profanity before showing preview
     try {
-      const profanityCheck = await checkDealContentForProfanity(dealTitle, dealDetails);
+      const profanityCheck = await checkDealContentForProfanity(form.values.title, form.values.details);
       if (!profanityCheck.success) {
         Alert.alert("Content Review", profanityCheck.error);
         return;
@@ -469,30 +466,27 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   };
 
   const handlePost = async () => {
-    if (!selectedRestaurant || !dealTitle) {
-      Alert.alert("Missing Information", "Please select a restaurant and add a deal title to continue.");
-      return;
-    }
-
-    if (imageUris.length === 0) {
-      Alert.alert("Missing Photo", "Please add at least one photo to continue.");
+    const validation = form.validate();
+    if (!validation.valid) {
+      Alert.alert("Missing Information", validation.errors[0].message);
       return;
     }
 
     setIsPosting(true);
 
     try {
+      const { values } = form;
       // Pass all images and thumbnail index to createDeal
       const dealData = {
-        title: dealTitle,
-        description: dealDetails,
-        imageUris: imageUris,
-        thumbnailIndex: thumbnailIndex,
-        expirationDate: expirationDate,
-        restaurantId: selectedRestaurant.id,
-        categoryId: selectedCategory,
-        cuisineId: selectedCuisine,
-        isAnonymous: isAnonymous,
+        title: values.title,
+        description: values.details,
+        imageUris: values.imageUris,
+        thumbnailIndex: values.thumbnailIndex,
+        expirationDate: values.expirationDate,
+        restaurantId: values.restaurant!.id,
+        categoryId: values.categoryId,
+        cuisineId: values.cuisineId,
+        isAnonymous: values.isAnonymous,
       };
 
       // Check for profanity before proceeding
@@ -521,20 +515,13 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
                 // Clear the form after a brief delay
                 setTimeout(() => {
-                  setDealTitle('');
-                  setDealDetails('');
-                  setImageUris([]);
+                  form.reset();
                   setOriginalImageUris([]);
-                  setThumbnailIndex(0);
-                  setExpirationDate(null);
-                  setSelectedCategory(null);
-                  setSelectedCuisine(null);
-                  setSelectedRestaurant(null);
-                  setIsAnonymous(false);
+                  setCropRegions([]);
 
                   // Then close the main modal
                   onClose();
-                }, 200);
+                }, TIMING.closeDelay);
               }
             }
           ]
@@ -550,214 +537,169 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString || dateString === 'Unknown') return null;
-    const date = new Date(dateString);
-    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
   const handleDetailsFocus = () => {
     setTimeout(() => {
       if (scrollViewRef.current && detailsInputRef.current) {
-        scrollViewRef.current.scrollToPosition(0, 300, true);
+        scrollViewRef.current.scrollToPosition(0, DIMENSION.scrollDetailsFocusY, true);
       }
-    }, 100);
+    }, TIMING.focusDelay);
   };
 
   const handleTitleFocus = () => {
     setTimeout(() => {
       if (scrollViewRef.current && titleInputRef.current) {
-        scrollViewRef.current.scrollToPosition(0, 100, true);
+        scrollViewRef.current.scrollToPosition(0, DIMENSION.scrollTitleFocusY, true);
       }
-    }, 100);
+    }, TIMING.focusDelay);
   };
 
   const getSelectedCategoryName = () => {
-    if (!selectedCategory) return '';
-    return categories.find(c => c.id === selectedCategory)?.name || '';
+    if (!form.values.categoryId) return '';
+    return categories.find(c => c.id === form.values.categoryId)?.name || '';
   };
 
   const getSelectedCuisineName = () => {
-    if (!selectedCuisine) return '';
-    return cuisines.find(c => c.id === selectedCuisine)?.name || '';
+    if (!form.values.cuisineId) return '';
+    return cuisines.find(c => c.id === form.values.cuisineId)?.name || '';
   };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
         <StatusBar style="dark" />
 
         {/* Show a loading indicator when data is being loaded */}
         {dataLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#FFA05C" />
-          </View>
+          <Box absoluteFill center bg={ALPHA_COLORS.whiteOverlay70} style={{ zIndex: Z_INDEX.loader }}>
+            <ActivityIndicator size="large" color={BRAND.accent} />
+          </Box>
         )}
 
         <KeyboardAwareScrollView
           ref={scrollViewRef}
-          style={styles.mainFrame}
-          contentContainerStyle={styles.mainFrameContentContainer}
+          style={{ flex: 1, width: '100%' }}
+          contentContainerStyle={{ paddingBottom: SPACING.xl, paddingHorizontal: SPACING.md }}
           keyboardShouldPersistTaps="handled"
-          extraScrollHeight={120}
+          extraScrollHeight={DIMENSION.extraScrollHeight}
           enableOnAndroid={true}
           enableAutomaticScroll={true}
           keyboardOpeningTime={0}
           scrollToOverflowEnabled={true}
         >
           {/* Back Button and Next Button Row */}
-          <View style={styles.topButtonRow}>
+          <Box row justify="space-between" align="center" mb="sm">
             <TouchableOpacity
-              style={styles.backButton}
+              style={{ width: DIMENSION.hitArea, height: DIMENSION.hitArea, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.circle }}
               onPress={onClose}
             >
-              <Ionicons name="arrow-back" size={20} color="#000000" />
+              <Ionicons name="arrow-back" size={ICON_SIZE.sm} color={STATIC.black} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.nextButton, dataLoading ? styles.disabledButton : null]}
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingVertical: SPACING.sm,
+                paddingHorizontal: SPACING.lg,
+                backgroundColor: ALPHA_COLORS.brandPrimary80,
+                borderRadius: RADIUS.pill,
+                minWidth: DIMENSION.buttonMinWidth,
+                opacity: dataLoading ? OPACITY.disabled : OPACITY.full,
+              }}
               onPress={handlePreview}
               disabled={dataLoading}
             >
-              <Text style={styles.nextButtonText}>Review</Text>
+              <Text size="xs" color={STATIC.black}>Review</Text>
             </TouchableOpacity>
-          </View>
+          </Box>
 
           {/* Search bar */}
-          {selectedRestaurant ? (
-            <View style={styles.selectedRestaurantContainer}>
-              <View style={styles.restaurantTextContainer}>
-                <Text style={styles.selectedRestaurantName}>{selectedRestaurant.name}</Text>
-                <Text style={styles.selectedRestaurantAddress}>{selectedRestaurant.subtext}</Text>
-              </View>
+          {form.values.restaurant ? (
+            <Box row align="center" py="lg" px="lg" h={DIMENSION.restaurantBarHeight} bg={ALPHA_COLORS.whiteCard93} rounded={RADIUS.card}>
+              <Box flex={1} mr="lg">
+                <Text size="xs" weight="bold" color={STATIC.black} style={{ lineHeight: DIMENSION.compactLineHeight, marginBottom: SPACING['2xs'] }}>
+                  {form.values.restaurant.name}
+                </Text>
+                <Text size="xs" color={STATIC.black} style={{ lineHeight: DIMENSION.compactLineHeight }}>
+                  {form.values.restaurant.address}
+                </Text>
+              </Box>
               <TouchableOpacity onPress={handleClearRestaurant}>
-                <Ionicons name="close-circle" size={24} color="#C1C1C1" />
+                <Ionicons name="close-circle" size={ICON_SIZE.md} color={GRAY[350]} />
               </TouchableOpacity>
-            </View>
+            </Box>
           ) : (
-            <TouchableOpacity style={styles.searchContainer} onPress={handleSearchPress}>
-              <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
-              <Text style={styles.searchPlaceholder}>Search for Restaurant *</Text>
-            </TouchableOpacity>
+            <Pressable row align="center" p="md" h={DIMENSION.searchBarHeight} bg={ALPHA_COLORS.whiteCard93} rounded={RADIUS.pill} gap="sm" px="lg" onPress={handleSearchPress}>
+              <Ionicons name="search" size={ICON_SIZE.sm} color={ALPHA_COLORS.placeholderGray} />
+              <Text size="xs" color={ALPHA_COLORS.nearBlack} ml="sm" flex={1}>Search for Restaurant *</Text>
+            </Pressable>
           )}
 
-          {/* Unified main container - with minimal gap from search */}
-          <View style={styles.dealContainerWrapper}>
-            <View style={styles.unifiedContainer}>
+          {/* Unified main container */}
+          <Box mt={6} flex={1}>
+            <Box bg={STATIC.white} rounded={RADIUS.card} py="md" flex={1} minH={DIMENSION.formMinHeight}>
               {/* Deal Title Section */}
-              <View style={styles.dealTitleSection}>
-                <Ionicons name="menu-outline" size={20} color="#606060" />
-                <Text style={styles.sectionLabel}>Deal Title *</Text>
-              </View>
-              <View style={styles.dealTitleInputContainer}>
-                <TextInput
-                  ref={titleInputRef}
-                  style={styles.dealTitleText}
-                  value={dealTitle}
-                  onChangeText={setDealTitle}
-                  placeholder="$10 Sushi before 5pm on M-W"
-                  placeholderTextColor="#C1C1C1"
-                  multiline
-                  maxLength={100}
-                  onFocus={handleTitleFocus}
-                />
-                <Text style={styles.characterCount}>{dealTitle.length}/100</Text>
-              </View>
+              <TitleSection
+                value={form.values.title}
+                onChangeText={(text) => form.setField('title', text)}
+                onFocus={handleTitleFocus}
+                inputRef={titleInputRef}
+              />
 
-              <View style={styles.separator} />
+              <FormDivider />
 
+              {/* Photo Row */}
+              <PhotoRow
+                photoCount={form.values.imageUris.length}
+                onPress={form.values.imageUris.length > 0 ? () => setIsPhotoReviewVisible(true) : handleAddPhoto}
+              />
 
-              {/* Options Section */}
-              <TouchableOpacity
-                style={styles.optionRow}
-                onPress={imageUris.length > 0 ? () => setIsPhotoReviewVisible(true) : handleAddPhoto}
-              >
-                <Ionicons name="camera-outline" size={20} color="#404040" />
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionText}>Add Photo *</Text>
-                  {imageUris.length > 0 && (
-                    <Text style={styles.optionSubText}>
-                      {imageUris.length} Photo{imageUris.length !== 1 ? 's' : ''} Added
-                    </Text>
-                  )}
-                </View>
-                <Ionicons name="chevron-forward" size={12} color="black" />
-              </TouchableOpacity>
+              <FormDivider />
 
-              <View style={styles.separator} />
+              {/* Expiration Date */}
+              <DateRow
+                expirationDate={form.values.expirationDate}
+                onPress={() => setIsCalendarModalVisible(true)}
+              />
 
-              <TouchableOpacity style={styles.optionRow} onPress={() => setIsCalendarModalVisible(true)}>
-                <Ionicons name="time-outline" size={20} color="#4E4E4E" />
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionText}>Expiration Date</Text>
-                  {expirationDate && (
-                    <Text style={styles.optionSubText}>
-                      {expirationDate === 'Unknown' ? 'Not Known' : formatDate(expirationDate)}
-                    </Text>
-                  )}
-                </View>
-                <Ionicons name="chevron-forward" size={12} color="black" />
-              </TouchableOpacity>
+              <FormDivider />
 
-              <View style={styles.separator} />
+              {/* Deal Categories */}
+              <PickerRow
+                icon="grid-outline"
+                label="Deal Categories"
+                selectedLabel={getSelectedCategoryName() || null}
+                onPress={() => setIsCategoriesModalVisible(true)}
+              />
 
-              <TouchableOpacity style={styles.optionRow} onPress={() => setIsCategoriesModalVisible(true)}>
-                <Ionicons name="grid-outline" size={20} color="#606060" />
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionText}>Deal Categories</Text>
-                  {selectedCategory && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCategoryName()}</Text>}
-                </View>
-                <Ionicons name="chevron-forward" size={12} color="black" />
-              </TouchableOpacity>
+              <FormDivider />
 
-              <View style={styles.separator} />
+              {/* Cuisine Tag */}
+              <PickerRow
+                icon="pricetag-outline"
+                label="Cuisine Tag"
+                selectedLabel={getSelectedCuisineName() || null}
+                onPress={() => setIsFoodTagsModalVisible(true)}
+              />
 
-              <TouchableOpacity style={styles.optionRow} onPress={() => setIsFoodTagsModalVisible(true)}>
-                <Ionicons name="pricetag-outline" size={20} color="#606060" />
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionText}>Cuisine Tag</Text>
-                  {selectedCuisine && <Text style={styles.optionSubText} numberOfLines={1}>{getSelectedCuisineName()}</Text>}
-                </View>
-                <Ionicons name="chevron-forward" size={12} color="black" />
-              </TouchableOpacity>
+              <FormDivider />
 
-              <View style={styles.separator} />
+              {/* Anonymous Toggle */}
+              <AnonymousToggle
+                value={form.values.isAnonymous}
+                onValueChange={(val) => form.setField('isAnonymous', val)}
+              />
 
-              <View style={styles.optionRow}>
-                <MaterialCommunityIcons name="incognito" size={20} color="#606060" />
-                <Text style={[styles.optionText, { flex: 1 }]}>Anonymous</Text>
-                <Switch
-                  trackColor={{ false: "#D2D5DA", true: "#FFA05C" }}
-                  thumbColor={"#FFFFFF"}
-                  onValueChange={setIsAnonymous}
-                  value={isAnonymous}
-                />
-              </View>
+              <FormDivider />
 
-              <View style={styles.separator} />
-
-              <View style={styles.optionRow}>
-                <Ionicons name="menu-outline" size={20} color="#606060" />
-                <Text style={[styles.optionText, { flex: 1 }]}>Extra Details</Text>
-              </View>
-
-              <View style={styles.extraDetailsInputContainer}>
-                <TextInput
-                  ref={detailsInputRef}
-                  style={styles.extraDetailsInput}
-                  value={dealDetails}
-                  onChangeText={setDealDetails}
-                  placeholder="• Is it valid for takeout, delivery, or dine-in?&#10;• Are there any limitations or exclusions?&#10;• Are there any codes or special instructions needed to redeem it?&#10;• Is this a mobile deal or in-person deal?"
-                  placeholderTextColor="#C1C1C1"
-                  multiline
-                  onFocus={handleDetailsFocus}
-                />
-              </View>
-            </View>
-          </View>
+              {/* Extra Details */}
+              <DetailsSection
+                value={form.values.details}
+                onChangeText={(text) => form.setField('details', text)}
+                onFocus={handleDetailsFocus}
+                inputRef={detailsInputRef}
+              />
+            </Box>
+          </Box>
         </KeyboardAwareScrollView>
       </SafeAreaView>
 
@@ -768,12 +710,12 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         onTakePhoto={handleTakePhoto}
         onChooseFromAlbum={handleChooseFromAlbum}
       />
-      <CalendarModal visible={isCalendarModalVisible} onClose={() => setIsCalendarModalVisible(false)} onConfirm={handleConfirmDate} initialDate={expirationDate} />
+      <CalendarModal visible={isCalendarModalVisible} onClose={() => setIsCalendarModalVisible(false)} onConfirm={handleConfirmDate} initialDate={form.values.expirationDate} />
       <ListSelectionModal
         visible={isCategoriesModalVisible}
         onClose={() => setIsCategoriesModalVisible(false)}
         onDone={handleDoneCategories}
-        initialSelected={selectedCategory ? [selectedCategory] : []}
+        initialSelected={form.values.categoryId ? [form.values.categoryId] : []}
         data={categories}
         title="Add Deal Category"
         singleSelect={true}
@@ -782,7 +724,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         visible={isFoodTagsModalVisible}
         onClose={() => setIsFoodTagsModalVisible(false)}
         onDone={handleDoneCuisines}
-        initialSelected={selectedCuisine ? [selectedCuisine] : []}
+        initialSelected={form.values.cuisineId ? [form.values.cuisineId] : []}
         data={cuisines}
         title="Cuisine Tag"
         singleSelect={true}
@@ -816,12 +758,18 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         visible={isPreviewVisible}
         onClose={() => setIsPreviewVisible(false)}
         onPost={handlePost}
-        dealTitle={dealTitle}
-        dealDetails={dealDetails}
-        imageUris={imageUris}
+        dealTitle={form.values.title}
+        dealDetails={form.values.details}
+        imageUris={form.values.imageUris}
         originalImageUris={originalImageUris}
-        expirationDate={expirationDate}
-        selectedRestaurant={selectedRestaurant}
+        expirationDate={form.values.expirationDate}
+        selectedRestaurant={form.values.restaurant ? {
+          id: form.values.restaurant.id,
+          name: form.values.restaurant.name,
+          subtext: form.values.restaurant.address,
+          lat: form.values.restaurant.lat,
+          lng: form.values.restaurant.lng,
+        } : null}
         selectedCategory={getSelectedCategoryName()}
         selectedCuisine={getSelectedCuisineName()}
         userData={userData}
@@ -830,15 +778,14 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
       <PhotoReviewModal
         visible={isPhotoReviewVisible}
-        photos={imageUris}
+        photos={form.values.imageUris}
         originalPhotos={originalImageUris}
         initialCropRegions={cropRegions}
-        thumbnailIndex={thumbnailIndex}
+        thumbnailIndex={form.values.thumbnailIndex}
         onClose={() => setIsPhotoReviewVisible(false)}
         onDone={(photos, thumbIdx, originals) => {
-          setImageUris(photos);
+          form.setFields({ imageUris: photos, thumbnailIndex: thumbIdx });
           setOriginalImageUris(originals);
-          setThumbnailIndex(thumbIdx);
           setIsPhotoReviewVisible(false);
         }}
         onAddMore={() => {
@@ -851,217 +798,9 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         visible={isInstagramPickerVisible}
         onClose={() => setIsInstagramPickerVisible(false)}
         onDone={handleInstagramPickerDone}
-        maxPhotos={5}
-        existingPhotosCount={imageUris.length}
+        maxPhotos={IMAGES_MAX_COUNT}
+        existingPhotosCount={form.values.imageUris.length}
       />
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  mainFrame: {
-    flex: 1,
-    width: '100%',
-  },
-  mainFrameContentContainer: {
-    paddingBottom: 20,
-    paddingHorizontal: 12,
-  },
-  topButtonRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  nextButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: 30,
-    minWidth: 90,
-  },
-  nextButtonText: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    color: '#000000',
-  },
-  dealContainerWrapper: {
-    marginTop: 6,
-    flex: 1,
-    width: '100%',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.93)',
-    borderRadius: 30,
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  searchPlaceholder: {
-    flex: 1,
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: 'rgba(12, 12, 13, 1)',
-    marginLeft: 8,
-  },
-  selectedRestaurantContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    height: 59,
-    backgroundColor: 'rgba(255, 255, 255, 0.93)',
-    borderRadius: 10,
-  },
-  restaurantTextContainer: {
-    flex: 1,
-    marginRight: 16,
-  },
-  selectedRestaurantName: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 12,
-    lineHeight: 17,
-    color: '#000000',
-    marginBottom: 2,
-  },
-  selectedRestaurantAddress: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 17,
-    color: '#000000',
-  },
-  unifiedContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 12,
-    flex: 1,
-    minHeight: 600,
-  },
-  dealTitleSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    height: 38,
-    gap: 16,
-  },
-  sectionLabel: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    flex: 1,
-  },
-  dealTitleInputContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 4,
-    minHeight: 70,
-  },
-  extraDetailsInputContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 4,
-    flex: 1,
-    minHeight: 200,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
-    marginVertical: 4,
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    minHeight: 38,
-    paddingVertical: 6,
-    gap: 16,
-  },
-  optionTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  optionText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-  },
-  optionSubText: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    color: '#888889',
-    marginTop: 2,
-  },
-  extraDetailsInput: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    flex: 1,
-    minHeight: 180,
-    textAlignVertical: 'top',
-    paddingHorizontal: 0,
-    paddingTop: 0,
-    paddingLeft: 2,
-    paddingBottom: 12,
-    lineHeight: 20,
-    includeFontPadding: false,
-  },
-  safeAreaContent: {
-    flex: 1,
-    width: '100%',
-    alignItems: 'center',
-    paddingTop: 14,
-    paddingBottom: 20,
-    gap: 14,
-  },
-  dealTitleText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    minHeight: 50,
-    textAlignVertical: 'top',
-    lineHeight: 20,
-    paddingTop: 0,
-    paddingLeft: 4,
-    includeFontPadding: false,
-  },
-  characterCount: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#888889',
-    alignSelf: 'flex-end',
-    marginTop: 4,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    zIndex: 1000,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-});
