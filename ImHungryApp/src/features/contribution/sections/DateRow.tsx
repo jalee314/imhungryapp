@@ -2,9 +2,11 @@
  * @file DateRow — Expiration date selection row
  *
  * Tappable row that opens the CalendarModal (managed by the screen).
+ * Optionally shows an inline clear button when a date is set.
  */
 
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Box, Text, Pressable } from '../../../ui/primitives';
 
@@ -13,6 +15,8 @@ export interface DateRowProps {
   expirationDate: string | null;
   /** Called when the row is tapped. */
   onPress: () => void;
+  /** Optional callback to clear the date inline (used by edit screen). */
+  onClear?: () => void;
 }
 
 /**
@@ -33,7 +37,7 @@ function formatDisplayDate(dateString: string | null): string | null {
   });
 }
 
-export function DateRow({ expirationDate, onPress }: DateRowProps) {
+export function DateRow({ expirationDate, onPress, onClear }: DateRowProps) {
   const displayText = formatDisplayDate(expirationDate);
 
   return (
@@ -45,7 +49,16 @@ export function DateRow({ expirationDate, onPress }: DateRowProps) {
           <Text style={{ fontSize: 11 }} color="#888889" mt="2xs">{displayText}</Text>
         )}
       </Box>
-      <Ionicons name="chevron-forward" size={12} color="black" />
+      {onClear && expirationDate ? (
+        <TouchableOpacity
+          onPress={onClear}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="close-circle" size={18} color="#888889" />
+        </TouchableOpacity>
+      ) : (
+        <Ionicons name="chevron-forward" size={12} color="black" />
+      )}
     </Pressable>
   );
 }

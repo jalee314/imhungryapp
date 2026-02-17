@@ -14,9 +14,11 @@ export interface DetailsSectionProps {
   onChangeText: (text: string) => void;
   onFocus?: () => void;
   inputRef?: React.RefObject<TextInput | null>;
+  /** Custom placeholder text. */
+  placeholder?: string;
 }
 
-const PLACEHOLDER =
+const DEFAULT_PLACEHOLDER =
   '• Is it valid for takeout, delivery, or dine-in?\n' +
   '• Are there any limitations or exclusions?\n' +
   '• Are there any codes or special instructions needed to redeem it?\n' +
@@ -27,6 +29,7 @@ export function DetailsSection({
   onChangeText,
   onFocus,
   inputRef,
+  placeholder = DEFAULT_PLACEHOLDER,
 }: DetailsSectionProps) {
   return (
     <>
@@ -53,7 +56,7 @@ export function DetailsSection({
           }}
           value={value}
           onChangeText={onChangeText}
-          placeholder={PLACEHOLDER}
+          placeholder={placeholder}
           placeholderTextColor="#C1C1C1"
           multiline
           onFocus={onFocus}
