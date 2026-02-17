@@ -1,18 +1,28 @@
 /**
  * Interaction Service (Facade)
  *
- * Public API for interaction logging operations. This service maintains
- * backward compatibility with existing callers while the underlying logic
- * is being consolidated in src/features/interactions.
+ * Minimal facade for interaction logging operations. This service provides
+ * backward compatibility with existing callers while delegating to
+ * the canonical implementation in src/features/interactions.
  *
- * For new code, consider using the interactions feature module directly:
+ * For new code, use the interactions feature module directly:
  * @see src/features/interactions for centralized interaction logging utilities
+ *
+ * @module services/interactionService
+ * @since PR-035 - Converted logging functions to thin facades
  */
 
 import { supabase } from '../../lib/supabase';
-import { getCurrentDatabaseSessionId } from './sessionService';
+import {
+  logInteractionEvent,
+  logClickEvent,
+  logShareEvent,
+  logClickThroughEvent,
+  removeFavoriteInteractionsForDeal,
+} from '../features/interactions';
+import type { InteractionSource as CanonicalInteractionSource } from '../features/interactions';
 
-// Interaction types matching your enum
+// Re-export types for backward compatibility
 export type InteractionType = 
   | 'impression'
   | 'click-open'
@@ -26,7 +36,6 @@ export type InteractionType =
   | 'block'
   | 'share';
 
-// Source types for interactions
 export type InteractionSource = 
   | 'feed'
   | 'search'
@@ -34,21 +43,14 @@ export type InteractionSource =
   | 'profile'
   | 'discover';
 
-/**
- * Get the current authenticated user's ID
- */
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
-};
+// ==========================================
+// Interaction Logging (Facade)
+// ==========================================
 
 /**
  * Log an interaction to the database
+ * Returns boolean for backward compatibility (true = success)
+ * @deprecated Use logInteractionEvent from @/features/interactions directly
  */
 export const logInteraction = async (
   dealId: string,
@@ -57,89 +59,65 @@ export const logInteraction = async (
   positionInFeed?: number,
   dwellTime?: number
 ): Promise<boolean> => {
-  try {
-    const userId = await getCurrentUserId();
-    if (!userId) return false;
-
-    const sessionId = await getCurrentDatabaseSessionId();
-    if (!sessionId) {
-      console.warn('No session ID available for interaction');
-      return false;
-    }
-
-    const { error } = await supabase
-      .from('interaction')
-      .insert({
-        user_id: userId,
-        deal_id: dealId,
-        session_id: sessionId,
-        interaction_type: interactionType,
-        source: source,
-        position_in_feed: positionInFeed || null,
-        dwell_time: dwellTime || null,
-      });
-
-    if (error) {
-      console.error('Error logging interaction:', error);
-      return false;
-    }
-
-    console.log(`✅ ${interactionType} logged for deal ${dealId} from ${source}`);
-    return true;
-  } catch (error) {
-    console.error('Error in logInteraction:', error);
-    return false;
-  }
+  const result = await logInteractionEvent({
+    dealId,
+    interactionType,
+    source: source as CanonicalInteractionSource,
+    positionInFeed,
+    dwellTime,
+  });
+  return result.success;
 };
 
 /**
  * Log a click interaction when user opens a deal
+ * @deprecated Use logClickEvent from @/features/interactions directly
  */
-export const logClick = async (dealId: string, source: InteractionSource = 'feed', positionInFeed?: number): Promise<boolean> => {
-  return await logInteraction(dealId, 'click-open', source, positionInFeed);
+export const logClick = async (
+  dealId: string,
+  source: InteractionSource = 'feed',
+  positionInFeed?: number
+): Promise<boolean> => {
+  const result = await logClickEvent(dealId, source as CanonicalInteractionSource, positionInFeed);
+  return result.success;
 };
 
 /**
  * Log a share interaction when user shares a deal
+ * @deprecated Use logShareEvent from @/features/interactions directly
  */
-export const logShare = async (dealId: string, source: InteractionSource = 'feed'): Promise<boolean> => {
-  return await logInteraction(dealId, 'share', source);
+export const logShare = async (
+  dealId: string,
+  source: InteractionSource = 'feed'
+): Promise<boolean> => {
+  const result = await logShareEvent(dealId, source as CanonicalInteractionSource);
+  return result.success;
 };
 
 /**
  * Log a click-through interaction when user clicks directions/map
+ * @deprecated Use logClickThroughEvent from @/features/interactions directly
  */
-export const logClickThrough = async (dealId: string, source: InteractionSource = 'feed'): Promise<boolean> => {
-  return await logInteraction(dealId, 'click-through', source);
+export const logClickThrough = async (
+  dealId: string,
+  source: InteractionSource = 'feed'
+): Promise<boolean> => {
+  const result = await logClickThroughEvent(dealId, source as CanonicalInteractionSource);
+  return result.success;
 };
 
 /**
  * Remove favorite interactions for a deal when unfavoriting
+ * @deprecated Use removeFavoriteInteractionsForDeal from @/features/interactions directly
  */
 export const removeFavoriteInteractions = async (dealId: string): Promise<boolean> => {
-  try {
-    const userId = await getCurrentUserId();
-    if (!userId) return false;
-
-    const { error } = await supabase
-      .from('interaction')
-      .delete()
-      .eq('user_id', userId)
-      .eq('deal_id', dealId)
-      .eq('interaction_type', 'favorite');
-
-    if (error) {
-      console.error('Error removing favorite interactions:', error);
-      return false;
-    }
-
-    console.log(`🗑️ Favorite interactions removed for deal ${dealId}`);
-    return true;
-  } catch (error) {
-    console.error('Error in removeFavoriteInteractions:', error);
-    return false;
-  }
+  const result = await removeFavoriteInteractionsForDeal(dealId);
+  return result.success;
 };
+
+// ==========================================
+// View Count Functions (Non-duplicated)
+// ==========================================
 
 /**
  * Get the view count for a deal (count of click interactions)
