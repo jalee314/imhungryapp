@@ -84,6 +84,8 @@ export const ALPHA_COLORS = {
   whiteCard93: 'rgba(255, 255, 255, 0.93)',
   placeholderGray: 'rgba(60, 60, 67, 0.6)',
   nearBlack: 'rgba(12, 12, 13, 1)',
+  /** Heavy overlay used by bottom-sheet modals */
+  blackOverlay80: 'rgba(0, 0, 0, 0.8)',
 } as const;
 
 // ============================================================================
@@ -347,6 +349,12 @@ export const DIMENSION = {
   compactLineHeight: 17,
   scrollTitleFocusY: 100,
   scrollDetailsFocusY: 300,
+  /** Profile avatar displayed on the header row */
+  profilePhoto: 85,
+  /** Skeleton placeholder for profile photo */
+  profilePhotoSkeleton: 75,
+  /** Header row height on profile page */
+  profileHeaderHeight: 117,
 } as const;
 
 // ============================================================================
