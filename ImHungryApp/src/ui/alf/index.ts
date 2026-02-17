@@ -31,6 +31,7 @@ export {
   GRAY,
   SEMANTIC,
   STATIC,
+  ALPHA_COLORS,
   // Spacing & Layout
   SPACING,
   RADIUS,
@@ -46,11 +47,18 @@ export {
   // Animation
   DURATION,
   EASING,
+  // UI Constants
+  OPACITY,
+  ICON_SIZE,
+  TIMING,
+  DIMENSION,
+  CAMERA,
   // Types
   type BrandColor,
   type GrayColor,
   type SemanticColor,
   type StaticColor,
+  type AlphaColor,
   type SpacingKey,
   type FontSizeKey,
   type FontWeightKey,
@@ -58,6 +66,11 @@ export {
   type ShadowKey,
   type DurationKey,
   type ZIndexKey,
+  type OpacityKey,
+  type IconSizeKey,
+  type TimingKey,
+  type DimensionKey,
+  type CameraKey,
 } from './tokens';
 
 // Re-export all tokens as a namespace

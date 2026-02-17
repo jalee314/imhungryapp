@@ -19,6 +19,7 @@ export const BRAND = {
   primary: '#FF8C4C',
   primaryLight: '#FFB088',
   primaryDark: '#E57A3A',
+  accent: '#FFA05C',
 } as const;
 
 /**
@@ -29,6 +30,7 @@ export const GRAY = {
   100: '#F5F5F5',
   200: '#EEEEEE',
   300: '#E0E0E0',
+  350: '#C1C1C1',
   400: '#BDBDBD',
   500: '#9E9E9E',
   600: '#757575',
@@ -66,6 +68,18 @@ export const STATIC = {
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
+} as const;
+
+/**
+ * Semi-transparent / alpha color variants
+ * Use these for overlays, translucent cards, and placeholder text
+ */
+export const ALPHA_COLORS = {
+  brandPrimary80: 'rgba(255, 140, 76, 0.8)',
+  whiteOverlay70: 'rgba(255, 255, 255, 0.7)',
+  whiteCard93: 'rgba(255, 255, 255, 0.93)',
+  placeholderGray: 'rgba(60, 60, 67, 0.6)',
+  nearBlack: 'rgba(12, 12, 13, 1)',
 } as const;
 
 // ============================================================================
@@ -161,9 +175,12 @@ export const RADIUS = {
   xs: 2,
   sm: 4,
   md: 8,
+  card: 10,
   lg: 12,
   xl: 16,
+  circle: 20,
   '2xl': 24,
+  pill: 30,
   full: 9999,
 } as const;
 
@@ -265,6 +282,79 @@ export const Z_INDEX = {
   popover: 500,
   toast: 600,
   tooltip: 700,
+  loader: 1000,
+} as const;
+
+// ============================================================================
+// OPACITY
+// ============================================================================
+
+/**
+ * Opacity values for common UI states
+ */
+export const OPACITY = {
+  disabled: 0.5,
+  overlay: 0.7,
+  active: 0.8,
+  card: 0.93,
+  full: 1,
+} as const;
+
+// ============================================================================
+// ICON SIZES
+// ============================================================================
+
+/**
+ * Standard icon sizes
+ */
+export const ICON_SIZE = {
+  sm: 20,
+  md: 24,
+} as const;
+
+// ============================================================================
+// TIMING
+// ============================================================================
+
+/**
+ * Timing constants for UX interactions (in milliseconds)
+ */
+export const TIMING = {
+  focusDelay: 100,
+  closeDelay: 200,
+  debounce: 500,
+  locationTimeout: 5000,
+} as const;
+
+// ============================================================================
+// COMPONENT DIMENSIONS
+// ============================================================================
+
+/**
+ * Reusable component dimension values
+ */
+export const DIMENSION = {
+  hitArea: 40,
+  searchBarHeight: 48,
+  restaurantBarHeight: 59,
+  buttonMinWidth: 90,
+  formMinHeight: 600,
+  extraScrollHeight: 120,
+  compactLineHeight: 17,
+  scrollTitleFocusY: 100,
+  scrollDetailsFocusY: 300,
+} as const;
+
+// ============================================================================
+// CAMERA
+// ============================================================================
+
+/**
+ * Camera configuration constants
+ */
+export const CAMERA = {
+  quality: 0.7,
+  aspectRatio: [4, 3] as const,
 } as const;
 
 // ============================================================================
@@ -275,6 +365,7 @@ export type BrandColor = keyof typeof BRAND;
 export type GrayColor = keyof typeof GRAY;
 export type SemanticColor = keyof typeof SEMANTIC;
 export type StaticColor = keyof typeof STATIC;
+export type AlphaColor = keyof typeof ALPHA_COLORS;
 export type SpacingKey = keyof typeof SPACING;
 export type FontSizeKey = keyof typeof FONT_SIZE;
 export type FontWeightKey = keyof typeof FONT_WEIGHT;
@@ -282,3 +373,8 @@ export type RadiusKey = keyof typeof RADIUS;
 export type ShadowKey = keyof typeof SHADOW;
 export type DurationKey = keyof typeof DURATION;
 export type ZIndexKey = keyof typeof Z_INDEX;
+export type OpacityKey = keyof typeof OPACITY;
+export type IconSizeKey = keyof typeof ICON_SIZE;
+export type TimingKey = keyof typeof TIMING;
+export type DimensionKey = keyof typeof DIMENSION;
+export type CameraKey = keyof typeof CAMERA;

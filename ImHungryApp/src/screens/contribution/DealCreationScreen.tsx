@@ -26,6 +26,20 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ProfileCacheService } from '../../services/profileCacheService';
 import { searchRestaurants, getOrCreateRestaurant, GooglePlaceResult } from '../../services/restaurantService';
 import { Box, Text, Pressable } from '../../ui/primitives';
+import {
+  BRAND,
+  GRAY,
+  STATIC,
+  ALPHA_COLORS,
+  SPACING,
+  RADIUS,
+  OPACITY,
+  ICON_SIZE,
+  TIMING,
+  DIMENSION,
+  CAMERA,
+  Z_INDEX,
+} from '../../ui/alf';
 import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
 import type { FormRestaurant } from '../../features/contribution/engine';
 import {
@@ -132,7 +146,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
   // Get device's current location with timeout to prevent hangs
   const getDeviceLocation = async (): Promise<{ lat: number; lng: number } | null> => {
-    const LOCATION_TIMEOUT_MS = 5000; // 5 second timeout
+    const LOCATION_TIMEOUT_MS = TIMING.locationTimeout;
 
     try {
       // Wrap the entire location process with a timeout
@@ -260,7 +274,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           setIsSearching(false);
         }
       }
-    }, 500),
+    }, TIMING.debounce),
     []
   );
 
@@ -316,8 +330,8 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       console.log('Camera permission granted, launching camera...');
       let result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7
+        aspect: CAMERA.aspectRatio as [number, number],
+        quality: CAMERA.quality
       });
 
       console.log('Camera result:', result);
@@ -507,7 +521,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
                   // Then close the main modal
                   onClose();
-                }, 200);
+                }, TIMING.closeDelay);
               }
             }
           ]
@@ -526,17 +540,17 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
   const handleDetailsFocus = () => {
     setTimeout(() => {
       if (scrollViewRef.current && detailsInputRef.current) {
-        scrollViewRef.current.scrollToPosition(0, 300, true);
+        scrollViewRef.current.scrollToPosition(0, DIMENSION.scrollDetailsFocusY, true);
       }
-    }, 100);
+    }, TIMING.focusDelay);
   };
 
   const handleTitleFocus = () => {
     setTimeout(() => {
       if (scrollViewRef.current && titleInputRef.current) {
-        scrollViewRef.current.scrollToPosition(0, 100, true);
+        scrollViewRef.current.scrollToPosition(0, DIMENSION.scrollTitleFocusY, true);
       }
-    }, 100);
+    }, TIMING.focusDelay);
   };
 
   const getSelectedCategoryName = () => {
@@ -551,22 +565,22 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
         <StatusBar style="dark" />
 
         {/* Show a loading indicator when data is being loaded */}
         {dataLoading && (
-          <Box absoluteFill center bg="rgba(255,255,255,0.7)" style={{ zIndex: 1000 }}>
-            <ActivityIndicator size="large" color="#FFA05C" />
+          <Box absoluteFill center bg={ALPHA_COLORS.whiteOverlay70} style={{ zIndex: Z_INDEX.loader }}>
+            <ActivityIndicator size="large" color={BRAND.accent} />
           </Box>
         )}
 
         <KeyboardAwareScrollView
           ref={scrollViewRef}
           style={{ flex: 1, width: '100%' }}
-          contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 12 }}
+          contentContainerStyle={{ paddingBottom: SPACING.xl, paddingHorizontal: SPACING.md }}
           keyboardShouldPersistTaps="handled"
-          extraScrollHeight={120}
+          extraScrollHeight={DIMENSION.extraScrollHeight}
           enableOnAndroid={true}
           enableAutomaticScroll={true}
           keyboardOpeningTime={0}
@@ -575,54 +589,54 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           {/* Back Button and Next Button Row */}
           <Box row justify="space-between" align="center" mb="sm">
             <TouchableOpacity
-              style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 }}
+              style={{ width: DIMENSION.hitArea, height: DIMENSION.hitArea, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.circle }}
               onPress={onClose}
             >
-              <Ionicons name="arrow-back" size={20} color="#000000" />
+              <Ionicons name="arrow-back" size={ICON_SIZE.sm} color={STATIC.black} />
             </TouchableOpacity>
             <TouchableOpacity
               style={{
                 justifyContent: 'center',
                 alignItems: 'center',
-                paddingVertical: 8,
-                paddingHorizontal: 16,
-                backgroundColor: 'rgba(255, 140, 76, 0.8)',
-                borderRadius: 30,
-                minWidth: 90,
-                opacity: dataLoading ? 0.5 : 1,
+                paddingVertical: SPACING.sm,
+                paddingHorizontal: SPACING.lg,
+                backgroundColor: ALPHA_COLORS.brandPrimary80,
+                borderRadius: RADIUS.pill,
+                minWidth: DIMENSION.buttonMinWidth,
+                opacity: dataLoading ? OPACITY.disabled : OPACITY.full,
               }}
               onPress={handlePreview}
               disabled={dataLoading}
             >
-              <Text size="xs" color="#000000">Review</Text>
+              <Text size="xs" color={STATIC.black}>Review</Text>
             </TouchableOpacity>
           </Box>
 
           {/* Search bar */}
           {form.values.restaurant ? (
-            <Box row align="center" py="lg" px="lg" h={59} bg="rgba(255,255,255,0.93)" rounded={10}>
+            <Box row align="center" py="lg" px="lg" h={DIMENSION.restaurantBarHeight} bg={ALPHA_COLORS.whiteCard93} rounded={RADIUS.card}>
               <Box flex={1} mr="lg">
-                <Text size="xs" weight="bold" color="#000000" style={{ lineHeight: 17, marginBottom: 2 }}>
+                <Text size="xs" weight="bold" color={STATIC.black} style={{ lineHeight: DIMENSION.compactLineHeight, marginBottom: SPACING['2xs'] }}>
                   {form.values.restaurant.name}
                 </Text>
-                <Text size="xs" color="#000000" style={{ lineHeight: 17 }}>
+                <Text size="xs" color={STATIC.black} style={{ lineHeight: DIMENSION.compactLineHeight }}>
                   {form.values.restaurant.address}
                 </Text>
               </Box>
               <TouchableOpacity onPress={handleClearRestaurant}>
-                <Ionicons name="close-circle" size={24} color="#C1C1C1" />
+                <Ionicons name="close-circle" size={ICON_SIZE.md} color={GRAY[350]} />
               </TouchableOpacity>
             </Box>
           ) : (
-            <Pressable row align="center" p="md" h={48} bg="rgba(255,255,255,0.93)" rounded={30} gap="sm" px="lg" onPress={handleSearchPress}>
-              <Ionicons name="search" size={20} color="rgba(60, 60, 67, 0.6)" />
-              <Text size="xs" color="rgba(12, 12, 13, 1)" ml="sm" flex={1}>Search for Restaurant *</Text>
+            <Pressable row align="center" p="md" h={DIMENSION.searchBarHeight} bg={ALPHA_COLORS.whiteCard93} rounded={RADIUS.pill} gap="sm" px="lg" onPress={handleSearchPress}>
+              <Ionicons name="search" size={ICON_SIZE.sm} color={ALPHA_COLORS.placeholderGray} />
+              <Text size="xs" color={ALPHA_COLORS.nearBlack} ml="sm" flex={1}>Search for Restaurant *</Text>
             </Pressable>
           )}
 
           {/* Unified main container */}
           <Box mt={6} flex={1}>
-            <Box bg="#FFFFFF" rounded={10} py="md" flex={1} minH={600}>
+            <Box bg={STATIC.white} rounded={RADIUS.card} py="md" flex={1} minH={DIMENSION.formMinHeight}>
               {/* Deal Title Section */}
               <TitleSection
                 value={form.values.title}
