@@ -18,3 +18,6 @@ export * from './feed';
 
 // Community feature (decomposed CommunityUploadedScreen)
 export * from './community';
+
+// Profile feature (decomposed Profile screen & hook)
+export * from './profile';
