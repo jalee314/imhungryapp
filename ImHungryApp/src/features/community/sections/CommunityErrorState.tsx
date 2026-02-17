@@ -1,0 +1,47 @@
+/**
+ * @file CommunityErrorState — Error message with retry button.
+ */
+
+import React from 'react';
+import { TouchableOpacity } from 'react-native';
+import { Box, Text } from '../../../ui/primitives';
+import { BRAND, GRAY, STATIC, RADIUS, SPACING } from '../../../ui/alf';
+
+export interface CommunityErrorStateProps {
+  message: string;
+  onRetry: () => void;
+}
+
+export function CommunityErrorState({ message, onRetry }: CommunityErrorStateProps) {
+  return (
+    <Box flex={1} center py="5xl">
+      <Text
+        size="md"
+        color={GRAY[600]}
+        textAlign="center"
+        mb="lg"
+        style={{ fontFamily: 'Inter' }}
+      >
+        {message}
+      </Text>
+      <TouchableOpacity
+        onPress={onRetry}
+        style={{
+          backgroundColor: BRAND.accent,
+          paddingHorizontal: SPACING['2xl'],
+          paddingVertical: SPACING.md,
+          borderRadius: RADIUS.md,
+        }}
+      >
+        <Text
+          size="md"
+          weight="semibold"
+          color={STATIC.white}
+          style={{ fontFamily: 'Inter' }}
+        >
+          Retry
+        </Text>
+      </TouchableOpacity>
+    </Box>
+  );
+}
