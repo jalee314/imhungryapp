@@ -5,15 +5,14 @@
  */
 
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { Box } from '../../../ui/primitives';
-import { BORDER_WIDTH } from '../../../ui/alf/tokens';
 
 export function FormDivider() {
   return (
     <Box
-      mx="md"
-      h={BORDER_WIDTH.hairline}
-      bg="borderSubtle"
+      my={4}
+      style={{ height: StyleSheet.hairlineWidth, backgroundColor: '#C1C1C1' }}
     />
   );
 }

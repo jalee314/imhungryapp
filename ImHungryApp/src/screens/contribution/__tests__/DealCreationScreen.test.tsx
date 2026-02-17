@@ -2,18 +2,21 @@
  * DealCreationScreen Integration Tests
  *
  * These tests capture the current behavior of the DealCreationScreen,
- * including form validation, required fields, and submission flow.
+ * which now uses the shared form engine (useDealForm) and section
+ * components from PR-039. Validation is delegated to validateDealForm.
  *
  * Test Categories:
- * 1. Form Validation: required fields, error messages
+ * 1. Form Validation: required fields via form engine validation
  * 2. Submit Flow: profanity check, createDeal service
- * 3. Behavior Baseline: ensures parity for form engine extraction
+ * 3. Service Integration: parity with service layer contracts
  *
  * Note: Component rendering tests are skipped due to Switch component
  * compatibility issues. Focus is on service integration and behavior.
  */
 
 import { Alert } from 'react-native';
+import { validateDealForm, DEAL_FORM_DEFAULTS } from '../../../features/contribution/engine';
+import type { DealFormValues } from '../../../features/contribution/engine';
 
 // Mock @monicon/native
 jest.mock('@monicon/native', () => ({
@@ -28,7 +31,6 @@ jest.mock('../../../services/userService', () => ({
     city: 'San Francisco',
     state: 'CA',
   }),
-  clearUserCache: jest.fn(),
 }));
 
 jest.mock('../../../services/dealService', () => ({
@@ -78,21 +80,45 @@ describe('DealCreationScreen Integration Tests', () => {
     (getOrCreateRestaurant as jest.Mock).mockResolvedValue({ success: true, restaurant_id: 'rest-123' });
   });
 
-  describe('Form Validation - Required Fields', () => {
+  describe('Form Validation - Required Fields (via form engine)', () => {
+    const validValues: DealFormValues = {
+      ...DEAL_FORM_DEFAULTS,
+      title: 'Test Deal',
+      imageUris: ['https://example.com/img.jpg'],
+      restaurant: { id: 'r1', name: 'Place', address: '123 Main' },
+    };
+
     it('should require restaurant selection for submission', () => {
-      // Validation logic checks: if (!selectedRestaurant || !dealTitle)
-      // This test documents the required field
-      expect(true).toBe(true);
+      const result = validateDealForm(
+        { ...validValues, restaurant: null },
+        'create',
+      );
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'restaurant')).toBe(true);
     });
 
     it('should require deal title for submission', () => {
-      // Validation checks dealTitle before preview/post
-      expect(true).toBe(true);
+      const result = validateDealForm(
+        { ...validValues, title: '' },
+        'create',
+      );
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'title')).toBe(true);
     });
 
     it('should require at least one photo for submission', () => {
-      // Validation checks: if (imageUris.length === 0)
-      expect(true).toBe(true);
+      const result = validateDealForm(
+        { ...validValues, imageUris: [] },
+        'create',
+      );
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field === 'imageUris')).toBe(true);
+    });
+
+    it('should pass when all required fields are present', () => {
+      const result = validateDealForm(validValues, 'create');
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
     it('should have Alert available for validation messages', () => {

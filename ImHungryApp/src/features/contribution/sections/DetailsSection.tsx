@@ -8,13 +8,12 @@ import React from 'react';
 import { TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Box, Text } from '../../../ui/primitives';
-import { GRAY, FONT_SIZE } from '../../../ui/alf/tokens';
 
 export interface DetailsSectionProps {
   value: string;
   onChangeText: (text: string) => void;
   onFocus?: () => void;
-  inputRef?: React.RefObject<TextInput>;
+  inputRef?: React.RefObject<TextInput | null>;
 }
 
 const PLACEHOLDER =
@@ -31,24 +30,31 @@ export function DetailsSection({
 }: DetailsSectionProps) {
   return (
     <>
-      <Box row gap="sm" py="md" px="md">
-        <Ionicons name="menu-outline" size={20} color={GRAY[700]} />
-        <Text size="sm" weight="medium" color="textMuted" flex={1}>Extra Details</Text>
+      <Box row gap="lg" py={6} px="lg" minH={38} align="center">
+        <Ionicons name="menu-outline" size={20} color="#606060" />
+        <Text size="xs" color="#000000" flex={1}>Extra Details</Text>
       </Box>
-      <Box px="lg" pb="md">
+      <Box px={15} py={4} flex={1} minH={200}>
         <TextInput
           ref={inputRef}
           style={{
-            fontSize: FONT_SIZE.sm,
-            color: GRAY[800],
-            padding: 0,
-            minHeight: 80,
+            fontFamily: 'Inter',
+            fontSize: 12,
+            color: '#000000',
+            flex: 1,
+            minHeight: 180,
             textAlignVertical: 'top',
+            paddingHorizontal: 0,
+            paddingTop: 0,
+            paddingLeft: 2,
+            paddingBottom: 12,
+            lineHeight: 20,
+            includeFontPadding: false,
           }}
           value={value}
           onChangeText={onChangeText}
           placeholder={PLACEHOLDER}
-          placeholderTextColor={GRAY[400]}
+          placeholderTextColor="#C1C1C1"
           multiline
           onFocus={onFocus}
         />
