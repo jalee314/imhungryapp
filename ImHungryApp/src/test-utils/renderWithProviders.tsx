@@ -3,10 +3,6 @@ import { render, RenderOptions } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Import app providers
-import { AuthProvider } from '../context/AuthContext';
-import { LocationProvider } from '../context/LocationContext';
-
 interface WrapperProps {
   children: React.ReactNode;
 }
@@ -17,7 +13,8 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 }
 
 /**
- * Test wrapper that includes all necessary providers
+ * Test wrapper that includes all necessary providers.
+ * Auth & Location are backed by Zustand stores and need no React context providers.
  */
 function AllTheProviders({ children }: WrapperProps) {
   return (
@@ -27,9 +24,7 @@ function AllTheProviders({ children }: WrapperProps) {
         insets: { top: 0, left: 0, right: 0, bottom: 0 },
       }}
     >
-      <AuthProvider>
-        <LocationProvider>{children}</LocationProvider>
-      </AuthProvider>
+      {children}
     </SafeAreaProvider>
   );
 }
@@ -46,9 +41,7 @@ function AllTheProvidersWithNavigation({ children }: WrapperProps) {
       }}
     >
       <NavigationContainer>
-        <AuthProvider>
-          <LocationProvider>{children}</LocationProvider>
-        </AuthProvider>
+        {children}
       </NavigationContainer>
     </SafeAreaProvider>
   );

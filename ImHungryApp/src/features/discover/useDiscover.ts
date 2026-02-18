@@ -8,7 +8,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
-import { useLocation } from '../../context/LocationContext';
+import { useLocation } from '../../hooks/useLocation';
 import {
   getRestaurantsWithDeals,
   getRestaurantsWithDealsDirect,
