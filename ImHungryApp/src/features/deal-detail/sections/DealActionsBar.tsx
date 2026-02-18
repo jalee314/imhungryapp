@@ -11,7 +11,7 @@ import VoteButtons from '../../../components/VoteButtons';
 import { Box } from '../../../ui/primitives';
 import { STATIC, GRAY, RADIUS, SPACING, BORDER_WIDTH } from '../../../ui/alf';
 import type { DealInteractions } from '../types';
-import { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 
 export interface DealActionsBarProps {
   dealData: Deal;

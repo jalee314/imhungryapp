@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Deal } from '../components/DealCard';
+import type { Deal } from '../types/deal';
 import { fetchRankedDeals, transformDealForUI, addDistancesToDeals, addVotesToDeals } from './dealService';
 import { getUserVoteStates, calculateVoteCounts } from './voteService';
 import { RealtimeChannel } from '@supabase/supabase-js';

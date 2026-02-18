@@ -4,7 +4,7 @@
  * Shared type definitions for the decomposed Discover (restaurant search) feature sections.
  */
 
-import { DiscoverRestaurant } from '../../services/discoverService';
+import type { DiscoverRestaurant } from '../../types/discover';
 
 /**
  * Core discover screen state.

@@ -7,7 +7,7 @@
 import React from 'react';
 import { Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 import SkeletonLoader from '../../../components/SkeletonLoader';
 import { Box, Text } from '../../../ui/primitives';
 import { BRAND, GRAY, STATIC, SPACING, RADIUS, BORDER_WIDTH } from '../../../ui/alf';

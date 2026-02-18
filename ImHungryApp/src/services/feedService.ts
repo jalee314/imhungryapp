@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import { Deal } from '../components/DealCard';
+import type { Deal } from '../types/deal';
 
 export const feedService = {
   // Fetch deals with uploader user information

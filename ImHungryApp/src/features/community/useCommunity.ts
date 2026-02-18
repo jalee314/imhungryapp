@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import React from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 import { getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';

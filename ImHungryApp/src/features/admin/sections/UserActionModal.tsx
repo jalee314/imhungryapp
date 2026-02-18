@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 import { BRAND, STATIC, GRAY, SPACING, RADIUS, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
-import type { UserProfile } from '../../../services/admin/types';
+import type { UserProfile } from '../types';
 
 interface UserActionModalProps {
   visible: boolean;

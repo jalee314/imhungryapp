@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Deal } from '../types';
+import type { Deal } from '../types/deal';
 
 interface DealUpdateState {
   // Map of updated deals (id -> deal object)

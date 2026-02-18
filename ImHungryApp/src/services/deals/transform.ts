@@ -3,7 +3,7 @@
  * Functions for transforming deal data between formats
  */
 
-import { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 import { supabase } from '../../../lib/supabase';
 import { getUserVoteStates, calculateVoteCounts } from '../voteService';
 import { getTimeAgo } from './utils';

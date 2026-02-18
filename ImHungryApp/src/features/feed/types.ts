@@ -4,7 +4,7 @@
  * Shared type definitions for the decomposed Feed feature sections.
  */
 
-import { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 
 /**
  * Core feed state: deals, loading flags, and error.

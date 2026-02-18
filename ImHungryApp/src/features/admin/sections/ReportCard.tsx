@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW, SEMANTIC } from '../../../ui/alf';
-import type { Report } from '../../../services/admin/types';
+import type { Report } from '../types';
 
 const STATUS_COLORS: Record<Report['status'], string> = {
   pending: BRAND.accent,

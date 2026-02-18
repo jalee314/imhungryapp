@@ -1,5 +1,5 @@
 import { useDataCacheStore } from '../stores/DataCacheStore';
-import type { Category, Cuisine, Restaurant } from '../types';
+import type { Category, Cuisine, Restaurant } from '../types/restaurant';
 
 // Overload: allow selector or default bundle
 export function useDataCache<T>(selector: (state: any) => T, equality?: (a: T, b: T) => boolean): T;

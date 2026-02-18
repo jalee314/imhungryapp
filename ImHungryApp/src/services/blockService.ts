@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import type { BlockReasonCode } from '../types';
+import type { BlockReasonCode } from '../types/block';
 
 // Interface for block reason codes pulled from reason_code table
 export interface ReasonCode {

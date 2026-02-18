@@ -9,10 +9,10 @@ import { useNavigation } from '@react-navigation/native';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import { useLocation } from '../../hooks/useLocation';
+import type { DiscoverRestaurant } from '../../types/discover';
 import {
   getRestaurantsWithDeals,
   getRestaurantsWithDealsDirect,
-  DiscoverRestaurant,
 } from '../../services/discoverService';
 
 import type { DiscoverContext } from './types';

@@ -6,7 +6,8 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import DealCard, { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
+import DealCard from '../../../components/DealCard';
 import { Box, Text } from '../../../ui/primitives';
 import { STATIC, SPACING } from '../../../ui/alf';
 import type { FeedInteractions } from '../types';

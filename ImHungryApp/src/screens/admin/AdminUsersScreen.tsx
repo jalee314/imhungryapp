@@ -3,7 +3,7 @@ import { SafeAreaView, FlatList, TouchableOpacity, TextInput, Alert } from 'reac
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { adminService } from '../../services/adminService';
-import type { UserProfile } from '../../services/admin/types';
+import type { UserProfile } from '../../types/admin';
 import { supabase } from '../../../lib/supabase';
 import { BRAND, GRAY, STATIC, SPACING, RADIUS } from '../../ui/alf';
 import { Box } from '../../ui/primitives/Box';

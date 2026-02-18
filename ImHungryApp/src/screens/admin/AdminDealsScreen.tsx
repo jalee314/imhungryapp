@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { adminService } from '../../services/adminService';
-import type { Deal } from '../../services/admin/types';
+import type { AdminDeal as Deal } from '../../types/admin';
 import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
 import { BRAND, GRAY, STATIC, SPACING, RADIUS } from '../../ui/alf';
 import { Box } from '../../ui/primitives/Box';
