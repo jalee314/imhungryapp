@@ -586,40 +586,7 @@ export interface LocationItem {
   };
 }
 
-export interface LocationContextType {
-  currentLocation: LocationItem | null;
-  setCurrentLocation: (location: LocationItem) => void;
-  searchLocation: (query: string) => Promise<LocationItem[]>;
-  resetToUserLocation: () => Promise<void>;
-}
-
-export interface LocationProviderProps {
-  children: React.ReactNode;
-}
-
-export interface FavoritesContextType {
-  favorites: Set<string>;
-  toggleFavorite: (dealId: string) => Promise<void>;
-}
-
-export interface DealUpdateContextType {
-  triggerDealUpdate: () => void;
-  dealUpdateTrigger: number;
-}
-
-export interface AuthContextType {
-  user: any | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: any) => Promise<void>;
-  signOut: () => Promise<void>;
-  loading: boolean;
-}
-
-export interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-// Deprecated: AdminContext replaced by Zustand store (useAdminStore). Types removed.
+// Context-based provider types removed — all state is managed by Zustand stores.
 
 // ==========================================
 // Navigation Types

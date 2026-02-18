@@ -16,7 +16,7 @@ import { logClick } from '../../services/interactionService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useDataCache } from '../../hooks/useDataCache';
-import { useLocation } from '../../context/LocationContext';
+import { useLocation } from '../../hooks/useLocation';
 import { useFeedInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
 import type { FeedContext } from './types';
 
