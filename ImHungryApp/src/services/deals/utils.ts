@@ -82,31 +82,6 @@ export const uploadDealImage = async (imageUri: string): Promise<string | null> 
 };
 
 /**
- * Parse and format date string to ISO format
- */
-export const parseDate = (dateString: string | null): string | null => {
-  if (!dateString || dateString === 'Unknown') {
-    return null;
-  }
-  try {
-    let date: Date;
-    if (dateString.includes('T') || dateString.includes('Z')) {
-      date = new Date(dateString);
-    } else {
-      date = new Date(dateString);
-    }
-    if (isNaN(date.getTime())) {
-      console.error('Invalid date format:', dateString);
-      return null;
-    }
-    return date.toISOString();
-  } catch (error) {
-    console.error('Error parsing date:', dateString, error);
-    return null;
-  }
-};
-
-/**
  * Calculate human-readable time ago string
  */
 export const getTimeAgo = (date: Date): string => {

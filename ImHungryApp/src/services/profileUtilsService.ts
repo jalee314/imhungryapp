@@ -26,17 +26,6 @@ export const getDisplayName = (userData: any, profile: any) => {
 };
 
 /**
- * Calculate username font size based on length
- */
-export const getUsernameFontSize = (username: string) => {
-  const length = username.length;
-  
-  if (length <= 8) return 26;
-  if (length <= 12) return 24;
-  return 22;
-};
-
-/**
  * Show profile photo picker options
  */
 export const showProfilePhotoOptions = (
@@ -60,33 +49,6 @@ export const showProfilePhotoOptions = (
       {
         text: 'Cancel',
         style: 'cancel',
-      },
-    ]
-  );
-};
-
-/**
- * Show logout confirmation
- */
-export const showLogoutConfirmation = (
-  onConfirm: () => void,
-  onCancel: () => void
-) => {
-  const { Alert } = require('react-native');
-  
-  Alert.alert(
-    'Log Out',
-    'Are you sure you want to log out?',
-    [
-      {
-        text: 'Cancel',
-        onPress: onCancel,
-        style: 'cancel',
-      },
-      {
-        text: 'Log Out',
-        onPress: onConfirm,
-        style: 'destructive',
       },
     ]
   );

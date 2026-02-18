@@ -14,6 +14,7 @@ import { adminService } from '../../services/adminService';
 import { useAdmin } from '../../hooks/useAdmin';
 import { useAuth } from '../../hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 
 const AdminLoginScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -67,13 +68,7 @@ const AdminLoginScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Admin Login</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="Admin Login" onBack={handleCancel} />
 
       <View style={styles.content}>
         <View style={styles.lockIcon}>
@@ -127,27 +122,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    width: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
-  },
-  placeholder: {
-    width: 40,
   },
   content: {
     flex: 1,

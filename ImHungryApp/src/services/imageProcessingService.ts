@@ -302,13 +302,5 @@ export const processImageWithEdgeFunction = async (
   }
 };
 
-export const getOptimizedImageUrl = (
-  variants: ImageVariants,
-  context: VariantContext
-): string => {
-  const selectedVariant = getOptimalImageVariant(variants, context);
-  return getImageUrl(selectedVariant);
-};
-
 
 

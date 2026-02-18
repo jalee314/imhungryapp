@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
+import ModalHeader from './ui/ModalHeader';
 
 interface CalendarModalProps {
   visible: boolean;
@@ -53,15 +54,7 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.calendarHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.calendarHeaderText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.calendarHeaderTitle}>Expiration Date</Text>
-          <TouchableOpacity onPress={handleConfirm}>
-            <Text style={[styles.calendarHeaderText, { color: '#FF8C4C', fontWeight: 'bold' }]}>Done</Text>
-          </TouchableOpacity>
-        </View>
+        <ModalHeader title="Expiration Date" onCancel={onClose} onDone={handleConfirm} />
         {selectedDate && !noExpirationKnown && (
           <View style={styles.selectedDateContainer}>
             <View style={styles.selectedDatePill}>
@@ -122,22 +115,6 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
 }
 
 const styles = StyleSheet.create({
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
-  },
-  calendarHeaderText: {
-    fontSize: 17,
-    color: '#000000',
-  },
-  calendarHeaderTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
   selectedDateContainer: {
     padding: 16,
     alignItems: 'flex-start',

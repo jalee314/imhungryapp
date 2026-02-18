@@ -11,7 +11,7 @@ import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ProfileCacheService } from '../../../services/profileCacheService';
 import { loadCriticalProfileData, updateUserProfileCache } from '../../../services/profileLoadingService';
-import { UserProfileCache } from '../../../services/userProfileService';
+import type { UserProfileCache } from '../../../types/user';
 import type { ProfileDataState } from '../types';
 
 // ============================================================================

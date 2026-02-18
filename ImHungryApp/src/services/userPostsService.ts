@@ -1,4 +1,7 @@
 import { supabase } from '../../lib/supabase';
+import type { UserPost } from '../types/user';
+
+export type { UserPost } from '../types/user';
 
 // Cache for user posts
 const postsCache = new Map<string, {
@@ -8,33 +11,10 @@ const postsCache = new Map<string, {
 
 const POSTS_CACHE_DURATION = 30000; // 30 seconds cache for posts
 
-export interface UserPost {
-  id: string;
-  title: string;
-  restaurant: string;
-  details: string;
-  image: { uri: string } | any;
-  imageVariants?: any; // ✅ Add this for OptimizedImage
-  votes: number;
-  isUpvoted: boolean;
-  isDownvoted: boolean;
-  isFavorited: boolean;
-  cuisine: string;
-  cuisineId?: string;
-  timeAgo: string;
-  author: string;
-  milesAway: string;
-  userId?: string;
-  userDisplayName?: string;
-  userProfilePhoto?: string;
-  restaurantAddress?: string;
-  isAnonymous?: boolean;
-}
-
 /**
  * Transform database post data to UI format
  */
-export const transformDealForUI = (post: any): UserPost => {
+const transformDealForUI = (post: any): UserPost => {
   // Handle image source - ONLY use Cloudinary or placeholder
   let imageSource;
   let imageVariants = undefined;
@@ -215,14 +195,6 @@ export const updatePostsWithUserInfo = (
     userDisplayName: userDisplayName,
     userProfilePhoto: userProfilePhoto || undefined,
   }));
-};
-
-/**
- * Clear posts cache for a specific user
- */
-export const clearUserPostsCache = (userId: string): void => {
-  const keysToDelete = Array.from(postsCache.keys()).filter(key => key.startsWith(`${userId}_`));
-  keysToDelete.forEach(key => postsCache.delete(key));
 };
 
 /**

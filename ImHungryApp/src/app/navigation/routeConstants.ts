@@ -42,7 +42,4 @@ export {
   ALL_ROUTES,
 } from './routes';
 
-export type { RouteParams } from './types';
-
 export { DEEP_LINK_CONFIG } from './linking';
-export type { DeepLinkPath } from './linking';

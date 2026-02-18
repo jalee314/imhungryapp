@@ -14,6 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -541,16 +542,7 @@ const AdminMassUploadScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mass Deal Upload</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="Mass Deal Upload" onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={styles.content}
@@ -624,27 +616,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    width: 40,
-  },
-  placeholder: {
-    width: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
   },
   content: {
     flex: 1,

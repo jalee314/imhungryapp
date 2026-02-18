@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
  * Maps Google Places API types to cuisine names in our database
  * Based on the Google Places types returned in the search results
  */
-export const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
+const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
   // American variations
   'american_restaurant': 'American',
   'hamburger_restaurant': 'American',
@@ -61,7 +61,7 @@ export const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
  * @param googlePlacesTypes - Array of types from Google Places API
  * @returns cuisine name that exists in our database, or null if no match
  */
-export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): string | null => {
+const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): string | null => {
   if (!googlePlacesTypes || googlePlacesTypes.length === 0) {
     return 'American'; // Default to American if no types provided
   }
@@ -139,7 +139,7 @@ export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): st
  * @param cuisineName - Name of the cuisine (e.g., 'Italian', 'Chinese')
  * @returns cuisine_id or null if not found
  */
-export const getCuisineIdByName = async (cuisineName: string): Promise<string | null> => {
+const getCuisineIdByName = async (cuisineName: string): Promise<string | null> => {
   try {
     const { data, error } = await supabase
       .from('cuisine')
@@ -165,7 +165,7 @@ export const getCuisineIdByName = async (cuisineName: string): Promise<string | 
  * @param cuisineId - ID of the cuisine
  * @returns success boolean
  */
-export const createRestaurantCuisineEntry = async (
+const createRestaurantCuisineEntry = async (
   restaurantId: string, 
   cuisineId: string
 ): Promise<boolean> => {

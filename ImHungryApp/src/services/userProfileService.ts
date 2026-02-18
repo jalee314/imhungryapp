@@ -1,4 +1,7 @@
 import { supabase } from '../../lib/supabase';
+import type { UserProfileData, UserProfileCache } from '../types/user';
+
+export type { UserProfileData, UserProfileCache } from '../types/user';
 
 // Simple cache for profile data
 const profileCache = new Map<string, {
@@ -7,31 +10,6 @@ const profileCache = new Map<string, {
 }>();
 
 const CACHE_DURATION = 60000; // 1 minute cache
-
-export interface UserProfileData {
-  profile: any;
-  photoUrl: string | null;
-  dealCount: number;
-  userData: {
-    username: string;
-    profilePicture: string | null;
-    city: string;
-    state: string;
-  };
-}
-
-export interface UserProfileCache {
-  profile: any;
-  photoUrl: string | null;
-  dealCount: number;
-  userData: {
-    username: string;
-    profilePicture: string | null;
-    city: string;
-    state: string;
-  };
-  userPosts: any[];
-}
 
 /**
  * Fetch user profile data including basic info, photo, and deal count
@@ -156,16 +134,3 @@ export const createUserProfileCache = (
   };
 };
 
-/**
- * Clear profile cache for a specific user
- */
-export const clearProfileCache = (userId: string): void => {
-  profileCache.delete(userId);
-};
-
-/**
- * Clear all profile cache
- */
-export const clearAllProfileCache = (): void => {
-  profileCache.clear();
-};

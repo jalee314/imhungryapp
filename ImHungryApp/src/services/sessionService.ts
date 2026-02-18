@@ -66,7 +66,7 @@ export const initializeAuthSession = async (): Promise<boolean> => {
 /**
  * Create a new database session for tracking user activity
  */
-export const createDatabaseSession = async (): Promise<string | null> => {
+const createDatabaseSession = async (): Promise<string | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -150,7 +150,7 @@ export const getCurrentDatabaseSessionId = async (): Promise<string | null> => {
 /**
  * End the current database session
  */
-export const endDatabaseSession = async (sessionId?: string): Promise<void> => {
+const endDatabaseSession = async (sessionId?: string): Promise<void> => {
   try {
     const sessionIdToEnd = sessionId || await AsyncStorage.getItem(DB_SESSION_ID_KEY);
     if (!sessionIdToEnd) return;
@@ -197,7 +197,7 @@ export const signOut = async (): Promise<void> => {
 /**
  * Check if user is authenticated
  */
-export const isAuthenticated = async (): Promise<boolean> => {
+const isAuthenticated = async (): Promise<boolean> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     return !!session;
