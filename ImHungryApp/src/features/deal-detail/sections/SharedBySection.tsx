@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Image, ImageSourcePropType, TouchableOpacity } from 'react-native';
-import { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 import { Box, Text } from '../../../ui/primitives';
 import { STATIC, GRAY, BORDER_WIDTH, SPACING } from '../../../ui/alf';
 

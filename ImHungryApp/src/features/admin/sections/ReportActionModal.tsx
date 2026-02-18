@@ -22,7 +22,7 @@ import {
   ALPHA_COLORS,
   OPACITY,
 } from '../../../ui/alf';
-import type { Report } from '../../../services/admin/types';
+import type { Report } from '../types';
 
 const STATUS_COLORS: Record<Report['status'], string> = {
   pending: BRAND.accent,

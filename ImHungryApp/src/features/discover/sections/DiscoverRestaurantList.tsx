@@ -6,7 +6,7 @@ import React, { useCallback } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 
 import RowCard, { RowCardData } from '../../../components/RowCard';
-import { DiscoverRestaurant } from '../../../services/discoverService';
+import type { DiscoverRestaurant } from '../../../types/discover';
 
 import { DiscoverEmptyState } from './DiscoverEmptyState';
 

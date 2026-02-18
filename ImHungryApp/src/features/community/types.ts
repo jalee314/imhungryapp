@@ -4,7 +4,7 @@
  * Shared type definitions for the decomposed Community (Featured Deals) feature sections.
  */
 
-import { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 
 /**
  * Core community screen state.

@@ -16,7 +16,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
-import { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
 import { useSingleDealInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';

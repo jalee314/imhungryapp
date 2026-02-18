@@ -5,24 +5,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { toByteArray } from 'base64-js';
 
-// Define the allowed image types as a union type
-export type ImageType = 'profile_image' | 'deal_image' | 'restaurant_image' | 'franchise_logo_image';
+import type { ImageType, ImageVariants, VariantContext } from '../types/image';
 
-export interface ImageVariants {
-  original?: string;
-  large?: string;
-  medium?: string;
-  small?: string;
-  thumbnail?: string;
-}
-
-export interface VariantContext {
-  devicePixelRatio?: number;
-  screenWidth?: number;
-  componentType: 'profile' | 'deal' | 'restaurant' | 'franchise_logo';
-  displaySize: { width: number; height: number };
-  networkType?: 'slow-2g' | '2g' | '3g' | '4g' | 'wifi';
-}
+export type { ImageType, ImageVariants, VariantContext } from '../types/image';
 
 // Define variant thresholds based on component type
 const VARIANT_THRESHOLDS = {

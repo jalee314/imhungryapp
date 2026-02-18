@@ -7,7 +7,7 @@
 
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useFeedInteractionHandlers, useSingleDealInteractionHandlers } from '../useFeedInteractionHandlers';
-import type { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 
 // Mock the voteService
 const mockToggleUpvote = jest.fn();

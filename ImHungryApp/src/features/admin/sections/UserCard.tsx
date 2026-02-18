@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 import { STATIC, GRAY, SPACING, RADIUS, SHADOW, SEMANTIC, BRAND } from '../../../ui/alf';
-import type { UserProfile } from '../../../services/admin/types';
+import type { UserProfile } from '../types';
 
 interface UserCardProps {
   user: UserProfile;

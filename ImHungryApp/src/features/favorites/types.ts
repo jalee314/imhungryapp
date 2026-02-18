@@ -4,7 +4,7 @@
  * Shared type definitions for the decomposed Favorites feature sections.
  */
 
-import { FavoriteDeal, FavoriteRestaurant } from '../../services/favoritesService';
+import type { FavoriteDeal, FavoriteRestaurant } from '../../types/favorites';
 
 /**
  * Active tab selection.

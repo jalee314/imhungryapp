@@ -13,7 +13,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 import SkeletonLoader from '../../../components/SkeletonLoader';
 import OptimizedImage from '../../../components/OptimizedImage';
 import { Box, Text } from '../../../ui/primitives';

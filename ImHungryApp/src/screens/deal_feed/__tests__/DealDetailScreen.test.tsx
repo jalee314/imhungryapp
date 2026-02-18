@@ -23,7 +23,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import DealDetailScreen from '../DealDetailScreen';
-import { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 import { mockSupabase, configureMockAuth } from '../../../test-utils/mocks/supabaseMock';
 
 // Mock @monicon/native

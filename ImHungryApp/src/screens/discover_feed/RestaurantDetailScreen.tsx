@@ -17,11 +17,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
 import RowCard, { RowCardData } from '../../components/RowCard';
-import { DiscoverRestaurant } from '../../services/discoverService';
+import type { DiscoverRestaurant } from '../../types/discover';
 import { getCurrentUserLocation } from '../../services/locationService';
 import { calculateDistance } from '../../services/locationService';
 import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '../../services/restaurantFavoriteService';
-import { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 import { logClick } from '../../services/interactionService';
 import { useFavorites } from '../../hooks/useFavorites';
 

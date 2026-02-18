@@ -1,6 +1,9 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
 import { Monicon } from '@monicon/native';
+
+import type { Deal } from '../types/deal';
+
 import OptimizedImage, { preloadImage } from './OptimizedImage';
 import VoteButtons from './VoteButtons';
 
@@ -27,33 +30,7 @@ const HORIZONTAL_IMAGE_WIDTH = HORIZONTAL_CARD_WIDTH - scale(16); // Card paddin
 const HORIZONTAL_IMAGE_HEIGHT = HORIZONTAL_IMAGE_WIDTH * 0.64; // Maintain aspect ratio ~260:167
 const VERTICAL_IMAGE_SIZE = VERTICAL_CARD_WIDTH - scale(16); // Square image for vertical cards
 
-export interface Deal {
-  id: string;
-  title: string;
-  restaurant: string;
-  details: string;
-  image: string | any;
-  imageVariants?: any; // Add this field
-  images?: string[]; // Array of image URLs for multiple photos
-  votes: number;
-  isUpvoted: boolean;
-  isDownvoted: boolean;
-  isFavorited: boolean;
-  cuisine?: string;
-  cuisineId?: string;
-  dealType?: string; // e.g., "BOGO", "50% Off", "Happy Hour", etc.
-  timeAgo: string;
-  author?: string;
-  milesAway?: string;
-  userId?: string;
-  userDisplayName?: string;
-  userProfilePhoto?: string;
-  userCity?: string;
-  userState?: string;
-  restaurantAddress?: string;
-  isAnonymous?: boolean;
-  expirationDate?: string | null;
-}
+export type { Deal };
 
 interface DealCardProps {
   deal: Deal;

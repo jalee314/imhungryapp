@@ -5,7 +5,7 @@
 import React from 'react';
 
 import RowCard from '../../../components/RowCard';
-import { FavoriteDeal } from '../../../services/favoritesService';
+import type { FavoriteDeal } from '../../../types/favorites';
 
 export interface FavoritesDealsListProps {
   deals: FavoriteDeal[];

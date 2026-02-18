@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW, SEMANTIC } from '../../../ui/alf';
-import type { AppAnalytics } from '../../../services/admin/types';
+import type { AppAnalytics } from '../types';
 
 interface DashboardStatsGridProps {
   analytics: AppAnalytics;

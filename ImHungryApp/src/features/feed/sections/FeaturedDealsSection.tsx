@@ -9,7 +9,8 @@ import React from 'react';
 import { View, FlatList, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import DealCard, { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
+import DealCard from '../../../components/DealCard';
 import { Box, Text } from '../../../ui/primitives';
 import {
   STATIC,

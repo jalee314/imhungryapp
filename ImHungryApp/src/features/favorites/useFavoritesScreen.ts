@@ -10,13 +10,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { supabase } from '../../../lib/supabase';
 import { useFavorites } from '../../hooks/useFavorites';
+import type { FavoriteDeal, FavoriteRestaurant } from '../../types/favorites';
 import {
   fetchFavoriteDeals,
   fetchFavoriteRestaurants,
   clearFavoritesCache,
   toggleRestaurantFavorite,
-  FavoriteDeal,
-  FavoriteRestaurant,
 } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
 

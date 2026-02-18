@@ -26,7 +26,7 @@ import { useLocationStore } from '../../../stores/LocationStore';
 import { useFavoritesStore } from '../../../stores/FavoritesStore';
 import { useDataCacheStore } from '../../../stores/DataCacheStore';
 import { useDealUpdateStore } from '../../../stores/DealUpdateStore';
-import { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 import { mockSupabase, mockUser, configureMockAuth } from '../../../test-utils/mocks/supabaseMock';
 
 // Mock @monicon/native (used by DealCard)

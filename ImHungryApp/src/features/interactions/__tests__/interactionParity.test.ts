@@ -23,7 +23,7 @@ import {
   calculateUpvoteToggle,
   calculateDownvoteToggle,
 } from '../../../hooks/useFeedInteractionHandlers';
-import type { Deal } from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 
 describe('Cross-Surface Interaction Parity (PR-035)', () => {
   /**

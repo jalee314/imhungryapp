@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, RefreshControl, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { adminService } from '../../services/adminService';
-import type { AppAnalytics } from '../../services/admin/types';
+import type { AppAnalytics } from '../../types/admin';
 import { useAdmin } from '../../hooks/useAdmin';
 import { useAuth } from '../../hooks/useAuth';
 import { BRAND, GRAY } from '../../ui/alf';

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 import { STATIC, GRAY, SPACING, RADIUS, SHADOW } from '../../../ui/alf';
-import type { Deal } from '../../../services/admin/types';
+import type { AdminDeal as Deal } from '../types';
 
 interface DealCardProps {
   deal: Deal;

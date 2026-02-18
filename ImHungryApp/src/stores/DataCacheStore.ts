@@ -3,7 +3,7 @@ import React from 'react';
 import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, AppStateStatus } from 'react-native';
-import type { Category, Cuisine, Restaurant } from '../types';
+import type { Category, Cuisine, Restaurant } from '../types/restaurant';
 
 interface DataCacheState {
   // Reactive state

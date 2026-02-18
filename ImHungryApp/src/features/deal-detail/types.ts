@@ -4,7 +4,7 @@
  * Shared type definitions for the decomposed DealDetail feature sections.
  */
 
-import { Deal } from '../../components/DealCard';
+import type { Deal } from '../../types/deal';
 
 /**
  * The full set of state/callbacks the DealDetail container manages.
