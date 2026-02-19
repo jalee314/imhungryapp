@@ -173,7 +173,7 @@ describe('DealDetailScreen Integration Tests', () => {
         },
         error: null,
       }),
-    });
+    } as any);
   });
 
   describe('Render States', () => {
@@ -299,7 +299,7 @@ describe('DealDetailScreen Integration Tests', () => {
       // The share functionality is available through the VoteButtons component
       // logShare is called when sharing
       renderDealDetailScreen();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Test Deal Title')).toBeTruthy();
       });

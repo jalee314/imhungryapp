@@ -76,7 +76,7 @@ import {
 } from '../../../services/dealService';
 
 // Mock Alert
-jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+jest.spyOn(Alert, 'alert').mockImplementation(() => { });
 
 describe('DealEditScreen Integration Tests', () => {
   beforeEach(() => {
@@ -124,20 +124,20 @@ describe('DealEditScreen Integration Tests', () => {
     it('should fetch deal data successfully', async () => {
       const result = await fetchDealForEdit('deal-123');
       expect(result.success).toBe(true);
-      expect(result.deal).toBeDefined();
-      expect(result.deal.id).toBe('deal-123');
+      expect((result as any).deal).toBeDefined();
+      expect((result as any).deal.id).toBe('deal-123');
     });
 
     it('should load deal with images', async () => {
       const result = await fetchDealForEdit('deal-123');
-      expect(result.deal.images).toHaveLength(2);
-      expect(result.deal.images[0].public_url).toBe('https://example.com/img1.jpg');
+      expect((result as any).deal.images).toHaveLength(2);
+      expect((result as any).deal.images[0].public_url).toBe('https://example.com/img1.jpg');
     });
 
     it('should load deal with restaurant info', async () => {
       const result = await fetchDealForEdit('deal-123');
-      expect(result.deal.restaurant).toBeDefined();
-      expect(result.deal.restaurant.name).toBe('Test Restaurant');
+      expect((result as any).deal.restaurant).toBeDefined();
+      expect((result as any).deal.restaurant.name).toBe('Test Restaurant');
     });
 
     it('should handle fetch error', async () => {
@@ -212,7 +212,7 @@ describe('DealEditScreen Integration Tests', () => {
 
     it('should update image order successfully', async () => {
       const orderedImageIds = ['img-2', 'img-1'];
-      const result = await updateDealImageOrder('deal-123', orderedImageIds);
+      const result = await updateDealImageOrder('deal-123', orderedImageIds as any);
       expect(result.success).toBe(true);
       expect(updateDealImageOrder).toHaveBeenCalledWith('deal-123', orderedImageIds);
     });
@@ -249,7 +249,7 @@ describe('DealEditScreen Integration Tests', () => {
       await updateDealFields('deal-123', { title: 'New Title' });
       await removeDealImage('deal-123', 'img-2');
       await addDealImages('deal-123', ['https://example.com/new.jpg']);
-      await updateDealImageOrder('deal-123', ['img-1', 'img-3']);
+      await updateDealImageOrder('deal-123', ['img-1', 'img-3'] as any);
       await setDealThumbnail('deal-123', 'https://example.com/img1.jpg');
 
       // Verify all services were called

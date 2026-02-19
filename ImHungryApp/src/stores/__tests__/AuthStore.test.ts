@@ -277,7 +277,7 @@ describe('AuthStore', () => {
     it('should unsubscribe auth listener', async () => {
       const mockUnsubscribe = jest.fn();
       useAuthStore.setState({
-        _authSubscription: { unsubscribe: mockUnsubscribe },
+        _authSubscription: { unsubscribe: mockUnsubscribe } as any,
         _initialized: true,
       });
 

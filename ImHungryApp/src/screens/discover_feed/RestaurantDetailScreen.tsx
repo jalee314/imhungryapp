@@ -137,7 +137,7 @@ const RestaurantDetailScreen: React.FC = () => {
       }
 
       // Transform and process deals
-      const processedDeals: RestaurantDeal[] = await Promise.all(
+      const processedDeals = await Promise.all(
         data.map(async (deal) => {
           // Get view count for this deal (count of click-open interactions)
           const { count: viewCount } = await supabase
@@ -180,7 +180,7 @@ const RestaurantDetailScreen: React.FC = () => {
           console.log('🔍 Processing deal:', template.title, {
             has_image_url: !!template.image_url,
             has_image_metadata: !!imageMetadata,
-            image_metadata_variants: imageMetadata?.variants,
+            image_metadata_variants: (imageMetadata as any)?.variants,
             image_url: template.image_url,
             deal_images_count: dealImages.length
           });
@@ -208,7 +208,7 @@ const RestaurantDetailScreen: React.FC = () => {
 
       console.log('🔍 Loaded deals:', processedDeals.map(d => ({ id: d.deal_id, title: d.title })));
       console.log('🔍 Setting deals state with length:', processedDeals.length);
-      setDeals(processedDeals);
+      setDeals(processedDeals as RestaurantDeal[]);
       console.log('🔍 Deals state set successfully');
     } catch (err) {
       console.error('Error loading restaurant deals:', err);

@@ -26,6 +26,7 @@ export interface Deal {
   restaurantAddress?: string;
   isAnonymous?: boolean;
   expirationDate?: string | null;
+  uploaderUserId?: string;
 }
 
 export interface DatabaseDeal {

@@ -61,7 +61,7 @@ import { searchRestaurants, getOrCreateRestaurant } from '../../../services/rest
 import { ProfileCacheService } from '../../../services/profileCacheService';
 
 // Mock Alert
-jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+jest.spyOn(Alert, 'alert').mockImplementation(() => { });
 
 describe('DealCreationScreen Integration Tests', () => {
   beforeEach(() => {
@@ -180,13 +180,13 @@ describe('DealCreationScreen Integration Tests', () => {
 
     it('should handle successful creation', async () => {
       (createDeal as jest.Mock).mockResolvedValue({ success: true });
-      const result = await createDeal({ title: 'Test' });
+      const result = await createDeal({ title: 'Test' } as any);
       expect(result.success).toBe(true);
     });
 
     it('should handle creation failure', async () => {
       (createDeal as jest.Mock).mockResolvedValue({ success: false, error: 'Failed' });
-      const result = await createDeal({ title: 'Test' });
+      const result = await createDeal({ title: 'Test' } as any);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Failed');
     });

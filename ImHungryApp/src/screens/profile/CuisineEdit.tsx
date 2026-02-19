@@ -35,7 +35,7 @@ export default function CuisineEdit() {
 
     // Get the navigation state to find the ProfileEdit route key
     const state = navigation.getState();
-    const profileEditRoute = state.routes.find((r: any) => r.name === 'ProfileEdit');
+    const profileEditRoute = state?.routes.find((r: any) => r.name === 'ProfileEdit');
 
     if (profileEditRoute?.key) {
       // Set params on ProfileEdit screen before going back

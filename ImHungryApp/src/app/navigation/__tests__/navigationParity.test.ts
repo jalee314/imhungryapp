@@ -39,7 +39,7 @@ import {
 const EXPECTED_STACK_TOPOLOGY = {
   // Root level stacks (selected by App.tsx based on auth/admin state)
   rootStacks: ['OnboardingStack', 'AdminStack', 'AppStack'] as const,
-  
+
   // Onboarding stack screens (in order)
   onboarding: {
     initialRoute: 'Landing',
@@ -57,7 +57,7 @@ const EXPECTED_STACK_TOPOLOGY = {
       'AdminLogin',
     ],
   },
-  
+
   // Admin stack screens
   admin: {
     initialRoute: 'AdminDashboard',
@@ -69,7 +69,7 @@ const EXPECTED_STACK_TOPOLOGY = {
       'AdminMassUpload',
     ],
   },
-  
+
   // App stack (contains MainTabs + shared screens)
   app: {
     initialRoute: 'MainTabs',
@@ -94,7 +94,7 @@ const EXPECTED_STACK_TOPOLOGY = {
       ],
     },
   },
-  
+
   // Tab stack nested screens
   tabStacks: {
     feed: {
@@ -146,13 +146,13 @@ const SMOKE_PATHS = {
     'InstantNotifications',
     'CuisinePreferences',
   ],
-  
+
   // Login flow
   existingUserLogin: [
     'Landing',
     'LogIn',
   ],
-  
+
   // Password reset flow
   passwordReset: [
     'Landing',
@@ -160,7 +160,7 @@ const SMOKE_PATHS = {
     'ForgotPassword',
     'ResetPassword',
   ],
-  
+
   // Main app tab navigation
   tabNavigation: [
     'Feed',
@@ -168,20 +168,20 @@ const SMOKE_PATHS = {
     'FavoritesPage',
     'ProfilePage',
   ],
-  
+
   // Deal detail flow
   dealFlow: [
     'Feed',
     'DealDetail',
   ],
-  
+
   // Profile settings flow
   profileSettingsFlow: [
     'ProfilePage',
     'ProfileMain',
     'ProfileEdit',
   ],
-  
+
   // Admin flow
   adminFlow: [
     'AdminDashboard',
@@ -387,7 +387,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
         const appRoutes = new Set(Object.values(APP_STACK_ROUTES));
 
         onboardingRoutes.forEach((route) => {
-          expect(appRoutes.has(route)).toBe(false);
+          expect(appRoutes.has(route as any)).toBe(false);
         });
       });
 
@@ -396,7 +396,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
         const appRoutes = new Set(Object.values(APP_STACK_ROUTES));
 
         adminRoutes.forEach((route) => {
-          expect(appRoutes.has(route)).toBe(false);
+          expect(appRoutes.has(route as any)).toBe(false);
         });
       });
 
@@ -405,7 +405,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
         const adminRoutes = new Set(Object.values(ADMIN_ROUTES));
 
         onboardingRoutes.forEach((route) => {
-          expect(adminRoutes.has(route)).toBe(false);
+          expect(adminRoutes.has(route as any)).toBe(false);
         });
       });
     });
@@ -448,7 +448,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
     describe('Onboarding Paths', () => {
       it('new user signup path should have valid routes', () => {
         const allRouteValues = Object.values(ALL_ROUTES);
-        
+
         SMOKE_PATHS.newUserSignup.forEach((route) => {
           expect(allRouteValues).toContain(route);
         });
@@ -465,7 +465,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
 
       it('existing user login path should have valid routes', () => {
         const allRouteValues = Object.values(ALL_ROUTES);
-        
+
         SMOKE_PATHS.existingUserLogin.forEach((route) => {
           expect(allRouteValues).toContain(route);
         });
@@ -473,7 +473,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
 
       it('password reset path should have valid routes', () => {
         const allRouteValues = Object.values(ALL_ROUTES);
-        
+
         SMOKE_PATHS.passwordReset.forEach((route) => {
           expect(allRouteValues).toContain(route);
         });
@@ -487,7 +487,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
     describe('Main Tabs Paths', () => {
       it('tab navigation path should have valid routes', () => {
         const tabValues = Object.values(TAB_ROUTES);
-        
+
         SMOKE_PATHS.tabNavigation.forEach((route) => {
           expect(tabValues).toContain(route);
         });
@@ -504,7 +504,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
     describe('Shared Stack Routes Paths', () => {
       it('deal flow path should have valid routes', () => {
         const allRouteValues = Object.values(ALL_ROUTES);
-        
+
         SMOKE_PATHS.dealFlow.forEach((route) => {
           expect(allRouteValues).toContain(route);
         });
@@ -517,7 +517,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
 
       it('profile settings flow should have valid routes', () => {
         const allRouteValues = Object.values(ALL_ROUTES);
-        
+
         SMOKE_PATHS.profileSettingsFlow.forEach((route) => {
           expect(allRouteValues).toContain(route);
         });
@@ -533,7 +533,7 @@ describe('Navigation Parity Tests (PR-023)', () => {
     describe('Admin Paths', () => {
       it('admin flow path should have valid routes', () => {
         const adminValues = Object.values(ADMIN_ROUTES);
-        
+
         SMOKE_PATHS.adminFlow.forEach((route) => {
           expect(adminValues).toContain(route);
         });
