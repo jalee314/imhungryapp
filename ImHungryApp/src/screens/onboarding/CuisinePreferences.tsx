@@ -5,6 +5,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDataCache } from '../../hooks/useDataCache';
 import { useAuth } from '../../hooks/useAuth';
 
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
+
 export default function CuisinePreferencesScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -13,7 +15,7 @@ export default function CuisinePreferencesScreen() {
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { completeSignup, completeSignupSkip } = useAuth();
-  
+
   // Ref to synchronously track submission state and prevent duplicate submissions
   const isSubmittingRef = useRef(false);
 
@@ -37,7 +39,7 @@ export default function CuisinePreferencesScreen() {
   const handleFinish = async () => {
     // Synchronous check to prevent duplicate submissions
     if (isSubmittingRef.current) return;
-    
+
     if (!userData) {
       Alert.alert('Error', 'User data not found');
       return;
@@ -46,7 +48,7 @@ export default function CuisinePreferencesScreen() {
     // Set ref immediately (synchronous) to block any subsequent clicks
     isSubmittingRef.current = true;
     setLoading(true);
-    
+
     try {
       try {
         await completeSignup(userData, selectedCuisines);
@@ -82,7 +84,7 @@ export default function CuisinePreferencesScreen() {
   const handleSkip = async () => {
     // Synchronous check to prevent duplicate submissions
     if (isSubmittingRef.current) return;
-    
+
     if (!userData) {
       Alert.alert('Error', 'User data not found');
       return;
@@ -91,7 +93,7 @@ export default function CuisinePreferencesScreen() {
     // Set ref immediately (synchronous) to block any subsequent clicks
     isSubmittingRef.current = true;
     setLoading(true);
-    
+
     try {
       try {
         await completeSignupSkip(userData);
@@ -117,7 +119,7 @@ export default function CuisinePreferencesScreen() {
   const availableCuisines = cuisines.map(c => c.name);
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -128,8 +130,8 @@ export default function CuisinePreferencesScreen() {
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.skipLink, loading && { opacity: 0.5 }]} 
+              <TouchableOpacity
+                style={[styles.skipLink, loading && { opacity: 0.5 }]}
                 onPress={handleSkip}
                 disabled={loading}
               >
@@ -200,7 +202,7 @@ export default function CuisinePreferencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white'
+    backgroundColor: STATIC.white
   },
 
   keyboardAvoidingView: { flex: 1 },
@@ -221,14 +223,14 @@ const styles = StyleSheet.create({
   backButton: { paddingVertical: 8, paddingHorizontal: 4 },
   backButtonText: {
     fontSize: 20,
-    color: '#000',
+    color: STATIC.black,
     fontWeight: '500'
   },
 
   skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
   skipText: {
     fontSize: 16,
-    color: '#404040',
+    color: GRAY[800],
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
@@ -246,7 +248,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    color: '#000',
+    color: STATIC.black,
     fontWeight: 'bold',
     marginBottom: 25,
     fontFamily: 'Inter-Bold',
@@ -254,7 +256,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#404040',
+    color: GRAY[800],
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left',
@@ -271,24 +273,24 @@ const styles = StyleSheet.create({
   cuisineButton: {
     width: '48%',
     height: 36,
-    backgroundColor: '#eaeaea',
+    backgroundColor: GRAY[200],
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
   cuisineButtonSelected: {
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
   },
   cuisineButtonText: {
-    color: '#000',
+    color: STATIC.black,
     fontSize: 14,
     fontWeight: '400',
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },
   cuisineButtonTextSelected: {
-    color: '#000',
+    color: STATIC.black,
   },
   footer: {
     width: '100%',
@@ -299,20 +301,20 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 343,
     height: 44,
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center'
   },
   continueButtonText: {
-    color: '#fff',
+    color: STATIC.white,
     fontSize: 16,
     fontWeight: '600'
   },
   skeletonButton: {
     width: '48%',
     height: 36,
-    backgroundColor: '#E1E9EE',
+    backgroundColor: GRAY[300],
     borderRadius: 18,
     marginBottom: 8,
   },

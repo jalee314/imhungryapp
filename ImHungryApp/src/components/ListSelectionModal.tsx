@@ -12,6 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ModalHeader from './ui/ModalHeader';
 
+import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+
 interface ListItem {
   id: string;
   name: string;
@@ -95,7 +97,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
         disabled={isInfoItem}
       >
         {isSearchModal && !isInfoItem && (
-          <Ionicons name="location-sharp" size={28} color="#FF8C4C" style={styles.locationIcon} />
+          <Ionicons name="location-sharp" size={28} color={BRAND.primary} style={styles.locationIcon} />
         )}
         <View style={styles.textContainer}>
           {isSearchModal ? (
@@ -109,7 +111,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
         </View>
         {selectedItems.includes(item.id) && !isInfoItem ? (
           <View style={styles.checkmark}>
-            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={16} color={STATIC.white} />
           </View>
         ) : (
           <View style={styles.checkmarkPlaceholder} />
@@ -159,7 +161,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
 
   searchContainer: {
@@ -171,16 +173,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 10,
     height: 36,
-    borderColor: '#D8D8D8',
+    borderColor: GRAY[325],
     borderWidth: 1,
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: FONT_SIZE.sm,
     fontFamily: 'Inter-Regular',
-    color: '#000000',
-    fontWeight: '400',
+    color: STATIC.black,
+    fontWeight: FONT_WEIGHT.regular,
   },
   listContentContainer: {
     paddingBottom: 16,
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   locationIcon: {
     marginRight: 5,
@@ -201,35 +203,35 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
+    fontSize: FONT_SIZE.xs,
+    color: STATIC.black,
     paddingLeft: 2,
   },
   itemTextBold: {
     paddingTop: 5,
     fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '700',
+    fontSize: FONT_SIZE.xs,
+    color: STATIC.black,
+    fontWeight: FONT_WEIGHT.bold,
     paddingLeft: 2,
   },
   itemSubtext: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
+    fontSize: FONT_SIZE.xs,
+    color: STATIC.black,
     paddingLeft: 2,
     paddingBottom: 5,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
+    backgroundColor: GRAY[350],
     marginHorizontal: 10,
   },
   checkmark: {
     width: 24,
     height: 24,
     borderRadius: 4,
-    backgroundColor: '#FFA05C',
+    backgroundColor: BRAND.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },

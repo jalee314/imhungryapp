@@ -11,6 +11,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../ui/alf';
+
 interface ThreeDotPopupProps {
   visible: boolean;
   onClose: () => void;
@@ -44,7 +46,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
 
   const handleReportContent = () => {
     onClose();
-    
+
     // Check if user is trying to report their own post
     if (isOwnPost) {
       Alert.alert(
@@ -53,7 +55,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
       );
       return;
     }
-    
+
     if (dealId && uploaderUserId) {
       (navigation as any).navigate('ReportContent', { dealId, uploaderUserId });
     }
@@ -61,7 +63,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
 
   const handleBlockUser = () => {
     onClose();
-    
+
     // Check if user is trying to block themselves
     if (isOwnPost) {
       Alert.alert(
@@ -70,7 +72,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
       );
       return;
     }
-    
+
     onBlockUser();
   };
 
@@ -88,19 +90,19 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
             <>
               <TouchableOpacity style={styles.popupItem} onPress={handleEditPost}>
                 <Text style={styles.popupItemText}>Edit Post</Text>
-                <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
+                <MaterialCommunityIcons name="chevron-right" size={16} color={GRAY[600]} />
               </TouchableOpacity>
               <View style={styles.popupDivider} />
             </>
           )}
           <TouchableOpacity style={styles.popupItem} onPress={handleReportContent}>
             <Text style={styles.popupItemText}>Report Content</Text>
-            <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
+            <MaterialCommunityIcons name="chevron-right" size={16} color={GRAY[600]} />
           </TouchableOpacity>
           <View style={styles.popupDivider} />
           <TouchableOpacity style={styles.popupItem} onPress={handleBlockUser}>
             <Text style={styles.popupItemText}>Block User</Text>
-            <MaterialCommunityIcons name="chevron-right" size={16} color="#666666" />
+            <MaterialCommunityIcons name="chevron-right" size={16} color={GRAY[600]} />
           </TouchableOpacity>
         </View>
       </Pressable>
@@ -116,13 +118,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   popupContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: STATIC.white,
+    borderRadius: RADIUS.card,
     width: 369,
-    paddingVertical: 8,
+    paddingVertical: SPACING.sm,
     flexDirection: 'column',
-    gap: 8,
-    shadowColor: '#000',
+    gap: SPACING.sm,
+    shadowColor: STATIC.black,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -141,14 +143,14 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   popupItemText: {
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '400',
+    fontSize: FONT_SIZE.xs,
+    color: STATIC.black,
+    fontWeight: FONT_WEIGHT.regular,
     flex: 1,
   },
   popupDivider: {
     height: 1.45,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: GRAY[300],
     alignSelf: 'stretch',
   },
 });

@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
 import { Monicon } from '@monicon/native';
 
+import { BRAND, STATIC, GRAY, SEMANTIC, FONT_WEIGHT, RADIUS } from '../ui/alf';
+
 import type { Deal } from '../types/deal';
 
 import OptimizedImage, { preloadImage } from './OptimizedImage';
@@ -165,7 +167,7 @@ const DealCard: React.FC<DealCardProps> = ({
               <Monicon
                 name={deal.isFavorited ? "mdi:heart" : "mdi:heart-outline"}
                 size={scale(19)}
-                color={deal.isFavorited ? "#FF1E00" : "#000"}
+                color={deal.isFavorited ? SEMANTIC.error : STATIC.black}
               />
             </TouchableOpacity>
           </View>
@@ -240,7 +242,7 @@ const DealCard: React.FC<DealCardProps> = ({
 const styles = StyleSheet.create({
   // Horizontal Card Styles (for community track - actually vertical cards in horizontal scroll)
   horizontalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderRadius: scale(10),
     paddingVertical: scale(12),
     paddingHorizontal: scale(8),
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: scale(12),
     lineHeight: scale(15),
-    color: '#000000',
+    color: STATIC.black,
     textAlign: 'left',
     height: scale(30),
   },
@@ -280,7 +282,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: scale(10),
     lineHeight: scale(12),
-    color: '#757575',
+    color: GRAY[600],
     textAlign: 'left',
     width: '100%',
   },
@@ -294,9 +296,9 @@ const styles = StyleSheet.create({
   horizontalVoteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F4F4',
+    backgroundColor: GRAY[100],
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: GRAY[325],
     borderRadius: 30,
     paddingHorizontal: scale(10),
     paddingVertical: scale(2),
@@ -316,13 +318,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: scale(10),
     fontWeight: '400',
-    color: '#000000',
+    color: STATIC.black,
     marginHorizontal: scale(6),
   },
   horizontalVoteSeparator: {
     width: 1,
     height: scale(12),
-    backgroundColor: '#DEDEDE',
+    backgroundColor: GRAY[250],
     marginHorizontal: scale(6),
   },
   horizontalFavoriteWrapper: {
@@ -331,9 +333,9 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   horizontalFavoriteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: GRAY[325],
     borderRadius: 30,
     paddingHorizontal: scale(12),
     justifyContent: 'center',
@@ -343,7 +345,7 @@ const styles = StyleSheet.create({
   },
   // Vertical Card Styles (for 2-column grid)
   verticalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderRadius: scale(16),
     padding: scale(8),
     alignItems: 'flex-start',
@@ -361,7 +363,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: scale(12),
     lineHeight: scale(15),
-    color: '#000000',
+    color: STATIC.black,
     textAlign: 'left',
     width: VERTICAL_CARD_WIDTH - scale(24),
   },
@@ -374,7 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: scale(10),
     lineHeight: scale(12),
-    color: '#757575',
+    color: GRAY[600],
     textAlign: 'left',
     width: '100%',
   },
@@ -387,9 +389,9 @@ const styles = StyleSheet.create({
   verticalVoteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F4F4',
+    backgroundColor: GRAY[100],
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: GRAY[325],
     borderRadius: 30,
     paddingHorizontal: scale(10),
     paddingVertical: scale(2),
@@ -409,19 +411,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: scale(10),
     fontWeight: '400',
-    color: '#000000',
+    color: STATIC.black,
     marginHorizontal: scale(6),
   },
   verticalVoteSeparator: {
     width: 1,
     height: scale(12),
-    backgroundColor: '#DEDEDE',
+    backgroundColor: GRAY[250],
     marginHorizontal: scale(6),
   },
   verticalFavoriteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: GRAY[325],
     borderRadius: 30,
     width: scale(40),
     height: scale(28),
@@ -429,9 +431,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   verticalDeleteButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: GRAY[325],
     borderRadius: 30,
     width: scale(40),
     height: scale(28),

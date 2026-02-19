@@ -8,6 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
+
 export default function InstantNotificationsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -30,7 +32,7 @@ export default function InstantNotificationsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -50,7 +52,7 @@ export default function InstantNotificationsScreen() {
               <View style={styles.titleSection}>
                 <Text style={styles.title}>Instant Notifications</Text>
                 <Text style={styles.subtitle}>
-                    Get instant alerts when your favorite restaurants drop new offers, happy hours, or limited-time specials.
+                  Get instant alerts when your favorite restaurants drop new offers, happy hours, or limited-time specials.
                 </Text>
               </View>
 
@@ -65,7 +67,7 @@ export default function InstantNotificationsScreen() {
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={[
-                    styles.continueButton, 
+                    styles.continueButton,
                     loading && { opacity: 0.7 }
                   ]}
                   onPress={handleGetNotified}
@@ -85,70 +87,70 @@ export default function InstantNotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: 'white' 
+  container: {
+    flex: 1,
+    backgroundColor: STATIC.white
   },
 
   keyboardAvoidingView: { flex: 1 },
-  pagePad: { 
-    flex: 1, 
-    paddingHorizontal: 24, 
-    paddingVertical: 20 
+  pagePad: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 20
   },
 
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 40,
     height: 44
   },
 
   backButton: { paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { 
-    fontSize: 20, 
-    color: '#000', 
-    fontWeight: '500' 
+  backButtonText: {
+    fontSize: 20,
+    color: STATIC.black,
+    fontWeight: '500'
   },
 
   skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
-  skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
+  skipText: {
+    fontSize: 16,
+    color: GRAY[800],
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
 
-  mainContainer: { 
-    flex: 1, 
-    alignItems: 'flex-start', 
+  mainContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
     width: '100%'
   },
 
-  titleSection: { 
+  titleSection: {
     marginBottom: 40,
     maxWidth: 343,
     alignItems: 'flex-start'
   },
-  title: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
+  title: {
+    fontSize: 24,
+    color: STATIC.black,
+    fontWeight: 'bold',
     marginBottom: 25,
     fontFamily: 'Inter-Bold',
     textAlign: 'left'
   },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#404040', 
+  subtitle: {
+    fontSize: 16,
+    color: GRAY[800],
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
 
-  imageSection: { 
-    alignItems: 'center', 
+  imageSection: {
+    alignItems: 'center',
     marginBottom: 40,
     alignSelf: 'center'
   },
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#000',
+    backgroundColor: STATIC.black,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
@@ -168,24 +170,24 @@ const styles = StyleSheet.create({
   },
 
   spacer: { flex: 1 },
-  footer: { 
-    width: '100%', 
+  footer: {
+    width: '100%',
     alignItems: 'center',
     alignSelf: 'center'
   },
 
-  continueButton: { 
-    width: '100%', 
+  continueButton: {
+    width: '100%',
     maxWidth: 343,
-    height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
-    alignItems: 'center', 
+    height: 44,
+    backgroundColor: BRAND.primary,
+    borderRadius: 22,
+    alignItems: 'center',
     justifyContent: 'center'
   },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+  continueButtonText: {
+    color: STATIC.white,
+    fontSize: 16,
+    fontWeight: '600'
   },
 });

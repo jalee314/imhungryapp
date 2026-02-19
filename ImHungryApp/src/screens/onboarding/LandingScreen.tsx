@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Pressable, View, Image, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
+import { STATIC } from '../../ui/alf';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 export default function LandingScreen() {
@@ -17,8 +18,8 @@ export default function LandingScreen() {
         accessibilityLabel="Continue to sign up"
         hitSlop={8}
       >
-        <Image 
-          source={require('../../../img/logo/hungri_logo.png')} 
+        <Image
+          source={require('../../../img/logo/hungri_logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -32,7 +33,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
+    backgroundColor: STATIC.white,
   },
   fill: {
     flex: 1,

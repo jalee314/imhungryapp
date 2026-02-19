@@ -9,6 +9,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { checkPhoneExists } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
 
+import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
+
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
   return (...args: any[]) => {
@@ -160,7 +162,7 @@ export default function SignUpScreen() {
   const handlePrivacyPress = () => { };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -193,9 +195,9 @@ export default function SignUpScreen() {
                       value={(formData as any)[cfg.field]}
                       onChangeText={t => handleInputChange(cfg.field, t)}
                       placeholder={cfg.placeholder}
-                      outlineColor="#FFA05C"
-                      activeOutlineColor="#FFA05C"
-                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                      outlineColor={BRAND.accent}
+                      activeOutlineColor={BRAND.accent}
+                      style={[styles.textInputStyle, { backgroundColor: STATIC.white }]}
                       theme={{
                         roundness: 8,
                         colors: {
@@ -251,7 +253,7 @@ export default function SignUpScreen() {
 
 const styles = StyleSheet.create({
   // Set an opaque base to avoid any bleed-through if gradient ever uses alpha
-  container: { flex: 1, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: STATIC.white },
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 }, // responsive padding applied at runtime
@@ -265,7 +267,7 @@ const styles = StyleSheet.create({
   loginLink: { alignSelf: 'flex-end' },
   loginText: {
     fontSize: 16,
-    color: '#000000',
+    color: STATIC.black,
     fontWeight: '700',
     fontFamily: 'Inter-Bold'
   },
@@ -273,14 +275,14 @@ const styles = StyleSheet.create({
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle: {
     fontSize: 18,
-    color: '#181619',
+    color: GRAY[950],
     fontFamily: 'Inter-Bold',
     fontWeight: '700',
     textAlign: 'left'
   },
   welcomeSubtitle: {
     fontSize: 16,
-    color: '#181619',
+    color: GRAY[950],
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
@@ -292,7 +294,7 @@ const styles = StyleSheet.create({
   }, // field bg; spacing added responsively
 
   textInputStyle: {
-    backgroundColor: 'white',
+    backgroundColor: STATIC.white,
     minHeight: 56,
     fontSize: 16,
     lineHeight: 22,
@@ -302,13 +304,13 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     height: 50,
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueButtonText: {
-    color: '#fff',
+    color: STATIC.white,
     fontSize: 16,
     fontWeight: '400',
     fontFamily: 'Inter-Regular',
@@ -318,19 +320,19 @@ const styles = StyleSheet.create({
   legalContainer: { alignItems: 'center' },
   legalText: {
     fontSize: 12,
-    color: '#181619',
+    color: GRAY[950],
     textAlign: 'left',
     lineHeight: 16,
     fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
   legalLink: {
-    color: '#FFA05C',
+    color: BRAND.accent,
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold'
   },
   errorText: {
-    color: 'red',
+    color: SEMANTIC.error,
     alignSelf: 'flex-start',
     marginLeft: 12,
     marginTop: 4,

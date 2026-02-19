@@ -8,14 +8,16 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { sendPasswordResetEmail } from '../../services/authService';
 
+import { BRAND, STATIC, SEMANTIC } from '../../ui/alf';
+
 export default function ForgotPasswordScreen() {
-  
+
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
 
-  const H   = Math.max(16, Math.min(28, Math.round(width  * 0.06)));
-  const V   = Math.max(12, Math.min(24, Math.round(height * 0.02)));
-  const GAP = Math.max( 8, Math.min(16, Math.round(height * 0.012)));
+  const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
+  const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
+  const GAP = Math.max(8, Math.min(16, Math.round(height * 0.012)));
   const MAX_W = Math.min(560, Math.round(width * 0.92));
   const CONSTRAIN: ViewStyle = { width: '100%', maxWidth: MAX_W, alignSelf: 'center' };
 
@@ -42,10 +44,10 @@ export default function ForgotPasswordScreen() {
     }
     setSuccessMessage('');
     setLoading(true);
-    
+
     try {
       const result = await sendPasswordResetEmail(email);
-      
+
       if (result.success) {
         setSuccessMessage(result.message);
       } else {
@@ -63,18 +65,18 @@ export default function ForgotPasswordScreen() {
     navigation.goBack();
   };
 
-  const handleTermsPress = () => {};
-  const handlePrivacyPress = () => {};
+  const handleTermsPress = () => { };
+  const handlePrivacyPress = () => { };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView}>
           <View style={[styles.pagePad, responsive.pagePad]}>
             <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color={STATIC.black} />
             </TouchableOpacity>
 
             <View style={styles.mainContainer}>
@@ -97,9 +99,9 @@ export default function ForgotPasswordScreen() {
                       if (successMessage) setSuccessMessage('');
                     }}
                     placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                    outlineColor={BRAND.primary}
+                    activeOutlineColor={BRAND.primary}
+                    style={[styles.textInputStyle, { backgroundColor: STATIC.white }]}
                     theme={{
                       roundness: 12,
                       colors: {
@@ -145,18 +147,18 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: STATIC.white },
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 },
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
   backButton: { alignSelf: 'flex-start' },
   welcomeSection: { alignSelf: 'stretch' },
-  welcomeTitle: { fontSize: 20, color: '#000', fontFamily: 'Inter-Bold' },
-  welcomeSubtitle: { fontSize: 16, color: '#000', lineHeight: 24, fontFamily: 'Inter-Regular' },
+  welcomeTitle: { fontSize: 20, color: STATIC.black, fontFamily: 'Inter-Bold' },
+  welcomeSubtitle: { fontSize: 16, color: STATIC.black, lineHeight: 24, fontFamily: 'Inter-Regular' },
   formContainer: { width: '100%' },
-  paperInput: { backgroundColor: 'white' },
+  paperInput: { backgroundColor: STATIC.white },
   textInputStyle: {
-    backgroundColor: 'white',
+    backgroundColor: STATIC.white,
     minHeight: 56,
     fontSize: 16,
     lineHeight: 22,
@@ -165,18 +167,18 @@ const styles = StyleSheet.create({
   resetButton: {
     width: '100%',
     height: 44,
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  resetButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  resetButtonText: { color: STATIC.white, fontSize: 18, fontWeight: '600' },
   legalContainer: { alignItems: 'center' },
-  legalText: { fontSize: 14, color: '#000', textAlign: 'center', lineHeight: 20 },
-  legalLink: { color: '#FF9800', fontWeight: '500' },
+  legalText: { fontSize: 14, color: STATIC.black, textAlign: 'center', lineHeight: 20 },
+  legalLink: { color: BRAND.accent, fontWeight: '500' },
   successText: {
     marginTop: 10,
-    color: '#2E7D32', // A shade of green
+    color: SEMANTIC.successAlt, // A shade of green
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },

@@ -15,6 +15,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as MediaLibrary from 'expo-media-library';
+
+import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
     useSharedValue,
@@ -102,7 +104,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
     const [isMultiSelectEnabled, setIsMultiSelectEnabled] = useState(false);
     const [isCurrentPhotoPortrait, setIsCurrentPhotoPortrait] = useState(false);
     const [isCropping, setIsCropping] = useState(false);
-    
+
     // Store transform state per photo ID for preserving crops
     const photoTransforms = useRef<Map<string, PhotoTransformState>>(new Map());
 
@@ -305,9 +307,9 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         if (previewPhoto) {
             saveTransformState(previewPhoto.id);
         }
-        
+
         setPreviewPhoto(photo);
-        
+
         // Restore saved transform state for this photo, or initialize fresh
         restoreTransformState(photo.id, photo);
 
@@ -353,25 +355,25 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
         transform: PhotoTransformState
     ): CropRegion => {
         const { scale: photoScale, translateX: tx, translateY: ty, imageScaledHeight: scaledHeight } = transform;
-        
+
         // Conversion factor from displayed coordinates to original image coordinates
         const conversionFactor = photo.width / (SCREEN_WIDTH * photoScale);
-        
+
         // Calculate crop origin in displayed image coordinates, then convert to original
         const displayCropX = (SCREEN_WIDTH * photoScale - SCREEN_WIDTH) / 2 - tx;
         const displayCropY = (scaledHeight * photoScale - MAX_PREVIEW_HEIGHT) / 2 - ty;
-        
+
         let originX = displayCropX * conversionFactor;
         let originY = displayCropY * conversionFactor;
         let cropWidth = SCREEN_WIDTH * conversionFactor;
         let cropHeight = MAX_PREVIEW_HEIGHT * conversionFactor;
-        
+
         // Clamp to image bounds
         originX = Math.max(0, Math.min(originX, photo.width - cropWidth));
         originY = Math.max(0, Math.min(originY, photo.height - cropHeight));
         cropWidth = Math.min(cropWidth, photo.width - originX);
         cropHeight = Math.min(cropHeight, photo.height - originY);
-        
+
         // Convert to normalized coordinates (0-1)
         return {
             x: originX / photo.width,
@@ -387,14 +389,14 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
             Alert.alert('No Photos Selected', 'Please select at least one photo.');
             return;
         }
-        
+
         // Save current preview photo's transform state
         if (previewPhoto) {
             saveTransformState(previewPhoto.id);
         }
-        
+
         setIsCropping(true);
-        
+
         try {
             const photosWithCrop = await Promise.all(
                 selectedPhotos.map(async (assetId) => {
@@ -404,14 +406,14 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                         if (!photo) {
                             throw new Error(`Photo not found: ${assetId}`);
                         }
-                        
+
                         // Fetch the full asset info to get localUri (full original image)
                         const assetInfo = await MediaLibrary.getAssetInfoAsync(assetId);
                         const sourceUri = assetInfo.localUri || assetInfo.uri;
-                        
+
                         // Get the saved transform state for this photo
                         let transform = photoTransforms.current.get(assetId);
-                        
+
                         // If no saved transform, create a default one (center crop for portrait, full for landscape)
                         if (!transform) {
                             const aspectRatio = photo.height / photo.width;
@@ -425,10 +427,10 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                                 isPortrait: photoIsPortrait,
                             };
                         }
-                        
+
                         // Calculate normalized crop region
                         const cropRegion = calculateCropRegion(photo, transform);
-                        
+
                         return {
                             uri: sourceUri,
                             originalWidth: photo.width,
@@ -448,7 +450,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                     }
                 })
             );
-            
+
             // Filter out any with empty URIs
             const validPhotos = photosWithCrop.filter(p => p.uri.length > 0);
             onDone(validPhotos);
@@ -645,7 +647,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                     <View style={styles.albumPickerHeader}>
                         <Text style={styles.albumPickerTitle}>Select Album</Text>
                         <TouchableOpacity onPress={() => setShowAlbumPicker(false)}>
-                            <Ionicons name="close" size={24} color="#000" />
+                            <Ionicons name="close" size={24} color={STATIC.black} />
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity
@@ -686,13 +688,13 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                 <SafeAreaView style={styles.container}>
                     <View style={styles.header}>
                         <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={28} color="#000" />
+                            <Ionicons name="close" size={28} color={STATIC.black} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>New Post</Text>
                         <View style={{ width: 60 }} />
                     </View>
                     <View style={styles.permissionDenied}>
-                        <Ionicons name="images-outline" size={64} color="#CCC" />
+                        <Ionicons name="images-outline" size={64} color={GRAY[350]} />
                         <Text style={styles.permissionText}>
                             Access to your photo library is required to select photos.
                         </Text>
@@ -721,12 +723,12 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
 
                     {/* Header */}
                     <View style={styles.header}>
-                        <TouchableOpacity 
-                            style={styles.headerButton} 
+                        <TouchableOpacity
+                            style={styles.headerButton}
                             onPress={onClose}
                             disabled={isCropping}
                         >
-                            <Ionicons name="close" size={28} color={isCropping ? "#CCC" : "#000"} />
+                            <Ionicons name="close" size={28} color={isCropping ? GRAY[350] : STATIC.black} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>New Post</Text>
                         <TouchableOpacity
@@ -735,7 +737,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                             disabled={isCropping}
                         >
                             {isCropping ? (
-                                <ActivityIndicator size="small" color="#FFA05C" />
+                                <ActivityIndicator size="small" color={BRAND.accent} />
                             ) : (
                                 <Text style={styles.nextText}>Next</Text>
                             )}
@@ -756,7 +758,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                             </GestureDetector>
                         ) : (
                             <View style={styles.previewPlaceholder}>
-                                <Ionicons name="image-outline" size={48} color="#CCC" />
+                                <Ionicons name="image-outline" size={48} color={GRAY[350]} />
                             </View>
                         )}
                     </Animated.View>
@@ -773,7 +775,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                                     <Text style={styles.albumSelectorText}>
                                         {albums.find(a => a.id === selectedAlbum)?.title || 'Recents'}
                                     </Text>
-                                    <Ionicons name="chevron-down" size={16} color="#000" />
+                                    <Ionicons name="chevron-down" size={16} color={STATIC.black} />
                                 </TouchableOpacity>
 
                                 {/* Multi-select toggle */}
@@ -787,7 +789,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                                     <Ionicons
                                         name="copy-outline"
                                         size={18}
-                                        color={isMultiSelectEnabled ? '#FFA05C' : '#666'}
+                                        color={isMultiSelectEnabled ? BRAND.accent : GRAY[600]}
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -797,7 +799,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                     {/* Photo Grid */}
                     {isLoading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#FFA05C" />
+                            <ActivityIndicator size="large" color={BRAND.accent} />
                         </View>
                     ) : (
                         <FlatList
@@ -811,7 +813,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                             ListFooterComponent={
                                 isLoadingMore ? (
                                     <View style={styles.loadingMore}>
-                                        <ActivityIndicator size="small" color="#FFA05C" />
+                                        <ActivityIndicator size="small" color={BRAND.accent} />
                                     </View>
                                 ) : null
                             }
@@ -837,11 +839,11 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
     },
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
     },
     header: {
         flexDirection: 'row',
@@ -849,9 +851,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        borderBottomColor: GRAY[300],
     },
     headerButton: {
         minWidth: 60,
@@ -860,18 +862,18 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontSize: 18,
         fontWeight: '600',
-        color: '#000',
+        color: STATIC.black,
     },
     nextText: {
         fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: '600',
-        color: '#FFA05C',
+        color: BRAND.accent,
         textAlign: 'right',
     },
     previewContainer: {
         width: SCREEN_WIDTH,
-        backgroundColor: '#1A1A1A',
+        backgroundColor: GRAY[950],
         overflow: 'hidden',
     },
     previewImageWrapper: {
@@ -889,11 +891,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     dragHandleContainer: {
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
         borderTopWidth: 1,
-        borderTopColor: '#E0E0E0',
+        borderTopColor: GRAY[300],
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        borderBottomColor: GRAY[300],
     },
     multiSelectButton: {
         flexDirection: 'row',
@@ -910,7 +912,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 12,
         paddingHorizontal: 16,
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
     },
     albumSelector: {
         flexDirection: 'row',
@@ -920,11 +922,11 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: '600',
-        color: '#000',
+        color: STATIC.black,
         marginRight: 4,
     },
     gridContainer: {
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
     },
     gridItem: {
         width: THUMBNAIL_SIZE,
@@ -942,23 +944,23 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: '#FFA05C',
+        backgroundColor: BRAND.accent,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#FFF',
+        borderColor: STATIC.white,
     },
     selectionBadgeText: {
         fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: '700',
-        color: '#FFF',
+        color: STATIC.white,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
     },
     loadingMore: {
         paddingVertical: 20,
@@ -974,7 +976,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: '600',
-        color: '#FFF',
+        color: STATIC.white,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         paddingHorizontal: 16,
         paddingVertical: 8,
@@ -986,18 +988,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
     },
     permissionText: {
         fontFamily: 'Inter',
         fontSize: 16,
-        color: '#666',
+        color: GRAY[600],
         textAlign: 'center',
         marginTop: 16,
         marginBottom: 24,
     },
     permissionButton: {
-        backgroundColor: '#FFA05C',
+        backgroundColor: BRAND.accent,
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 8,
@@ -1006,7 +1008,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: '600',
-        color: '#FFF',
+        color: STATIC.white,
     },
     albumPickerOverlay: {
         flex: 1,
@@ -1014,7 +1016,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     albumPickerContainer: {
-        backgroundColor: '#FFF',
+        backgroundColor: STATIC.white,
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         maxHeight: SCREEN_HEIGHT * 0.6,
@@ -1026,13 +1028,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        borderBottomColor: GRAY[300],
     },
     albumPickerTitle: {
         fontFamily: 'Inter',
         fontSize: 18,
         fontWeight: '600',
-        color: '#000',
+        color: STATIC.black,
     },
     albumItem: {
         flexDirection: 'row',
@@ -1041,7 +1043,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
+        borderBottomColor: GRAY[150],
     },
     albumItemSelected: {
         backgroundColor: 'rgba(255, 160, 92, 0.1)',
@@ -1049,12 +1051,12 @@ const styles = StyleSheet.create({
     albumItemText: {
         fontFamily: 'Inter',
         fontSize: 16,
-        color: '#000',
+        color: STATIC.black,
     },
     albumItemCount: {
         fontFamily: 'Inter',
         fontSize: 14,
-        color: '#888',
+        color: GRAY[475],
     },
 });
 

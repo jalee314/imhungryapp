@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 
+import { STATIC, GRAY, RADIUS } from '../ui/alf';
+
 const { width: screenWidth } = Dimensions.get('window');
 // Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (4px), then divide by 2
 const HORIZONTAL_PADDING = 20; // 10px on each side
@@ -49,15 +51,15 @@ const DealCardSkeleton: React.FC<DealCardSkeletonProps> = ({ variant = 'vertical
       <View style={styles.horizontalCard}>
         {/* Image skeleton */}
         <Animated.View style={[styles.horizontalImage, styles.skeleton, shimmerStyle]} />
-        
+
         {/* Title skeleton */}
         <View style={styles.horizontalTitleContainer}>
           <Animated.View style={[styles.horizontalTitleSkeleton, styles.skeleton, shimmerStyle]} />
         </View>
-        
+
         {/* Details skeleton */}
         <Animated.View style={[styles.horizontalDetailsSkeleton, styles.skeleton, shimmerStyle]} />
-        
+
         {/* Interactions skeleton */}
         <View style={styles.horizontalInteractions}>
           <Animated.View style={[styles.horizontalVoteContainerSkeleton, styles.skeleton, shimmerStyle]} />
@@ -72,13 +74,13 @@ const DealCardSkeleton: React.FC<DealCardSkeletonProps> = ({ variant = 'vertical
     <View style={styles.verticalCard}>
       {/* Image skeleton */}
       <Animated.View style={[styles.verticalImage, styles.skeleton, shimmerStyle]} />
-      
+
       {/* Title skeleton */}
       <Animated.View style={[styles.verticalTitleSkeleton, styles.skeleton, shimmerStyle]} />
-      
+
       {/* Details skeleton */}
       <Animated.View style={[styles.verticalDetailsSkeleton, styles.skeleton, shimmerStyle]} />
-      
+
       {/* Interactions skeleton */}
       <View style={styles.verticalInteractions}>
         <Animated.View style={[styles.verticalVoteContainerSkeleton, styles.skeleton, shimmerStyle]} />
@@ -90,12 +92,12 @@ const DealCardSkeleton: React.FC<DealCardSkeletonProps> = ({ variant = 'vertical
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: GRAY[300],
   },
-  
+
   // Horizontal Card Styles (matching DealCard dimensions exactly)
   horizontalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 8,
@@ -147,7 +149,7 @@ const styles = StyleSheet.create({
 
   // Vertical Card Styles (matching DealCard dimensions exactly)
   verticalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderRadius: 16,
     padding: 8,
     alignItems: 'flex-start',

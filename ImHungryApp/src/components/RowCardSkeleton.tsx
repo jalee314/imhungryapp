@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 
+import { STATIC, GRAY, RADIUS } from '../ui/alf';
+
 const RowCardSkeleton: React.FC = () => {
   const shimmerAnimation = useRef(new Animated.Value(0)).current;
 
@@ -35,16 +37,16 @@ const RowCardSkeleton: React.FC = () => {
       <View style={styles.content}>
         {/* Image skeleton */}
         <Animated.View style={[styles.imageSkeleton, styles.skeleton, shimmerStyle]} />
-        
+
         {/* Text content skeleton */}
         <View style={styles.textFrame}>
           {/* Title skeleton */}
           <Animated.View style={[styles.titleSkeleton, styles.skeleton, shimmerStyle]} />
-          
+
           {/* Subtitle skeleton */}
           <Animated.View style={[styles.subtitleSkeleton, styles.skeleton, shimmerStyle]} />
         </View>
-        
+
         {/* Arrow skeleton */}
         <Animated.View style={[styles.arrowSkeleton, styles.skeleton, shimmerStyle]} />
       </View>
@@ -54,11 +56,11 @@ const RowCardSkeleton: React.FC = () => {
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: GRAY[300],
   },
   rowCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: STATIC.white,
+    borderRadius: RADIUS.lg,
     padding: 8,
     marginHorizontal: 12,
     marginVertical: 4,

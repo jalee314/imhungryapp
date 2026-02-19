@@ -1,6 +1,8 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+import { BRAND, SEMANTIC, ALPHA_COLORS } from '../ui/alf';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -64,7 +66,7 @@ const DraggableThumbnailStrip: React.FC<DraggableThumbnailStripProps> = ({
     // The reorder will change the array, so items are already in correct positions
     setDraggingIndex(null);
     setTargetIndex(null);
-    
+
     if (fromIndex !== toIndex && fromIndex >= 0 && toIndex >= 0) {
       // Pass toIndex so parent knows where the image ended up
       onReorder(fromIndex, toIndex);
@@ -93,19 +95,19 @@ const DraggableThumbnailStrip: React.FC<DraggableThumbnailStripProps> = ({
         'worklet';
         dragX.value = event.translationX;
         dragY.value = event.translationY * 0.3;
-        
+
         // Add hysteresis: need to move 40% past threshold to switch
         const threshold = ITEM_WIDTH * 0.4;
-        const adjustedX = event.translationX > 0 
+        const adjustedX = event.translationX > 0
           ? Math.max(0, event.translationX - threshold)
           : Math.min(0, event.translationX + threshold);
         const rawOffset = Math.round(adjustedX / ITEM_WIDTH);
-        
+
         // Clamp to valid range (0 to imageCount-1)
         // If dragged past the last item (onto add button), clamp to last valid position
         const maxIndex = imageCount - 1;
         const newTarget = Math.max(0, Math.min(maxIndex, index + rawOffset));
-        
+
         if (newTarget !== currentTarget.value) {
           currentTarget.value = newTarget;
           runOnJS(updateTargetIndex)(newTarget);
@@ -115,13 +117,13 @@ const DraggableThumbnailStrip: React.FC<DraggableThumbnailStripProps> = ({
         'worklet';
         const finalTarget = currentTarget.value;
         const fromIdx = activeIndex.value;
-        
+
         dragX.value = withSpring(0);
         dragY.value = withSpring(0);
         dragScale.value = withSpring(1);
         activeIndex.value = -1;
         currentTarget.value = -1;
-        
+
         runOnJS(endDragging)(fromIdx, finalTarget);
       })
       .onFinalize(() => {
@@ -140,7 +142,7 @@ const DraggableThumbnailStrip: React.FC<DraggableThumbnailStripProps> = ({
       {images.map((item, index) => {
         const isDragging = draggingIndex === index;
         const offset = getItemOffset(index, draggingIndex, targetIndex);
-        
+
         // Calculate if this item will be the cover after reorder
         const visualIndex = draggingIndex !== null && targetIndex !== null
           ? getVisualIndex(index, draggingIndex, targetIndex)
@@ -168,7 +170,7 @@ const DraggableThumbnailStrip: React.FC<DraggableThumbnailStripProps> = ({
       {/* Add more button */}
       {images.length < maxPhotos && (
         <TouchableOpacity style={styles.addPhotoButton} onPress={onAddPress}>
-          <Ionicons name="add" size={20} color="#FF8C4C" />
+          <Ionicons name="add" size={20} color={BRAND.primary} />
         </TouchableOpacity>
       )}
     </View>
@@ -265,10 +267,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(200, 200, 200, 0.3)',
   },
   thumbnailSelected: {
-    borderColor: '#FF8C4C',
+    borderColor: BRAND.primary,
   },
   thumbnailIsCover: {
-    borderColor: '#FFD700',
+    borderColor: SEMANTIC.warning,
   },
   thumbnailImage: {
     width: '100%',
@@ -288,7 +290,7 @@ const styles = StyleSheet.create({
     height: THUMBNAIL_SIZE,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#FF8C4C',
+    borderColor: BRAND.primary,
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',

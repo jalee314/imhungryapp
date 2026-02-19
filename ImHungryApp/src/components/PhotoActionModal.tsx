@@ -8,6 +8,8 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 
+import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+
 interface PhotoActionModalProps {
   visible: boolean;
   onClose: () => void;
@@ -30,7 +32,7 @@ const PhotoActionModal: React.FC<PhotoActionModalProps> = ({
     >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={() => {}}>
+          <TouchableWithoutFeedback onPress={() => { }}>
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
                 <TouchableOpacity style={styles.option} onPress={onTakePhoto}>
@@ -66,8 +68,8 @@ const styles = StyleSheet.create({
     paddingBottom: 90, // Position above bottom navigation
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: STATIC.white,
+    borderRadius: RADIUS.card,
     marginBottom: 8,
   },
   option: {
@@ -76,25 +78,25 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#000000',
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.regular,
+    color: STATIC.black,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: GRAY[300],
   },
   cancelButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 16,
+    backgroundColor: STATIC.white,
+    borderRadius: RADIUS.card,
+    paddingVertical: SPACING.lg,
     alignItems: 'center',
   },
   cancelText: {
     fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#000000',
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.regular,
+    color: STATIC.black,
   },
 });
 

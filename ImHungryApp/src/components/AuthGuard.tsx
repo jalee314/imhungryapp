@@ -1,5 +1,7 @@
 import React, { ReactNode } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+
+import { BRAND } from '../ui/alf';
 import { useAuth } from '../hooks/useAuth';
 
 interface AuthGuardProps {
@@ -7,11 +9,11 @@ interface AuthGuardProps {
   fallback?: ReactNode;
 }
 
-export const AuthGuard: React.FC<AuthGuardProps> = ({ 
-  children, 
+export const AuthGuard: React.FC<AuthGuardProps> = ({
+  children,
   fallback = (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFE5B4' }}>
-      <ActivityIndicator size="large" color="#FFA05C" />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BRAND.peach }}>
+      <ActivityIndicator size="large" color={BRAND.accent} />
     </View>
   )
 }) => {

@@ -7,6 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
+
 interface LocationData {
   latitude: number;
   longitude: number;
@@ -17,7 +19,7 @@ export default function LocationPermissionsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const userData = (route.params as any)?.userData;
-  
+
   const [loading, setLoading] = useState(false);
 
   // Function to get city from coordinates using reverse geocoding
@@ -27,7 +29,7 @@ export default function LocationPermissionsScreen() {
         latitude,
         longitude,
       });
-      
+
       if (reverseGeocode && reverseGeocode.length > 0) {
         const location = reverseGeocode[0];
         return location.city || location.subregion || location.region || 'Unknown City';
@@ -43,9 +45,9 @@ export default function LocationPermissionsScreen() {
     try {
       // Request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       let locationData: LocationData | null = null;
-      
+
       if (status === 'granted') {
         try {
           // Get current location
@@ -53,31 +55,31 @@ export default function LocationPermissionsScreen() {
             accuracy: Location.Accuracy.Balanced,
             timeInterval: 10000, // 10 seconds timeout
           });
-          
+
           const { latitude, longitude } = location.coords;
           const city = await getCityFromCoordinates(latitude, longitude);
-          
+
           locationData = {
             latitude,
             longitude,
             city,
           };
-          
+
           console.log('Location captured:', locationData);
         } catch (locationError) {
           console.warn('Failed to get location:', locationError);
           // Continue without location data
         }
       }
-      
+
       // Pass location data (or null) to next screen
-      (navigation as any).navigate('InstantNotifications', { 
+      (navigation as any).navigate('InstantNotifications', {
         userData: {
           ...userData,
           locationData
         }
       });
-      
+
     } catch (error) {
       console.error('Location permission error:', error);
       // Continue without location data
@@ -93,7 +95,7 @@ export default function LocationPermissionsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -128,7 +130,7 @@ export default function LocationPermissionsScreen() {
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={[
-                    styles.continueButton, 
+                    styles.continueButton,
                     loading && { opacity: 0.7 }
                   ]}
                   onPress={handleLocationPermission}
@@ -148,70 +150,70 @@ export default function LocationPermissionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: 'white' 
+  container: {
+    flex: 1,
+    backgroundColor: STATIC.white
   },
 
   keyboardAvoidingView: { flex: 1 },
-  pagePad: { 
-    flex: 1, 
-    paddingHorizontal: 24, 
-    paddingVertical: 20 
+  pagePad: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 20
   },
 
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 40,
     height: 44
   },
 
   backButton: { paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { 
-    fontSize: 20, 
-    color: '#000', 
-    fontWeight: '500' 
+  backButtonText: {
+    fontSize: 20,
+    color: STATIC.black,
+    fontWeight: '500'
   },
 
   skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
-  skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
+  skipText: {
+    fontSize: 16,
+    color: GRAY[800],
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
 
-  mainContainer: { 
-    flex: 1, 
-    alignItems: 'flex-start', 
+  mainContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
     width: '100%'
   },
 
-  titleSection: { 
+  titleSection: {
     marginBottom: 40,
     maxWidth: 343,
     alignItems: 'flex-start'
   },
-  title: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
+  title: {
+    fontSize: 24,
+    color: STATIC.black,
+    fontWeight: 'bold',
     marginBottom: 25,
     fontFamily: 'Inter-Bold',
     textAlign: 'left'
   },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#404040', 
+  subtitle: {
+    fontSize: 16,
+    color: GRAY[800],
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
 
-  imageSection: { 
-    alignItems: 'center', 
+  imageSection: {
+    alignItems: 'center',
     marginBottom: 40,
     alignSelf: 'center'
   },
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#000',
+    backgroundColor: STATIC.black,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
@@ -231,24 +233,24 @@ const styles = StyleSheet.create({
   },
 
   spacer: { flex: 1 },
-  footer: { 
-    width: '100%', 
+  footer: {
+    width: '100%',
     alignItems: 'center',
     alignSelf: 'center'
   },
 
-  continueButton: { 
-    width: '100%', 
+  continueButton: {
+    width: '100%',
     maxWidth: 343,
-    height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
-    alignItems: 'center', 
+    height: 44,
+    backgroundColor: BRAND.primary,
+    borderRadius: 22,
+    alignItems: 'center',
     justifyContent: 'center'
   },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+  continueButtonText: {
+    color: STATIC.white,
+    fontSize: 16,
+    fontWeight: '600'
   },
 });
