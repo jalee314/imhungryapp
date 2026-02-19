@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { View } from 'react-native';
+
 import DealCardSkeleton from '../../../components/DealCardSkeleton';
 import { Box } from '../../../ui/primitives';
 

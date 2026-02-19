@@ -10,6 +10,10 @@
  * StyleSheet / inline literals.
  */
 
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   SafeAreaView,
@@ -20,23 +24,24 @@ import {
   FlatList,
   Dimensions,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as ImagePicker from 'expo-image-picker';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
 import CalendarModal from '../../components/CalendarModal';
-import PhotoActionModal from '../../components/PhotoActionModal';
+import DraggableThumbnailStrip from '../../components/DraggableThumbnailStrip';
 import ImageCropperModal from '../../components/ImageCropperModal';
 import InstagramPhotoPickerModal, { PhotoWithCrop } from '../../components/InstagramPhotoPickerModal';
-import DraggableThumbnailStrip from '../../components/DraggableThumbnailStrip';
+import PhotoActionModal from '../../components/PhotoActionModal';
+import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
+import {
+  TitleSection,
+  DetailsSection,
+  DateRow,
+  AnonymousToggle,
+  FormDivider,
+} from '../../features/contribution/sections';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
-import { ProfileCacheService } from '../../services/profileCacheService';
 import { dealCacheService } from '../../services/dealCacheService';
-import { invalidateDealImageCache } from '../deal_feed/DealDetailScreen';
-import { clearAllPostsCache } from '../../services/userPostsService';
-import { clearFavoritesCache } from '../../services/favoritesService';
 import {
   fetchDealForEdit,
   updateDealFields,
@@ -46,7 +51,9 @@ import {
   updateDealImageOrder,
   DealEditData,
 } from '../../services/dealService';
-import { Box, Text } from '../../ui/primitives';
+import { clearFavoritesCache } from '../../services/favoritesService';
+import { ProfileCacheService } from '../../services/profileCacheService';
+import { clearAllPostsCache } from '../../services/userPostsService';
 import {
   BRAND,
   GRAY,
@@ -61,14 +68,8 @@ import {
   SHADOW,
   CAMERA,
 } from '../../ui/alf';
-import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
-import {
-  TitleSection,
-  DetailsSection,
-  DateRow,
-  AnonymousToggle,
-  FormDivider,
-} from '../../features/contribution/sections';
+import { Box, Text } from '../../ui/primitives';
+import { invalidateDealImageCache } from '../deal_feed/DealDetailScreen';
 
 const { width: screenWidth } = Dimensions.get('window');
 

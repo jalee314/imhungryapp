@@ -6,10 +6,11 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import type { Deal } from '../../../types/deal';
+
 import DealCard from '../../../components/DealCard';
-import { Box, Text } from '../../../ui/primitives';
+import type { Deal } from '../../../types/deal';
 import { STATIC, SPACING } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 import type { FeedInteractions } from '../types';
 
 export interface DealsForYouSectionProps {

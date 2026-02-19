@@ -1,3 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   SafeAreaView,
@@ -7,25 +12,30 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
+
 import CalendarModal from '../../components/CalendarModal';
+import InstagramPhotoPickerModal, { PhotoWithCrop, CropRegion } from '../../components/InstagramPhotoPickerModal';
 import ListSelectionModal from '../../components/ListSelectionModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import PhotoReviewModal from '../../components/PhotoReviewModal';
-import InstagramPhotoPickerModal, { PhotoWithCrop, CropRegion } from '../../components/InstagramPhotoPickerModal';
-import DealPreviewScreen from './DealPreviewScreen';
+import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
+import type { FormRestaurant } from '../../features/contribution/engine';
+import {
+  TitleSection,
+  DetailsSection,
+  PhotoRow,
+  DateRow,
+  PickerRow,
+  AnonymousToggle,
+  FormDivider,
+} from '../../features/contribution/sections';
 import { useDataCache } from '../../hooks/useDataCache';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
-import { fetchUserData } from '../../services/userService';
 import { createDeal, checkDealContentForProfanity } from '../../services/dealService';
-import { useFocusEffect } from '@react-navigation/native';
 import { ProfileCacheService } from '../../services/profileCacheService';
 import { searchRestaurants, getOrCreateRestaurant, GooglePlaceResult } from '../../services/restaurantService';
-import { Box, Text, Pressable } from '../../ui/primitives';
+import { fetchUserData } from '../../services/userService';
 import {
   BRAND,
   GRAY,
@@ -40,17 +50,9 @@ import {
   CAMERA,
   Z_INDEX,
 } from '../../ui/alf';
-import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
-import type { FormRestaurant } from '../../features/contribution/engine';
-import {
-  TitleSection,
-  DetailsSection,
-  PhotoRow,
-  DateRow,
-  PickerRow,
-  AnonymousToggle,
-  FormDivider,
-} from '../../features/contribution/sections';
+import { Box, Text, Pressable } from '../../ui/primitives';
+
+import DealPreviewScreen from './DealPreviewScreen';
 
 // --- Debounce Helper Function ---
 function debounce<T extends (...args: any[]) => any>(
@@ -328,7 +330,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       }
 
       console.log('Camera permission granted, launching camera...');
-      let result = await ImagePicker.launchCameraAsync({
+      const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: CAMERA.aspectRatio as [number, number],
         quality: CAMERA.quality

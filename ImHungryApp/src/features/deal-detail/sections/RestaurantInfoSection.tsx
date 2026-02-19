@@ -4,13 +4,14 @@
  * Purely presentational. Matches the original "restaurantSection" block.
  */
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Image } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { Deal } from '../../../types/deal';
+
 import SkeletonLoader from '../../../components/SkeletonLoader';
-import { Box, Text } from '../../../ui/primitives';
+import type { Deal } from '../../../types/deal';
 import { BRAND, GRAY, STATIC, SPACING, RADIUS, BORDER_WIDTH } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 import type { ViewData } from '../types';
 
 export interface RestaurantInfoSectionProps {

@@ -5,6 +5,7 @@
  * components can remain purely presentational.
  */
 
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Image,
@@ -15,12 +16,13 @@ import {
   Dimensions,
   FlatList,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
-import type { Deal } from '../../types/deal';
-import { useDealUpdate } from '../../hooks/useDealUpdate';
-import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
-import { useSingleDealInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
+
 import { supabase } from '../../../lib/supabase';
+import { useDealUpdate } from '../../hooks/useDealUpdate';
+import { useSingleDealInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
+import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
+import type { Deal } from '../../types/deal';
+
 import type {
   DealDetailState,
   ViewData,

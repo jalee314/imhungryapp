@@ -26,16 +26,14 @@ import {
 import {
   CreateDealData,
   UpdateDealData,
-} from '../dealService';
-import {
+
   createDeal,
   deleteDeal,
   updateDealFields,
   addDealImages,
   removeDealImage,
   setDealThumbnail,
-  updateDealImageOrder,
-} from '../dealService';
+  updateDealImageOrder} from '../dealService';
 
 // Mock image processing service
 import * as imageProcessingService from '../imageProcessingService';

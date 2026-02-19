@@ -16,7 +16,7 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
-import { Box, Text } from '../../../ui/primitives';
+
 import {
   STATIC,
   GRAY,
@@ -27,6 +27,7 @@ import {
   FONT_WEIGHT,
   ALPHA_COLORS,
 } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 // ============================================================================
 // Props

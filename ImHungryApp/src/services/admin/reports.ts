@@ -1,8 +1,9 @@
 import { supabase } from '../../../lib/supabase';
+
 import { logAction, mapResolutionAction } from './core';
 import { deleteDeal } from './deals';
-import { warnUser, banUser, suspendUser } from './users';
 import type { Report, ReportCounts, ModerationAction, ServiceResult } from './types';
+import { warnUser, banUser, suspendUser } from './users';
 
 export async function getReports(status?: string): Promise<Report[]> {
   try {

@@ -1,7 +1,7 @@
-import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-import { AppState, AppStateStatus } from 'react-native';
+import { Platform , AppState, AppStateStatus } from 'react-native';
+
+import { supabase } from '../../lib/supabase';
 
 // Cache keys
 const AUTH_SESSION_KEY = 'supabase_auth_session';

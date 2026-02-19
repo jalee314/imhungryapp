@@ -1,14 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TextInput } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
 import type { ViewStyle } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { checkPhoneExists } from '../../services/userService';
-import { useAuth } from '../../hooks/useAuth';
+import { TextInput } from 'react-native-paper';
 
+import { useAuth } from '../../hooks/useAuth';
+import { checkPhoneExists } from '../../services/userService';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {

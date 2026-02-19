@@ -1,17 +1,17 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, RefreshControl, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { adminService } from '../../services/adminService';
-import type { AppAnalytics } from '../../types/admin';
-import { useAdmin } from '../../hooks/useAdmin';
-import { useAuth } from '../../hooks/useAuth';
-import { BRAND, GRAY } from '../../ui/alf';
 
 import AdminHeader from '../../features/admin/sections/AdminHeader';
 import AdminLoadingState from '../../features/admin/sections/AdminLoadingState';
-import DashboardStatsGrid from '../../features/admin/sections/DashboardStatsGrid';
 import DashboardQuickActions from '../../features/admin/sections/DashboardQuickActions';
 import DashboardRankingList from '../../features/admin/sections/DashboardRankingList';
+import DashboardStatsGrid from '../../features/admin/sections/DashboardStatsGrid';
+import { useAdmin } from '../../hooks/useAdmin';
+import { useAuth } from '../../hooks/useAuth';
+import { adminService } from '../../services/adminService';
+import type { AppAnalytics } from '../../types/admin';
+import { BRAND, GRAY } from '../../ui/alf';
 
 const AdminDashboardScreen: React.FC = () => {
   const navigation = useNavigation();

@@ -5,24 +5,23 @@
  * Includes landing, signup, login, and account setup screens.
  */
 
-import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
 
 // Onboarding screens
-import LandingScreen from '../../../screens/onboarding/LandingScreen';
-import SignUp from '../../../screens/onboarding/SignUp';
-import LogIn from '../../../screens/onboarding/LogIn';
-import ForgotPassword from '../../../screens/onboarding/ForgotPassword';
-import ResetPassword from '../../../screens/onboarding/ResetPassword';
-import UsernameScreen from '../../../screens/onboarding/UsernameScreen';
-import ProfilePhoto from '../../../screens/onboarding/ProfilePhoto';
-import LocationPermissions from '../../../screens/onboarding/LocationPermissions';
-import InstantNotifications from '../../../screens/onboarding/InstantNotifications';
+import AdminLoginScreen from '../../../screens/admin/AdminLoginScreen';
 import CuisinePreferences from '../../../screens/onboarding/CuisinePreferences';
+import ForgotPassword from '../../../screens/onboarding/ForgotPassword';
+import InstantNotifications from '../../../screens/onboarding/InstantNotifications';
+import LandingScreen from '../../../screens/onboarding/LandingScreen';
+import LocationPermissions from '../../../screens/onboarding/LocationPermissions';
+import LogIn from '../../../screens/onboarding/LogIn';
+import ProfilePhoto from '../../../screens/onboarding/ProfilePhoto';
+import ResetPassword from '../../../screens/onboarding/ResetPassword';
+import SignUp from '../../../screens/onboarding/SignUp';
+import UsernameScreen from '../../../screens/onboarding/UsernameScreen';
 
 // Admin login accessible from onboarding
-import AdminLoginScreen from '../../../screens/admin/AdminLoginScreen';
-
 import type { OnboardingStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();

@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+
 import { Box, Text } from '../../ui/primitives';
 
 interface ModalHeaderProps {

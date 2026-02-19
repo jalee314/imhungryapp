@@ -1,12 +1,12 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Notifications from 'expo-notifications';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
   KeyboardAvoidingView, Platform, Alert, Image
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 

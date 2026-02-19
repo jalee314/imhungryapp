@@ -6,9 +6,10 @@
  *          own-profile and other-user-profile flows.
  */
 
+import { useFocusEffect } from '@react-navigation/native';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+
 import { ProfileCacheService } from '../../../services/profileCacheService';
 import { loadCriticalProfileData, updateUserProfileCache } from '../../../services/profileLoadingService';
 import { UserProfileCache } from '../../../services/userProfileService';

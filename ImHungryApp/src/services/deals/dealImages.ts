@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../../../lib/supabase';
+
 import { getCurrentUserId, uploadDealImage } from './utils';
 
 /**

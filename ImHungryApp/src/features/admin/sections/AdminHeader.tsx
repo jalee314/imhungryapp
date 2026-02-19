@@ -1,10 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+
+import { BRAND, GRAY, STATIC, SPACING, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
-import { BRAND, GRAY, STATIC, SPACING, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
 
 interface AdminHeaderProps {
   title: string;

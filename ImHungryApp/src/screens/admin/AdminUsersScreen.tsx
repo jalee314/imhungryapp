@@ -1,19 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+
+import { supabase } from '../../../lib/supabase';
+import AdminHeader from '../../features/admin/sections/AdminHeader';
+import AdminLoadingState from '../../features/admin/sections/AdminLoadingState';
+import UserActionModal from '../../features/admin/sections/UserActionModal';
+import UserCard from '../../features/admin/sections/UserCard';
+import UserDetailModal from '../../features/admin/sections/UserDetailModal';
 import { adminService } from '../../services/adminService';
 import type { UserProfile } from '../../types/admin';
-import { supabase } from '../../../lib/supabase';
 import { BRAND, GRAY, STATIC, SPACING, RADIUS } from '../../ui/alf';
 import { Box } from '../../ui/primitives/Box';
 import { Text } from '../../ui/primitives/Text';
-
-import AdminHeader from '../../features/admin/sections/AdminHeader';
-import AdminLoadingState from '../../features/admin/sections/AdminLoadingState';
-import UserCard from '../../features/admin/sections/UserCard';
-import UserDetailModal from '../../features/admin/sections/UserDetailModal';
-import UserActionModal from '../../features/admin/sections/UserActionModal';
 
 const AdminUsersScreen: React.FC = () => {
   const navigation = useNavigation();

@@ -8,10 +8,10 @@
 
 import React from 'react';
 import { ScrollView, StatusBar, RefreshControl } from 'react-native';
-import { Box } from '../../ui/primitives';
-import { STATIC, BRAND, SPACING } from '../../ui/alf';
 
-import { useCommunity } from './useCommunity';
+import { STATIC, BRAND, SPACING } from '../../ui/alf';
+import { Box } from '../../ui/primitives';
+
 import {
   CommunityHeader,
   CommunityDealsGrid,
@@ -19,6 +19,7 @@ import {
   CommunityEmptyState,
   CommunityErrorState,
 } from './sections';
+import { useCommunity } from './useCommunity';
 
 const CommunityContainer: React.FC = () => {
   const ctx = useCommunity();

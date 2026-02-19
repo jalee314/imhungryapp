@@ -1,8 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-import { BRAND, SEMANTIC, ALPHA_COLORS } from '../ui/alf';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -10,7 +9,8 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+
+import { BRAND, SEMANTIC, ALPHA_COLORS } from '../ui/alf';
 import {
   getVisualIndex,
   getItemOffset,

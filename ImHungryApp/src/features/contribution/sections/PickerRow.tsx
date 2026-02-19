@@ -5,8 +5,9 @@
  * duplicated across both contribution screens.
  */
 
-import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+
 import { Box, Text, Pressable } from '../../../ui/primitives';
 
 export interface PickerRowProps {

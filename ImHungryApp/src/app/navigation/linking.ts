@@ -14,10 +14,11 @@
  * ```
  */
 
-import * as Linking from 'expo-linking';
 import type { LinkingOptions } from '@react-navigation/native';
-import type { RootStackParamList } from './types';
+import * as Linking from 'expo-linking';
+
 import { OnboardingRoutes } from './routes';
+import type { RootStackParamList } from './types';
 
 // ============================================================================
 // URL Scheme Configuration

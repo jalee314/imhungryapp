@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '../../lib/supabase';
+
 import { getCurrentDatabaseSessionId } from './sessionService';
 
 const getCurrentUserId = async (): Promise<string | null> => {

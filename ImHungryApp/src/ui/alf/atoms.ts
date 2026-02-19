@@ -8,6 +8,7 @@
  */
 
 import { StyleSheet, ViewStyle, TextStyle, ImageStyle } from 'react-native';
+
 import {
   SPACING,
   FONT_SIZE,

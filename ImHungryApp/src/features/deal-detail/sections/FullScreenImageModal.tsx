@@ -4,6 +4,7 @@
  * Extracted from the original DealDetailScreen inline Modal block.
  */
 
+import { Ionicons } from '@expo/vector-icons';
 import React, { useRef } from 'react';
 import {
   Modal,
@@ -14,9 +15,9 @@ import {
   Dimensions,
   StyleSheet,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Box, Text } from '../../../ui/primitives';
+
 import { STATIC } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 import type { ImageViewerState } from '../types';
 
 export interface FullScreenImageModalProps {

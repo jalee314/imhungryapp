@@ -1,8 +1,9 @@
-import { create } from 'zustand';
-import React from 'react';
-import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+import { create } from 'zustand';
+
+import { supabase } from '../../lib/supabase';
 import type { Category, Cuisine, Restaurant } from '../types/restaurant';
 
 interface DataCacheState {

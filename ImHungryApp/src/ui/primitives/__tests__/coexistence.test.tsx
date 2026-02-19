@@ -7,9 +7,10 @@
  * 3. Legacy styles can override primitive props when passed via style prop
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
 import { StyleSheet, View as RNView, Text as RNText } from 'react-native';
+
 import { ThemeProvider, Box, Text, Pressable } from '../index';
 
 // Legacy styles created with StyleSheet.create (existing pattern in codebase)

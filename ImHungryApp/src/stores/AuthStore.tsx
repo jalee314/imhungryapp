@@ -1,4 +1,7 @@
+import type { User } from '@supabase/supabase-js';
+import React from 'react';
 import { create } from 'zustand';
+
 import {
   getCurrentUser,
   setupAuthStateListener,
@@ -10,8 +13,6 @@ import {
 } from '../services/authService';
 import { completeSignup as completeSignupSvc, completeSignupSkip as completeSignupSkipSvc } from '../services/onboardingService';
 import { initializeAuthSession, setupAppStateListener } from '../services/sessionService';
-import type { User } from '@supabase/supabase-js';
-import React from 'react';
 
 interface AuthState {
   isAuthenticated: boolean;

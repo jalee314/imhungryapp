@@ -718,7 +718,7 @@ exports[`UI Component Snapshots DealCard should match snapshot for horizontal va
         }
       >
         <View
-          color="#000"
+          color="#000000"
           name="mdi:heart-outline"
           size={36.25954198473283}
           testID="icon-mdi:heart-outline"
@@ -2265,7 +2265,7 @@ exports[`UI Component Snapshots RowCard should match snapshot for explore-deal-c
   onStartShouldSetResponder={[Function]}
   style={
     {
-      "backgroundColor": "#ffffff",
+      "backgroundColor": "#FFFFFF",
       "borderRadius": 12,
       "height": 96,
       "marginHorizontal": 12,
@@ -2359,7 +2359,7 @@ exports[`UI Component Snapshots RowCard should match snapshot for explore-deal-c
           style={
             [
               {
-                "color": "#666666",
+                "color": "#757575",
               },
               {
                 "fontFamily": "Inter",
@@ -2430,7 +2430,7 @@ exports[`UI Component Snapshots RowCard should match snapshot for favorites-deal
   onStartShouldSetResponder={[Function]}
   style={
     {
-      "backgroundColor": "#ffffff",
+      "backgroundColor": "#FFFFFF",
       "borderRadius": 12,
       "height": 96,
       "marginHorizontal": 12,
@@ -2508,7 +2508,7 @@ exports[`UI Component Snapshots RowCard should match snapshot for favorites-deal
         style={
           [
             {
-              "color": "#666666",
+              "color": "#757575",
             },
             {
               "fontFamily": "Inter",
@@ -2572,7 +2572,7 @@ exports[`UI Component Snapshots RowCard should match snapshot for rest-deal vari
   onStartShouldSetResponder={[Function]}
   style={
     {
-      "backgroundColor": "#ffffff",
+      "backgroundColor": "#FFFFFF",
       "borderRadius": 12,
       "height": 96,
       "marginHorizontal": 12,
@@ -2666,7 +2666,7 @@ exports[`UI Component Snapshots RowCard should match snapshot for rest-deal vari
           style={
             [
               {
-                "color": "#666666",
+                "color": "#757575",
               },
               {
                 "fontFamily": "Inter",
@@ -2707,7 +2707,7 @@ exports[`UI Component Snapshots RowCardSkeleton should match snapshot 1`] = `
 <View
   style={
     {
-      "backgroundColor": "#ffffff",
+      "backgroundColor": "#FFFFFF",
       "borderRadius": 12,
       "height": 86,
       "marginHorizontal": 12,

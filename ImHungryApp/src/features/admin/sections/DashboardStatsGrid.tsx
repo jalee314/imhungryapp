@@ -1,9 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
+import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW, SEMANTIC } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
-import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW, SEMANTIC } from '../../../ui/alf';
 import type { AppAnalytics } from '../types';
 
 interface DashboardStatsGridProps {

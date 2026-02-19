@@ -6,8 +6,9 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
-import { useDealForm, DEAL_FORM_DEFAULTS } from '../engine/useDealForm';
+
 import type { DealFormValues, DealFormOptions } from '../engine/types';
+import { useDealForm, DEAL_FORM_DEFAULTS } from '../engine/useDealForm';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 

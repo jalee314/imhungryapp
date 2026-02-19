@@ -1,6 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, BORDER_WIDTH, SPACING } from '../ui/alf';
 

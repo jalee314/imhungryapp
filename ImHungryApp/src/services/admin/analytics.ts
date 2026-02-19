@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase';
+
 import type { AppAnalytics } from './types';
 
 export async function getAnalytics(): Promise<AppAnalytics> {

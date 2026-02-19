@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+
 import { mapAndCreateRestaurantCuisine } from './cuisineMappingService';
 
 export interface GooglePlaceResult {

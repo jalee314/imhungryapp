@@ -4,6 +4,7 @@
  * Handles all three render states: carousel, skeleton-while-loading, and single-image fallback.
  */
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useRef } from 'react';
 import {
   Image,
@@ -12,12 +13,12 @@ import {
   Dimensions,
   StyleSheet,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { Deal } from '../../../types/deal';
-import SkeletonLoader from '../../../components/SkeletonLoader';
+
 import OptimizedImage from '../../../components/OptimizedImage';
-import { Box, Text } from '../../../ui/primitives';
+import SkeletonLoader from '../../../components/SkeletonLoader';
+import type { Deal } from '../../../types/deal';
 import { GRAY, STATIC, RADIUS, BORDER_WIDTH, BRAND } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 import type { ImageCarouselState } from '../types';
 
 const { width: screenWidth } = Dimensions.get('window');

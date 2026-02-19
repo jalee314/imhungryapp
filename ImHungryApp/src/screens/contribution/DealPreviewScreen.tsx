@@ -6,6 +6,10 @@
  * (Box / Text) and design tokens — no raw StyleSheet or inline literals.
  */
 
+import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
+import { StatusBar } from 'expo-status-bar';
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
@@ -20,12 +24,8 @@ import {
   FlatList,
   Easing,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
-import { Monicon } from '@monicon/native';
-import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
+
 import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
-import { Box, Text } from '../../ui/primitives';
 import {
   BRAND,
   GRAY,
@@ -37,6 +37,7 @@ import {
   BORDER_WIDTH,
   FONT_SIZE,
 } from '../../ui/alf';
+import { Box, Text } from '../../ui/primitives';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 

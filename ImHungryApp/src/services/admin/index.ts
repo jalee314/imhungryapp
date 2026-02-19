@@ -23,11 +23,11 @@ export { getDeals, updateDeal, deleteDeal, featureDeal, pinDeal } from './deals'
 export { searchUsers, getUser, warnUser, banUser, unbanUser, suspendUser, unsuspendUser, deleteUser } from './users';
 export { getAnalytics } from './analytics';
 
-import { isAdmin, logAction } from './core';
-import { getReports, updateReportStatus, getReportCounts, dismissReport, resolveReportWithAction } from './reports';
-import { getDeals, updateDeal, deleteDeal, featureDeal, pinDeal } from './deals';
-import { searchUsers, getUser, warnUser, banUser, unbanUser, suspendUser, unsuspendUser, deleteUser } from './users';
 import { getAnalytics } from './analytics';
+import { isAdmin, logAction } from './core';
+import { getDeals, updateDeal, deleteDeal, featureDeal, pinDeal } from './deals';
+import { getReports, updateReportStatus, getReportCounts, dismissReport, resolveReportWithAction } from './reports';
+import { searchUsers, getUser, warnUser, banUser, unbanUser, suspendUser, unsuspendUser, deleteUser } from './users';
 
 /**
  * Facade object that mirrors the original AdminService class singleton.

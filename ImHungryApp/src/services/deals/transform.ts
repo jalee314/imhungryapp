@@ -3,11 +3,12 @@
  * Functions for transforming deal data between formats
  */
 
-import type { Deal } from '../../types/deal';
 import { supabase } from '../../../lib/supabase';
+import type { Deal } from '../../types/deal';
 import { getUserVoteStates, calculateVoteCounts } from '../voteService';
-import { getTimeAgo } from './utils';
+
 import { DatabaseDeal } from './types';
+import { getTimeAgo } from './utils';
 
 /**
  * Add vote information (counts, user vote state) to deals

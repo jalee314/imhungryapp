@@ -1,13 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, useWindowDimensions, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-
-import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../hooks/useAuth';
+import { TextInput } from 'react-native-paper';
 
+import { useAuth } from '../../hooks/useAuth';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 export default function LogInScreen() {

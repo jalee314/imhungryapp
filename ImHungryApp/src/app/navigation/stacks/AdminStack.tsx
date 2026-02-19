@@ -4,16 +4,15 @@
  * Navigation stack for admin dashboard and management screens.
  */
 
-import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
 
 // Admin screens
 import AdminDashboardScreen from '../../../screens/admin/AdminDashboardScreen';
-import AdminReportsScreen from '../../../screens/admin/AdminReportsScreen';
 import AdminDealsScreen from '../../../screens/admin/AdminDealsScreen';
-import AdminUsersScreen from '../../../screens/admin/AdminUsersScreen';
 import AdminMassUploadScreen from '../../../screens/admin/AdminMassUploadScreen';
-
+import AdminReportsScreen from '../../../screens/admin/AdminReportsScreen';
+import AdminUsersScreen from '../../../screens/admin/AdminUsersScreen';
 import type { AdminStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<AdminStackParamList>();

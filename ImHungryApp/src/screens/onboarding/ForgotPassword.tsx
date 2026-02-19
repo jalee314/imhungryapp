@@ -1,13 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { sendPasswordResetEmail } from '../../services/authService';
+import { TextInput } from 'react-native-paper';
 
+import { sendPasswordResetEmail } from '../../services/authService';
 import { BRAND, STATIC, SEMANTIC } from '../../ui/alf';
 
 export default function ForgotPasswordScreen() {

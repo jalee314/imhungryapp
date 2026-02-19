@@ -3,8 +3,9 @@
  */
 
 import React from 'react';
-import { Box, Text } from '../../../ui/primitives';
+
 import { GRAY } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 export function CommunityEmptyState() {
   return (

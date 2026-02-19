@@ -4,9 +4,10 @@
  * Matches the incognito toggle from DealCreationScreen / DealEditScreen.
  */
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Switch } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { Box, Text } from '../../../ui/primitives';
 
 export interface AnonymousToggleProps {

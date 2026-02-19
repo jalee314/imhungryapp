@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
@@ -9,10 +10,11 @@ import {
   TextInput,
   FlatList,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import ModalHeader from './ui/ModalHeader';
 
 import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+
+import ModalHeader from './ui/ModalHeader';
+
 
 interface ListItem {
   id: string;

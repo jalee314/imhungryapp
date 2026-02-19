@@ -1,9 +1,12 @@
-import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RealtimeChannel } from '@supabase/supabase-js';
+
+import { supabase } from '../../lib/supabase';
 import type { Deal } from '../types/deal';
+
 import { fetchRankedDeals, transformDealForUI, addDistancesToDeals, addVotesToDeals } from './dealService';
 import { getUserVoteStates, calculateVoteCounts } from './voteService';
-import { RealtimeChannel } from '@supabase/supabase-js';
+
 
 const CACHE_KEY = 'cached_deals';
 const CACHE_TIMESTAMP_KEY = 'cached_deals_timestamp';

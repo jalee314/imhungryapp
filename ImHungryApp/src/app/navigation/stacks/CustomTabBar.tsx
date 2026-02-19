@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+
 import BottomNavigation from '../../../components/BottomNavigation';
 
 interface CustomTabBarProps {

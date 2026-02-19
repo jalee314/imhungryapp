@@ -1,10 +1,10 @@
+import { Monicon } from '@monicon/native';
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
-import { Monicon } from '@monicon/native';
-
-import { BRAND, STATIC, GRAY, SEMANTIC, FONT_WEIGHT, RADIUS } from '../ui/alf';
 
 import type { Deal } from '../types/deal';
+import { BRAND, STATIC, GRAY, SEMANTIC, FONT_WEIGHT, RADIUS } from '../ui/alf';
+
 
 import OptimizedImage, { preloadImage } from './OptimizedImage';
 import VoteButtons from './VoteButtons';

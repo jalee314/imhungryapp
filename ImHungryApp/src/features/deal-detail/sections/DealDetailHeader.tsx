@@ -4,10 +4,10 @@
  * Purely presentational. State & callbacks come from useDealDetail.
  */
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Box, Text } from '../../../ui/primitives';
+
 import {
   STATIC,
   ALPHA_COLORS,
@@ -16,6 +16,7 @@ import {
   RADIUS,
   SPACING,
 } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 export interface DealDetailHeaderProps {
   onGoBack: () => void;

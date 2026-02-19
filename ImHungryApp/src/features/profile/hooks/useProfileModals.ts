@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+
 import { handleUserLogout, handleAccountDeletion } from '../../../services/profileActionsService';
 import { showDeleteAccountConfirmation } from '../../../services/profileUtilsService';
 import type { ProfileModalState, ProfileModalHandlers } from '../types';

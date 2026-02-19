@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Image, ImageProps, PixelRatio, Dimensions } from 'react-native';
+
 import { getOptimalImageVariant, getImageUrl } from '../services/imageProcessingService';
 import type { ImageVariants, VariantContext } from '../types/image';
 

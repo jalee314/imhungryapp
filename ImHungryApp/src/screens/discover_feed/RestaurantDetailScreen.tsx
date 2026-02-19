@@ -1,3 +1,5 @@
+import { Ionicons , MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -12,19 +14,15 @@ import {
   Linking,
   SafeAreaView,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { supabase } from '../../../lib/supabase';
 import RowCard, { RowCardData } from '../../components/RowCard';
-import type { DiscoverRestaurant } from '../../types/discover';
-import { getCurrentUserLocation } from '../../services/locationService';
-import { calculateDistance } from '../../services/locationService';
+import { useFavorites } from '../../hooks/useFavorites';
+import { logClick } from '../../services/interactionService';
+import { getCurrentUserLocation , calculateDistance } from '../../services/locationService';
 import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '../../services/restaurantFavoriteService';
 import type { Deal } from '../../types/deal';
-import { logClick } from '../../services/interactionService';
-import { useFavorites } from '../../hooks/useFavorites';
-
+import type { DiscoverRestaurant } from '../../types/discover';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 type RestaurantDetailRouteProp = RouteProp<{

@@ -5,15 +5,16 @@
  * Migrated to use ALF primitives (PR-029).
  */
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { fetchUserData } from '../services/userService';
+
 import { useAuth } from '../hooks/useAuth';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
-import { Box, Text } from '../ui/primitives';
+import { fetchUserData } from '../services/userService';
 import { GRAY, STATIC } from '../ui/alf/tokens';
+import { Box, Text } from '../ui/primitives';
 
 const { width: screenWidth } = Dimensions.get('window');
 

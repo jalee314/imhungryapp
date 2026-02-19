@@ -4,14 +4,15 @@
  * Purely presentational. Wraps the existing VoteButtons component.
  */
 
+import { Monicon } from '@monicon/native';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
-import { Monicon } from '@monicon/native';
+
 import VoteButtons from '../../../components/VoteButtons';
-import { Box } from '../../../ui/primitives';
-import { STATIC, GRAY, RADIUS, SPACING, BORDER_WIDTH } from '../../../ui/alf';
-import type { DealInteractions } from '../types';
 import type { Deal } from '../../../types/deal';
+import { STATIC, GRAY, RADIUS, SPACING, BORDER_WIDTH } from '../../../ui/alf';
+import { Box } from '../../../ui/primitives';
+import type { DealInteractions } from '../types';
 
 export interface DealActionsBarProps {
   dealData: Deal;

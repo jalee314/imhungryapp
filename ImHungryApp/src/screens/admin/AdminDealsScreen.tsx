@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
-import { adminService } from '../../services/adminService';
-import type { AdminDeal as Deal } from '../../types/admin';
-import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
-import { BRAND, GRAY, STATIC, SPACING, RADIUS } from '../../ui/alf';
-import { Box } from '../../ui/primitives/Box';
-import { Text } from '../../ui/primitives/Text';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
 
 import AdminHeader from '../../features/admin/sections/AdminHeader';
 import AdminLoadingState from '../../features/admin/sections/AdminLoadingState';
 import DealCard from '../../features/admin/sections/DealCard';
 import DealEditModal from '../../features/admin/sections/DealEditModal';
+import { adminService } from '../../services/adminService';
+import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
+import type { AdminDeal as Deal } from '../../types/admin';
+import { BRAND, GRAY, STATIC, SPACING, RADIUS } from '../../ui/alf';
+import { Box } from '../../ui/primitives/Box';
+import { Text } from '../../ui/primitives/Text';
+
 
 const AdminDealsScreen: React.FC = () => {
   const navigation = useNavigation();

@@ -1,10 +1,10 @@
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { isUsernameAvailable } from '../../services/onboardingService';
 
+import { isUsernameAvailable } from '../../services/onboardingService';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 export default function UsernameScreen() {

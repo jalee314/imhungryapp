@@ -21,6 +21,7 @@ import {
   toggleDownvote as canonicalToggleDownvote,
   toggleDealFavorite,
 } from '../features/interactions';
+
 import { clearFavoritesCache } from './favoritesService';
 
 // ==========================================

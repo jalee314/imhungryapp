@@ -6,6 +6,7 @@
  */
 
 import { useAuthStore } from '../AuthStore';
+
 import { act } from '@testing-library/react-native';
 
 // Mock services that AuthStore depends on
@@ -37,8 +38,8 @@ import {
   signInWithPassword,
   resetPasswordWithTokens,
 } from '../../services/authService';
-import { initializeAuthSession, setupAppStateListener } from '../../services/sessionService';
 import { completeSignup, completeSignupSkip } from '../../services/onboardingService';
+import { initializeAuthSession, setupAppStateListener } from '../../services/sessionService';
 
 describe('AuthStore', () => {
   beforeEach(() => {

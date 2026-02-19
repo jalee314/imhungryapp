@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase';
+
 import type { ResolutionActionEnum, ModerationAction } from './types';
 
 export function mapResolutionAction(

@@ -5,8 +5,9 @@
  * Actual photo picking / cropping modals are orchestrated by the screen.
  */
 
-import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+
 import { Box, Text, Pressable } from '../../../ui/primitives';
 
 export interface PhotoRowProps {

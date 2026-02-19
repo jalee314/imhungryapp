@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -10,11 +12,9 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { submitBlock } from '../../services/blockService';
 import { getDealUploaderId } from '../../services/dealService';
-
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 type BlockUserRouteProp = RouteProp<{ BlockUser: { dealId: string; uploaderUserId: string } }, 'BlockUser'>;

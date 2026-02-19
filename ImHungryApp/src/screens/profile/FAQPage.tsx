@@ -1,8 +1,8 @@
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import ScreenHeader from '../../components/ui/ScreenHeader';
 
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import { STATIC, GRAY } from '../../ui/alf';
 
 const FAQPage = () => {

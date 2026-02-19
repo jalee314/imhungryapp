@@ -8,11 +8,12 @@
  * to enable cleaner separation of concerns and better testability.
  */
 
-import React, { ReactNode } from 'react';
-import { useInitializeAuth } from '@stores/AuthStore';
 import { useInitializeAdmin } from '@stores/AdminStore';
+import { useInitializeAuth } from '@stores/AuthStore';
 import { useInitializeDataCache } from '@stores/DataCacheStore';
 import { useInitializeLocation } from '@stores/LocationStore';
+import React, { ReactNode } from 'react';
+
 import { ThemeProvider } from '../../ui/primitives';
 
 export interface AppProvidersProps {

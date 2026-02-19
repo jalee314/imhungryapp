@@ -12,12 +12,12 @@ import {
   StatusBar,
   ScrollView,
 } from 'react-native';
-import ThreeDotPopup from '../../components/ThreeDotPopup';
-import MapSelectionModal from '../../components/MapSelectionModal';
-import { Box, Text } from '../../ui/primitives';
-import { STATIC, GRAY, BORDER_WIDTH, SPACING } from '../../ui/alf';
 
-import { useDealDetail } from './useDealDetail';
+import MapSelectionModal from '../../components/MapSelectionModal';
+import ThreeDotPopup from '../../components/ThreeDotPopup';
+import { STATIC, GRAY, BORDER_WIDTH, SPACING } from '../../ui/alf';
+import { Box, Text } from '../../ui/primitives';
+
 import {
   DealDetailHeader,
   RestaurantInfoSection,
@@ -28,6 +28,7 @@ import {
   FullScreenImageModal,
   SectionDivider,
 } from './sections';
+import { useDealDetail } from './useDealDetail';
 
 const DealDetailContainer: React.FC = () => {
   const ctx = useDealDetail();

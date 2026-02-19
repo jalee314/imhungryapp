@@ -15,6 +15,7 @@
  */
 
 import { Alert } from 'react-native';
+
 import { validateDealForm, DEAL_FORM_DEFAULTS } from '../../../features/contribution/engine';
 import type { DealFormValues } from '../../../features/contribution/engine';
 
@@ -56,9 +57,9 @@ jest.mock('../../../services/profileCacheService', () => ({
 
 // Import mocked services
 import { createDeal, checkDealContentForProfanity } from '../../../services/dealService';
-import { fetchUserData } from '../../../services/userService';
-import { searchRestaurants, getOrCreateRestaurant } from '../../../services/restaurantService';
 import { ProfileCacheService } from '../../../services/profileCacheService';
+import { searchRestaurants, getOrCreateRestaurant } from '../../../services/restaurantService';
+import { fetchUserData } from '../../../services/userService';
 
 // Mock Alert
 jest.spyOn(Alert, 'alert').mockImplementation(() => { });

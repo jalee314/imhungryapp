@@ -1,8 +1,8 @@
 import React, { ReactNode } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 
-import { BRAND } from '../ui/alf';
 import { useAuth } from '../hooks/useAuth';
+import { BRAND } from '../ui/alf';
 
 interface AuthGuardProps {
   children: ReactNode;

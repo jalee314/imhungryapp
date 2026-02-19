@@ -6,14 +6,15 @@
  * The legacy ProfilePage re-exports it for navigation compatibility.
  */
 
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useProfile } from '../../hooks/useProfile';
+
 import { useAdmin } from '../../hooks/useAdmin';
-import { Box } from '../../ui/primitives';
+import { useProfile } from '../../hooks/useProfile';
 import { STATIC, GRAY } from '../../ui/alf';
+import { Box } from '../../ui/primitives';
 
 import {
   ProfileSkeleton,

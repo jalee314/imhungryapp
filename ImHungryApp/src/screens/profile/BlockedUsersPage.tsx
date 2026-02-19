@@ -1,9 +1,9 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
-import { getBlockedUsers, unblockUser } from '../../services/blockService';
 
+import { getBlockedUsers, unblockUser } from '../../services/blockService';
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 interface BlockedUser {

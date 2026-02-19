@@ -7,7 +7,7 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Box, Text } from '../../../ui/primitives';
+
 import {
   STATIC,
   GRAY,
@@ -16,6 +16,7 @@ import {
   FONT_SIZE,
   FONT_WEIGHT,
 } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 // ============================================================================
 // Props

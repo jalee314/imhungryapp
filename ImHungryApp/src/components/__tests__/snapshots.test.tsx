@@ -11,8 +11,8 @@
  * 4. VoteButtons: various states (upvoted, downvoted, favorited)
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
 
 // Mock react-native Switch component (doesn't work in jest environment)
 jest.mock('react-native/Libraries/Components/Switch/Switch', () => {
@@ -48,8 +48,8 @@ jest.mock('../OptimizedImage', () => {
 
 // Import components after mocks
 import DealCard, { Deal } from '../DealCard';
-import RowCard, { RowCardData } from '../RowCard';
 import DealCardSkeleton from '../DealCardSkeleton';
+import RowCard, { RowCardData } from '../RowCard';
 import RowCardSkeleton from '../RowCardSkeleton';
 import SkeletonLoader from '../SkeletonLoader';
 import VoteButtons from '../VoteButtons';

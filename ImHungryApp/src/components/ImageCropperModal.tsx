@@ -1,3 +1,5 @@
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
 import {
     Modal,
@@ -10,13 +12,11 @@ import {
     SafeAreaView,
     ActivityIndicator,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
 } from 'react-native-reanimated';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

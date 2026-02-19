@@ -1,8 +1,9 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
+
+import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
-import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW } from '../../../ui/alf';
 import type { ReportCounts } from '../types';
 
 export type ReportFilter = 'pending' | 'review' | 'resolved' | 'all';

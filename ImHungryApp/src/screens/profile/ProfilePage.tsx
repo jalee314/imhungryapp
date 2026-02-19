@@ -7,6 +7,7 @@
  */
 
 import React from 'react';
+
 import ProfileContainer from '../../features/profile/ProfileContainer';
 
 const ProfilePage: React.FC = () => <ProfileContainer />;

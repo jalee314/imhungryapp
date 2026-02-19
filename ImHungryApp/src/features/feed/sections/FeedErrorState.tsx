@@ -6,8 +6,9 @@
 
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
-import { Box, Text } from '../../../ui/primitives';
+
 import { BRAND, GRAY, STATIC, RADIUS, SPACING } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 export interface FeedErrorStateProps {
   message: string;

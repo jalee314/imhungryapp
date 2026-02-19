@@ -14,8 +14,10 @@
  */
 
 import { useCallback } from 'react';
-import type { Deal } from '../types/deal';
+
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../services/voteService';
+import type { Deal } from '../types/deal';
+
 import { useFavorites } from './useFavorites';
 import type { DealInteractionState } from './useOptimisticDealInteractions';
 

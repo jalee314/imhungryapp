@@ -4,9 +4,10 @@
  */
 
 import { supabase } from '../../../lib/supabase';
-import { getCurrentUserId } from './utils';
+
 import { checkDealContentForProfanity } from './moderation';
 import { DealEditData, UpdateDealData } from './types';
+import { getCurrentUserId } from './utils';
 
 /**
  * Fetch deal data for editing

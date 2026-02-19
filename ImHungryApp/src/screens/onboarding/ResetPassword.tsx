@@ -1,12 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../hooks/useAuth';
+import { TextInput } from 'react-native-paper';
 
+import { useAuth } from '../../hooks/useAuth';
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 export default function ResetPasswordScreen() {

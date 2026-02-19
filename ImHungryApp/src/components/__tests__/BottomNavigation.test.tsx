@@ -5,8 +5,9 @@
  * Validates tab mapping, active-state logic, press behavior, and snapshot consistency.
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
+
 import { ThemeProvider } from '../../ui/primitives';
 import BottomNavigation from '../BottomNavigation';
 

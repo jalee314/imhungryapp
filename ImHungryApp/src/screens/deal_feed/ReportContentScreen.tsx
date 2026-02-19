@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -10,12 +12,10 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+import { getDealUploaderId } from '../../services/dealService';
 import { reportService } from '../../services/reportService';
 import { getFullUserProfile } from '../../services/userService';
-import { getDealUploaderId } from '../../services/dealService';
-
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 type ReportContentRouteProp = RouteProp<{ ReportContent: { dealId: string; uploaderUserId: string } }, 'ReportContent'>;
