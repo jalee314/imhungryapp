@@ -219,7 +219,7 @@ export const processImageWithEdgeFunction = async (
       const imageInfo = await new Promise<{ width: number; height: number }>((resolve, reject) => {
         Image.getSize(imageUri, (width, height) => resolve({ width, height }), reject);
       });
-      
+
       // Only resize if image is larger than 1200px (allow some margin above 1080)
       if (imageInfo.width > 1200) {
         console.log(`🔄 Optimizing large image (${imageInfo.width}px) before upload...`);
@@ -301,14 +301,4 @@ export const processImageWithEdgeFunction = async (
     return { success: false, error: error.message || 'Unknown error' };
   }
 };
-
-export const getOptimizedImageUrl = (
-  variants: ImageVariants,
-  context: VariantContext
-): string => {
-  const selectedVariant = getOptimalImageVariant(variants, context);
-  return getImageUrl(selectedVariant);
-};
-
-
 

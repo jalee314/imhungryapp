@@ -34,11 +34,11 @@ export interface UserPost {
 /**
  * Transform database post data to UI format
  */
-export const transformDealForUI = (post: any): UserPost => {
+const transformDealForUI = (post: any): UserPost => {
   // Handle image source - ONLY use Cloudinary or placeholder
   let imageSource;
   let imageVariants = undefined;
-  
+
   if (post.image_metadata?.variants) {
     // Use Cloudinary variants (new deals)
     console.log('✅ Using Cloudinary for user post:', post.title);
@@ -50,12 +50,12 @@ export const transformDealForUI = (post: any): UserPost => {
     imageSource = require('../../img/default-rest.png');
     imageVariants = undefined; // No variants = OptimizedImage won't be used
   }
-  
+
   return {
     id: post.deal_id || post.template_id,
     title: post.title,
-    restaurant: Array.isArray(post.restaurant) 
-      ? (post.restaurant[0]?.name || 'Unknown') 
+    restaurant: Array.isArray(post.restaurant)
+      ? (post.restaurant[0]?.name || 'Unknown')
       : (post.restaurant?.name || 'Unknown'),
     details: post.description,
     image: imageSource,
@@ -72,8 +72,8 @@ export const transformDealForUI = (post: any): UserPost => {
     userId: post.user_id,
     userDisplayName: post.user_display_name,
     userProfilePhoto: post.user_profile_photo,
-    restaurantAddress: Array.isArray(post.restaurant) 
-      ? (post.restaurant[0]?.address || '') 
+    restaurantAddress: Array.isArray(post.restaurant)
+      ? (post.restaurant[0]?.address || '')
       : (post.restaurant?.address || ''),
     isAnonymous: false,
   };
@@ -83,7 +83,7 @@ export const transformDealForUI = (post: any): UserPost => {
  * Fetch user posts with restaurant data
  */
 export const fetchUserPosts = async (
-  targetUserId: string, 
+  targetUserId: string,
   limit: number = 20
 ): Promise<UserPost[]> => {
   try {
@@ -91,7 +91,7 @@ export const fetchUserPosts = async (
     const cacheKey = `${targetUserId}_${limit}`;
     const cached = postsCache.get(cacheKey);
     const now = Date.now();
-    
+
     if (cached && (now - cached.timestamp) < POSTS_CACHE_DURATION) {
       console.log('Using cached posts for user:', targetUserId);
       return cached.data;
@@ -141,22 +141,22 @@ export const fetchUserPosts = async (
     }
 
     console.log('Loading posts for user:', targetUserId, 'Found posts:', postsData.length);
-    
+
     // Transform posts to UI format
     const transformedPosts = postsData.map((post: any) => {
       // Get the actual deal_id from deal_instance (not template_id)
-      const dealInstance = Array.isArray(post.deal_instance) 
-        ? post.deal_instance[0] 
+      const dealInstance = Array.isArray(post.deal_instance)
+        ? post.deal_instance[0]
         : post.deal_instance;
       const actualDealId = dealInstance?.deal_id || post.template_id;
-      
+
       // Determine image variants - prioritize first image by display_order from deal_images
       let imageMetadata = null;
       const dealImages = post.deal_images || [];
-      
+
       if (dealImages.length > 0) {
         // Sort by display_order and use the first image (which is the cover/thumbnail)
-        const sortedImages = [...dealImages].sort((a: any, b: any) => 
+        const sortedImages = [...dealImages].sort((a: any, b: any) =>
           (a.display_order ?? 999) - (b.display_order ?? 999)
         );
         const firstImage = sortedImages.find((img: any) => img.image_metadata?.variants);
@@ -167,12 +167,12 @@ export const fetchUserPosts = async (
           imageMetadata = selectedImage.image_metadata;
         }
       }
-      
+
       // Fall back to deal_template.image_metadata if no deal_images
       if (!imageMetadata && post.image_metadata?.variants) {
         imageMetadata = post.image_metadata;
       }
-      
+
       return transformDealForUI({
         deal_id: actualDealId,
         template_id: post.template_id,
@@ -217,13 +217,6 @@ export const updatePostsWithUserInfo = (
   }));
 };
 
-/**
- * Clear posts cache for a specific user
- */
-export const clearUserPostsCache = (userId: string): void => {
-  const keysToDelete = Array.from(postsCache.keys()).filter(key => key.startsWith(`${userId}_`));
-  keysToDelete.forEach(key => postsCache.delete(key));
-};
 
 /**
  * Clear all posts cache

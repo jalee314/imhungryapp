@@ -1,21 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 
-// Get public URL for a file in Supabase Storage
-const getPublicUrl = (path: string) => {
-  // Profile photos are stored in the 'avatars' bucket
-  // The path in the database is just the filename (e.g., "public/user_jasonklee1003_jasklee_1757535543645.jpg")
-  const { data } = supabase
-    .storage
-    .from('avatars')
-    .getPublicUrl(path);
-  
-  return data.publicUrl;
-};
 
 
 // Define the User interface to match your database schema
-export interface User {
+interface User {
   user_id: string;
   display_name: string;
   email: string;
@@ -29,7 +18,7 @@ export interface User {
 }
 
 // Interface for the component (simplified)
-export interface UserDisplayData {
+interface UserDisplayData {
   username: string;
   profilePicture: string | null;
   city: string;
@@ -78,7 +67,7 @@ export const fetchUserData = async (): Promise<UserDisplayData> => {
     });
 
     // Use the medium variant for profile display
-    const profilePicture = user.image_metadata?.variants?.medium 
+    const profilePicture = user.image_metadata?.variants?.medium
       || user.image_metadata?.variants?.small
       || user.image_metadata?.variants?.thumbnail
       || user.profile_photo;  // Fallback to old path
@@ -97,56 +86,6 @@ export const fetchUserData = async (): Promise<UserDisplayData> => {
   }
 };
 
-/**
- * Updates user data in Supabase
- */
-export const updateUserData = async (updates: Partial<User>): Promise<UserDisplayData> => {
-  try {
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      throw new Error('No authenticated user found');
-    }
-
-    // Update in Supabase
-    const { data, error } = await supabase
-      .from('user')
-      .update(updates)
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase update error:', error);
-      throw error;
-    }
-
-    // Process the profile photo URL
-    let profilePicture = null;
-    if (data.profile_photo) {
-      if (data.profile_photo.startsWith('http')) {
-        profilePicture = data.profile_photo;
-      } else {
-        profilePicture = getPublicUrl(data.profile_photo);
-      }
-    }
-
-    // Transform and cache the updated data
-    const displayData: UserDisplayData = {
-      username: data.display_name,
-      profilePicture: profilePicture,
-      city: data.location_city || 'Unknown',
-      state: 'CA',
-    };
-
-    await AsyncStorage.setItem('userData', JSON.stringify(displayData));
-    await AsyncStorage.setItem('userDataTimestamp', Date.now().toString());
-
-    return displayData;
-  } catch (error) {
-    console.error('Error updating user data:', error);
-    throw new Error('Failed to update user data');
-  }
-};
 
 /**
  * Get full user profile data (for profile screens)
@@ -183,8 +122,8 @@ export const getFullUserProfile = async (): Promise<User | null> => {
  */
 export const checkEmailExists = async (email: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.rpc('check_email_exists', { 
-      email_input: email.toLowerCase().trim() 
+    const { data, error } = await supabase.rpc('check_email_exists', {
+      email_input: email.toLowerCase().trim()
     });
 
     if (error) {

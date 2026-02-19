@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
+import ModalHeader from './ui/ModalHeader';
 
 interface CalendarModalProps {
   visible: boolean;
@@ -53,15 +54,11 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.calendarHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.calendarHeaderText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.calendarHeaderTitle}>Expiration Date</Text>
-          <TouchableOpacity onPress={handleConfirm}>
-            <Text style={[styles.calendarHeaderText, { color: '#FF8C4C', fontWeight: 'bold' }]}>Done</Text>
-          </TouchableOpacity>
-        </View>
+        <ModalHeader
+          title="Expiration Date"
+          onCancel={onClose}
+          onDone={handleConfirm}
+        />
         {selectedDate && !noExpirationKnown && (
           <View style={styles.selectedDateContainer}>
             <View style={styles.selectedDatePill}>
@@ -83,7 +80,7 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
               // Ignore selection if the selected date string is lexicographically smaller than today's.
               return;
             }
-            
+
             setSelectedDate(day.dateString);
             if (noExpirationKnown) {
               setNoExpirationKnown(false);
@@ -100,9 +97,9 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
 
         {/* Separator line */}
         <View style={styles.separator} />
-        
+
         {/* No expiration known toggle */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.noExpirationContainer}
           onPress={handleToggleNoExpiration}
         >

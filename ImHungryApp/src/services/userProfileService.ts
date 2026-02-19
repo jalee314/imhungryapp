@@ -41,7 +41,7 @@ export const fetchUserProfile = async (targetUserId: string): Promise<UserProfil
     // Check cache first
     const cached = profileCache.get(targetUserId);
     const now = Date.now();
-    
+
     if (cached && (now - cached.timestamp) < CACHE_DURATION) {
       console.log('Using cached profile data for user:', targetUserId);
       return cached.data;
@@ -59,7 +59,7 @@ export const fetchUserProfile = async (targetUserId: string): Promise<UserProfil
         `)
         .eq('user_id', targetUserId)
         .single(),
-      
+
       supabase
         .from('deal_template')
         .select('*', { count: 'exact', head: true })
@@ -124,12 +124,12 @@ export const fetchCurrentUserPhoto = async (): Promise<string | null> => {
       `)
       .eq('user_id', user.id)
       .single();
-    
+
     if (currentUserData) {
       const variants = (currentUserData as any)?.image_metadata?.variants as any;
       return variants?.thumbnail || null;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error fetching current user photo:', error);
@@ -156,16 +156,3 @@ export const createUserProfileCache = (
   };
 };
 
-/**
- * Clear profile cache for a specific user
- */
-export const clearProfileCache = (userId: string): void => {
-  profileCache.delete(userId);
-};
-
-/**
- * Clear all profile cache
- */
-export const clearAllProfileCache = (): void => {
-  profileCache.clear();
-};

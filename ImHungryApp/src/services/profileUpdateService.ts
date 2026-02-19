@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase';
 
-export interface ProfileFormUpdate {
+interface ProfileFormUpdate {
   fullName: string;
   username: string;
   email: string;
@@ -47,7 +47,7 @@ export const updateCurrentUserProfile = async (form: ProfileFormUpdate): Promise
   if (userError) throw userError;
 };
 
-export const fetchUserCuisines = async (userId: string): Promise<string[]> => {
+const fetchUserCuisines = async (userId: string): Promise<string[]> => {
   const { data, error } = await supabase
     .from('user_cuisine_preference')
     .select('cuisine:cuisine_id ( cuisine_name )')

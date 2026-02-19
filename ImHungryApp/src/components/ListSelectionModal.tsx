@@ -10,6 +10,7 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import ModalHeader from './ui/ModalHeader';
 
 interface ListItem {
   id: string;
@@ -64,8 +65,8 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
     if (singleSelect || isSearchModal) {
       setSelectedItems(prev => (prev.includes(itemId) ? [] : [itemId]));
     } else {
-      setSelectedItems(prev => 
-        prev.includes(itemId) 
+      setSelectedItems(prev =>
+        prev.includes(itemId)
           ? prev.filter(id => id !== itemId)
           : [...prev, itemId]
       );
@@ -80,7 +81,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   };
 
   const filteredData = onSearchChange ? data : data.filter(item =>
-    item.name.toLowerCase().includes(searchText.toLowerCase()) || 
+    item.name.toLowerCase().includes(searchText.toLowerCase()) ||
     (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
   );
 
@@ -125,15 +126,11 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.headerButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{title}</Text>
-          <TouchableOpacity onPress={() => onDone(selectedItems)}>
-            <Text style={[styles.headerButtonText, styles.doneButton]}>Done</Text>
-          </TouchableOpacity>
-        </View>
+        <ModalHeader
+          title={title}
+          onCancel={onClose}
+          onDone={() => onDone(selectedItems)}
+        />
 
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#8E8E93" />
@@ -164,27 +161,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  headerButtonText: {
-    fontSize: 16,
-    color: '#000000',
-  },
-  doneButton: {
-    fontWeight: '700',
-    color: '#FF8C4C',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000000',
-  },
+
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',

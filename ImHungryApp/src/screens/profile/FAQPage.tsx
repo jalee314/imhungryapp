@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 
 const FAQPage = () => {
   const navigation = useNavigation();
@@ -136,13 +136,7 @@ const FAQPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.titleText}>FAQ</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="FAQ" onBack={handleBack} />
 
       {/* Dotted Line */}
       <View style={styles.dottedLine} />
@@ -181,25 +175,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  titleText: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 19,
-    color: '#000000',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 24,
-  },
+
   dottedLine: {
     height: 1,
     borderBottomWidth: 1,

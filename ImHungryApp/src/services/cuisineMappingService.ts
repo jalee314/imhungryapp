@@ -4,13 +4,13 @@ import { supabase } from '../../lib/supabase';
  * Maps Google Places API types to cuisine names in our database
  * Based on the Google Places types returned in the search results
  */
-export const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
+const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
   // American variations
   'american_restaurant': 'American',
   'hamburger_restaurant': 'American',
   'fast_food_restaurant': 'American',
   'steak_house': 'American',
-  
+
   // Asian cuisines
   'chinese_restaurant': 'Chinese',
   'japanese_restaurant': 'Japanese',
@@ -21,27 +21,27 @@ export const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
   'sushi_restaurant': 'Japanese',
   'ramen_restaurant': 'Japanese',
   'noodle_house': 'Japanese', // Could also be Chinese/Vietnamese, but Japanese is common
-  
+
   // European cuisines
   'italian_restaurant': 'Italian',
   'french_restaurant': 'French',
   'greek_restaurant': 'Greek',
   'german_restaurant': 'German',
-  
+
   // Middle Eastern/Mediterranean
   'mediterranean_restaurant': 'Mediterranean',
   'middle_eastern_restaurant': 'MiddleEastern',
-  
+
   // Mexican/Latin American
   'mexican_restaurant': 'Mexican',
-  
+
   // Other specific types
   'seafood_restaurant': 'American', // Default to American for seafood
   'pizza_restaurant': 'Italian',
   'sandwich_shop': 'American',
   'vegetarian_restaurant': 'American', // Could be any cuisine, defaulting to American
   'vegan_restaurant': 'American',
-  
+
   // General fallbacks
   'restaurant': 'American', // Default fallback
   'food': 'American',
@@ -61,7 +61,7 @@ export const GOOGLE_PLACES_CUISINE_MAPPING: Record<string, string> = {
  * @param googlePlacesTypes - Array of types from Google Places API
  * @returns cuisine name that exists in our database, or null if no match
  */
-export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): string | null => {
+const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): string | null => {
   if (!googlePlacesTypes || googlePlacesTypes.length === 0) {
     return 'American'; // Default to American if no types provided
   }
@@ -70,7 +70,7 @@ export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): st
   const priorityOrder = [
     // Highly specific cuisine types (highest priority)
     'chinese_restaurant',
-    'japanese_restaurant', 
+    'japanese_restaurant',
     'korean_restaurant',
     'thai_restaurant',
     'vietnamese_restaurant',
@@ -84,20 +84,20 @@ export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): st
     'german_restaurant',
     'sushi_restaurant',
     'ramen_restaurant',
-    
+
     // Moderately specific
     'pizza_restaurant',
     'seafood_restaurant',
     'steak_house',
     'hamburger_restaurant',
-    
+
     // Less specific (lower priority)
     'american_restaurant',
     'fast_food_restaurant',
     'sandwich_shop',
     'vegetarian_restaurant',
     'vegan_restaurant',
-    
+
     // General fallbacks (lowest priority)
     'restaurant',
     'food',
@@ -139,7 +139,7 @@ export const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): st
  * @param cuisineName - Name of the cuisine (e.g., 'Italian', 'Chinese')
  * @returns cuisine_id or null if not found
  */
-export const getCuisineIdByName = async (cuisineName: string): Promise<string | null> => {
+const getCuisineIdByName = async (cuisineName: string): Promise<string | null> => {
   try {
     const { data, error } = await supabase
       .from('cuisine')
@@ -165,8 +165,8 @@ export const getCuisineIdByName = async (cuisineName: string): Promise<string | 
  * @param cuisineId - ID of the cuisine
  * @returns success boolean
  */
-export const createRestaurantCuisineEntry = async (
-  restaurantId: string, 
+const createRestaurantCuisineEntry = async (
+  restaurantId: string,
   cuisineId: string
 ): Promise<boolean> => {
   try {
