@@ -17,6 +17,7 @@ import { Monicon } from '@monicon/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useDataCache } from '../../hooks/useDataCache';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../../services/restaurantService';
 import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
 import { supabase } from '../../../lib/supabase';
@@ -70,7 +71,7 @@ const AdminMassUploadScreen: React.FC = () => {
     },
   ]);
   const [uploading, setUploading] = useState(false);
-  
+
   // Restaurant search state
   const [activeFormId, setActiveFormId] = useState<string | null>(null);
   const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
@@ -135,7 +136,7 @@ const AdminMassUploadScreen: React.FC = () => {
 
       try {
         const deviceLocation = await getDeviceLocation();
-        
+
         if (!deviceLocation) {
           setSearchError('Location not available. Please enable location services.');
           setSearchResults([]);
@@ -164,7 +165,7 @@ const AdminMassUploadScreen: React.FC = () => {
             lat: place.lat,
             lng: place.lng,
           }));
-          
+
           setSearchResults(transformed);
           setSearchError(null);
         }
@@ -189,10 +190,10 @@ const AdminMassUploadScreen: React.FC = () => {
   const handleDoneSearch = async (selectedIds: string[]) => {
     if (selectedIds.length > 0 && activeFormId) {
       const selectedPlace = searchResults.find(r => r.id === selectedIds[0]);
-      
+
       if (selectedPlace && selectedPlace.google_place_id) {
         setIsSearchModalVisible(false);
-        
+
         try {
           const result = await getOrCreateRestaurant({
             google_place_id: selectedPlace.google_place_id,
@@ -221,7 +222,7 @@ const AdminMassUploadScreen: React.FC = () => {
         }
       }
     }
-    
+
     // Clear search state
     setSearchQuery('');
     setSearchResults([]);
@@ -374,8 +375,7 @@ const AdminMassUploadScreen: React.FC = () => {
               setUploading(false);
               Alert.alert(
                 'Upload Complete',
-                `Successfully uploaded ${successCount} deal(s).${
-                  errorCount > 0 ? ` ${errorCount} failed.` : ''
+                `Successfully uploaded ${successCount} deal(s).${errorCount > 0 ? ` ${errorCount} failed.` : ''
                 }`,
                 [
                   {
@@ -541,16 +541,7 @@ const AdminMassUploadScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mass Deal Upload</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="Mass Deal Upload" onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={styles.content}
@@ -591,27 +582,27 @@ const AdminMassUploadScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <ListSelectionModal 
-        visible={isSearchModalVisible} 
+      <ListSelectionModal
+        visible={isSearchModalVisible}
         onClose={() => {
           setIsSearchModalVisible(false);
           setSearchQuery('');
           setSearchResults([]);
           setSearchError(null);
           setActiveFormId(null);
-        }} 
-        onDone={handleDoneSearch} 
+        }}
+        onDone={handleDoneSearch}
         data={
-          isSearching 
+          isSearching
             ? [{ id: 'loading', name: 'Searching restaurants...', subtext: '' }]
             : searchError
-            ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
-            : searchQuery.trim().length > 0
-            ? (searchResults.length > 0 
-                ? searchResults.map(r => ({ id: r.id, name: r.name, subtext: r.address }))
-                : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
-            : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
-        } 
+              ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
+              : searchQuery.trim().length > 0
+                ? (searchResults.length > 0
+                  ? searchResults.map(r => ({ id: r.id, name: r.name, subtext: r.address }))
+                  : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
+                : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
+        }
         title="Search Restaurant"
         onSearchChange={handleSearchChange}
         searchQuery={searchQuery}
@@ -625,27 +616,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    width: 40,
-  },
-  placeholder: {
-    width: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
-  },
+
   content: {
     flex: 1,
   },
