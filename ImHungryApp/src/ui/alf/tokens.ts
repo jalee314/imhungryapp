@@ -20,6 +20,7 @@ export const BRAND = {
   primaryLight: '#FFB088',
   primaryDark: '#E57A3A',
   accent: '#FFA05C',
+  peach: '#FFE5B4',
 } as const;
 
 /**
@@ -36,11 +37,13 @@ export const GRAY = {
   325: '#D7D7D7',
   350: '#C1C1C1',
   400: '#BDBDBD',
+  475: '#888889',
   500: '#9E9E9E',
   600: '#757575',
   700: '#616161',
   800: '#424242',
   900: '#212121',
+  950: '#181619',
   1000: '#121212',
 } as const;
 
@@ -51,15 +54,17 @@ export const SEMANTIC = {
   success: '#4CAF50',
   successLight: '#81C784',
   successDark: '#388E3C',
-  
+  successAlt: '#2E7D32',
+
   warning: '#FF9800',
   warningLight: '#FFB74D',
   warningDark: '#F57C00',
-  
+
   error: '#F44336',
   errorLight: '#E57373',
   errorDark: '#D32F2F',
-  
+  errorBright: '#DC2626',
+
   info: '#2196F3',
   infoLight: '#64B5F6',
   infoDark: '#1976D2',
@@ -79,6 +84,7 @@ export const STATIC = {
  * Use these for overlays, translucent cards, and placeholder text
  */
 export const ALPHA_COLORS = {
+  brandPrimary20: 'rgba(255, 140, 76, 0.2)',
   brandPrimary80: 'rgba(255, 140, 76, 0.8)',
   whiteOverlay70: 'rgba(255, 255, 255, 0.7)',
   whiteCard93: 'rgba(255, 255, 255, 0.93)',

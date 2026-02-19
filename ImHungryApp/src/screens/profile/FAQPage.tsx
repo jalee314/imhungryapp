@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } fr
 import { useNavigation } from '@react-navigation/native';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 
+import { STATIC, GRAY } from '../../ui/alf';
+
 const FAQPage = () => {
   const navigation = useNavigation();
 
@@ -173,13 +175,13 @@ const FAQPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
 
   dottedLine: {
     height: 1,
     borderBottomWidth: 1,
-    borderBottomColor: '#C1C1C1',
+    borderBottomColor: GRAY[350],
     borderStyle: 'dashed',
     marginTop: 24,
   },
@@ -198,7 +200,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginBottom: 16,
   },
   questionContainer: {
@@ -209,19 +211,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
   },
   sectionContentData: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginTop: 8,
   },
   separator: {
     height: 0.5,
-    backgroundColor: '#C1C1C1',
+    backgroundColor: GRAY[350],
     marginTop: 16,
   },
 });

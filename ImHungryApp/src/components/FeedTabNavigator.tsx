@@ -6,14 +6,16 @@ import { useLocation } from '../hooks/useLocation';
 import Feed from '../screens/deal_feed/Feed';
 import DiscoverFeed from '../screens/discover_feed/DiscoverFeed';
 
+import { STATIC } from '../ui/alf';
+
 interface FeedTabNavigatorProps {
   currentTab?: 'feed' | 'discover';
   onTabChange?: (tab: 'feed' | 'discover') => void;
 }
 
-const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({ 
+const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
   currentTab = 'feed',
-  onTabChange 
+  onTabChange
 }) => {
   const { currentLocation, updateLocation, refreshPermissionStatus } = useLocation();
   const [locationModalVisible, setLocationModalVisible] = useState(false);
@@ -48,11 +50,11 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
   return (
     <View style={styles.container}>
       {/* Persistent Header */}
-      <Header 
-        onLocationPress={handleLocationPress} 
+      <Header
+        onLocationPress={handleLocationPress}
         currentLocation={currentLocation}
       />
-      
+
       {/* Current Screen Content */}
       <View style={styles.screenContainer}>
         {renderCurrentScreen()}
@@ -71,7 +73,7 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   screenContainer: {
     flex: 1,

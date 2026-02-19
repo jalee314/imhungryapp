@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCityAndStateFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
 
+import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+
 interface LocationItem {
   id: string;
   city: string;
@@ -261,11 +263,11 @@ const LocationModal: React.FC<LocationModalProps> = ({
       >
         <View style={styles.locationTextContainer}>
           <Text style={styles.locationText}>Use Current Location</Text>
-          <Ionicons name="navigate" size={16} color="#FF8C4C" style={{ marginLeft: 8 }} />
+          <Ionicons name="navigate" size={16} color={BRAND.primary} style={{ marginLeft: 8 }} />
         </View>
         {selectedLocation === 'current' ? (
           <View style={styles.checkmark}>
-            <Ionicons name="checkmark" size={16} color="white" />
+            <Ionicons name="checkmark" size={16} color={STATIC.white} />
           </View>
         ) : (
           <View style={styles.checkmarkPlaceholder} />
@@ -284,7 +286,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
       </View>
       {selectedLocation === item.id ? (
         <View style={styles.checkmark}>
-          <Ionicons name="checkmark" size={16} color="white" />
+          <Ionicons name="checkmark" size={16} color={STATIC.white} />
         </View>
       ) : (
         <View style={styles.checkmarkPlaceholder} />
@@ -319,7 +321,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#8E8E93" />
+          <Ionicons name="search" size={20} color={GRAY[475]} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search"
@@ -335,7 +337,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
           {/* Search Results */}
           {isSearching ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#FF8C4C" />
+              <ActivityIndicator size="small" color={BRAND.primary} />
             </View>
           ) : (
             <FlatList
@@ -365,7 +367,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   header: {
     flexDirection: 'row',
@@ -374,19 +376,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
+    borderBottomColor: GRAY[250],
   },
   headerButtonText: {
     fontSize: 16,
-    color: '#000',
+    color: STATIC.black,
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
+    color: STATIC.black,
   },
   doneButton: {
-    color: '#FF8C4C',
+    color: BRAND.primary,
     fontWeight: '600',
   },
   doneButtonDisabled: {
@@ -395,7 +397,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: GRAY[150],
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -405,7 +407,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 17,
-    color: '#000',
+    color: STATIC.black,
     marginLeft: 8,
   },
   content: {
@@ -426,13 +428,13 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 16,
-    color: '#000',
+    color: STATIC.black,
   },
   checkmark: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -442,7 +444,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 0.5,
-    backgroundColor: '#C6C6C8',
+    backgroundColor: GRAY[350],
     marginLeft: 4,
   },
   loadingContainer: {

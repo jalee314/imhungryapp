@@ -7,6 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
+
 export default function ProfilePhotoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -41,7 +43,7 @@ export default function ProfilePhotoScreen() {
     try {
       // Request permission to access the camera
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert('Permission Required', 'Sorry, we need camera permissions to take a photo!');
         return;
@@ -67,7 +69,7 @@ export default function ProfilePhotoScreen() {
     try {
       // Request permission to access the photo library
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to select a photo!');
         return;
@@ -143,7 +145,7 @@ export default function ProfilePhotoScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -184,7 +186,7 @@ export default function ProfilePhotoScreen() {
               <View style={styles.footer}>
                 <TouchableOpacity
                   style={[
-                    styles.continueButton, 
+                    styles.continueButton,
                     loading && { opacity: 0.5 }
                   ]}
                   onPress={handleContinue}
@@ -204,84 +206,84 @@ export default function ProfilePhotoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: 'white' 
+  container: {
+    flex: 1,
+    backgroundColor: STATIC.white
   },
 
   keyboardAvoidingView: { flex: 1 },
-  pagePad: { 
-    flex: 1, 
-    paddingHorizontal: 24, 
-    paddingVertical: 20 
+  pagePad: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 20
   },
 
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 40,
     height: 44
   },
 
   backButton: { paddingVertical: 8, paddingHorizontal: 4 },
-  backButtonText: { 
-    fontSize: 20, 
-    color: '#000', 
-    fontWeight: '500' 
+  backButtonText: {
+    fontSize: 20,
+    color: STATIC.black,
+    fontWeight: '500'
   },
 
   skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
-  skipText: { 
-    fontSize: 16, 
-    color: '#404040', 
+  skipText: {
+    fontSize: 16,
+    color: GRAY[800],
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
 
-  mainContainer: { 
-    flex: 1, 
-    alignItems: 'flex-start', 
+  mainContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
     width: '100%'
   },
 
-  titleSection: { 
+  titleSection: {
     alignItems: 'flex-start',
     marginBottom: 40,
     maxWidth: 343
   },
-  title: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
+  title: {
+    fontSize: 24,
+    color: STATIC.black,
+    fontWeight: 'bold',
     marginBottom: 25,
     fontFamily: 'Inter-Bold',
     textAlign: 'left'
   },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#404040', 
+  subtitle: {
+    fontSize: 16,
+    color: GRAY[800],
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
 
-  photoSection: { 
-    alignItems: 'center', 
+  photoSection: {
+    alignItems: 'center',
     marginBottom: 40,
     alignSelf: 'center'
   },
   photoInfo: {
     marginTop: 12,
     fontSize: 14,
-    color: '#666',
+    color: GRAY[600],
     fontFamily: 'Inter-Regular'
   },
   photoPlaceholder: {
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#000',
+    backgroundColor: STATIC.black,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
@@ -302,24 +304,24 @@ const styles = StyleSheet.create({
     resizeMode: 'cover'
   },
   spacer: { flex: 1 },
-  footer: { 
-    width: '100%', 
+  footer: {
+    width: '100%',
     alignItems: 'center',
     alignSelf: 'center'
   },
 
-  continueButton: { 
-    width: '100%', 
+  continueButton: {
+    width: '100%',
     maxWidth: 343,
-    height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
-    alignItems: 'center', 
+    height: 44,
+    backgroundColor: BRAND.primary,
+    borderRadius: 22,
+    alignItems: 'center',
     justifyContent: 'center'
   },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+  continueButtonText: {
+    color: STATIC.white,
+    fontSize: 16,
+    fontWeight: '600'
   },
 });

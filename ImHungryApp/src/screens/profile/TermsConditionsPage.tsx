@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } fr
 import { useNavigation } from '@react-navigation/native';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 
+import { STATIC } from '../../ui/alf';
+
 const TermsConditionsPage = () => {
   const navigation = useNavigation();
 
@@ -104,7 +106,7 @@ const TermsConditionsPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
 
   content: {
@@ -121,7 +123,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginBottom: 12,
   },
   effectiveDate: {
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginBottom: 12,
   },
   heading: {
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginTop: 16,
     marginBottom: 8,
   },
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginTop: 12,
     marginBottom: 4,
   },
@@ -155,7 +157,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginBottom: 8,
   },
   listItem: {
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 19,
-    color: '#000000',
+    color: STATIC.black,
     marginLeft: 16,
     marginBottom: 4,
   },

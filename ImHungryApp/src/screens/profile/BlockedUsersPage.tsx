@@ -4,6 +4,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation } from '@react-navigation/native';
 import { getBlockedUsers, unblockUser } from '../../services/blockService';
 
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
+
 interface BlockedUser {
   block_id: string;
   blocked_user_id: string;
@@ -55,7 +57,7 @@ const BlockedUsersPage = () => {
 
   const handleUpdate = async () => {
     const usersToUnblock = blockedUsers.filter(user => !selectedUsers.has(user.blocked_user_id));
-    
+
     if (usersToUnblock.length === 0) {
       Alert.alert('No Changes', 'No users selected for unblocking');
       return;
@@ -65,18 +67,18 @@ const BlockedUsersPage = () => {
       // Unblock all users who are NOT selected (unchecked)
       const unblockPromises = usersToUnblock.map(user => unblockUser(user.blocked_user_id));
       const results = await Promise.all(unblockPromises);
-      
+
       const successCount = results.filter(result => result.success).length;
-      
+
       if (successCount > 0) {
         // Remove successfully unblocked users from the list
-        setBlockedUsers(prevUsers => 
+        setBlockedUsers(prevUsers =>
           prevUsers.filter(user => selectedUsers.has(user.blocked_user_id))
         );
-        
+
         // Update selected users to only include remaining blocked users
         setSelectedUsers(new Set(blockedUsers.filter(user => selectedUsers.has(user.blocked_user_id)).map(user => user.blocked_user_id)));
-        
+
         Alert.alert('Success', `${successCount} user(s) have been unblocked`, [
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
@@ -90,24 +92,24 @@ const BlockedUsersPage = () => {
 
   const renderUserItem = (user: BlockedUser, index: number) => {
     const isSelected = selectedUsers.has(user.blocked_user_id);
-    
+
     return (
       <View key={user.block_id}>
-        <TouchableOpacity 
-          style={styles.userItem} 
+        <TouchableOpacity
+          style={styles.userItem}
           onPress={() => toggleUserSelection(user.blocked_user_id)}
           activeOpacity={1}
         >
           <Text style={styles.userName}>
             {user.blocked_user.display_name || 'Unknown User'}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.checkbox, isSelected ? styles.checkedBox : styles.uncheckedBox]}
             onPress={() => toggleUserSelection(user.blocked_user_id)}
             activeOpacity={1}
           >
             {isSelected && (
-              <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
+              <MaterialCommunityIcons name="check" size={16} color={STATIC.white} />
             )}
           </TouchableOpacity>
         </TouchableOpacity>
@@ -133,7 +135,7 @@ const BlockedUsersPage = () => {
       <View style={styles.content}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FFA05C" />
+            <ActivityIndicator size="large" color={BRAND.accent} />
             <Text style={styles.loadingText}>Loading blocked users...</Text>
           </View>
         ) : blockedUsers.length === 0 ? (
@@ -154,7 +156,7 @@ const BlockedUsersPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   header: {
     flexDirection: 'row',
@@ -167,7 +169,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 16,
-    color: '#000000',
+    color: STATIC.black,
     flex: 1,
     textAlign: 'left',
   },
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '700',
     fontSize: 16,
-    color: '#000000',
+    color: STATIC.black,
     flex: 1,
     textAlign: 'center',
   },
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '700',
     fontSize: 16,
-    color: '#FFA05C',
+    color: BRAND.accent,
     flex: 1,
     textAlign: 'right',
   },
@@ -195,7 +197,7 @@ const styles = StyleSheet.create({
   userList: {
     width: '100%',
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: GRAY[325],
     borderRadius: 14,
   },
   userItem: {
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
-    color: '#000000',
+    color: STATIC.black,
     flex: 1,
     marginRight: 16,
   },
@@ -220,12 +222,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkedBox: {
-    backgroundColor: '#FFA05C',
+    backgroundColor: BRAND.accent,
   },
   uncheckedBox: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#CCCCCC',
+    borderColor: GRAY[350],
   },
   loadingContainer: {
     flex: 1,
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: GRAY[600],
     fontFamily: 'Inter',
   },
   emptyContainer: {
@@ -247,7 +249,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
+    color: GRAY[600],
     textAlign: 'center',
     marginBottom: 8,
     fontFamily: 'Inter',
@@ -255,14 +257,14 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: GRAY[475],
     textAlign: 'center',
     fontFamily: 'Inter',
   },
   separator: {
     width: '100%',
     height: 0.5,
-    backgroundColor: '#C1C1C1',
+    backgroundColor: GRAY[350],
     alignSelf: 'center',
   },
 });

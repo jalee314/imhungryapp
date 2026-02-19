@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 
+import { GRAY } from '../ui/alf';
+
 interface SkeletonLoaderProps {
   width?: number | string;
   height?: number;
@@ -59,7 +61,7 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: GRAY[300],
   },
 });
 

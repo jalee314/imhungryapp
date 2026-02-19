@@ -353,11 +353,39 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                 {/* Category row */}
                 {((selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine') ||
                   (selectedCategory && selectedCategory.trim() !== '')) && (
-                  <Box row align="center">
-                    <Text size="xs" style={{ fontFamily: 'Inter', lineHeight: 20 }}>
-                      {selectedCuisine &&
-                        selectedCuisine.trim() !== '' &&
-                        selectedCuisine !== 'Cuisine' && (
+                    <Box row align="center">
+                      <Text size="xs" style={{ fontFamily: 'Inter', lineHeight: 20 }}>
+                        {selectedCuisine &&
+                          selectedCuisine.trim() !== '' &&
+                          selectedCuisine !== 'Cuisine' && (
+                            <Text
+                              style={{
+                                fontFamily: 'Inter',
+                                fontSize: FONT_SIZE.xs,
+                                fontWeight: '400',
+                                color: STATIC.black,
+                              }}
+                            >
+                              🍽 {selectedCuisine}
+                            </Text>
+                          )}
+                        {selectedCuisine &&
+                          selectedCuisine.trim() !== '' &&
+                          selectedCuisine !== 'Cuisine' &&
+                          selectedCategory &&
+                          selectedCategory.trim() !== '' && (
+                            <Text
+                              style={{
+                                fontFamily: 'Inter',
+                                fontSize: FONT_SIZE.xs,
+                                fontWeight: '300',
+                                color: STATIC.black,
+                              }}
+                            >
+                              {' '}•{' '}
+                            </Text>
+                          )}
+                        {selectedCategory && selectedCategory.trim() !== '' && (
                           <Text
                             style={{
                               fontFamily: 'Inter',
@@ -366,40 +394,12 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                               color: STATIC.black,
                             }}
                           >
-                            🍽 {selectedCuisine}
+                            {' '}{selectedCategory}
                           </Text>
                         )}
-                      {selectedCuisine &&
-                        selectedCuisine.trim() !== '' &&
-                        selectedCuisine !== 'Cuisine' &&
-                        selectedCategory &&
-                        selectedCategory.trim() !== '' && (
-                          <Text
-                            style={{
-                              fontFamily: 'Inter',
-                              fontSize: FONT_SIZE.xs,
-                              fontWeight: '300',
-                              color: STATIC.black,
-                            }}
-                          >
-                            {' '}•{' '}
-                          </Text>
-                        )}
-                      {selectedCategory && selectedCategory.trim() !== '' && (
-                        <Text
-                          style={{
-                            fontFamily: 'Inter',
-                            fontSize: FONT_SIZE.xs,
-                            fontWeight: '400',
-                            color: STATIC.black,
-                          }}
-                        >
-                          {' '}{selectedCategory}
-                        </Text>
-                      )}
-                    </Text>
-                  </Box>
-                )}
+                      </Text>
+                    </Box>
+                  )}
               </Box>
 
               {/* Separator */}
@@ -408,7 +408,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                 style={{
                   alignSelf: 'stretch',
                   height: BORDER_WIDTH.hairline,
-                  backgroundColor: '#DEDEDE',
+                  backgroundColor: GRAY[250],
                   width: '100%',
                 }}
               />
@@ -501,7 +501,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                             backgroundColor:
                               currentImageIndex === index
                                 ? BRAND.accent
-                                : '#D0D0D0',
+                                : GRAY[325],
                           }}
                         />
                       ))}
@@ -518,7 +518,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                   align="center"
                   bg={STATIC.white}
                   borderWidth={1}
-                  borderColor="#D7D7D7"
+                  borderColor={GRAY[325]}
                   rounded={RADIUS.pill}
                   h={PILL_HEIGHT}
                   w={PILL_WIDTH}
@@ -549,7 +549,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                   <Box
                     w={1}
                     h={scale(12)}
-                    bg="#DEDEDE"
+                    bg={GRAY[250]}
                   />
                   <Box
                     center
@@ -566,7 +566,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                     center
                     bg={STATIC.white}
                     borderWidth={1}
-                    borderColor="#D7D7D7"
+                    borderColor={GRAY[325]}
                     rounded={RADIUS.pill}
                     w={40}
                     h={28}
@@ -577,7 +577,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                     center
                     bg={STATIC.white}
                     borderWidth={1}
-                    borderColor="#D7D7D7"
+                    borderColor={GRAY[325]}
                     rounded={RADIUS.pill}
                     w={40}
                     h={28}
@@ -593,7 +593,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                 style={{
                   alignSelf: 'stretch',
                   height: BORDER_WIDTH.hairline,
-                  backgroundColor: '#DEDEDE',
+                  backgroundColor: GRAY[250],
                   width: '100%',
                 }}
               />

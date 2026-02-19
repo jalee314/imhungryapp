@@ -766,7 +766,7 @@ function DealEditForm({
 
             {/* Photos Section Header */}
             <Box row gap="lg" py={6} px="lg" align="center" style={{ minHeight: 38 }}>
-              <Ionicons name="camera-outline" size={ICON_SIZE.sm} color="#404040" />
+              <Ionicons name="camera-outline" size={ICON_SIZE.sm} color={GRAY[800]} />
               <Text size="xs" color={STATIC.black}>
                 Photos ({activeImages.length}/{IMAGES_MAX_COUNT})
               </Text>
@@ -781,7 +781,7 @@ function DealEditForm({
                 overflow: 'hidden',
                 backgroundColor: GRAY[100],
                 borderWidth: 0.5,
-                borderColor: '#AAAAAA',
+                borderColor: GRAY[475],
               }}
             >
               {activeImages.length > 0 ? (
@@ -837,7 +837,7 @@ function DealEditForm({
                         }}
                         onPress={() => handleRemoveImage(item.imageMetadataId)}
                       >
-                        <Ionicons name="close-circle" size={26} color="#FF3B30" />
+                        <Ionicons name="close-circle" size={26} color={SEMANTIC.error} />
                       </TouchableOpacity>
                       {/* Edit / Crop button */}
                       <TouchableOpacity

@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Linking } from 
 import { useNavigation } from '@react-navigation/native';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 
+import { STATIC, GRAY } from '../../ui/alf';
+
 const ContactUsPage = () => {
   const navigation = useNavigation();
 
@@ -55,7 +57,7 @@ const ContactUsPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
 
   content: {
@@ -73,13 +75,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 16,
-    color: '#000000',
+    color: STATIC.black,
   },
   emailText: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
-    color: '#000000',
+    color: STATIC.black,
   },
   linkContainer: {
     alignItems: 'center',
@@ -88,17 +90,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
-    color: '#000000',
+    color: STATIC.black,
   },
   underline: {
     height: 1,
-    backgroundColor: '#000000',
+    backgroundColor: STATIC.black,
     width: '100%',
     marginTop: 2,
   },
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: GRAY[300],
     marginHorizontal: 20,
   },
 

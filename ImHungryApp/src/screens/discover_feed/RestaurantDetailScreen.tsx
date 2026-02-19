@@ -25,10 +25,12 @@ import type { Deal } from '../../types/deal';
 import { logClick } from '../../services/interactionService';
 import { useFavorites } from '../../hooks/useFavorites';
 
-type RestaurantDetailRouteProp = RouteProp<{ 
-  RestaurantDetail: { 
+import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
+
+type RestaurantDetailRouteProp = RouteProp<{
+  RestaurantDetail: {
     restaurant: DiscoverRestaurant;
-  } 
+  }
 }, 'RestaurantDetail'>;
 
 export interface RestaurantDeal {
@@ -63,7 +65,7 @@ const RestaurantDetailScreen: React.FC = () => {
   const route = useRoute<RestaurantDetailRouteProp>();
   const { restaurant } = route.params;
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
-  
+
   const [deals, setDeals] = useState<RestaurantDeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +91,7 @@ const RestaurantDetailScreen: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { data, error } = await supabase
         .from('deal_instance')
         .select(`
@@ -160,12 +162,12 @@ const RestaurantDetailScreen: React.FC = () => {
 
           const template = Array.isArray(deal.deal_template) ? deal.deal_template[0] : deal.deal_template;
           const user = Array.isArray(template.user) ? template.user[0] : template.user;
-          
+
           // Prioritize thumbnail from deal_images, fallback to deal_template.image_metadata
           const dealImages = template.deal_images || [];
           const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
           const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
-          
+
           let imageMetadata;
           if (thumbnailImage?.image_metadata) {
             imageMetadata = thumbnailImage.image_metadata;
@@ -174,7 +176,7 @@ const RestaurantDetailScreen: React.FC = () => {
           } else {
             imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
           }
-          
+
           console.log('🔍 Processing deal:', template.title, {
             has_image_url: !!template.image_url,
             has_image_metadata: !!imageMetadata,
@@ -182,7 +184,7 @@ const RestaurantDetailScreen: React.FC = () => {
             image_url: template.image_url,
             deal_images_count: dealImages.length
           });
-          
+
           return {
             deal_id: deal.deal_id,
             title: template.title,
@@ -249,14 +251,14 @@ const RestaurantDetailScreen: React.FC = () => {
   const handleRestaurantFavorite = async () => {
     try {
       setFavoriteLoading(true);
-      
+
       // Notify global store for instant favorites page update
       if (isRestaurantFavorited) {
         markAsUnfavorited(restaurant.restaurant_id, 'restaurant');
       } else {
         markAsFavorited(restaurant.restaurant_id, 'restaurant');
       }
-      
+
       const result = await toggleRestaurantFavorite(
         restaurant.restaurant_id,
         isRestaurantFavorited, // Pass current state
@@ -265,7 +267,7 @@ const RestaurantDetailScreen: React.FC = () => {
           setIsRestaurantFavorited(isFavorited);
         }
       );
-      
+
       if (!result.success) {
         // Only show error if the operation failed
         Alert.alert('Error', result.error || 'Failed to update favorites');
@@ -283,7 +285,7 @@ const RestaurantDetailScreen: React.FC = () => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
@@ -350,9 +352,9 @@ const RestaurantDetailScreen: React.FC = () => {
         milesAway: formatDistance(restaurant.distance_miles),
         userId: dealData.user_display_name ? dealData.user_display_name : undefined,
         userDisplayName: dealData.user_display_name || undefined,
-        userProfilePhoto: dealData.user_profile_photo ? 
-          (dealData.user_profile_photo.startsWith('http') 
-            ? dealData.user_profile_photo 
+        userProfilePhoto: dealData.user_profile_photo ?
+          (dealData.user_profile_photo.startsWith('http')
+            ? dealData.user_profile_photo
             : supabase.storage.from('avatars').getPublicUrl(dealData.user_profile_photo).data.publicUrl
           ) : undefined,
         restaurantAddress: restaurant.address,
@@ -376,7 +378,7 @@ const RestaurantDetailScreen: React.FC = () => {
       const { lat, lng } = restaurant;
       const url = `https://maps.google.com/maps?daddr=${lat},${lng}`;
       const supported = await Linking.canOpenURL(url);
-      
+
       if (supported) {
         await Linking.openURL(url);
       } else {
@@ -399,12 +401,12 @@ const RestaurantDetailScreen: React.FC = () => {
 
     const formatExpiration = (endDate: string | null) => {
       if (!endDate) return 'No expiration';
-      
+
       const end = new Date(endDate);
       const now = new Date();
       const diffTime = end.getTime() - now.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays <= 0) return 'Expired';
       if (diffDays === 1) return '1 day';
       return `${diffDays} days`;
@@ -424,15 +426,15 @@ const RestaurantDetailScreen: React.FC = () => {
         if (deal.image_url.startsWith('http')) {
           return { uri: deal.image_url };
         }
-        
+
         // Use Supabase storage to get the public URL
         const { data } = supabase.storage
           .from('deal-images')
           .getPublicUrl(deal.image_url);
-        
+
         return { uri: data.publicUrl };
       }
-      
+
       // Ultimate fallback
       return require('../../../img/gallery.jpg');
     };
@@ -462,7 +464,7 @@ const RestaurantDetailScreen: React.FC = () => {
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#FF8C4C" />
+      <ActivityIndicator size="large" color={BRAND.primary} />
       <Text style={styles.loadingText}>Loading deals...</Text>
     </View>
   );
@@ -488,15 +490,15 @@ const RestaurantDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+      <StatusBar barStyle="dark-content" backgroundColor={STATIC.white} />
+
       {/* Header with Title and Navigation */}
       <View style={styles.header}>
         <View style={styles.headerButtons}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#000000" />
+            <Ionicons name="arrow-back" size={20} color={STATIC.black} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.directionsButton} onPress={handleDirections}>
             <Text style={styles.directionsButtonText}>Directions</Text>
           </TouchableOpacity>
@@ -507,20 +509,20 @@ const RestaurantDetailScreen: React.FC = () => {
       <View style={styles.restaurantInfoSection}>
         <View style={styles.restaurantHeader}>
           <Text style={styles.restaurantName}>{restaurant.name}</Text>
-          <TouchableOpacity 
-            style={[styles.heartButton, isRestaurantFavorited && styles.favorited]} 
-            onPress={handleRestaurantFavorite} 
+          <TouchableOpacity
+            style={[styles.heartButton, isRestaurantFavorited && styles.favorited]}
+            onPress={handleRestaurantFavorite}
             disabled={favoriteLoading}
             activeOpacity={0.6}
           >
             <MaterialCommunityIcons
               name={isRestaurantFavorited ? "heart" : "heart-outline"}
-              size={19} 
-              color={isRestaurantFavorited ? "#FF1E00" : "#000"} 
+              size={19}
+              color={isRestaurantFavorited ? SEMANTIC.error : STATIC.black}
             />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.restaurantDetailsContainer}>
           {cuisineName && (
             <Text style={styles.restaurantDetails}>
@@ -537,18 +539,18 @@ const RestaurantDetailScreen: React.FC = () => {
 
       {/* Deals List */}
       <View style={styles.dealsContainer}>
-        {loading ? renderLoadingState() : 
-         error ? renderErrorState() : 
-         deals.length === 0 ? renderEmptyState() :
-         (
-          <FlatList
-            data={deals}
-            renderItem={renderDealCard}
-            keyExtractor={(item) => item.deal_id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.dealsList}
-          />
-        )}
+        {loading ? renderLoadingState() :
+          error ? renderErrorState() :
+            deals.length === 0 ? renderEmptyState() :
+              (
+                <FlatList
+                  data={deals}
+                  renderItem={renderDealCard}
+                  keyExtractor={(item) => item.deal_id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.dealsList}
+                />
+              )}
       </View>
     </SafeAreaView>
   );
@@ -558,13 +560,13 @@ const RestaurantDetailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   header: {
     flexDirection: 'column',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#D7D7D7',
+    borderBottomColor: GRAY[325],
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -590,7 +592,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   directionsButtonText: {
-    color: '#000000',
+    color: STATIC.black,
     fontWeight: '400',
     fontSize: 14,
     fontFamily: 'Inter-Regular',
@@ -600,7 +602,7 @@ const styles = StyleSheet.create({
   restaurantInfoSection: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   restaurantHeader: {
     flexDirection: 'row',
@@ -611,12 +613,12 @@ const styles = StyleSheet.create({
   restaurantName: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#000000',
+    color: STATIC.black,
     fontFamily: 'Inter',
     lineHeight: 24,
   },
   heartButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderRadius: 30,
     width: 40,
     height: 28,
@@ -632,28 +634,28 @@ const styles = StyleSheet.create({
   restaurantDetails: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#000000',
+    color: STATIC.black,
     fontFamily: 'Inter',
     lineHeight: 20,
   },
   cuisineText: {
-    color: '#000000',
+    color: STATIC.black,
   },
   distanceText: {
-    color: '#000000',
+    color: STATIC.black,
   },
   separator: {
-    color: '#000000',
+    color: STATIC.black,
     fontWeight: '300',
     marginHorizontal: 4,
   },
   addressText: {
-    color: '#000000',
+    color: STATIC.black,
     marginLeft: 4,
   },
   dealsContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   dealsList: {
     paddingVertical: 8,
@@ -667,7 +669,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666666',
+    color: GRAY[600],
   },
   errorContainer: {
     flex: 1,
@@ -677,18 +679,18 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#FF4444',
+    color: SEMANTIC.error,
     textAlign: 'center',
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: STATIC.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -700,7 +702,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666666',
+    color: GRAY[600],
     textAlign: 'center',
   },
 });

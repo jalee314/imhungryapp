@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 
+import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../ui/alf';
+
 export interface CuisineFilterProps {
   filters: string[];
   selectedFilter?: string;
@@ -34,7 +36,7 @@ const CuisineFilter: React.FC<CuisineFilterProps> = ({
   const handleFilterPress = (filter: string) => {
     if (multiSelect) {
       let newFilters: string[];
-      
+
       if (filter === 'All') {
         newFilters = ['All'];
       } else {
@@ -48,7 +50,7 @@ const CuisineFilter: React.FC<CuisineFilterProps> = ({
           newFilters = [...currentFilters, filter];
         }
       }
-      
+
       onFiltersSelect?.(newFilters);
       onFilterSelect(newFilters[0] || 'All'); // Fallback for single select compatibility
     } else {
@@ -58,7 +60,7 @@ const CuisineFilter: React.FC<CuisineFilterProps> = ({
 
   const renderFilter = ({ item }: { item: string }) => {
     const selected = isSelected(item);
-    
+
     return (
       <TouchableOpacity
         style={[
@@ -97,43 +99,43 @@ const CuisineFilter: React.FC<CuisineFilterProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 4,
-    marginBottom: 4,
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   filterList: {
     paddingLeft: 18.5,
   },
   filterCell: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 4,
+    borderColor: GRAY[325],
+    borderRadius: RADIUS.circle,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    marginRight: SPACING.xs,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 4,
+    gap: SPACING.xs,
   },
   selectedFilterCell: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
+    borderColor: BRAND.primary,
   },
   filterCellText: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000000',
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.regular,
+    color: STATIC.black,
     textAlign: 'center',
   },
   selectedFilterCellText: {
-    color: '#FFFFFF',
+    color: STATIC.white,
   },
   selectedIndicator: {
-    marginLeft: 4,
-    fontSize: 10,
-    color: '#FFFFFF',
+    marginLeft: SPACING.xs,
+    fontSize: FONT_SIZE['2xs'],
+    color: STATIC.white,
     fontWeight: 'bold',
   },
 });
