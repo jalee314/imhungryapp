@@ -1,6 +1,8 @@
-import { supabase } from '../../lib/supabase';
-import { checkEmailExists } from './userService';
 import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
+
+import { supabase } from '../../lib/supabase';
+
+import { checkEmailExists } from './userService';
 
 // ============================================
 // TYPES

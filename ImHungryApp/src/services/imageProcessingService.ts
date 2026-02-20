@@ -1,28 +1,13 @@
-import { PixelRatio, Dimensions, Image } from 'react-native';
-import { supabase } from '../../lib/supabase';
-import * as FileSystem from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { toByteArray } from 'base64-js';
+import * as FileSystem from 'expo-file-system';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
+import { PixelRatio, Dimensions, Image } from 'react-native';
 
-// Define the allowed image types as a union type
-export type ImageType = 'profile_image' | 'deal_image' | 'restaurant_image' | 'franchise_logo_image';
+import { supabase } from '../../lib/supabase';
+import type { ImageType, ImageVariants, VariantContext } from '../types/image';
 
-export interface ImageVariants {
-  original?: string;
-  large?: string;
-  medium?: string;
-  small?: string;
-  thumbnail?: string;
-}
-
-export interface VariantContext {
-  devicePixelRatio?: number;
-  screenWidth?: number;
-  componentType: 'profile' | 'deal' | 'restaurant' | 'franchise_logo';
-  displaySize: { width: number; height: number };
-  networkType?: 'slow-2g' | '2g' | '3g' | '4g' | 'wifi';
-}
+export type { ImageType, ImageVariants, VariantContext } from '../types/image';
 
 // Define variant thresholds based on component type
 const VARIANT_THRESHOLDS = {
@@ -234,7 +219,7 @@ export const processImageWithEdgeFunction = async (
       const imageInfo = await new Promise<{ width: number; height: number }>((resolve, reject) => {
         Image.getSize(imageUri, (width, height) => resolve({ width, height }), reject);
       });
-      
+
       // Only resize if image is larger than 1200px (allow some margin above 1080)
       if (imageInfo.width > 1200) {
         console.log(`🔄 Optimizing large image (${imageInfo.width}px) before upload...`);
@@ -316,14 +301,4 @@ export const processImageWithEdgeFunction = async (
     return { success: false, error: error.message || 'Unknown error' };
   }
 };
-
-export const getOptimizedImageUrl = (
-  variants: ImageVariants,
-  context: VariantContext
-): string => {
-  const selectedVariant = getOptimalImageVariant(variants, context);
-  return getImageUrl(selectedVariant);
-};
-
-
 

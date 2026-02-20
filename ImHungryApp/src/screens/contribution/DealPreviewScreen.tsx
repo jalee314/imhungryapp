@@ -1,8 +1,18 @@
+/**
+ * @file DealPreviewScreen — Read-only deal preview before posting
+ *
+ * Purely presentational; receives form data via props and renders a
+ * preview that mirrors DealDetailScreen.  Migrated to ALF primitives
+ * (Box / Text) and design tokens — no raw StyleSheet or inline literals.
+ */
+
+import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
+import { StatusBar } from 'expo-status-bar';
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
-  View,
-  Text,
   Image,
   StyleSheet,
   SafeAreaView,
@@ -14,19 +24,28 @@ import {
   FlatList,
   Easing,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Monicon } from '@monicon/native';
-import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
+
 import { getCurrentUserLocation, calculateDistance } from '../../services/locationService';
+import {
+  BRAND,
+  GRAY,
+  STATIC,
+  ALPHA_COLORS,
+  SPACING,
+  RADIUS,
+  OPACITY,
+  BORDER_WIDTH,
+  FONT_SIZE,
+} from '../../ui/alf';
+import { Box, Text } from '../../ui/primitives';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Base design width (iPhone 15 = 393pt) - matches VoteButtons component
+// Base design width (iPhone 15 = 393pt) — matches VoteButtons component
 const BASE_WIDTH = 393;
 const scale = (size: number) => (screenWidth / BASE_WIDTH) * size;
 
-// Dynamic sizes for vote buttons - matches VoteButtons component exactly
+// Dynamic sizes for vote buttons — matches VoteButtons component exactly
 const PILL_WIDTH = scale(85);
 const PILL_HEIGHT = scale(28);
 const ARROW_SIZE = Math.round(scale(18));
@@ -53,7 +72,7 @@ interface DealPreviewScreenProps {
   dealTitle: string;
   dealDetails: string;
   imageUris: string[];
-  // Optional originals (uncropped) so fullscreen preview can always show the full photo
+  /** Optional originals (uncropped) so fullscreen preview can show the full photo. */
   originalImageUris?: string[];
   expirationDate: string | null;
   selectedRestaurant: Restaurant | null;
@@ -83,17 +102,17 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
   const [isImageViewVisible, setImageViewVisible] = useState(false);
   const [modalImageLoading, setModalImageLoading] = useState(false);
   const [modalImageError, setModalImageError] = useState(false);
-  const [imageDimensions, setImageDimensions] = useState<{ width: number, height: number } | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [imageViewerKey, setImageViewerKey] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const carouselRef = useRef<FlatList>(null);
-  const slideAnim = useRef(new Animated.Value(screenWidth)).current; // Start off-screen to the right
-  const fadeAnim = useRef(new Animated.Value(0)).current; // For fade effect on background
+  const slideAnim = useRef(new Animated.Value(screenWidth)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // ── Slide-in animation ────────────────────────────────────────────────────
   useEffect(() => {
     if (visible && !isAnimatingOut) {
-      // Reset animation values and slide in from right with easing
       slideAnim.setValue(screenWidth);
       fadeAnim.setValue(0);
 
@@ -113,7 +132,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     }
   }, [visible]);
 
-  // Animated close handler - slides out before closing
+  // ── Animated close ────────────────────────────────────────────────────────
   const handleAnimatedClose = useCallback(() => {
     if (isPosting || isAnimatingOut) return;
 
@@ -137,11 +156,11 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     });
   }, [isPosting, isAnimatingOut, onClose, slideAnim, fadeAnim]);
 
-  const removeZipCode = (address: string) => {
-    // Remove zip code (5 digits or 5+4 digits) from the end of the address
-    return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
-  };
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const removeZipCode = (address: string) =>
+    address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
 
+  // ── Distance calculation ──────────────────────────────────────────────────
   useEffect(() => {
     const calculateRestaurantDistance = async () => {
       if (!selectedRestaurant?.lat || !selectedRestaurant?.lng) {
@@ -159,13 +178,13 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
             userLocation.lat,
             userLocation.lng,
             selectedRestaurant.lat,
-            selectedRestaurant.lng
+            selectedRestaurant.lng,
           );
 
-          // Format distance with no decimals
-          const formattedDistance = distanceMiles < 1
-            ? '<1mi away'
-            : `${Math.round(distanceMiles)}mi away`;
+          const formattedDistance =
+            distanceMiles < 1
+              ? '<1mi away'
+              : `${Math.round(distanceMiles)}mi away`;
 
           setDistance(formattedDistance);
         } else {
@@ -187,11 +206,10 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
   const formatDate = (dateString: string | null) => {
     if (!dateString || dateString === 'Unknown') return 'Not Known';
     const date = new Date(dateString);
-    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString(
+      'en-US',
+      { year: 'numeric', month: 'long', day: 'numeric' },
+    );
   };
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -200,8 +218,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     setModalImageLoading(true);
     setModalImageError(false);
     setImageViewVisible(true);
-    // Force ScrollView to re-render with fresh state
-    setImageViewerKey(prev => prev + 1);
+    setImageViewerKey((prev) => prev + 1);
   };
 
   const handleImageLoad = (event: any) => {
@@ -209,96 +226,214 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
     setImageDimensions({ width, height });
   };
 
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <Modal visible={visible} animationType="none" transparent={true} onRequestClose={handleAnimatedClose}>
+    <Modal
+      visible={visible}
+      animationType="none"
+      transparent={true}
+      onRequestClose={handleAnimatedClose}
+    >
       {/* Fade background overlay */}
       <Animated.View
         style={[
-          styles.modalOverlay,
-          { opacity: fadeAnim }
+          StyleSheet.absoluteFillObject,
+          { backgroundColor: 'rgba(0, 0, 0, 0.15)', opacity: fadeAnim },
         ]}
       />
+
       <Animated.View
-        style={[
-          styles.animatedContainer,
-          {
-            transform: [{ translateX: slideAnim }]
-          }
-        ]}
+        style={{
+          flex: 1,
+          backgroundColor: STATIC.white,
+          transform: [{ translateX: slideAnim }],
+        }}
       >
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: STATIC.white }}>
           <StatusBar style="dark" />
 
-          {/* Back Button and Next Button Row */}
-          <View style={styles.topButtonRow}>
+          {/* Back Button and Share Button Row */}
+          <Box row justify="space-between" align="center" mb="sm" px="md">
             <TouchableOpacity
-              style={styles.backButton}
+              style={{
+                width: 40,
+                height: 40,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: RADIUS.circle,
+              }}
               onPress={handleAnimatedClose}
               disabled={isPosting || isAnimatingOut}
             >
-              <Ionicons name="arrow-back" size={20} color={(isPosting || isAnimatingOut) ? "#ccc" : "#000000"} />
+              <Ionicons
+                name="arrow-back"
+                size={20}
+                color={isPosting || isAnimatingOut ? GRAY[350] : STATIC.black}
+              />
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={[styles.nextButton, isPosting ? styles.disabledButton : null]}
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingVertical: SPACING.sm,
+                paddingHorizontal: SPACING.lg,
+                backgroundColor: ALPHA_COLORS.brandPrimary80,
+                borderRadius: RADIUS.card,
+                minWidth: 90,
+                opacity: isPosting ? OPACITY.disabled + 0.1 : OPACITY.full,
+              }}
               onPress={onPost}
               disabled={isPosting}
             >
               {isPosting ? (
-                <ActivityIndicator size="small" color="#000000" />
+                <ActivityIndicator size="small" color={STATIC.black} />
               ) : (
-                <Text style={styles.nextButtonText}>Share</Text>
+                <Text
+                  size="xs"
+                  color={STATIC.black}
+                  style={{ fontFamily: 'Inter', fontWeight: '400' }}
+                >
+                  Share
+                </Text>
               )}
             </TouchableOpacity>
-          </View>
+          </Box>
 
-          <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.card}>
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: SPACING['2xl'],
+              paddingTop: SPACING.lg,
+            }}
+          >
+            <Box bg={STATIC.white} rounded={RADIUS.card} py="lg">
               {/* Restaurant Info */}
-              <View style={styles.restaurantWrapper}>
-                <Text style={styles.restaurantName}>{selectedRestaurant?.name}</Text>
+              <Box style={{ alignSelf: 'stretch', alignItems: 'flex-start', justifyContent: 'space-around' }}>
+                <Text
+                  size="lg"
+                  weight="bold"
+                  color={STATIC.black}
+                  style={{ fontFamily: 'Inter', lineHeight: 20, marginBottom: SPACING.sm }}
+                >
+                  {selectedRestaurant?.name}
+                </Text>
 
                 {/* Location row */}
-                <View style={styles.locationRow}>
-                  <Text style={styles.infoText}>📍 {isCalculatingDistance ? 'Calculating...' : distance} </Text>
-                  <Text style={styles.bulletText}>•</Text>
-                  <Text style={styles.infoText} numberOfLines={1}> {removeZipCode(selectedRestaurant?.subtext || '')}</Text>
-                </View>
+                <Box row align="center" mb="xs">
+                  <Text
+                    size="xs"
+                    style={{ fontFamily: 'Inter', lineHeight: 20 }}
+                  >
+                    📍 {isCalculatingDistance ? 'Calculating...' : distance}{' '}
+                  </Text>
+                  <Text
+                    size="xs"
+                    style={{ fontFamily: 'Inter', fontWeight: '300', color: STATIC.black }}
+                  >
+                    •
+                  </Text>
+                  <Text
+                    size="xs"
+                    numberOfLines={1}
+                    style={{ fontFamily: 'Inter', lineHeight: 20 }}
+                  >
+                    {' '}{removeZipCode(selectedRestaurant?.subtext || '')}
+                  </Text>
+                </Box>
 
                 {/* Valid until row */}
-                <View style={styles.validUntilRow}>
-                  <Text style={styles.infoText}>⏳ Valid Until • {formatDate(expirationDate)}</Text>
-                </View>
+                <Box row align="center" mb="xs">
+                  <Text
+                    size="xs"
+                    style={{ fontFamily: 'Inter', lineHeight: 20 }}
+                  >
+                    ⏳ Valid Until • {formatDate(expirationDate)}
+                  </Text>
+                </Box>
 
-                {/* Only show category row if cuisine or deal type exists and has meaningful content */}
+                {/* Category row */}
                 {((selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine') ||
                   (selectedCategory && selectedCategory.trim() !== '')) && (
-                    <View style={styles.categoryRow}>
-                      <Text style={styles.infoText}>
-                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' && (
-                          <Text style={styles.infoRegular}>🍽 {selectedCuisine}</Text>
-                        )}
-                        {selectedCuisine && selectedCuisine.trim() !== '' && selectedCuisine !== 'Cuisine' &&
-                          selectedCategory && selectedCategory.trim() !== '' && (
-                            <Text style={styles.bulletText}> • </Text>
+                    <Box row align="center">
+                      <Text size="xs" style={{ fontFamily: 'Inter', lineHeight: 20 }}>
+                        {selectedCuisine &&
+                          selectedCuisine.trim() !== '' &&
+                          selectedCuisine !== 'Cuisine' && (
+                            <Text
+                              style={{
+                                fontFamily: 'Inter',
+                                fontSize: FONT_SIZE.xs,
+                                fontWeight: '400',
+                                color: STATIC.black,
+                              }}
+                            >
+                              🍽 {selectedCuisine}
+                            </Text>
+                          )}
+                        {selectedCuisine &&
+                          selectedCuisine.trim() !== '' &&
+                          selectedCuisine !== 'Cuisine' &&
+                          selectedCategory &&
+                          selectedCategory.trim() !== '' && (
+                            <Text
+                              style={{
+                                fontFamily: 'Inter',
+                                fontSize: FONT_SIZE.xs,
+                                fontWeight: '300',
+                                color: STATIC.black,
+                              }}
+                            >
+                              {' '}•{' '}
+                            </Text>
                           )}
                         {selectedCategory && selectedCategory.trim() !== '' && (
-                          <Text style={styles.infoRegular}> {selectedCategory}</Text>
+                          <Text
+                            style={{
+                              fontFamily: 'Inter',
+                              fontSize: FONT_SIZE.xs,
+                              fontWeight: '400',
+                              color: STATIC.black,
+                            }}
+                          >
+                            {' '}{selectedCategory}
+                          </Text>
                         )}
                       </Text>
-                    </View>
+                    </Box>
                   )}
-              </View>
+              </Box>
 
               {/* Separator */}
-              <View style={styles.separator} />
+              <Box
+                my="sm"
+                style={{
+                  alignSelf: 'stretch',
+                  height: BORDER_WIDTH.hairline,
+                  backgroundColor: GRAY[250],
+                  width: '100%',
+                }}
+              />
 
               {/* Deal Title */}
-              <Text style={styles.dealTitle}>{dealTitle}</Text>
+              <Text
+                size="lg"
+                weight="bold"
+                color={STATIC.black}
+                style={{
+                  alignSelf: 'stretch',
+                  fontFamily: 'Inter',
+                  letterSpacing: 0,
+                  lineHeight: 20,
+                  marginTop: SPACING.sm,
+                  marginBottom: SPACING.lg,
+                }}
+              >
+                {dealTitle}
+              </Text>
 
               {/* Deal Images Carousel */}
               {imageUris.length > 0 && (
-                <View style={{ marginBottom: 16 }}>
+                <Box mb="lg">
                   <FlatList
                     ref={carouselRef}
                     data={imageUris}
@@ -311,8 +446,14 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                     style={{ height: 350 }}
                     onScroll={(event) => {
                       const contentWidth = screenWidth - 48;
-                      const index = Math.round(event.nativeEvent.contentOffset.x / contentWidth);
-                      if (index !== currentImageIndex && index >= 0 && index < imageUris.length) {
+                      const index = Math.round(
+                        event.nativeEvent.contentOffset.x / contentWidth,
+                      );
+                      if (
+                        index !== currentImageIndex &&
+                        index >= 0 &&
+                        index < imageUris.length
+                      ) {
                         setCurrentImageIndex(index);
                       }
                     }}
@@ -333,106 +474,224 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                       >
                         <Image
                           source={{ uri: item }}
-                          style={[
-                            styles.dealImage,
-                            { width: screenWidth - 48 }
-                          ]}
+                          style={{
+                            width: screenWidth - 48,
+                            height: 350,
+                            backgroundColor: GRAY[200],
+                            borderRadius: RADIUS.md,
+                            alignSelf: 'center',
+                          }}
                           resizeMode="cover"
                           onLoad={handleImageLoad}
                         />
                       </TouchableOpacity>
                     )}
                   />
+
                   {/* Pagination Dots */}
                   {imageUris.length > 1 && (
-                    <View style={styles.paginationContainer}>
+                    <Box row justify="center" align="center" mt={10} mb={5}>
                       {imageUris.map((_, index) => (
-                        <View
+                        <Box
                           key={`dot-${index}`}
-                          style={[
-                            styles.paginationDot,
-                            currentImageIndex === index && styles.paginationDotActive
-                          ]}
+                          mx="xs"
+                          rounded="full"
+                          style={{
+                            width: currentImageIndex === index ? 10 : 8,
+                            height: currentImageIndex === index ? 10 : 8,
+                            backgroundColor:
+                              currentImageIndex === index
+                                ? BRAND.accent
+                                : GRAY[325],
+                          }}
                         />
                       ))}
-                    </View>
+                    </Box>
                   )}
-                </View>
+                </Box>
               )}
 
-              {/* Interactions (Preview State - Non-interactive, matches DealDetailScreen) */}
-              <View style={styles.actionButtonsContainer}>
-                <View style={styles.voteContainer}>
-                  <View style={styles.upvoteArea}>
-                    <ArrowBigUp size={ARROW_SIZE} color="#000000" fill="transparent" />
-                    <Text style={styles.voteCount}>0</Text>
-                  </View>
-                  <View style={styles.voteSeparator} />
-                  <View style={styles.downvoteArea}>
-                    <ArrowBigDown size={ARROW_SIZE} color="#000000" fill="transparent" />
-                  </View>
-                </View>
+              {/* Interactions (Preview State — Non-interactive) */}
+              <Box row justify="space-between" align="center" mb="sm">
+                {/* Vote pill */}
+                <Box
+                  row
+                  align="center"
+                  bg={STATIC.white}
+                  borderWidth={1}
+                  borderColor={GRAY[325]}
+                  rounded={RADIUS.pill}
+                  h={PILL_HEIGHT}
+                  w={PILL_WIDTH}
+                  overflow="hidden"
+                >
+                  <Box
+                    flex={1}
+                    row
+                    align="center"
+                    justify="center"
+                    h="100%"
+                    pl={scale(8)}
+                    pr={scale(2)}
+                  >
+                    <ArrowBigUp size={ARROW_SIZE} color={STATIC.black} fill="transparent" />
+                    <Text
+                      style={{
+                        fontFamily: 'Inter',
+                        fontSize: scale(10),
+                        fontWeight: '400',
+                        color: STATIC.black,
+                        marginLeft: scale(4),
+                      }}
+                    >
+                      0
+                    </Text>
+                  </Box>
+                  <Box
+                    w={1}
+                    h={scale(12)}
+                    bg={GRAY[250]}
+                  />
+                  <Box
+                    center
+                    h="100%"
+                    px={scale(10)}
+                  >
+                    <ArrowBigDown size={ARROW_SIZE} color={STATIC.black} fill="transparent" />
+                  </Box>
+                </Box>
 
-                <View style={styles.rightActions}>
-                  <View style={styles.actionButton}>
-                    <Monicon name="mdi:heart-outline" size={19} color="#000" />
-                  </View>
-                  <View style={styles.actionButton}>
-                    <Monicon name="mdi-light:share" size={24} color="#000000" />
-                  </View>
-                </View>
-              </View>
+                {/* Right actions */}
+                <Box row gap="xs">
+                  <Box
+                    center
+                    bg={STATIC.white}
+                    borderWidth={1}
+                    borderColor={GRAY[325]}
+                    rounded={RADIUS.pill}
+                    w={40}
+                    h={28}
+                  >
+                    <Monicon name="mdi:heart-outline" size={19} color={STATIC.black} />
+                  </Box>
+                  <Box
+                    center
+                    bg={STATIC.white}
+                    borderWidth={1}
+                    borderColor={GRAY[325]}
+                    rounded={RADIUS.pill}
+                    w={40}
+                    h={28}
+                  >
+                    <Monicon name="mdi-light:share" size={24} color={STATIC.black} />
+                  </Box>
+                </Box>
+              </Box>
 
               {/* Separator */}
-              <View style={styles.separator} />
+              <Box
+                my="sm"
+                style={{
+                  alignSelf: 'stretch',
+                  height: BORDER_WIDTH.hairline,
+                  backgroundColor: GRAY[250],
+                  width: '100%',
+                }}
+              />
 
               {/* Deal Details */}
               {dealDetails ? (
-                <View style={styles.detailsSection}>
-                  <Text style={styles.detailsHeader}>Details</Text>
-                  <Text style={styles.detailsContent}>{dealDetails}</Text>
-                </View>
+                <Box style={{ alignSelf: 'stretch' }}>
+                  <Text
+                    size="lg"
+                    weight="bold"
+                    color={STATIC.black}
+                    style={{ fontFamily: 'Inter', lineHeight: 20, marginBottom: 10 }}
+                  >
+                    Details
+                  </Text>
+                  <Text
+                    size="xs"
+                    color={STATIC.black}
+                    style={{ fontFamily: 'Inter', lineHeight: 18, fontWeight: '400' }}
+                  >
+                    {dealDetails}
+                  </Text>
+                </Box>
               ) : null}
 
               {/* Shared By Section */}
-              <View style={styles.sharedByComponent}>
+              <Box row align="center" gap="sm" py="lg">
                 {userData.profilePicture ? (
-                  <Image source={{ uri: userData.profilePicture }} style={styles.pfp} />
+                  <Image
+                    source={{ uri: userData.profilePicture }}
+                    style={{ width: 58, height: 58, borderRadius: 29 }}
+                  />
                 ) : (
-                  <Image source={require('../../../img/Default_pfp.svg.png')} style={styles.pfp} />
+                  <Image
+                    source={require('../../../img/Default_pfp.svg.png')}
+                    style={{ width: 58, height: 58, borderRadius: 29 }}
+                  />
                 )}
-                <Text style={styles.sharedByText}>
-                  <Text style={styles.sharedByLabel}>Shared By{"\n"}</Text>
-                  <Text style={styles.userName}>{userData.username}{"\n"}</Text>
-                  <Text style={styles.userLocation}>{userData.city}, {userData.state}</Text>
+                <Text
+                  size="2xs"
+                  color={STATIC.black}
+                  style={{ fontFamily: 'Inter', letterSpacing: 0.2, lineHeight: 15 }}
+                >
+                  <Text style={{ letterSpacing: 0.2 }}>Shared By{'\n'}</Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Inter',
+                      fontSize: FONT_SIZE.xs,
+                      fontWeight: '700',
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    {userData.username}
+                    {'\n'}
+                  </Text>
+                  <Text style={{ letterSpacing: 0.2 }}>
+                    {userData.city}, {userData.state}
+                  </Text>
                 </Text>
-              </View>
-            </View>
+              </Box>
+            </Box>
           </ScrollView>
         </SafeAreaView>
       </Animated.View>
 
+      {/* Full-screen image viewer */}
       {imageUris.length > 0 && imageUris[currentImageIndex] && (
         <Modal
           visible={isImageViewVisible}
           transparent={true}
           onRequestClose={() => setImageViewVisible(false)}
         >
-          <View style={styles.imageViewerContainer}>
+          <Box flex={1} center bg="rgba(0, 0, 0, 0.9)">
             <TouchableOpacity
-              style={styles.imageViewerCloseButton}
+              style={{ position: 'absolute', top: 60, right: 20, zIndex: 1 }}
               onPress={() => setImageViewVisible(false)}
             >
-              <Ionicons name="close" size={30} color="white" />
+              <Ionicons name="close" size={30} color={STATIC.white} />
             </TouchableOpacity>
+
             {modalImageLoading && (
-              <ActivityIndicator size="large" color="#FFFFFF" style={styles.modalImageLoader} />
+              <ActivityIndicator
+                size="large"
+                color={STATIC.white}
+                style={{ position: 'absolute' }}
+              />
             )}
+
             <ScrollView
               key={imageViewerKey}
               ref={scrollViewRef}
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollViewContent}
+              style={{ flex: 1, width: '100%' }}
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
               maximumZoomScale={3}
               minimumZoomScale={1}
               showsHorizontalScrollIndicator={false}
@@ -442,8 +701,16 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
               centerContent={true}
             >
               <Image
-                source={{ uri: (originalImageUris?.[currentImageIndex] || imageUris[currentImageIndex]) }}
-                style={styles.fullScreenImage}
+                source={{
+                  uri:
+                    originalImageUris?.[currentImageIndex] ||
+                    imageUris[currentImageIndex],
+                }}
+                style={{
+                  width: screenWidth,
+                  height: screenHeight,
+                  resizeMode: 'contain',
+                }}
                 resizeMode="contain"
                 onLoad={() => setModalImageLoading(false)}
                 onError={() => {
@@ -452,339 +719,40 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                 }}
               />
             </ScrollView>
+
             {modalImageError && (
-              <View style={styles.modalErrorContainer}>
-                <Text style={styles.modalErrorText}>Could not load image</Text>
-              </View>
+              <Box position="absolute" center>
+                <Text color={STATIC.white} size="md">
+                  Could not load image
+                </Text>
+              </Box>
             )}
+
             {/* Image counter */}
             {imageUris.length > 1 && (
-              <View style={styles.imageCounterContainer}>
-                <Text style={styles.imageCounterText}>
+              <Box
+                position="absolute"
+                bottom={60}
+                alignSelf="center"
+                bg="rgba(0, 0, 0, 0.6)"
+                px="lg"
+                py="sm"
+                rounded={RADIUS.circle}
+              >
+                <Text
+                  color={STATIC.white}
+                  size="sm"
+                  weight="semibold"
+                >
                   {currentImageIndex + 1} / {imageUris.length}
                 </Text>
-              </View>
+              </Box>
             )}
-          </View>
+          </Box>
         </Modal>
       )}
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
-  },
-  animatedContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topButtonRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    paddingHorizontal: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  nextButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 140, 76, 0.8)',
-    borderRadius: 10,
-    minWidth: 90,
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  nextButtonText: {
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    fontSize: 12,
-    color: '#000000',
-  },
-  scrollContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 16,
-  },
-  restaurantWrapper: {
-    alignSelf: 'stretch',
-    alignItems: 'flex-start',
-    justifyContent: 'space-around',
-  },
-  restaurantName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000000',
-    fontFamily: 'Inter',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  validUntilRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    lineHeight: 20,
-  },
-  infoRegular: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000000',
-  },
-  bulletText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '300',
-    color: '#000000',
-  },
-  separator: {
-    alignSelf: 'stretch',
-    height: 0.5,
-    backgroundColor: '#DEDEDE',
-    width: '100%',
-    marginVertical: 8,
-  },
-  dealTitle: {
-    alignSelf: 'stretch',
-    color: '#000000',
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 18,
-    letterSpacing: 0,
-    lineHeight: 20,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  dealImage: {
-    width: '100%',
-    height: 350,
-    backgroundColor: '#EFEFEF',
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
-  // Matches DealDetailScreen.actionButtonsContainer exactly
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  // Matches VoteButtons.voteContainer exactly
-  voteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    height: PILL_HEIGHT,
-    width: PILL_WIDTH,
-    overflow: 'hidden',
-  },
-  // Matches VoteButtons.upvoteArea exactly
-  upvoteArea: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    paddingLeft: scale(8),
-    paddingRight: scale(2),
-  },
-  // Matches VoteButtons.downvoteArea exactly
-  downvoteArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    paddingHorizontal: scale(10),
-  },
-  // Matches VoteButtons.voteCount exactly
-  voteCount: {
-    fontFamily: 'Inter',
-    fontSize: scale(10),
-    fontWeight: '400',
-    color: '#000000',
-    marginLeft: scale(4),
-  },
-  // Matches VoteButtons.voteSeparator exactly
-  voteSeparator: {
-    width: 1,
-    height: scale(12),
-    backgroundColor: '#DEDEDE',
-  },
-  // Matches DealDetailScreen.rightActions exactly
-  rightActions: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  // Matches DealDetailScreen.actionButton exactly
-  actionButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D7D7D7',
-    borderRadius: 30,
-    width: 40,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  detailsSection: {
-    alignSelf: 'stretch',
-  },
-  detailsHeader: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 18,
-    lineHeight: 20,
-    color: '#000000',
-    marginBottom: 10,
-  },
-  detailsContent: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#000000',
-    fontWeight: '400',
-  },
-  sharedByComponent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
-  },
-  pfp: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-  },
-  sharedByText: {
-    color: '#000000',
-    fontFamily: 'Inter',
-    fontSize: 10,
-    fontWeight: '400',
-    letterSpacing: 0.2,
-    lineHeight: 15,
-  },
-  sharedByLabel: {
-    letterSpacing: 0.2,
-  },
-  userName: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-  userLocation: {
-    letterSpacing: 0.2,
-  },
-  imageViewerContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageViewerCloseButton: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    zIndex: 1,
-  },
-  scrollView: {
-    flex: 1,
-    width: '100%',
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullScreenImage: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-    resizeMode: 'contain',
-  },
-  modalImageLoader: {
-    position: 'absolute',
-  },
-  modalErrorContainer: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalErrorText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  // Pagination styles for image carousel
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#D0D0D0',
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: '#FFA05C',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  // Image counter in fullscreen viewer
-  imageCounterContainer: {
-    position: 'absolute',
-    bottom: 60,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  imageCounterText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
 
 export default DealPreviewScreen;

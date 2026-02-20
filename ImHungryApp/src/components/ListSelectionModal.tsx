@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
@@ -9,7 +10,11 @@ import {
   TextInput,
   FlatList,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
+import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+
+import ModalHeader from './ui/ModalHeader';
+
 
 interface ListItem {
   id: string;
@@ -64,8 +69,8 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
     if (singleSelect || isSearchModal) {
       setSelectedItems(prev => (prev.includes(itemId) ? [] : [itemId]));
     } else {
-      setSelectedItems(prev => 
-        prev.includes(itemId) 
+      setSelectedItems(prev =>
+        prev.includes(itemId)
           ? prev.filter(id => id !== itemId)
           : [...prev, itemId]
       );
@@ -80,7 +85,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   };
 
   const filteredData = onSearchChange ? data : data.filter(item =>
-    item.name.toLowerCase().includes(searchText.toLowerCase()) || 
+    item.name.toLowerCase().includes(searchText.toLowerCase()) ||
     (item.subtext && item.subtext.toLowerCase().includes(searchText.toLowerCase()))
   );
 
@@ -94,7 +99,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
         disabled={isInfoItem}
       >
         {isSearchModal && !isInfoItem && (
-          <Ionicons name="location-sharp" size={28} color="#FF8C4C" style={styles.locationIcon} />
+          <Ionicons name="location-sharp" size={28} color={BRAND.primary} style={styles.locationIcon} />
         )}
         <View style={styles.textContainer}>
           {isSearchModal ? (
@@ -108,7 +113,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
         </View>
         {selectedItems.includes(item.id) && !isInfoItem ? (
           <View style={styles.checkmark}>
-            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={16} color={STATIC.white} />
           </View>
         ) : (
           <View style={styles.checkmarkPlaceholder} />
@@ -125,15 +130,11 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.headerButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{title}</Text>
-          <TouchableOpacity onPress={() => onDone(selectedItems)}>
-            <Text style={[styles.headerButtonText, styles.doneButton]}>Done</Text>
-          </TouchableOpacity>
-        </View>
+        <ModalHeader
+          title={title}
+          onCancel={onClose}
+          onDone={() => onDone(selectedItems)}
+        />
 
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#8E8E93" />
@@ -162,29 +163,9 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  headerButtonText: {
-    fontSize: 16,
-    color: '#000000',
-  },
-  doneButton: {
-    fontWeight: '700',
-    color: '#FF8C4C',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000000',
-  },
+
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -194,16 +175,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 10,
     height: 36,
-    borderColor: '#D8D8D8',
+    borderColor: GRAY[325],
     borderWidth: 1,
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: FONT_SIZE.sm,
     fontFamily: 'Inter-Regular',
-    color: '#000000',
-    fontWeight: '400',
+    color: STATIC.black,
+    fontWeight: FONT_WEIGHT.regular,
   },
   listContentContainer: {
     paddingBottom: 16,
@@ -214,7 +195,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   locationIcon: {
     marginRight: 5,
@@ -224,35 +205,35 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
+    fontSize: FONT_SIZE.xs,
+    color: STATIC.black,
     paddingLeft: 2,
   },
   itemTextBold: {
     paddingTop: 5,
     fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
-    fontWeight: '700',
+    fontSize: FONT_SIZE.xs,
+    color: STATIC.black,
+    fontWeight: FONT_WEIGHT.bold,
     paddingLeft: 2,
   },
   itemSubtext: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    color: '#000000',
+    fontSize: FONT_SIZE.xs,
+    color: STATIC.black,
     paddingLeft: 2,
     paddingBottom: 5,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
+    backgroundColor: GRAY[350],
     marginHorizontal: 10,
   },
   checkmark: {
     width: 24,
     height: 24,
     borderRadius: 4,
-    backgroundColor: '#FFA05C',
+    backgroundColor: BRAND.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },

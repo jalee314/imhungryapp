@@ -1,13 +1,15 @@
+import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
   ScrollView, TextInput as RNTextInput, Alert
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useProfileEdit } from '../../hooks/useProfileEdit';
+
 import LocationModal from '../../components/LocationModal';
+import { useProfileEdit } from '../../hooks/useProfileEdit';
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 interface ProfileEditProps {
   route?: {
@@ -45,7 +47,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name="chevron-left" size={28} color="#000000" />
+          <MaterialCommunityIcons name="chevron-left" size={28} color={STATIC.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={loading || !hasChanges}>
@@ -70,7 +72,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   value={formData.fullName}
                   onChangeText={(text) => setField('fullName', text)}
                   placeholder="Joe"
-                  placeholderTextColor="#757575"
+                  placeholderTextColor={GRAY[500]}
                 />
               </View>
 
@@ -83,7 +85,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   value={formData.username}
                   onChangeText={(text) => setField('username', text)}
                   placeholder="JoeDeals"
-                  placeholderTextColor="#757575"
+                  placeholderTextColor={GRAY[500]}
                 />
               </View>
 
@@ -96,7 +98,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   value={formData.email}
                   onChangeText={(text) => setField('email', text)}
                   placeholder="johndeals@gmail.com"
-                  placeholderTextColor="#757575"
+                  placeholderTextColor={GRAY[500]}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -113,7 +115,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                   <Text style={[styles.cityValue, !formData.city && styles.cityPlaceholder]}>
                     {formData.city || 'Fullerton, CA'}
                   </Text>
-                  <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={GRAY[350]} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -136,7 +138,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
                       : 'Not set'}
                   </Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color="#C7C7CC" />
+                <MaterialCommunityIcons name="chevron-right" size={20} color={GRAY[350]} />
               </View>
             </TouchableOpacity>
           </View>
@@ -156,7 +158,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   header: {
     flexDirection: 'row',
@@ -164,18 +166,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#000000',
+    color: STATIC.black,
     fontFamily: 'Inter',
   },
   saveText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FF8C4C',
+    color: BRAND.primary,
     fontFamily: 'Inter',
   },
   saveTextDisabled: {
@@ -195,16 +197,16 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#000000',
+    color: STATIC.black,
     letterSpacing: 0.3,
     marginLeft: 16,
     marginBottom: 12,
     fontFamily: 'Inter',
   },
   groupedContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
     borderWidth: 1,
-    borderColor: '#D7D7D7',
+    borderColor: GRAY[325],
     borderRadius: 14,
     overflow: 'hidden',
   },
@@ -218,7 +220,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#000000',
+    color: STATIC.black,
     width: 100,
     letterSpacing: -0.31,
     fontFamily: 'Inter',
@@ -233,7 +235,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '400',
-    color: '#757575',
+    color: GRAY[600],
     textAlign: 'right',
     paddingVertical: 4,
     letterSpacing: -0.31,
@@ -242,17 +244,17 @@ const styles = StyleSheet.create({
   cityValue: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#757575',
+    color: GRAY[600],
     textAlign: 'right',
     letterSpacing: -0.31,
     fontFamily: 'Inter',
   },
   cityPlaceholder: {
-    color: '#757575',
+    color: GRAY[600],
   },
   divider: {
     height: 1,
-    backgroundColor: '#D7D7D7',
+    backgroundColor: GRAY[325],
     marginLeft: 16,
   },
   cuisineRow: {
@@ -268,7 +270,7 @@ const styles = StyleSheet.create({
   cuisineText: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#757575',
+    color: GRAY[600],
     letterSpacing: -0.15,
     lineHeight: 20,
     fontFamily: 'Inter',

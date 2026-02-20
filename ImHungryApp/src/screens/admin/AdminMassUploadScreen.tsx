@@ -1,3 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -11,16 +16,14 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { Monicon } from '@monicon/native';
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
-import { useDataCache } from '../../hooks/useDataCache';
-import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../../services/restaurantService';
-import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
+
 import { supabase } from '../../../lib/supabase';
 import ListSelectionModal from '../../components/ListSelectionModal';
+import ScreenHeader from '../../components/ui/ScreenHeader';
+import { useDataCache } from '../../hooks/useDataCache';
+import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
+import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../../services/restaurantService';
+import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 // --- Debounce Helper Function ---
 function debounce<T extends (...args: any[]) => any>(
@@ -70,7 +73,7 @@ const AdminMassUploadScreen: React.FC = () => {
     },
   ]);
   const [uploading, setUploading] = useState(false);
-  
+
   // Restaurant search state
   const [activeFormId, setActiveFormId] = useState<string | null>(null);
   const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
@@ -135,7 +138,7 @@ const AdminMassUploadScreen: React.FC = () => {
 
       try {
         const deviceLocation = await getDeviceLocation();
-        
+
         if (!deviceLocation) {
           setSearchError('Location not available. Please enable location services.');
           setSearchResults([]);
@@ -164,7 +167,7 @@ const AdminMassUploadScreen: React.FC = () => {
             lat: place.lat,
             lng: place.lng,
           }));
-          
+
           setSearchResults(transformed);
           setSearchError(null);
         }
@@ -189,10 +192,10 @@ const AdminMassUploadScreen: React.FC = () => {
   const handleDoneSearch = async (selectedIds: string[]) => {
     if (selectedIds.length > 0 && activeFormId) {
       const selectedPlace = searchResults.find(r => r.id === selectedIds[0]);
-      
+
       if (selectedPlace && selectedPlace.google_place_id) {
         setIsSearchModalVisible(false);
-        
+
         try {
           const result = await getOrCreateRestaurant({
             google_place_id: selectedPlace.google_place_id,
@@ -221,7 +224,7 @@ const AdminMassUploadScreen: React.FC = () => {
         }
       }
     }
-    
+
     // Clear search state
     setSearchQuery('');
     setSearchResults([]);
@@ -374,8 +377,7 @@ const AdminMassUploadScreen: React.FC = () => {
               setUploading(false);
               Alert.alert(
                 'Upload Complete',
-                `Successfully uploaded ${successCount} deal(s).${
-                  errorCount > 0 ? ` ${errorCount} failed.` : ''
+                `Successfully uploaded ${successCount} deal(s).${errorCount > 0 ? ` ${errorCount} failed.` : ''
                 }`,
                 [
                   {
@@ -417,7 +419,7 @@ const AdminMassUploadScreen: React.FC = () => {
         <Text style={styles.formTitle}>Deal #{index + 1}</Text>
         {dealForms.length > 1 && (
           <TouchableOpacity onPress={() => removeForm(form.id)}>
-            <Monicon name="uil:trash-alt" size={24} color="#FF3B30" />
+            <Monicon name="uil:trash-alt" size={24} color={SEMANTIC.error} />
           </TouchableOpacity>
         )}
       </View>
@@ -430,7 +432,7 @@ const AdminMassUploadScreen: React.FC = () => {
             style={styles.removeImageButton}
             onPress={() => removeImage(form.id)}
           >
-            <Ionicons name="close-circle" size={24} color="#F44336" />
+            <Ionicons name="close-circle" size={24} color={SEMANTIC.error} />
           </TouchableOpacity>
         </View>
       ) : (
@@ -438,7 +440,7 @@ const AdminMassUploadScreen: React.FC = () => {
           style={styles.imagePickerButton}
           onPress={() => pickImage(form.id)}
         >
-          <Ionicons name="camera" size={32} color="#666" />
+          <Ionicons name="camera" size={32} color={GRAY[600]} />
           <Text style={styles.imagePickerText}>Add Photo</Text>
         </TouchableOpacity>
       )}
@@ -473,7 +475,7 @@ const AdminMassUploadScreen: React.FC = () => {
             <Text style={styles.restaurantAddress}>{form.restaurant.address}</Text>
           </View>
           <TouchableOpacity onPress={() => handleClearRestaurant(form.id)}>
-            <Ionicons name="close-circle" size={24} color="#FF3B30" />
+            <Ionicons name="close-circle" size={24} color={SEMANTIC.error} />
           </TouchableOpacity>
         </View>
       ) : (
@@ -481,9 +483,9 @@ const AdminMassUploadScreen: React.FC = () => {
           style={styles.searchButton}
           onPress={() => handleSearchPress(form.id)}
         >
-          <Ionicons name="search" size={20} color="#666" />
+          <Ionicons name="search" size={20} color={GRAY[600]} />
           <Text style={styles.searchButtonText}>Search for Restaurant</Text>
-          <Ionicons name="chevron-forward" size={20} color="#666" />
+          <Ionicons name="chevron-forward" size={20} color={GRAY[600]} />
         </TouchableOpacity>
       )}
 
@@ -541,23 +543,14 @@ const AdminMassUploadScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mass Deal Upload</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="Mass Deal Upload" onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
       >
         <View style={styles.infoCard}>
-          <Ionicons name="information-circle" size={32} color="#FFA05C" />
+          <Ionicons name="information-circle" size={32} color={BRAND.accent} />
           <Text style={styles.infoText}>
             Add multiple deals at once by filling out the forms below. Click "Add
             Another Deal" to create more forms.
@@ -567,7 +560,7 @@ const AdminMassUploadScreen: React.FC = () => {
         {dealForms.map((form, index) => renderDealForm(form, index))}
 
         <TouchableOpacity style={styles.addButton} onPress={addNewForm}>
-          <Ionicons name="add-circle-outline" size={24} color="#FFA05C" />
+          <Ionicons name="add-circle-outline" size={24} color={BRAND.accent} />
           <Text style={styles.addButtonText}>Add Another Deal</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -579,10 +572,10 @@ const AdminMassUploadScreen: React.FC = () => {
           disabled={uploading}
         >
           {uploading ? (
-            <ActivityIndicator color="#FFF" />
+            <ActivityIndicator color={STATIC.white} />
           ) : (
             <>
-              <Ionicons name="cloud-upload" size={24} color="#FFF" />
+              <Ionicons name="cloud-upload" size={24} color={STATIC.white} />
               <Text style={styles.uploadButtonText}>
                 Upload {dealForms.length} Deal{dealForms.length > 1 ? 's' : ''}
               </Text>
@@ -591,27 +584,27 @@ const AdminMassUploadScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <ListSelectionModal 
-        visible={isSearchModalVisible} 
+      <ListSelectionModal
+        visible={isSearchModalVisible}
         onClose={() => {
           setIsSearchModalVisible(false);
           setSearchQuery('');
           setSearchResults([]);
           setSearchError(null);
           setActiveFormId(null);
-        }} 
-        onDone={handleDoneSearch} 
+        }}
+        onDone={handleDoneSearch}
         data={
-          isSearching 
+          isSearching
             ? [{ id: 'loading', name: 'Searching restaurants...', subtext: '' }]
             : searchError
-            ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
-            : searchQuery.trim().length > 0
-            ? (searchResults.length > 0 
-                ? searchResults.map(r => ({ id: r.id, name: r.name, subtext: r.address }))
-                : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
-            : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
-        } 
+              ? [{ id: 'error', name: searchError || 'Unknown error', subtext: 'Try a different search' }]
+              : searchQuery.trim().length > 0
+                ? (searchResults.length > 0
+                  ? searchResults.map(r => ({ id: r.id, name: r.name, subtext: r.address }))
+                  : [{ id: 'empty', name: 'No results found', subtext: 'Try a different search term' }])
+                : [{ id: 'prompt', name: 'Search for a restaurant', subtext: 'Start typing to see results...' }]
+        }
         title="Search Restaurant"
         onSearchChange={handleSearchChange}
         searchQuery={searchQuery}
@@ -623,29 +616,9 @@ const AdminMassUploadScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    width: 40,
-  },
-  placeholder: {
-    width: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
-  },
+
   content: {
     flex: 1,
   },
@@ -654,7 +627,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   infoCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: STATIC.white,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -665,15 +638,15 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: '#666',
+    color: GRAY[600],
     lineHeight: 20,
   },
   formCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: STATIC.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: STATIC.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -688,26 +661,26 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#000',
+    color: STATIC.black,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: STATIC.black,
     marginBottom: 8,
     marginTop: 12,
   },
   required: {
-    color: '#FF3B30',
+    color: SEMANTIC.error,
   },
   input: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
-    color: '#000',
+    color: STATIC.black,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: GRAY[300],
   },
   textArea: {
     height: 80,
@@ -723,20 +696,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: GRAY[300],
   },
   chipSelected: {
-    backgroundColor: '#FFA05C',
-    borderColor: '#FFA05C',
+    backgroundColor: BRAND.accent,
+    borderColor: BRAND.accent,
   },
   chipText: {
     fontSize: 12,
-    color: '#666',
+    color: GRAY[600],
   },
   chipTextSelected: {
-    color: '#FFF',
+    color: STATIC.white,
     fontWeight: '600',
   },
   addButton: {
@@ -746,12 +719,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#FFA05C',
+    borderColor: BRAND.accent,
     borderStyle: 'dashed',
     gap: 8,
   },
   addButtonText: {
-    color: '#FFA05C',
+    color: BRAND.accent,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -760,13 +733,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFF',
+    backgroundColor: STATIC.white,
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: GRAY[300],
   },
   uploadButton: {
-    backgroundColor: '#FFA05C',
+    backgroundColor: BRAND.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -775,10 +748,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   uploadButtonDisabled: {
-    backgroundColor: '#CCC',
+    backgroundColor: GRAY[350],
   },
   uploadButtonText: {
-    color: '#FFF',
+    color: STATIC.white,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -802,9 +775,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   imagePickerButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: GRAY[300],
     borderStyle: 'dashed',
     borderRadius: 8,
     padding: 32,
@@ -815,17 +788,17 @@ const styles = StyleSheet.create({
   imagePickerText: {
     marginTop: 8,
     fontSize: 14,
-    color: '#666',
+    color: GRAY[600],
   },
   selectedRestaurantContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: GRAY[300],
   },
   restaurantInfo: {
     flex: 1,
@@ -834,27 +807,27 @@ const styles = StyleSheet.create({
   restaurantName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: STATIC.black,
     marginBottom: 4,
   },
   restaurantAddress: {
     fontSize: 12,
-    color: '#666',
+    color: GRAY[600],
   },
   searchButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: GRAY[300],
   },
   searchButtonText: {
     flex: 1,
     fontSize: 14,
-    color: '#666',
+    color: GRAY[600],
     marginLeft: 8,
   },
 });

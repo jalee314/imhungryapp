@@ -1,5 +1,5 @@
 import { useDealUpdateStore } from '../stores/DealUpdateStore';
-import type { Deal } from '../types';
+import type { Deal } from '../types/deal';
 
 export function useDealUpdate<T>(selector: (state: any) => T, equality?: (a: T, b: T) => boolean): T;
 export function useDealUpdate(): {

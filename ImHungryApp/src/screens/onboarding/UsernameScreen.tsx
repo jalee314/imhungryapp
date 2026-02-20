@@ -1,9 +1,11 @@
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native-paper';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+
 import { isUsernameAvailable } from '../../services/onboardingService';
+import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 export default function UsernameScreen() {
   const navigation = useNavigation();
@@ -11,14 +13,14 @@ export default function UsernameScreen() {
   const userData = (route.params as any)?.userData;
   const existingProfilePhoto = (route.params as any)?.profilePhoto;
 
-  const [username, setUsername] = useState(userData?.username || ''); 
+  const [username, setUsername] = useState(userData?.username || '');
   const [displayUsername, setDisplayUsername] = useState(userData?.username ? '@' + userData.username : '');
   const [isFocused, setIsFocused] = useState(false);
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isValidated, setIsValidated] = useState(false); // Track if current username has been validated as available
   const [selection, setSelection] = useState<{ start: number; end: number } | undefined>(undefined);
-  
+
   // Track which username is currently being validated to prevent race conditions
   const validatingUsernameRef = useRef<string>('');
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -69,20 +71,20 @@ export default function UsernameScreen() {
 
     // Track which username we're validating to prevent race conditions
     validatingUsernameRef.current = name;
-    
+
     setIsChecking(true);
     setError('');
     setIsValidated(false);
 
     try {
       const available = await isUsernameAvailable(name);
-      
+
       // Only apply result if this is still the username we're validating
       // (prevents race condition when user types while API call is in flight)
       if (validatingUsernameRef.current !== name) {
         return; // Stale response, ignore it
       }
-      
+
       if (!available) {
         setError('Username is already taken.');
         setIsValidated(false);
@@ -128,11 +130,11 @@ export default function UsernameScreen() {
     const withAt = text.startsWith('@') ? text : '@' + text.replace(/^@+/, '');
     const body = withAt.slice(1).replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
     const newValue = '@' + body;
-    
+
     setDisplayUsername(newValue);
     setUsername(body);
     setIsValidated(false);
-    
+
     if (body) {
       debouncedCheck(body);
     } else {
@@ -167,7 +169,7 @@ export default function UsernameScreen() {
   };
 
   return (
-    <View style = {{flex:1, backgroundColor: 'white'}}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
@@ -181,50 +183,50 @@ export default function UsernameScreen() {
                 <Text style={styles.usernameTitle}>Choose your username</Text>
               </View>
               <View style={styles.formBlock}>
-                    <TextInput
-                      mode="flat"
-                      value={displayUsername}
-                      onChangeText={handleUsernameChange}
-                      placeholder={isFocused ? '' : '@ImHungri'}
-                      placeholderTextColor="#636363"
-                      selection={isFocused ? selection : undefined}
-                      onSelectionChange={isFocused ? handleSelectionChange : undefined}
+                <TextInput
+                  mode="flat"
+                  value={displayUsername}
+                  onChangeText={handleUsernameChange}
+                  placeholder={isFocused ? '' : '@ImHungri'}
+                  placeholderTextColor={GRAY[600]}
+                  selection={isFocused ? selection : undefined}
+                  onSelectionChange={isFocused ? handleSelectionChange : undefined}
 
-                      underlineColor="transparent"
-                      activeUnderlineColor="transparent"
-                      style={styles.usernameInput}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  style={styles.usernameInput}
 
-                      contentStyle={{ color: '#333' }} 
-                      theme={{
-                          colors: {
-                          onSurface: '#333',          
-                          onSurfaceVariant: '#636363',
-                          background: 'white',
-                          surface: 'white',
-                          },
-                      }}
+                  contentStyle={{ color: GRAY[800] }}
+                  theme={{
+                    colors: {
+                      onSurface: GRAY[800],
+                      onSurfaceVariant: GRAY[600],
+                      background: STATIC.white,
+                      surface: STATIC.white,
+                    },
+                  }}
 
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      maxLength={21}
-                      onFocus={() => { 
-                        setIsFocused(true); 
-                        setDisplayUsername(username ? '@' + username : '@');
-                        setSelection({ start: 1, end: 1 });
-                      }}
-                      onBlur={() => { 
-                        setIsFocused(false); 
-                        setSelection(undefined);
-                        if (!username) setDisplayUsername(''); 
-                      }}
-                    />
-                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={21}
+                  onFocus={() => {
+                    setIsFocused(true);
+                    setDisplayUsername(username ? '@' + username : '@');
+                    setSelection({ start: 1, end: 1 });
+                  }}
+                  onBlur={() => {
+                    setIsFocused(false);
+                    setSelection(undefined);
+                    if (!username) setDisplayUsername('');
+                  }}
+                />
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-                </View>
+              </View>
               <View style={styles.spacer} />
               <View style={styles.footer}>
-                <TouchableOpacity 
-                  style={[styles.continueButton, !canContinue && styles.continueButtonDisabled]} 
+                <TouchableOpacity
+                  style={[styles.continueButton, !canContinue && styles.continueButtonDisabled]}
                   onPress={handleContinue}
                   disabled={!canContinue}
                 >
@@ -234,38 +236,38 @@ export default function UsernameScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
-    </SafeAreaView>
-</View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 ,backgroundColor: 'white'},
+  container: { flex: 1, backgroundColor: STATIC.white },
   flex1: { flex: 1 },
   pagePad: { flex: 1, paddingHorizontal: 24, paddingVertical: 20 },
-  
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 40,
     height: 44
   },
-  
+
   mainContainer: { flex: 1, alignItems: 'flex-start', width: '100%' },
 
   backButton: { paddingVertical: 8, paddingHorizontal: 4, width: 44 },
 
-  titleSection: { 
+  titleSection: {
     marginBottom: 40,
     maxWidth: 343,
     alignItems: 'center',
     alignSelf: 'center'
   },
-  usernameTitle: { 
-    fontSize: 24, 
-    color: '#000', 
-    fontWeight: 'bold', 
+  usernameTitle: {
+    fontSize: 24,
+    color: STATIC.black,
+    fontWeight: 'bold',
     textAlign: 'center',
     fontFamily: 'Inter-Bold'
   },
@@ -282,37 +284,37 @@ const styles = StyleSheet.create({
   },
   formBlock: {
     width: '100%',
-    maxWidth: 338,      
+    maxWidth: 338,
     alignSelf: 'center',
     alignItems: 'center',
   },
 
   spacer: { flex: 1 },
-  footer: { 
-    width: '100%', 
+  footer: {
+    width: '100%',
     alignItems: 'center',
     alignSelf: 'center'
   },
 
-  continueButton: { 
-    width: '100%', 
+  continueButton: {
+    width: '100%',
     maxWidth: 343,
-    height: 44, 
-    backgroundColor: '#FF8C4C', 
-    borderRadius: 22, 
-    alignItems: 'center', 
+    height: 44,
+    backgroundColor: BRAND.primary,
+    borderRadius: 22,
+    alignItems: 'center',
     justifyContent: 'center'
   },
   continueButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: GRAY[350],
   },
-  continueButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: '600' 
+  continueButtonText: {
+    color: STATIC.white,
+    fontSize: 16,
+    fontWeight: '600'
   },
   errorText: {
-    color: 'red',
+    color: SEMANTIC.error,
     textAlign: 'center',
     marginTop: 6,
   },

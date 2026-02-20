@@ -1,7 +1,9 @@
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
+import ScreenHeader from '../../components/ui/ScreenHeader';
+import { STATIC } from '../../ui/alf';
 
 const PrivacyPolicyPage = () => {
   const navigation = useNavigation();
@@ -81,13 +83,7 @@ const PrivacyPolicyPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.titleText}>Privacy & Policy</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="Privacy & Policy" onBack={handleBack} />
 
       {/* Content */}
       <View style={styles.content}>
@@ -136,28 +132,9 @@ const PrivacyPolicyPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
-  },
-  titleText: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 19,
-    color: '#000000',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 24,
-  },
+
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -175,7 +152,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 15,
-    color: '#000000',
+    color: STATIC.black,
     marginBottom: 12,
   },
   effectiveDate: {
@@ -183,7 +160,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 15,
-    color: '#000000',
+    color: STATIC.black,
     marginBottom: 12,
   },
   heading: {
@@ -191,7 +168,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 15,
-    color: '#000000',
+    color: STATIC.black,
     marginTop: 16,
     marginBottom: 8,
   },
@@ -200,7 +177,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     lineHeight: 15,
-    color: '#000000',
+    color: STATIC.black,
     marginTop: 12,
     marginBottom: 4,
   },
@@ -209,7 +186,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 15,
-    color: '#000000',
+    color: STATIC.black,
     marginBottom: 8,
   },
   listItem: {
@@ -217,7 +194,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 15,
-    color: '#000000',
+    color: STATIC.black,
     marginLeft: 16,
     marginBottom: 4,
   },

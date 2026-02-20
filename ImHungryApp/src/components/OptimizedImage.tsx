@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Image, ImageProps, PixelRatio, Dimensions } from 'react-native';
-import { getOptimalImageVariant, getImageUrl, ImageVariants, VariantContext } from '../services/imageProcessingService';
+
+import { getOptimalImageVariant, getImageUrl } from '../services/imageProcessingService';
+import type { ImageVariants, VariantContext } from '../types/image';
 
 // Static set to track preloaded images
 const preloadedImages = new Set<string>();

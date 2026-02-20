@@ -1,11 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { TextInput } from 'react-native-paper';
+
 import { useAuth } from '../../hooks/useAuth';
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 export default function ResetPasswordScreen() {
   const navigation = useNavigation();
@@ -50,9 +52,9 @@ export default function ResetPasswordScreen() {
       console.log('ResetPassword: Already initialized, skipping');
       return;
     }
-    
+
     hasInitializedRef.current = true;
-    
+
     // Enable password reset mode FIRST to prevent AuthContext from reacting to session changes
     console.log('ResetPassword: Enabling password reset mode');
     setPasswordResetMode(true);
@@ -146,20 +148,20 @@ export default function ResetPasswordScreen() {
       } else {
         // Success - sign out FIRST (synchronously), then disable password reset mode, then navigate
         console.log('Password updated successfully, signing out...');
-        
+
         // Wait a moment for the sign out to propagate
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         console.log('Disabling password reset mode...');
         setPasswordResetMode(false);
         isUpdatingRef.current = false;
-        
+
         // Wait another moment before navigation to ensure clean state
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         console.log('Navigating to login screen...');
         (navigation as any).navigate('LogIn');
-        
+
         // Show success message after navigation
         setTimeout(() => {
           Alert.alert(
@@ -167,7 +169,7 @@ export default function ResetPasswordScreen() {
             'Your password has been updated successfully! Please log in with your new password.'
           );
         }, 300);
-  }
+      }
     } catch (err) {
       console.error('Password update error:', err);
       Alert.alert('Error', 'An unexpected error occurred');
@@ -181,11 +183,11 @@ export default function ResetPasswordScreen() {
     navigation.goBack();
   };
 
-  const handleTermsPress = () => {};
-  const handlePrivacyPress = () => {};
+  const handleTermsPress = () => { };
+  const handlePrivacyPress = () => { };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -199,96 +201,96 @@ export default function ResetPasswordScreen() {
             {/* Top Content */}
             <View>
               <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-                <Ionicons name="arrow-back" size={24} color="#000" />
+                <Ionicons name="arrow-back" size={24} color={STATIC.black} />
               </TouchableOpacity>
 
               <View style={styles.mainContainer}>
                 <View style={[styles.welcomeSection, responsive.welcomeSection, CONSTRAIN]}>
-                <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to ImHungri</Text>
-                <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
-                  Create a New Password
-                </Text>
-              </View>
-
-              {/* Form Fields */}
-              <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
-                <View style={responsive.paperInput}>
-                  <TextInput
-                    label="New Password"
-                    mode="outlined"
-                    value={formData.newPassword}
-                    onChangeText={t => handleInputChange('newPassword', t)}
-                    placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                    theme={{
-                      roundness: 12,
-                      colors: {
-                        background: 'white',
-                      },
-                    }}
-                    secureTextEntry={!showNewPassword}
-                    returnKeyType="next"
-                    onFocus={() => setIsNewPasswordFocused(true)}
-                    onBlur={() => setIsNewPasswordFocused(false)}
-                    right={(
-                      <TextInput.Icon
-                        icon={() => (
-                          <Ionicons
-                            name={showNewPassword ? 'eye-off' : 'eye'}
-                            size={20}
-                            color="#666"
-                            style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
-                          />
-                        )}
-                        onPress={() => setShowNewPassword(!showNewPassword)}
-                        style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
-                      />
-                    )}
-                  />
+                  <Text style={[styles.welcomeTitle, responsive.welcomeTitle]}>Welcome Back to ImHungri</Text>
+                  <Text style={[styles.welcomeSubtitle, responsive.welcomeSubtitle]}>
+                    Create a New Password
+                  </Text>
                 </View>
 
-                <View style={responsive.paperInput}>
-                  <TextInput
-                    label="Confirm New Password"
-                    mode="outlined"
-                    value={formData.confirmPassword}
-                    onChangeText={t => handleInputChange('confirmPassword', t)}
-                    placeholder=""
-                    outlineColor="#FF8C4C"
-                    activeOutlineColor="#FF8C4C"
-                    style={[styles.textInputStyle, { backgroundColor: 'white' }]}
-                    theme={{
-                      roundness: 12,
-                      colors: {
-                        background: 'white',
-                      },
-                    }}
-                    secureTextEntry={!showConfirmPassword}
-                    returnKeyType="done"
-                    onFocus={() => setIsConfirmPasswordFocused(true)}
-                    onBlur={() => setIsConfirmPasswordFocused(false)}
-                    right={(
-                      <TextInput.Icon
-                        icon={() => (
-                          <Ionicons
-                            name={showConfirmPassword ? 'eye-off' : 'eye'}
-                            size={20}
-                            color="#666"
-                            style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
-                          />
-                        )}
-                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                        style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
-                      />
-                    )}
-                  />
-                </View>
-              </View>
+                {/* Form Fields */}
+                <View style={[styles.formContainer, responsive.formContainer, CONSTRAIN]}>
+                  <View style={responsive.paperInput}>
+                    <TextInput
+                      label="New Password"
+                      mode="outlined"
+                      value={formData.newPassword}
+                      onChangeText={t => handleInputChange('newPassword', t)}
+                      placeholder=""
+                      outlineColor={BRAND.primary}
+                      activeOutlineColor={BRAND.primary}
+                      style={[styles.textInputStyle, { backgroundColor: STATIC.white }]}
+                      theme={{
+                        roundness: 12,
+                        colors: {
+                          background: 'white',
+                        },
+                      }}
+                      secureTextEntry={!showNewPassword}
+                      returnKeyType="next"
+                      onFocus={() => setIsNewPasswordFocused(true)}
+                      onBlur={() => setIsNewPasswordFocused(false)}
+                      right={(
+                        <TextInput.Icon
+                          icon={() => (
+                            <Ionicons
+                              name={showNewPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color={GRAY[600]}
+                              style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                            />
+                          )}
+                          onPress={() => setShowNewPassword(!showNewPassword)}
+                          style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                        />
+                      )}
+                    />
+                  </View>
 
-              {/* Update Password Button */}
-              <TouchableOpacity
+                  <View style={responsive.paperInput}>
+                    <TextInput
+                      label="Confirm New Password"
+                      mode="outlined"
+                      value={formData.confirmPassword}
+                      onChangeText={t => handleInputChange('confirmPassword', t)}
+                      placeholder=""
+                      outlineColor={BRAND.primary}
+                      activeOutlineColor={BRAND.primary}
+                      style={[styles.textInputStyle, { backgroundColor: STATIC.white }]}
+                      theme={{
+                        roundness: 12,
+                        colors: {
+                          background: 'white',
+                        },
+                      }}
+                      secureTextEntry={!showConfirmPassword}
+                      returnKeyType="done"
+                      onFocus={() => setIsConfirmPasswordFocused(true)}
+                      onBlur={() => setIsConfirmPasswordFocused(false)}
+                      right={(
+                        <TextInput.Icon
+                          icon={() => (
+                            <Ionicons
+                              name={showConfirmPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color={GRAY[600]}
+                              style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                            />
+                          )}
+                          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                          style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                        />
+                      )}
+                    />
+                  </View>
+                </View>
+
+                {/* Update Password Button */}
+                <TouchableOpacity
                   style={[styles.resetButton, responsive.resetButton, CONSTRAIN, (!sessionReady || loading) && { opacity: 0.7 }]}
                   onPress={handleUpdatePassword}
                   disabled={!sessionReady || loading}
@@ -318,7 +320,7 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: STATIC.white },
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 },
   scrollContentContainer: {
@@ -337,22 +339,22 @@ const styles = StyleSheet.create({
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle: {
     fontSize: 18,
-    color: '#181619',
+    color: GRAY[950],
     fontFamily: 'Inter-Bold',
     fontWeight: '700',
     textAlign: 'left'
   },
   welcomeSubtitle: {
     fontSize: 16,
-    color: '#181619',
+    color: GRAY[950],
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
   formContainer: { width: '100%' },
-  paperInput: { backgroundColor: 'white' },
+  paperInput: { backgroundColor: STATIC.white },
   textInputStyle: {
-    backgroundColor: 'white',
+    backgroundColor: STATIC.white,
     minHeight: 56,
     fontSize: 16,
     lineHeight: 22,
@@ -361,13 +363,13 @@ const styles = StyleSheet.create({
   resetButton: {
     width: '100%',
     height: 44,
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   resetButtonText: {
-    color: '#fff',
+    color: STATIC.white,
     fontSize: 16,
     fontWeight: '400',
     fontFamily: 'Inter-Regular',
@@ -376,11 +378,11 @@ const styles = StyleSheet.create({
   legalContainer: { alignItems: 'center' },
   legalText: {
     fontSize: 12,
-    color: '#181619',
+    color: GRAY[950],
     textAlign: 'left',
     lineHeight: 16,
     fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
-  legalLink: { color: '#FFA05C', fontWeight: '600', fontFamily: 'Inter-SemiBold' },
+  legalLink: { color: BRAND.accent, fontWeight: '600', fontFamily: 'Inter-SemiBold' },
 });

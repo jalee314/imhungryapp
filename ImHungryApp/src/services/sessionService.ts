@@ -1,7 +1,7 @@
-import { supabase } from '../../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-import { AppState, AppStateStatus } from 'react-native';
+import { Platform , AppState, AppStateStatus } from 'react-native';
+
+import { supabase } from '../../lib/supabase';
 
 // Cache keys
 const AUTH_SESSION_KEY = 'supabase_auth_session';
@@ -40,7 +40,7 @@ export const initializeAuthSession = async (): Promise<boolean> => {
   try {
     // Check if there's an existing Supabase session
     const { data: { session }, error } = await supabase.auth.getSession();
-    
+
     if (error) {
       console.error('Error getting auth session:', error);
       return false;
@@ -48,10 +48,10 @@ export const initializeAuthSession = async (): Promise<boolean> => {
 
     if (session) {
       console.log('✅ User is logged in:', session.user.email);
-      
+
       // Create or resume database session for analytics
       await createDatabaseSession();
-      
+
       return true;
     } else {
       console.log('❌ No active auth session');
@@ -66,7 +66,7 @@ export const initializeAuthSession = async (): Promise<boolean> => {
 /**
  * Create a new database session for tracking user activity
  */
-export const createDatabaseSession = async (): Promise<string | null> => {
+const createDatabaseSession = async (): Promise<string | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -150,7 +150,7 @@ export const getCurrentDatabaseSessionId = async (): Promise<string | null> => {
 /**
  * End the current database session
  */
-export const endDatabaseSession = async (sessionId?: string): Promise<void> => {
+const endDatabaseSession = async (sessionId?: string): Promise<void> => {
   try {
     const sessionIdToEnd = sessionId || await AsyncStorage.getItem(DB_SESSION_ID_KEY);
     if (!sessionIdToEnd) return;
@@ -176,17 +176,17 @@ export const signOut = async (): Promise<void> => {
   try {
     // End database session
     await endDatabaseSession();
-    
+
     // Sign out from Supabase auth
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Error signing out:', error);
       throw error;
     }
-    
+
     // Clear auth cache
     await AsyncStorage.removeItem(AUTH_SESSION_KEY);
-    
+
     console.log('✅ Signed out successfully');
   } catch (error) {
     console.error('Error in signOut:', error);
@@ -197,7 +197,7 @@ export const signOut = async (): Promise<void> => {
 /**
  * Check if user is authenticated
  */
-export const isAuthenticated = async (): Promise<boolean> => {
+const isAuthenticated = async (): Promise<boolean> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     return !!session;
@@ -211,7 +211,7 @@ export const isAuthenticated = async (): Promise<boolean> => {
  */
 export const setupAppStateListener = (): (() => void) => {
   let lastState: AppStateStatus = AppState.currentState;
-  
+
   const handleAppStateChange = async (nextAppState: AppStateStatus) => {
     // Only log when transitioning to background (not inactive)
     // This prevents duplicate logs since iOS fires both 'inactive' and 'background'
@@ -225,7 +225,7 @@ export const setupAppStateListener = (): (() => void) => {
         await createDatabaseSession();
       }
     }
-    
+
     lastState = nextAppState;
   };
 

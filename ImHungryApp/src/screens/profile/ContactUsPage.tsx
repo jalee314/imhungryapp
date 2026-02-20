@@ -1,7 +1,9 @@
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
+import ScreenHeader from '../../components/ui/ScreenHeader';
+import { STATIC, GRAY } from '../../ui/alf';
 
 const ContactUsPage = () => {
   const navigation = useNavigation();
@@ -19,13 +21,7 @@ const ContactUsPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.titleText}>Contact Us</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="Contact Us" onBack={() => navigation.goBack()} />
 
       {/* Content */}
       <View style={styles.content}>
@@ -61,28 +57,11 @@ const ContactUsPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  titleText: {
-    fontFamily: 'Inter',
-    fontWeight: '700',
-    fontSize: 16,
-    color: '#000000',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 24,
-  },
+
   content: {
-    flex: 1,    
+    flex: 1,
   },
   contactItem: {
     flexDirection: 'row',
@@ -96,13 +75,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 16,
-    color: '#000000',
+    color: STATIC.black,
   },
   emailText: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
-    color: '#000000',
+    color: STATIC.black,
   },
   linkContainer: {
     alignItems: 'center',
@@ -111,17 +90,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 14,
-    color: '#000000',
+    color: STATIC.black,
   },
   underline: {
     height: 1,
-    backgroundColor: '#000000',
+    backgroundColor: STATIC.black,
     width: '100%',
     marginTop: 2,
   },
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: GRAY[300],
     marginHorizontal: 20,
   },
 

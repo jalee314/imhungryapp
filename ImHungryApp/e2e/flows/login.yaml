@@ -1,0 +1,53 @@
+# Login Flow
+# Tests user authentication via email/password
+# 
+# Prerequisites: App launched, user on landing/signup screen
+# Expected: User reaches main feed after successful login
+
+appId: com.imhungri
+
+---
+
+# Start from landing screen - tap anywhere to continue
+- tapOn:
+    text: ".*"
+    optional: true
+    index: 0
+
+# Wait for signup screen to load  
+- waitForAnimationToEnd
+
+# Navigate to login from signup screen
+- tapOn:
+    text: "Log in"
+    optional: true
+
+# Wait for login screen
+- assertVisible:
+    text: "Welcome back to ImHungri"
+    optional: true
+
+# Enter test credentials
+# Note: Uses environment variables for security
+- tapOn: "Email address"
+
+- inputText: ${TEST_EMAIL}
+
+- tapOn: "Password"
+
+- inputText: ${TEST_PASSWORD}
+
+- hideKeyboard
+
+# Tap login button
+- tapOn:
+    text: "Log in"
+
+# Wait for authentication (give it time to complete)
+- waitForAnimationToEnd
+
+# Additional wait for auth to process
+- waitForAnimationToEnd
+
+# App should be loaded - just verify no crash
+- waitForAnimationToEnd

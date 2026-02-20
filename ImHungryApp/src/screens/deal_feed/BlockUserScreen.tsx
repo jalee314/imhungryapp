@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -10,10 +12,10 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { submitBlock } from '../../services/blockService';
 import { getDealUploaderId } from '../../services/dealService';
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 type BlockUserRouteProp = RouteProp<{ BlockUser: { dealId: string; uploaderUserId: string } }, 'BlockUser'>;
 
@@ -95,7 +97,7 @@ const BlockUserScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={STATIC.white} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -124,7 +126,7 @@ const BlockUserScreen: React.FC = () => {
                   <Text style={styles.optionText}>{option}</Text>
                   {isSelected ? (
                     <View style={styles.checkmark}>
-                      <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
+                      <MaterialCommunityIcons name="check" size={16} color={STATIC.white} />
                     </View>
                   ) : (
                     <View style={styles.checkmarkPlaceholder} />
@@ -142,7 +144,7 @@ const BlockUserScreen: React.FC = () => {
             <TextInput
               style={styles.textInput}
               placeholder="Please provide details about why you're blocking this user."
-              placeholderTextColor="#999999"
+              placeholderTextColor={GRAY[475]}
               value={additionalDetails}
               onChangeText={setAdditionalDetails}
               multiline
@@ -160,7 +162,7 @@ const BlockUserScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   header: {
     flexDirection: 'row',
@@ -172,18 +174,18 @@ const styles = StyleSheet.create({
   },
   headerButtonText: {
     fontSize: 16,
-    color: '#000000',
+    color: STATIC.black,
     fontFamily: 'Inter',
   },
   headerTitle: {
     fontSize: 16,
-    color: '#000000',
+    color: STATIC.black,
     fontWeight: '700',
     fontFamily: 'Inter',
   },
   submitButtonText: {
     fontSize: 16,
-    color: '#FF8C4C',
+    color: BRAND.primary,
     fontWeight: '700',
     fontFamily: 'Inter',
   },
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionsContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   optionRow: {
     flexDirection: 'row',
@@ -199,25 +201,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   optionText: {
     fontFamily: 'Inter',
     fontSize: 14,
-    color: '#000000',
+    color: STATIC.black,
     flex: 1,
     paddingLeft: 2,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#C1C1C1',
+    backgroundColor: GRAY[350],
     marginHorizontal: 10,
   },
   checkmark: {
     width: 24,
     height: 24,
     borderRadius: 4,
-    backgroundColor: '#FFA05C',
+    backgroundColor: BRAND.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -232,11 +234,11 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#CCCCCC',
+    borderColor: GRAY[350],
     borderRadius: 8,
     padding: 12,
     fontSize: 12,
-    color: '#000000',
+    color: STATIC.black,
     minHeight: 128,
     textAlignVertical: 'top',
     fontFamily: 'Inter',
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
   },
   characterCount: {
     fontSize: 12,
-    color: '#999999',
+    color: GRAY[475],
     textAlign: 'right',
     marginTop: 8,
     fontFamily: 'Inter',

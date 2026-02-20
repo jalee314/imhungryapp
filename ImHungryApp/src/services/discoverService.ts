@@ -1,23 +1,9 @@
 import { supabase } from '../../lib/supabase';
+import type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
+
 import { getCurrentUserLocation } from './locationService';
 
-export interface DiscoverRestaurant {
-  restaurant_id: string;
-  name: string;
-  address: string;
-  logo_image?: string; // Image URL from most liked deal
-  deal_count: number;
-  distance_miles: number;
-  lat: number;
-  lng: number;
-}
-
-export interface DiscoverResult {
-  success: boolean;
-  restaurants: DiscoverRestaurant[];
-  count: number;
-  error?: string;
-}
+export type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
 
 /**
  * Get all unique restaurants that have deals, with deal counts and distances

@@ -1,12 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, useWindowDimensions, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-
-import { TextInput } from 'react-native-paper';
 import type { ViewStyle } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { TextInput } from 'react-native-paper';
+
 import { useAuth } from '../../hooks/useAuth';
+import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 export default function LogInScreen() {
   const navigation = useNavigation();
@@ -115,7 +116,7 @@ export default function LogInScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
+    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -128,7 +129,7 @@ export default function LogInScreen() {
           >
             <View>
               <TouchableOpacity style={[styles.backButton, responsive.backButton]} onPress={handleBack}>
-                <Ionicons name="arrow-back" size={24} color="#000" />
+                <Ionicons name="arrow-back" size={24} color={STATIC.black} />
               </TouchableOpacity>
 
               <View style={styles.mainContainer}>
@@ -150,9 +151,9 @@ export default function LogInScreen() {
                       value={formData.email}
                       onChangeText={t => handleInputChange('email', t)}
                       placeholder=""
-                      outlineColor="#FF8C4C"
-                      activeOutlineColor="#FF8C4C"
-                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                      outlineColor={BRAND.primary}
+                      activeOutlineColor={BRAND.primary}
+                      style={[styles.textInputStyle, { backgroundColor: STATIC.white }]}
                       theme={{
                         roundness: 8,
                         colors: {
@@ -174,9 +175,9 @@ export default function LogInScreen() {
                       value={formData.password}
                       onChangeText={t => handleInputChange('password', t)}
                       placeholder=""
-                      outlineColor="#FF8C4C"
-                      activeOutlineColor="#FF8C4C"
-                      style={[styles.textInputStyle, { backgroundColor: 'white' }]}
+                      outlineColor={BRAND.primary}
+                      activeOutlineColor={BRAND.primary}
+                      style={[styles.textInputStyle, { backgroundColor: STATIC.white }]}
                       theme={{
                         roundness: 8,
                         colors: {
@@ -240,7 +241,7 @@ export default function LogInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: STATIC.white },
 
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 },
@@ -256,14 +257,14 @@ const styles = StyleSheet.create({
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle: {
     fontSize: 18,
-    color: '#181619',
+    color: GRAY[950],
     fontFamily: 'Inter-Bold',
     fontWeight: '700',
     textAlign: 'left'
   },
   welcomeSubtitle: {
     fontSize: 16,
-    color: '#181619',
+    color: GRAY[950],
     lineHeight: 24,
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   paperInput: {},
 
   textInputStyle: {
-    backgroundColor: 'white',
+    backgroundColor: STATIC.white,
     minHeight: 56,
     fontSize: 16,
     lineHeight: 22,
@@ -283,13 +284,13 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     height: 50,
-    backgroundColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueButtonText: {
-    color: '#fff',
+    color: STATIC.white,
     fontSize: 16,
     fontWeight: '400',
     fontFamily: 'Inter-Regular',
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   forgotPasswordContainer: { alignSelf: 'center', marginTop: 16 },
   forgotPasswordText: {
     fontSize: 14,
-    color: '#000',
+    color: STATIC.black,
     fontWeight: '500',
     textDecorationLine: 'underline'
   },
@@ -307,14 +308,14 @@ const styles = StyleSheet.create({
   legalContainer: { alignItems: 'center' },
   legalText: {
     fontSize: 12,
-    color: '#181619',
+    color: GRAY[950],
     textAlign: 'left',
     lineHeight: 16,
     fontFamily: 'Inter-Medium',
     fontWeight: '500'
   },
   legalLink: {
-    color: '#FFA05C',
+    color: BRAND.accent,
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold'
   },
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   errorText: {
-    color: '#DC2626',
+    color: SEMANTIC.errorBright,
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     fontWeight: '500',

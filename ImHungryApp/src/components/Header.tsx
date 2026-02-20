@@ -1,6 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
+import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, BORDER_WIDTH, SPACING } from '../ui/alf';
 
 interface HeaderProps {
   onLocationPress?: () => void;
@@ -24,11 +26,11 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, 
         </View>
         <TouchableOpacity onPress={onLocationPress} style={styles.locationContainer}>
           <View style={styles.locationInfo}>
-            <Ionicons name="location-sharp" size={16} color="#1D1B20" />
+            <Ionicons name="location-sharp" size={16} color={GRAY[900]} />
             <Text style={styles.locationText} numberOfLines={1}>
               {currentLocation || 'Location'}
             </Text>
-            <Ionicons name="chevron-down" size={16} color="#666" />
+            <Ionicons name="chevron-down" size={16} color={GRAY[600]} />
           </View>
         </TouchableOpacity>
       </View>
@@ -37,8 +39,8 @@ const Header: React.FC<HeaderProps> = memo(({ onLocationPress, currentLocation, 
 }, (prevProps, nextProps) => {
   // Custom comparison function to reduce unnecessary re-renders
   // Only re-render if the currentLocation actually changed meaningfully
-  return prevProps.currentLocation === nextProps.currentLocation && 
-         prevProps.onLocationPress === nextProps.onLocationPress;
+  return prevProps.currentLocation === nextProps.currentLocation &&
+    prevProps.onLocationPress === nextProps.onLocationPress;
 });
 
 // Add display name for debugging
@@ -48,11 +50,11 @@ const styles = StyleSheet.create({
   header: {
     width: '100%',
     height: 100,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#DEDEDE',
+    backgroundColor: STATIC.white,
+    borderBottomWidth: BORDER_WIDTH.hairline,
+    borderBottomColor: GRAY[250],
     justifyContent: 'flex-end',
-    paddingBottom: 4,
+    paddingBottom: SPACING.xs,
   },
   headerBottomFrame: {
     flexDirection: 'row',
@@ -69,23 +71,23 @@ const styles = StyleSheet.create({
     // Remove height constraint to let it scale naturally
   },
   locationContainer: {
-    padding: 4,
+    padding: SPACING.xs,
     justifyContent: 'center',
     alignItems: 'center',
   },
   locationInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACING.xs,
   },
   locationText: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
+    fontSize: FONT_SIZE.sm,
+    color: GRAY[900],
+    fontWeight: FONT_WEIGHT.medium,
     maxWidth: 120,
   },
   locationIconContainer: {
-    padding: 4,
+    padding: SPACING.xs,
     justifyContent: 'center',
     alignItems: 'center',
   }

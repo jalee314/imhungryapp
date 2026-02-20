@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+
 import { processImageWithEdgeFunction } from './imageProcessingService';
 import { clearUserCache } from './userService';
 

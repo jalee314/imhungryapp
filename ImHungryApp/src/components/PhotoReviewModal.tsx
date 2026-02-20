@@ -1,8 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
+    
     Modal,
     TouchableOpacity,
     Image,
@@ -12,8 +16,6 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
     useSharedValue,
@@ -22,7 +24,7 @@ import Animated, {
     withTiming,
     runOnJS,
 } from 'react-native-reanimated';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+
 import {
     getVisualIndex,
     getItemOffset,

@@ -1,6 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
+import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../ui/alf';
 
 export interface RowCardData {
   id: string;
@@ -45,23 +47,23 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             <View style={styles.frame}>
               <Image source={data.image} style={styles.image} />
             </View>
-            
+
             <View style={styles.textFrame}>
               <View style={styles.dealTitle}>
                 <Text style={[styles.titleText, styles.exploreTitle]} numberOfLines={2}>
                   {data.title}
                 </Text>
               </View>
-              
+
               <View style={styles.dealDetails}>
                 <Text style={[styles.subtitleText, styles.exploreSubtitle]}>
                   Posted {data.postedDate} • {data.expiresIn} • {data.views} views
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#666" />
+              <Ionicons name="chevron-forward" size={16} color={GRAY[600]} />
             </View>
           </View>
         );
@@ -72,23 +74,23 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             <View style={styles.frame}>
               <Image source={data.image} style={styles.image} />
             </View>
-            
+
             <View style={styles.textFrame}>
               <View style={styles.dealTitle}>
                 <Text style={[styles.titleText, styles.restTitle]} numberOfLines={2}>
                   {data.title}
                 </Text>
               </View>
-              
+
               <View style={styles.dealDetails}>
                 <Text style={[styles.subtitleText, styles.restSubtitle]}>
                   {data.distance} • {data.dealCount} Deals
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#000000" />
+              <Ionicons name="chevron-forward" size={16} color={STATIC.black} />
             </View>
           </View>
         );
@@ -99,7 +101,7 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
             <View style={styles.frame}>
               <Image source={data.image} style={styles.image} />
             </View>
-            
+
             <View style={styles.favoritesTextFrame}>
               <Text style={[styles.titleText, styles.favoritesTitle]} numberOfLines={2}>
                 {data.title}
@@ -108,9 +110,9 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
                 {data.subtitle}
               </Text>
             </View>
-            
+
             <View style={styles.arrow}>
-              <Ionicons name="chevron-forward" size={16} color="#000000" />
+              <Ionicons name="chevron-forward" size={16} color={STATIC.black} />
             </View>
           </View>
         );
@@ -121,8 +123,8 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
   };
 
   return (
-    <TouchableOpacity 
-      style={[styles.rowCard, styles[variant], style]} 
+    <TouchableOpacity
+      style={[styles.rowCard, styles[variant], style]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
@@ -133,8 +135,8 @@ const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, 
 
 const styles = StyleSheet.create({
   rowCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: STATIC.white,
+    borderRadius: RADIUS.lg,
     padding: 8,
     marginHorizontal: 12, // Further reduced to better match Figma design
     marginVertical: 4,
@@ -174,49 +176,49 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   titleText: {
-    color: '#000000',
+    color: STATIC.black,
     letterSpacing: -0.35,
     lineHeight: 17,
   },
   exploreTitle: {
     fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   restTitle: {
     fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   favoritesTitle: {
     fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   dealDetails: {
     alignSelf: 'stretch',
   },
   subtitleText: {
-    color: '#666666',
+    color: GRAY[600],
   },
   exploreSubtitle: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '400',
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.regular,
     letterSpacing: 0,
     lineHeight: 16,
   },
   restSubtitle: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '400',
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.regular,
     letterSpacing: 0,
     lineHeight: 16,
   },
   favoritesSubtitle: {
     fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: '400',
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.regular,
     letterSpacing: 0,
     lineHeight: 16,
   },
@@ -228,7 +230,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     minWidth: 20, // Ensure arrow has consistent width
   },
-  
+
   // Variant-specific styles
   'explore-deal-card': {
     height: 96,
@@ -257,7 +259,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: GRAY[150],
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 6,
@@ -266,7 +268,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: '400',
-    color: '#888888',
+    color: GRAY[475],
   },
 });
 

@@ -1,0 +1,246 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Favorites State Snapshots Empty State should snapshot empty favorites state 1`] = `
+{
+  "activeTab": "deals",
+  "deals": [],
+  "dealsLoading": false,
+  "hasLoadedInitialData": true,
+  "refreshing": false,
+  "restaurants": [],
+  "restaurantsLoading": false,
+}
+`;
+
+exports[`Favorites State Snapshots Loading State should snapshot loading favorites state 1`] = `
+{
+  "activeTab": "deals",
+  "deals": [],
+  "dealsLoading": true,
+  "hasLoadedInitialData": false,
+  "refreshing": false,
+  "restaurants": [],
+  "restaurantsLoading": false,
+}
+`;
+
+exports[`Favorites State Snapshots Optimistic Update State should snapshot unfavorited items tracking 1`] = `
+{
+  "newlyFavoritedDeals": [
+    {
+      "id": "new-deal-1",
+      "title": "Just Favorited",
+    },
+  ],
+  "unfavoritedItems": [
+    "deal-1",
+    "deal-3",
+  ],
+  "unfavoritedRestaurants": [
+    "rest-2",
+  ],
+}
+`;
+
+exports[`Favorites State Snapshots Populated State should snapshot deals tab state 1`] = `
+{
+  "activeTab": "deals",
+  "deals": [
+    {
+      "id": "fav-deal-1",
+      "isFavorited": true,
+      "restaurant": "Pizza Palace",
+      "title": "Favorite Pizza Deal",
+      "userDisplayName": "Pizza Lover",
+      "userId": "author-1",
+      "votes": 52,
+    },
+    {
+      "id": "fav-deal-2",
+      "isFavorited": true,
+      "restaurant": "Burger Barn",
+      "title": "Favorite Burger Deal",
+      "userDisplayName": "Burger Fan",
+      "userId": "author-2",
+      "votes": 38,
+    },
+  ],
+  "dealsLoading": false,
+  "hasLoadedInitialData": true,
+  "refreshing": false,
+  "restaurants": [],
+  "restaurantsLoading": false,
+}
+`;
+
+exports[`Favorites State Snapshots Populated State should snapshot restaurants tab state 1`] = `
+{
+  "activeTab": "restaurants",
+  "deals": [],
+  "dealsLoading": false,
+  "hasLoadedInitialData": true,
+  "refreshing": false,
+  "restaurants": [
+    {
+      "address": "123 Pizza St",
+      "dealCount": 5,
+      "distance": "0.5 mi",
+      "id": "fav-rest-1",
+      "name": "Pizza Palace",
+    },
+    {
+      "address": "456 Burger Ave",
+      "dealCount": 3,
+      "distance": "1.2 mi",
+      "id": "fav-rest-2",
+      "name": "Burger Barn",
+    },
+  ],
+  "restaurantsLoading": false,
+}
+`;
+
+exports[`Profile State Snapshots Error State should snapshot posts error state 1`] = `
+{
+  "hasData": false,
+  "postsError": "Failed to load posts. Please try again.",
+  "postsInitialized": true,
+  "postsLoading": false,
+  "profile": {
+    "display_name": "User",
+    "id": "user-1",
+  },
+  "userPosts": [],
+}
+`;
+
+exports[`Profile State Snapshots Loading State should snapshot loading profile state 1`] = `
+{
+  "activeTab": "posts",
+  "dealCount": 0,
+  "displayName": "",
+  "hasData": false,
+  "isViewingOtherUser": false,
+  "joinDateText": "",
+  "locationCity": "",
+  "photoUrl": null,
+  "postsError": null,
+  "postsInitialized": false,
+  "postsLoading": true,
+  "profile": null,
+  "showDeleteModal": false,
+  "showLogoutModal": false,
+  "userPosts": [],
+}
+`;
+
+exports[`Profile State Snapshots Modal States should snapshot delete modal open state 1`] = `
+{
+  "showDeleteModal": true,
+  "showLogoutModal": false,
+}
+`;
+
+exports[`Profile State Snapshots Modal States should snapshot logout modal open state 1`] = `
+{
+  "showDeleteModal": false,
+  "showLogoutModal": true,
+}
+`;
+
+exports[`Profile State Snapshots Other User Profile State should snapshot viewing other user state 1`] = `
+{
+  "activeTab": "posts",
+  "dealCount": 8,
+  "displayName": "Jane Smith",
+  "hasData": true,
+  "isViewingOtherUser": true,
+  "joinDateText": "Joined March 2025",
+  "locationCity": "Los Angeles, CA",
+  "photoUrl": "https://example.com/jane.jpg",
+  "postsError": null,
+  "postsInitialized": true,
+  "postsLoading": false,
+  "profile": {
+    "city": "Los Angeles",
+    "display_name": "Jane Smith",
+    "id": "other-user-1",
+    "profile_photo": "https://example.com/jane.jpg",
+    "state": "CA",
+  },
+  "showDeleteModal": false,
+  "showLogoutModal": false,
+  "userPosts": [
+    {
+      "id": "post-1",
+      "title": "LA Burger Deal",
+      "votes": 45,
+    },
+  ],
+}
+`;
+
+exports[`Profile State Snapshots Populated State should snapshot full profile state 1`] = `
+{
+  "activeTab": "posts",
+  "dealCount": 15,
+  "displayName": "John Doe",
+  "hasData": true,
+  "isViewingOtherUser": false,
+  "joinDateText": "Joined January 2025",
+  "locationCity": "San Francisco, CA",
+  "photoUrl": "https://example.com/profile.jpg",
+  "postsError": null,
+  "postsInitialized": true,
+  "postsLoading": false,
+  "profile": {
+    "bio": "Food enthusiast and deal hunter",
+    "city": "San Francisco",
+    "created_at": "2025-01-15T10:30:00Z",
+    "display_name": "John Doe",
+    "email": "john@example.com",
+    "id": "user-profile-1",
+    "profile_photo": "https://example.com/profile.jpg",
+    "state": "CA",
+  },
+  "showDeleteModal": false,
+  "showLogoutModal": false,
+  "userPosts": [
+    {
+      "id": "post-1",
+      "isDownvoted": false,
+      "isFavorited": true,
+      "isUpvoted": false,
+      "restaurant": "Taco Town",
+      "timeAgo": "1d ago",
+      "title": "Amazing Taco Deal",
+      "votes": 32,
+    },
+    {
+      "id": "post-2",
+      "isDownvoted": false,
+      "isFavorited": false,
+      "isUpvoted": true,
+      "restaurant": "Pizza Place",
+      "timeAgo": "3d ago",
+      "title": "Pizza Happy Hour",
+      "votes": 18,
+    },
+  ],
+}
+`;
+
+exports[`Profile State Snapshots Populated State should snapshot settings tab state 1`] = `
+{
+  "activeTab": "settings",
+  "postsInitialized": true,
+  "postsLoading": false,
+  "profile": {
+    "display_name": "John Doe",
+    "email": "john@example.com",
+    "id": "user-profile-1",
+  },
+  "showDeleteModal": false,
+  "showLogoutModal": false,
+}
+`;

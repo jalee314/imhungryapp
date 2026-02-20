@@ -1,6 +1,16 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+/**
+ * ScreenHeader
+ * 
+ * A reusable screen header component with back button, title, and optional right action.
+ * Migrated to use ALF primitives (PR-027).
+ */
+
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+
+import { SPACING, GRAY, STATIC } from '../../ui/alf/tokens';
+import { Box, Text } from '../../ui/primitives';
 
 type RightConfig = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -24,71 +34,59 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   titleStyle,
 }) => {
   const renderRight = () => {
-    if (!right) return <View style={styles.sidePlaceholder} />;
+    if (!right) return <Box w={40} h={32} />;
     if (React.isValidElement(right)) return right;
     const cfg = right as RightConfig;
     return (
       <TouchableOpacity onPress={cfg.onPress} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Ionicons name={cfg.icon} size={22} color={cfg.color || '#000'} />
+        <Ionicons name={cfg.icon} size={22} color={cfg.color || GRAY[900]} />
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.header, containerStyle]}>
+    <Box
+      row
+      justify="space-between"
+      px="lg"
+      py="md"
+      bg="background"
+      borderColor="border"
+      style={[styles.headerBorder, containerStyle]}
+    >
       {onBack ? (
         <TouchableOpacity onPress={onBack} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="arrow-back" size={22} color="#000" />
+          <Ionicons name="arrow-back" size={22} color={GRAY[900]} />
         </TouchableOpacity>
       ) : (
-        <View style={styles.sidePlaceholder} />
+        <Box w={40} h={32} />
       )}
 
-      <View style={styles.titleContainer}>
+      <Box flex={1} px="sm" align="center">
         {typeof title === 'string' ? (
-          <Text style={[styles.title, titleStyle]} numberOfLines={1}>
+          <Text size="lg" weight="bold" color="text" numberOfLines={1} style={titleStyle}>
             {title}
           </Text>
         ) : (
           title
         )}
-      </View>
+      </Box>
 
       {renderRight()}
-    </View>
+    </Box>
   );
 };
 
+// Minimal legacy styles for properties not yet in primitives
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFF',
+  headerBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
   iconButton: {
     width: 40,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sidePlaceholder: {
-    width: 40,
-    height: 32,
-  },
-  titleContainer: {
-    flex: 1,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
   },
 });
 

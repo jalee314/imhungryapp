@@ -1,0 +1,373 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`API Payload Contract Tests addDealImages payload contracts should snapshot deal_images insert payload for adding images: add_deal_images_payloads 1`] = `
+[
+  {
+    "data": {
+      "deal_template_id": "template-for-images",
+      "display_order": 1,
+      "image_metadata_id": "uploaded-image-meta-1",
+      "is_thumbnail": false,
+    },
+    "operation": "insert",
+    "table": "deal_images",
+  },
+  {
+    "data": {
+      "deal_template_id": "template-for-images",
+      "display_order": 2,
+      "image_metadata_id": "uploaded-image-meta-2",
+      "is_thumbnail": false,
+    },
+    "operation": "insert",
+    "table": "deal_images",
+  },
+]
+`;
+
+exports[`API Payload Contract Tests createDeal payload contracts should handle multiple images with correct order and thumbnail flag: deal_images_multi_insert_payload 1`] = `
+[
+  {
+    "deal_template_id": "created-template-123",
+    "display_order": 0,
+    "image_metadata_id": "uploaded-image-meta-1",
+    "is_thumbnail": false,
+  },
+  {
+    "deal_template_id": "created-template-123",
+    "display_order": 1,
+    "image_metadata_id": "uploaded-image-meta-2",
+    "is_thumbnail": true,
+  },
+  {
+    "deal_template_id": "created-template-123",
+    "display_order": 2,
+    "image_metadata_id": "uploaded-image-meta-3",
+    "is_thumbnail": false,
+  },
+]
+`;
+
+exports[`API Payload Contract Tests createDeal payload contracts should snapshot deal_images insert payload structure: deal_images_insert_payload 1`] = `
+[
+  {
+    "deal_template_id": "created-template-123",
+    "display_order": 0,
+    "image_metadata_id": "uploaded-image-meta-1",
+    "is_thumbnail": true,
+  },
+]
+`;
+
+exports[`API Payload Contract Tests createDeal payload contracts should snapshot deal_template insert payload structure: deal_template_insert_payload 1`] = `
+{
+  "category_id": "category-contract-456",
+  "cuisine_id": "cuisine-contract-789",
+  "description": "Testing payload structure",
+  "image_metadata_id": "uploaded-image-meta-1",
+  "is_anonymous": false,
+  "restaurant_id": "restaurant-contract-123",
+  "source_type": "community_uploaded",
+  "title": "Contract Test Deal",
+  "user_id": "test-user-id-123",
+}
+`;
+
+exports[`API Payload Contract Tests cross-module contract consistency should use consistent field names in payloads: field_contracts 1`] = `
+{
+  "deal_images": [
+    "deal_template_id",
+    "display_order",
+    "image_metadata_id",
+    "is_thumbnail",
+  ],
+  "deal_instance": [
+    "end_date",
+    "is_anonymous",
+  ],
+  "deal_template": [
+    "category_id",
+    "cuisine_id",
+    "description",
+    "image_metadata_id",
+    "is_anonymous",
+    "restaurant_id",
+    "source_type",
+    "title",
+    "user_id",
+  ],
+}
+`;
+
+exports[`API Payload Contract Tests cross-module contract consistency should use consistent table names across all operations: tables_accessed 1`] = `
+[
+  "deal_images",
+  "deal_template",
+]
+`;
+
+exports[`API Payload Contract Tests deleteDeal payload contracts should snapshot all delete operations in order: complete_delete_sequence 1`] = `
+[
+  {
+    "filters": {
+      "deal_id": "deal-complete-delete",
+    },
+    "operation": "delete",
+    "table": "deal_instance",
+  },
+  {
+    "filters": {
+      "deal_template_id": "template-to-delete",
+    },
+    "operation": "delete",
+    "table": "deal_images",
+  },
+  {
+    "filters": {
+      "template_id": "template-to-delete",
+    },
+    "operation": "delete",
+    "table": "deal_template",
+  },
+  {
+    "filters": {
+      "image_metadata_id": [
+        "primary-img-meta",
+        "img-meta-1",
+        "img-meta-2",
+      ],
+    },
+    "operation": "delete",
+    "table": "image_metadata",
+  },
+]
+`;
+
+exports[`API Payload Contract Tests deleteDeal payload contracts should snapshot deal_images delete filter: deal_images_delete_filters 1`] = `
+{
+  "deal_template_id": "template-to-delete",
+}
+`;
+
+exports[`API Payload Contract Tests deleteDeal payload contracts should snapshot deal_instance delete filter: deal_instance_delete_filters 1`] = `
+{
+  "deal_id": "deal-to-delete",
+}
+`;
+
+exports[`API Payload Contract Tests deleteDeal payload contracts should snapshot deal_template delete filter: deal_template_delete_filters 1`] = `
+{
+  "template_id": "template-to-delete",
+}
+`;
+
+exports[`API Payload Contract Tests deleteDeal payload contracts should snapshot image_metadata bulk delete: image_metadata_delete_filters 1`] = `
+{
+  "image_metadata_id": [
+    "primary-img-meta",
+    "img-meta-1",
+    "img-meta-2",
+  ],
+}
+`;
+
+exports[`API Payload Contract Tests removeDealImage payload contracts should snapshot all remove image operations: complete_remove_image_sequence 1`] = `
+[
+  {
+    "filters": {
+      "deal_template_id": "template-remove-img",
+      "image_metadata_id": "img-meta-id",
+    },
+    "operation": "delete",
+    "table": "deal_images",
+  },
+  {
+    "filters": {
+      "image_metadata_id": "img-meta-id",
+    },
+    "operation": "delete",
+    "table": "image_metadata",
+  },
+]
+`;
+
+exports[`API Payload Contract Tests removeDealImage payload contracts should snapshot deal_images delete filter: remove_deal_image_filters 1`] = `
+{
+  "deal_template_id": "template-remove-img",
+  "image_metadata_id": "img-to-remove",
+}
+`;
+
+exports[`API Payload Contract Tests removeDealImage payload contracts should snapshot image_metadata delete for cleanup: remove_image_metadata_filters 1`] = `
+{
+  "image_metadata_id": "img-to-remove",
+}
+`;
+
+exports[`API Payload Contract Tests setDealThumbnail payload contracts should snapshot complete thumbnail change sequence: complete_thumbnail_sequence 1`] = `
+[
+  {
+    "data": {
+      "is_thumbnail": false,
+    },
+    "filters": {
+      "deal_template_id": "template-thumbnail",
+    },
+    "operation": "update",
+    "table": "deal_images",
+  },
+  {
+    "data": {
+      "is_thumbnail": true,
+    },
+    "filters": {
+      "deal_template_id": "template-thumbnail",
+      "image_metadata_id": "selected-img-id",
+    },
+    "operation": "update",
+    "table": "deal_images",
+  },
+  {
+    "data": {
+      "image_metadata_id": "selected-img-id",
+    },
+    "filters": {
+      "template_id": "template-thumbnail",
+    },
+    "operation": "update",
+    "table": "deal_template",
+  },
+]
+`;
+
+exports[`API Payload Contract Tests setDealThumbnail payload contracts should snapshot deal_images clear thumbnail update: clear_thumbnail_payload 1`] = `
+{
+  "is_thumbnail": false,
+}
+`;
+
+exports[`API Payload Contract Tests setDealThumbnail payload contracts should snapshot deal_images set thumbnail update: set_thumbnail_filters 1`] = `
+{
+  "deal_template_id": "template-thumbnail",
+  "image_metadata_id": "new-thumbnail-img",
+}
+`;
+
+exports[`API Payload Contract Tests setDealThumbnail payload contracts should snapshot deal_images set thumbnail update: set_thumbnail_payload 1`] = `
+{
+  "is_thumbnail": true,
+}
+`;
+
+exports[`API Payload Contract Tests setDealThumbnail payload contracts should snapshot deal_template primary image update: template_primary_image_update 1`] = `
+{
+  "image_metadata_id": "new-thumbnail-img",
+}
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should handle null expiration date (Unknown): deal_instance_null_expiration_payload 1`] = `
+{
+  "end_date": null,
+}
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should snapshot combined update payload: combined_update_payloads 1`] = `
+[
+  {
+    "data": {
+      "description": "New Description",
+      "title": "New Title",
+    },
+    "filters": {
+      "template_id": "template-to-update",
+    },
+    "operation": "update",
+    "table": "deal_template",
+  },
+  {
+    "data": {
+      "end_date": "2026-05-01",
+      "is_anonymous": false,
+    },
+    "filters": {
+      "deal_id": "deal-456",
+    },
+    "operation": "update",
+    "table": "deal_instance",
+  },
+]
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should snapshot deal_instance update payload for anonymous toggle: deal_instance_anonymous_update_payload 1`] = `
+{
+  "is_anonymous": true,
+}
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should snapshot deal_instance update payload for expiration change: deal_instance_expiration_update_payload 1`] = `
+{
+  "end_date": "2026-04-15T00:00:00Z",
+}
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should snapshot deal_instance update payload for expiration change: deal_instance_update_filters 1`] = `
+{
+  "deal_id": "deal-123",
+}
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should snapshot deal_template update payload for description change: deal_template_description_update_payload 1`] = `
+{
+  "description": "Updated Description",
+}
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should snapshot deal_template update payload for title change: deal_template_title_update_payload 1`] = `
+{
+  "title": "Updated Title",
+}
+`;
+
+exports[`API Payload Contract Tests updateDealFields payload contracts should snapshot deal_template update payload for title change: deal_template_update_filters 1`] = `
+{
+  "template_id": "template-to-update",
+}
+`;
+
+exports[`API Payload Contract Tests updateDealImageOrder payload contracts should snapshot deal_images order updates: image_order_update_payloads 1`] = `
+[
+  {
+    "data": {
+      "display_order": 0,
+    },
+    "filters": {
+      "deal_template_id": "template-reorder",
+      "image_metadata_id": "img-a",
+    },
+    "operation": "update",
+    "table": "deal_images",
+  },
+  {
+    "data": {
+      "display_order": 1,
+    },
+    "filters": {
+      "deal_template_id": "template-reorder",
+      "image_metadata_id": "img-b",
+    },
+    "operation": "update",
+    "table": "deal_images",
+  },
+  {
+    "data": {
+      "display_order": 2,
+    },
+    "filters": {
+      "deal_template_id": "template-reorder",
+      "image_metadata_id": "img-c",
+    },
+    "operation": "update",
+    "table": "deal_images",
+  },
+]
+`;

@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import { Deal } from '../components/DealCard';
+import type { Deal } from '../types/deal';
 
 export const feedService = {
   // Fetch deals with uploader user information
@@ -98,16 +98,17 @@ export const feedService = {
         return null;
       }
 
-      const user = data.deal_template.user;
+      const template = data.deal_template as any;
+      const user = template.user;
       const variants = user?.image_metadata?.variants as any;
       const photoUrl = variants?.thumbnail || null;
 
       return {
         id: data.deal_id.toString(),
-        title: data.deal_template.title,
-        restaurant: data.deal_template.restaurant.name,
-        details: data.deal_template.description || '',
-        image: data.deal_template.image_url || require('../../img/default-rest.png'),
+        title: template.title,
+        restaurant: template.restaurant.name,
+        details: template.description || '',
+        image: template.image_url || require('../../img/default-rest.png'),
         votes: 0,
         isUpvoted: false,
         isDownvoted: false,
@@ -115,7 +116,7 @@ export const feedService = {
         timeAgo: '1h ago',
         author: user?.display_name || 'Anonymous',
         milesAway: '2mi',
-        uploaderUserId: data.deal_template.user_id,
+        uploaderUserId: template.user_id,
         userProfilePhoto: photoUrl,
         userDisplayName: user?.display_name || 'Anonymous',
       };

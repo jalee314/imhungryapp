@@ -1,7 +1,9 @@
-import { create } from 'zustand';
-import { getCurrentUserLocation, checkLocationPermission } from '../services/locationService';
-import { useAuthStore } from './AuthStore';
 import React from 'react';
+import { create } from 'zustand';
+
+import { getCurrentUserLocation, checkLocationPermission } from '../services/locationService';
+
+import { useAuthStore } from './AuthStore';
 
 type Coordinates = { lat: number; lng: number };
 

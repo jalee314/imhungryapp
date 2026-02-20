@@ -1,16 +1,18 @@
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import { useDataCache } from '../../hooks/useDataCache';
+import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS } from '../../ui/alf';
 
 export default function CuisineEdit() {
   const navigation = useNavigation();
   const route = useRoute();
   const { cuisines: cachedCuisines, loading: cuisinesLoading } = useDataCache();
   const initialCuisines = (route.params as any)?.selectedCuisines || [];
-  
+
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>(initialCuisines);
 
   const toggleCuisine = (cuisine: string) => {
@@ -30,11 +32,11 @@ export default function CuisineEdit() {
     // Pass the updated cuisines back to the previous screen (ProfileEdit)
     console.log('CuisineEdit: Navigating back with cuisines:', selectedCuisines);
     console.log('CuisineEdit: Profile param:', (route.params as any)?.profile);
-    
+
     // Get the navigation state to find the ProfileEdit route key
     const state = navigation.getState();
-    const profileEditRoute = state.routes.find((r: any) => r.name === 'ProfileEdit');
-    
+    const profileEditRoute = state?.routes.find((r: any) => r.name === 'ProfileEdit');
+
     if (profileEditRoute?.key) {
       // Set params on ProfileEdit screen before going back
       navigation.dispatch({
@@ -45,7 +47,7 @@ export default function CuisineEdit() {
         source: profileEditRoute.key,
       });
     }
-    
+
     // Use goBack for proper back animation (slides from left)
     navigation.goBack();
   };
@@ -59,7 +61,7 @@ export default function CuisineEdit() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack}>
-          <MaterialCommunityIcons name="chevron-left" size={28} color="#000000" />
+          <MaterialCommunityIcons name="chevron-left" size={28} color={STATIC.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Favorite Cuisines</Text>
         <View style={styles.headerSpacer} />
@@ -108,7 +110,7 @@ export default function CuisineEdit() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   header: {
     flexDirection: 'row',
@@ -116,12 +118,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: STATIC.white,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#000000',
+    color: STATIC.black,
     fontFamily: 'Inter',
   },
   headerSpacer: {
@@ -134,7 +136,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
+    color: GRAY[600],
     marginBottom: 24,
     textAlign: 'center',
     fontFamily: 'Inter',
@@ -147,29 +149,29 @@ const styles = StyleSheet.create({
   cuisineButton: {
     width: '48%',
     height: 48,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   cuisineButtonSelected: {
-    backgroundColor: '#FF8C4C',
-    borderColor: '#FF8C4C',
+    backgroundColor: BRAND.primary,
+    borderColor: BRAND.primary,
   },
   cuisineButtonText: {
-    color: '#000',
+    color: STATIC.black,
     fontSize: 16,
     fontWeight: '500',
     fontFamily: 'Inter',
   },
   cuisineButtonTextSelected: {
-    color: '#FFFFFF',
+    color: STATIC.white,
   },
   skeletonButton: {
     width: '48%',
     height: 48,
-    backgroundColor: '#E1E9EE',
+    backgroundColor: GRAY[300],
     borderRadius: 12,
     marginBottom: 12,
   },

@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -9,11 +11,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { adminService } from '../../services/adminService';
+
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import { useAdmin } from '../../hooks/useAdmin';
 import { useAuth } from '../../hooks/useAuth';
-import { Ionicons } from '@expo/vector-icons';
+import { adminService } from '../../services/adminService';
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 const AdminLoginScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -30,17 +33,17 @@ const AdminLoginScreen: React.FC = () => {
     }
 
     setLoading(true);
-    
+
     // Enter admin mode BEFORE signing in to prevent flashing to AppStack
     enterAdminMode();
-    
+
     try {
       // Sign in via centralized auth action
       await signIn(email, password);
 
       // Check if user is admin
       const isAdmin = await adminService.isAdmin();
-      
+
       if (!isAdmin) {
         // Not an admin - sign out and exit admin mode
         await signOut();
@@ -67,17 +70,11 @@ const AdminLoginScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Admin Login</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader title="Admin Login" onBack={handleCancel} />
 
       <View style={styles.content}>
         <View style={styles.lockIcon}>
-          <Ionicons name="shield-checkmark" size={60} color="#FFA05C" />
+          <Ionicons name="shield-checkmark" size={60} color={BRAND.accent} />
         </View>
 
         <Text style={styles.subtitle}>Authorized Access Only</Text>
@@ -89,7 +86,7 @@ const AdminLoginScreen: React.FC = () => {
             value={email}
             onChangeText={setEmail}
             placeholder="admin@imhungri.com"
-            placeholderTextColor="#999"
+            placeholderTextColor={GRAY[475]}
             autoCapitalize="none"
             keyboardType="email-address"
           />
@@ -102,7 +99,7 @@ const AdminLoginScreen: React.FC = () => {
             value={password}
             onChangeText={setPassword}
             placeholder="Enter password"
-            placeholderTextColor="#999"
+            placeholderTextColor={GRAY[475]}
             secureTextEntry
           />
         </View>
@@ -113,7 +110,7 @@ const AdminLoginScreen: React.FC = () => {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#FFF" />
+            <ActivityIndicator color={STATIC.white} />
           ) : (
             <Text style={styles.loginButtonText}>Login</Text>
           )}
@@ -126,29 +123,9 @@ const AdminLoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: GRAY[100],
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    width: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
-  },
-  placeholder: {
-    width: 40,
-  },
+
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -161,7 +138,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#666',
+    color: GRAY[600],
     marginBottom: 32,
   },
   inputContainer: {
@@ -170,21 +147,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: GRAY[800],
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: STATIC.white,
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: GRAY[250],
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#000',
+    color: STATIC.black,
   },
   loginButton: {
-    backgroundColor: '#FFA05C',
+    backgroundColor: BRAND.accent,
     borderRadius: 8,
     paddingVertical: 16,
     alignItems: 'center',
@@ -194,7 +171,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   loginButtonText: {
-    color: '#FFF',
+    color: STATIC.white,
     fontSize: 16,
     fontWeight: '700',
   },
