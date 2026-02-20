@@ -1,9 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '../../lib/supabase';
+import { logger } from '../utils/logger';
+
+import type { ProfileRecord } from './userProfileService';
+
+interface FreshProfileData {
+  profile: ProfileRecord;
+  photoUrl: string | null;
+  dealCount: number;
+}
 
 interface CachedProfileData {
-  profile: any;
+  profile: ProfileRecord;
   photoUrl: string | null;
   dealCount: number;
   timestamp: number;
@@ -13,20 +22,20 @@ const PROFILE_CACHE_KEY = 'cached_profile_data';
 const PHOTO_URL_CACHE_KEY = 'cached_photo_urls';
 
 export class ProfileCacheService {
-  private static freshInFlight: Promise<{ profile: any; photoUrl: string | null; dealCount: number } | null> | null = null;
+  private static freshInFlight: Promise<FreshProfileData | null> | null = null;
   // Show cached data immediately (no expiry check)
   static async getCachedProfile(): Promise<CachedProfileData | null> {
     try {
       const cached = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
       return cached ? JSON.parse(cached) : null;
     } catch (error) {
-      console.error('Error getting cached profile:', error);
+      logger.error('Error getting cached profile:', error);
       return null;
     }
   }
 
   // Cache profile data persistently
-  static async setCachedProfile(profile: any, photoUrl: string | null, dealCount: number): Promise<void> {
+  static async setCachedProfile(profile: ProfileRecord, photoUrl: string | null, dealCount: number): Promise<void> {
     try {
       const cacheData: CachedProfileData = {
         profile,
@@ -39,12 +48,12 @@ export class ProfileCacheService {
       // Also cache photo URL separately for quick access
       if (photoUrl) {
         const photoCache = await AsyncStorage.getItem(PHOTO_URL_CACHE_KEY) || '{}';
-        const photoCacheObj = JSON.parse(photoCache);
+        const photoCacheObj = JSON.parse(photoCache) as Record<string, string>;
         photoCacheObj[profile.user_id] = photoUrl;
         await AsyncStorage.setItem(PHOTO_URL_CACHE_KEY, JSON.stringify(photoCacheObj));
       }
     } catch (error) {
-      console.error('Error caching profile:', error);
+      logger.error('Error caching profile:', error);
     }
   }
 
@@ -53,11 +62,11 @@ export class ProfileCacheService {
     try {
       const photoCache = await AsyncStorage.getItem(PHOTO_URL_CACHE_KEY);
       if (photoCache) {
-        const photoCacheObj = JSON.parse(photoCache);
+        const photoCacheObj = JSON.parse(photoCache) as Record<string, string>;
         return photoCacheObj[userId] || null;
       }
     } catch (error) {
-      console.error('Error getting cached photo URL:', error);
+      logger.error('Error getting cached photo URL:', error);
     }
     return null;
   }
@@ -73,13 +82,13 @@ export class ProfileCacheService {
       if (error) throw error;
       return count || 0;  // Use 'count' instead of 'data.length'
     } catch (error) {
-      console.error('Error fetching deal count:', error);
+      logger.error('Error fetching deal count:', error);
       return 0;
     }
   }
 
   // Fetch fresh data in background (Instagram-style)
-  static async fetchFreshProfile(): Promise<{ profile: any; photoUrl: string | null; dealCount: number } | null> {
+  static async fetchFreshProfile(): Promise<FreshProfileData | null> {
     // De-dupe concurrent calls
     if (this.freshInFlight) return this.freshInFlight;
     this.freshInFlight = (async () => {
@@ -103,11 +112,11 @@ export class ProfileCacheService {
       ]);
 
       if (profileResult.error) throw profileResult.error;
-      const profile = profileResult.data;
+      const profile = profileResult.data as ProfileRecord;
 
       // Add validation to ensure we have the right data structure
       if (!profile.first_name && !profile.last_name && !profile.display_name) {
-        console.error('Invalid profile data structure:', profile);
+        logger.error('Invalid profile data structure:', profile);
         throw new Error('Invalid profile data received from database');
       }
 
@@ -119,7 +128,7 @@ export class ProfileCacheService {
         photoUrl = profile.image_metadata.variants.medium 
           || profile.image_metadata.variants.small
           || profile.image_metadata.variants.thumbnail;
-        console.log('✅ Using Cloudinary photo URL:', photoUrl);
+        logger.info('✅ Using Cloudinary photo URL:', photoUrl);
       } else if (profile.profile_photo && profile.profile_photo !== 'default_avatar.png') {
         // Fallback to old Supabase Storage for legacy photos
         const photoPath = profile.profile_photo.startsWith('public/') 
@@ -131,12 +140,12 @@ export class ProfileCacheService {
           .getPublicUrl(photoPath);
         
         photoUrl = urlData.publicUrl;
-        console.log('⚠️ Using legacy Supabase Storage URL:', photoUrl);
+        logger.info('⚠️ Using legacy Supabase Storage URL:', photoUrl);
       }
 
       return { profile, photoUrl, dealCount };
     } catch (error) {
-      console.error('Error fetching fresh profile:', error);
+      logger.error('Error fetching fresh profile:', error);
       return null;
     } finally {
       this.freshInFlight = null;
@@ -150,12 +159,12 @@ export class ProfileCacheService {
     try {
       await AsyncStorage.multiRemove([PROFILE_CACHE_KEY, PHOTO_URL_CACHE_KEY]);
     } catch (error) {
-      console.error('Error clearing profile cache:', error);
+      logger.error('Error clearing profile cache:', error);
     }
   }
 
   // Force refresh cache (when user makes profile changes)
-  static async forceRefresh(): Promise<{ profile: any; photoUrl: string | null; dealCount: number } | null> {
+  static async forceRefresh(): Promise<FreshProfileData | null> {
     const freshData = await this.fetchFreshProfile();
     if (freshData) {
       await this.setCachedProfile(freshData.profile, freshData.photoUrl, freshData.dealCount);

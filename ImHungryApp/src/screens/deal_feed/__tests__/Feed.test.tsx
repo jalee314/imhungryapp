@@ -11,31 +11,28 @@
  */
 
 import { NavigationContainer } from '@react-navigation/native';
+import { dealCacheService } from '@services/dealCacheService';
+import { logClick } from '@services/interactionService';
+import {
+  toggleUpvote,
+  toggleDownvote,
+  toggleFavorite,
+} from '@services/voteService';
+import { useDataCacheStore } from '@stores/DataCacheStore';
+import { useDealUpdateStore } from '@stores/DealUpdateStore';
+import { useFavoritesStore } from '@stores/FavoritesStore';
+import { useLocationStore } from '@stores/LocationStore';
 import {
   render,
   screen,
   fireEvent,
   waitFor,
-  act,
 } from '@testing-library/react-native';
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { dealCacheService } from '../../../services/dealCacheService';
-import { logClick } from '../../../services/interactionService';
-import {
-  toggleUpvote,
-  toggleDownvote,
-  toggleFavorite,
-} from '../../../services/voteService';
-import { useDataCacheStore } from '../../../stores/DataCacheStore';
-import { useDealUpdateStore } from '../../../stores/DealUpdateStore';
-import { useFavoritesStore } from '../../../stores/FavoritesStore';
-import { useLocationStore } from '../../../stores/LocationStore';
-import { mockSupabase, mockUser, configureMockAuth } from '../../../test-utils/mocks/supabaseMock';
-import type { Deal } from '../../../types/deal';
-
-// Mock @monicon/native (used by DealCard)
+const { mockSupabase, configureMockAuth } = require('../../../test-utils/mocks/supabaseMock') as typeof import('../../../test-utils/mocks/supabaseMock');
+type Deal = import('@types/deal').Deal;
 jest.mock('@monicon/native', () => ({
   Monicon: () => null,
 }));
@@ -48,7 +45,7 @@ jest.mock('../../../services/dealCacheService', () => ({
     initializeRealtime: jest.fn(),
     subscribe: jest.fn().mockImplementation(() => {
       // Always return a no-op unsubscribe function
-      return () => {};
+      return () => { };
     }),
   },
 }));
@@ -130,9 +127,6 @@ const renderFeed = () => {
 };
 
 describe('Feed Integration Tests', () => {
-  // Store cleanup function from each render
-  let cleanup: (() => void) | undefined;
-
   beforeEach(() => {
     // Configure mock auth to return a user
     configureMockAuth();
@@ -147,8 +141,8 @@ describe('Feed Integration Tests', () => {
     // Re-configure dealCacheService mocks (they get reset due to resetMocks: true)
     (dealCacheService.getDeals as jest.Mock).mockResolvedValue([]);
     (dealCacheService.getCachedDeals as jest.Mock).mockReturnValue([]);
-    (dealCacheService.subscribe as jest.Mock).mockImplementation(() => () => {});
-    
+    (dealCacheService.subscribe as jest.Mock).mockImplementation(() => () => { });
+
     // Re-configure interactionService mocks
     (logClick as jest.Mock).mockResolvedValue(undefined);
 
@@ -218,7 +212,7 @@ describe('Feed Integration Tests', () => {
       it('should show loading skeleton while fetching deals', async () => {
         // Location is set but deals are loading
         (dealCacheService.getDeals as jest.Mock).mockImplementation(
-          () => new Promise(() => {}) // Never resolves
+          () => new Promise(() => { }) // Never resolves
         );
 
         renderFeed();

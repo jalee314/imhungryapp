@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -51,11 +52,12 @@ import {
   Z_INDEX,
 } from '../../ui/alf';
 import { Box, Text, Pressable } from '../../ui/primitives';
+import { logger } from '../../utils/logger';
 
 import DealPreviewScreen from './DealPreviewScreen';
 
 // --- Debounce Helper Function ---
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number
 ): (...args: Parameters<T>) => void {
@@ -128,7 +130,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       const data = await fetchUserData();
       setUserData(data);
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      logger.error('Error fetching user data:', error);
     }
   };
 
@@ -179,19 +181,20 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       // Race against timeout
       const timeoutPromise = new Promise<null>((resolve) => {
         setTimeout(() => {
-          console.warn('getDeviceLocation: Timed out after 5 seconds');
+          logger.warn('getDeviceLocation: Timed out after 5 seconds');
           resolve(null);
         }, LOCATION_TIMEOUT_MS);
       });
 
       return await Promise.race([locationPromise, timeoutPromise]);
     } catch (error) {
-      console.error('Error getting device location:', error);
+      logger.error('Error getting device location:', error);
       return null;
     }
   };
 
   // Debounced Google Places search (when user types)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce(async (query: string) => {
       if (!query || query.trim().length < 2) {
@@ -262,12 +265,12 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           setSearchResults(transformed);
           setSearchError(null);
         }
-      } catch (error: any) {
+      } catch (error) {
         // Don't show error if search was cancelled
         if (abortController.signal.aborted || error?.message?.includes('cancelled')) {
           return;
         }
-        console.error('Search error:', error);
+        logger.error('Search error:', error);
         setSearchError('An error occurred while searching');
         setSearchResults([]);
       } finally {
@@ -308,15 +311,15 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
   const handleTakePhoto = async () => {
     try {
-      console.log('Starting camera photo process...');
+      logger.info('Starting camera photo process...');
 
       // Request camera permissions
-      console.log('Requesting camera permissions...');
+      logger.info('Requesting camera permissions...');
       const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
-      console.log('Camera permission status:', cameraStatus);
+      logger.info('Camera permission status:', cameraStatus);
 
       if (cameraStatus.status !== 'granted') {
-        console.log('Camera permission denied');
+        logger.info('Camera permission denied');
         handleCloseCameraModal();
         Alert.alert(
           'Camera Permission Required',
@@ -329,18 +332,18 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         return;
       }
 
-      console.log('Camera permission granted, launching camera...');
+      logger.info('Camera permission granted, launching camera...');
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: CAMERA.aspectRatio as [number, number],
         quality: CAMERA.quality
       });
 
-      console.log('Camera result:', result);
+      logger.info('Camera result:', result);
       handleCloseCameraModal();
 
       if (!result.canceled) {
-        console.log('Photo taken successfully:', result.assets[0].uri);
+        logger.info('Photo taken successfully:', result.assets[0].uri);
         // Append to existing photos (max 5)
         const currentUris = form.values.imageUris;
         if (currentUris.length >= IMAGES_MAX_COUNT) {
@@ -350,11 +353,11 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           setOriginalImageUris(prev => [...prev, result.assets[0].uri]);
         }
       } else {
-        console.log('User canceled camera');
+        logger.info('User canceled camera');
       }
-    } catch (error: any) {
+    } catch (error) {
       handleCloseCameraModal();
-      console.error('Camera error:', error);
+      logger.error('Camera error:', error);
       Alert.alert('Camera Error', `Unable to open camera: ${error?.message || 'Unknown error'}. Please try again.`);
     }
   };
@@ -401,14 +404,19 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
       if (selectedPlace && selectedPlace.google_place_id) {
         setIsSearchModalVisible(false);
 
+        if (selectedPlace.lat == null || selectedPlace.lng == null) {
+          Alert.alert('Location unavailable', 'Selected place is missing coordinates. Please try another result.');
+          return;
+        }
+
         try {
           // Persist to database and get restaurant_id
           const result = await getOrCreateRestaurant({
             google_place_id: selectedPlace.google_place_id,
             name: selectedPlace.name,
             address: selectedPlace.address || selectedPlace.subtext.split(' • ')[0],
-            lat: selectedPlace.lat!,
-            lng: selectedPlace.lng!,
+            lat: selectedPlace.lat,
+            lng: selectedPlace.lng,
             distance_miles: selectedPlace.distance_miles || 0,
           });
 
@@ -417,14 +425,14 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
               id: result.restaurant_id,
               name: selectedPlace.name,
               address: selectedPlace.subtext,
-              lat: selectedPlace.lat!,
-              lng: selectedPlace.lng!,
+              lat: selectedPlace.lat,
+              lng: selectedPlace.lng,
             } as FormRestaurant);
           } else {
             Alert.alert('Error', 'Failed to save restaurant. Please try again.');
           }
         } catch (error) {
-          console.error('Error saving restaurant:', error);
+          logger.error('Error saving restaurant:', error);
           Alert.alert('Error', 'An unexpected error occurred.');
         }
       }
@@ -460,7 +468,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         return;
       }
     } catch (error) {
-      console.error('Error checking profanity:', error);
+      logger.error('Error checking profanity:', error);
       // If profanity check fails, show preview anyway
     }
 
@@ -478,6 +486,11 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
     try {
       const { values } = form;
+      if (!values.restaurant?.id) {
+        Alert.alert('Validation Error', 'Please select a restaurant.');
+        setIsPosting(false);
+        return;
+      }
       // Pass all images and thumbnail index to createDeal
       const dealData = {
         title: values.title,
@@ -485,7 +498,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         imageUris: values.imageUris,
         thumbnailIndex: values.thumbnailIndex,
         expirationDate: values.expirationDate,
-        restaurantId: values.restaurant!.id,
+        restaurantId: values.restaurant.id,
         categoryId: values.categoryId,
         cuisineId: values.cuisineId,
         isAnonymous: values.isAnonymous,
@@ -532,7 +545,7 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
         Alert.alert("Error", result.error || "Failed to post deal. Please try again.");
       }
     } catch (error) {
-      console.error('Error posting deal:', error);
+      logger.error('Error posting deal:', error);
       Alert.alert("Error", "An unexpected error occurred. Please try again.");
     } finally {
       setIsPosting(false);
@@ -567,20 +580,20 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+      <SafeAreaView style={styles.safeArea}>
         <StatusBar style="dark" />
 
         {/* Show a loading indicator when data is being loaded */}
         {dataLoading && (
-          <Box absoluteFill center bg={ALPHA_COLORS.whiteOverlay70} style={{ zIndex: Z_INDEX.loader }}>
+          <Box absoluteFill center bg={ALPHA_COLORS.whiteOverlay70} style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color={BRAND.accent} />
           </Box>
         )}
 
         <KeyboardAwareScrollView
           ref={scrollViewRef}
-          style={{ flex: 1, width: '100%' }}
-          contentContainerStyle={{ paddingBottom: SPACING.xl, paddingHorizontal: SPACING.md }}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           extraScrollHeight={DIMENSION.extraScrollHeight}
           enableOnAndroid={true}
@@ -591,22 +604,16 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
           {/* Back Button and Next Button Row */}
           <Box row justify="space-between" align="center" mb="sm">
             <TouchableOpacity
-              style={{ width: DIMENSION.hitArea, height: DIMENSION.hitArea, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.circle }}
+              style={styles.backButton}
               onPress={onClose}
             >
               <Ionicons name="arrow-back" size={ICON_SIZE.sm} color={STATIC.black} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                paddingVertical: SPACING.sm,
-                paddingHorizontal: SPACING.lg,
-                backgroundColor: ALPHA_COLORS.brandPrimary80,
-                borderRadius: RADIUS.pill,
-                minWidth: DIMENSION.buttonMinWidth,
-                opacity: dataLoading ? OPACITY.disabled : OPACITY.full,
-              }}
+              style={[
+                styles.reviewButton,
+                dataLoading ? styles.reviewButtonDisabled : styles.reviewButtonEnabled,
+              ]}
               onPress={handlePreview}
               disabled={dataLoading}
             >
@@ -806,3 +813,43 @@ export default function DealCreationScreen({ visible, onClose }: DealCreationScr
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: GRAY[100],
+  },
+  loadingOverlay: {
+    zIndex: Z_INDEX.loader,
+  },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xl,
+    paddingHorizontal: SPACING.md,
+  },
+  backButton: {
+    width: DIMENSION.hitArea,
+    height: DIMENSION.hitArea,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: RADIUS.circle,
+  },
+  reviewButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    backgroundColor: ALPHA_COLORS.brandPrimary80,
+    borderRadius: RADIUS.pill,
+    minWidth: DIMENSION.buttonMinWidth,
+  },
+  reviewButtonDisabled: {
+    opacity: OPACITY.disabled,
+  },
+  reviewButtonEnabled: {
+    opacity: OPACITY.full,
+  },
+});

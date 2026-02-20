@@ -19,7 +19,6 @@ import { toggleUpvote, toggleDownvote, toggleFavorite } from '../services/voteSe
 import type { Deal } from '../types/deal';
 
 import { useFavorites } from './useFavorites';
-import type { DealInteractionState } from './useOptimisticDealInteractions';
 
 export interface UseFeedInteractionHandlersOptions {
   /** The current deals array */
@@ -33,6 +32,13 @@ export interface FeedInteractionHandlers {
   handleDownvote: (dealId: string) => void;
   handleFavorite: (dealId: string) => void;
 }
+
+const restoreDealInList = (
+  prevDeals: Deal[],
+  dealId: string,
+  originalDeal: Deal,
+): Deal[] =>
+  prevDeals.map((deal) => (deal.id === dealId ? originalDeal : deal));
 
 // ==========================================
 // Exported Calculation Utilities
@@ -126,10 +132,9 @@ export function useFeedInteractionHandlers(
       // Background database save with rollback on error
       toggleUpvote(dealId).catch((err) => {
         console.error('Failed to save upvote, reverting:', err);
-        if (originalDeal) {
-          setDeals((prevDeals) =>
-            prevDeals.map((d) => (d.id === dealId ? originalDeal! : d))
-          );
+        const originalSnapshot = originalDeal;
+        if (originalSnapshot) {
+          setDeals((prevDeals) => restoreDealInList(prevDeals, dealId, originalSnapshot));
         }
       });
     },
@@ -158,10 +163,9 @@ export function useFeedInteractionHandlers(
       // Background database save with rollback on error
       toggleDownvote(dealId).catch((err) => {
         console.error('Failed to save downvote, reverting:', err);
-        if (originalDeal) {
-          setDeals((prevDeals) =>
-            prevDeals.map((d) => (d.id === dealId ? originalDeal! : d))
-          );
+        const originalSnapshot = originalDeal;
+        if (originalSnapshot) {
+          setDeals((prevDeals) => restoreDealInList(prevDeals, dealId, originalSnapshot));
         }
       });
     },
@@ -210,9 +214,7 @@ export function useFeedInteractionHandlers(
       // 3. Background database save with rollback on error
       toggleFavorite(dealId, wasFavorited).catch((err) => {
         console.error('Failed to save favorite, reverting:', err);
-        setDeals((prevDeals) =>
-          prevDeals.map((d) => (d.id === dealId ? originalDeal : d))
-        );
+        setDeals((prevDeals) => restoreDealInList(prevDeals, dealId, originalDeal));
       });
     },
     [deals, setDeals, markAsUnfavorited, markAsFavorited]

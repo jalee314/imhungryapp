@@ -24,6 +24,19 @@ export interface DealDetailHeaderProps {
   onMore: () => void;
 }
 
+const headerBorderStyle = {
+  borderBottomWidth: BORDER_WIDTH.hairline,
+  borderBottomColor: GRAY[300],
+};
+const iconButtonStyle = { padding: SPACING.xs };
+const directionsButtonStyle = {
+  backgroundColor: ALPHA_COLORS.brandPrimary80,
+  borderRadius: RADIUS.pill,
+  paddingHorizontal: SPACING['2xl'],
+  paddingVertical: SPACING.sm,
+};
+const directionsTextStyle = { fontFamily: 'Inter-Regular', lineHeight: 15, textAlign: 'center' as const };
+
 export function DealDetailHeader({ onGoBack, onDirections, onMore }: DealDetailHeaderProps) {
   return (
     <Box
@@ -33,32 +46,27 @@ export function DealDetailHeader({ onGoBack, onDirections, onMore }: DealDetailH
       px="lg"
       py="md"
       bg={STATIC.white}
-      style={{ borderBottomWidth: BORDER_WIDTH.hairline, borderBottomColor: GRAY[300] }}
+      style={headerBorderStyle}
     >
-      <TouchableOpacity onPress={onGoBack} style={{ padding: SPACING.xs }}>
+      <TouchableOpacity onPress={onGoBack} style={iconButtonStyle}>
         <MaterialCommunityIcons name="arrow-left" size={24} color="#404040" />
       </TouchableOpacity>
 
       <Box row align="center" gap="xs">
         <TouchableOpacity
           onPress={onDirections}
-          style={{
-            backgroundColor: ALPHA_COLORS.brandPrimary80,
-            borderRadius: RADIUS.pill,
-            paddingHorizontal: SPACING['2xl'],
-            paddingVertical: SPACING.sm,
-          }}
+          style={directionsButtonStyle}
         >
           <Text
             size="sm"
             weight="regular"
             color={STATIC.black}
-            style={{ fontFamily: 'Inter-Regular', lineHeight: 15, textAlign: 'center' }}
+            style={directionsTextStyle}
           >
             Directions
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onMore} style={{ padding: SPACING.xs }}>
+        <TouchableOpacity onPress={onMore} style={iconButtonStyle}>
           <MaterialCommunityIcons name="dots-vertical" size={24} color="#404040" />
         </TouchableOpacity>
       </Box>

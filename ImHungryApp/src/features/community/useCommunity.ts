@@ -16,8 +16,77 @@ import { dealCacheService } from '../../services/dealCacheService';
 import { logClick } from '../../services/interactionService';
 import { getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
 import type { Deal } from '../../types/deal';
+import { logger } from '../../utils/logger';
 
 import type { CommunityContext } from './types';
+
+// ---------------------------------------------------------------------------
+// Local helpers
+// ---------------------------------------------------------------------------
+
+const applyUpdatedDealsFromStore = (
+  prevDeals: Deal[],
+  getUpdatedDeal: (dealId: string) => Deal | undefined,
+) => {
+  let hasChanges = false;
+  const dealsToClean: string[] = [];
+
+  const updatedDeals = prevDeals.map((deal) => {
+    const updatedDeal = getUpdatedDeal(deal.id);
+    if (!updatedDeal) return deal;
+    hasChanges = true;
+    dealsToClean.push(deal.id);
+    return updatedDeal;
+  });
+
+  return { hasChanges, dealsToClean, updatedDeals };
+};
+
+const clearDealsFromUpdateStore = (
+  dealsToClean: string[],
+  clearUpdatedDeal: (dealId: string) => void,
+) => {
+  for (const dealId of dealsToClean) {
+    clearUpdatedDeal(dealId);
+  }
+};
+
+const scheduleClearDealsFromUpdateStore = (
+  dealsToClean: string[],
+  clearUpdatedDeal: (dealId: string) => void,
+) => {
+  if (dealsToClean.length === 0) return;
+  setTimeout(() => {
+    clearDealsFromUpdateStore(dealsToClean, clearUpdatedDeal);
+  }, 0);
+};
+
+const applyVoteRealtimeUpdate = (
+  prevDeals: Deal[],
+  dealId: string,
+  voteCounts: Record<string, number>,
+): Deal[] =>
+  prevDeals.map((deal) => (
+    deal.id === dealId
+      ? {
+        ...deal,
+        votes: voteCounts[deal.id] || deal.votes,
+        isUpvoted: deal.isUpvoted,
+        isDownvoted: deal.isDownvoted,
+      }
+      : deal
+  ));
+
+const applyFavoriteRealtimeUpdate = (
+  prevDeals: Deal[],
+  dealId: string | undefined,
+  isFavorited: boolean,
+): Deal[] => {
+  if (!dealId) return prevDeals;
+  return prevDeals.map((deal) => (
+    deal.id === dealId ? { ...deal, isFavorited } : deal
+  ));
+};
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -53,7 +122,7 @@ export function useCommunity(): CommunityContext {
         setDeals(cachedDeals);
         setError(null);
       } catch (err) {
-        console.error('Error loading deals:', err);
+        logger.error('Error loading deals:', err);
         setError('Failed to load deals. Please try again.');
       } finally {
         setLoading(false);
@@ -75,28 +144,11 @@ export function useCommunity(): CommunityContext {
   useFocusEffect(
     React.useCallback(() => {
       const timeoutId = setTimeout(() => {
-        const dealsToClean: string[] = [];
-
-        setDeals(prevDeals => {
-          let hasChanges = false;
-          const updatedDeals = prevDeals.map(deal => {
-            const updatedDeal = getUpdatedDeal(deal.id);
-            if (updatedDeal) {
-              hasChanges = true;
-              dealsToClean.push(deal.id);
-              return updatedDeal;
-            }
-            return deal;
-          });
-
+        setDeals((prevDeals) => {
+          const { hasChanges, dealsToClean, updatedDeals } = applyUpdatedDealsFromStore(prevDeals, getUpdatedDeal);
+          scheduleClearDealsFromUpdateStore(dealsToClean, clearUpdatedDeal);
           return hasChanges ? updatedDeals : prevDeals;
         });
-
-        if (dealsToClean.length > 0) {
-          setTimeout(() => {
-            dealsToClean.forEach(id => clearUpdatedDeal(id));
-          }, 0);
-        }
       }, 0);
 
       return () => clearTimeout(timeoutId);
@@ -134,7 +186,7 @@ export function useCommunity(): CommunityContext {
             const interaction = payload.new;
             if (interaction.interaction_type === 'click') return;
             if (interaction.user_id === userId) {
-              console.log('⏭️ Skipping own action - optimistic update already handled it');
+              logger.info('⏭️ Skipping own action - optimistic update already handled it');
               return;
             }
 
@@ -144,29 +196,19 @@ export function useCommunity(): CommunityContext {
             recentActions.current.add(actionKey);
             setTimeout(() => recentActions.current.delete(actionKey), 1000);
 
-            console.log('⚡ Realtime interaction from another user:', interaction.interaction_type);
+            logger.info('⚡ Realtime interaction from another user:', interaction.interaction_type);
 
-            const [voteStates, voteCounts] = await Promise.all([
+            const [, voteCounts] = await Promise.all([
               getUserVoteStates([interaction.deal_id]),
               calculateVoteCounts([interaction.deal_id]),
             ]);
 
-            setDeals(prevDeals => prevDeals.map(deal => {
-              if (deal.id === interaction.deal_id) {
-                return {
-                  ...deal,
-                  votes: voteCounts[deal.id] || deal.votes,
-                  isUpvoted: deal.isUpvoted,
-                  isDownvoted: deal.isDownvoted,
-                };
-              }
-              return deal;
-            }));
+            setDeals((prevDeals) => applyVoteRealtimeUpdate(prevDeals, interaction.deal_id, voteCounts));
           },
         )
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            console.log('📡 Community Interaction channel: SUBSCRIBED');
+            logger.info('📡 Community Interaction channel: SUBSCRIBED');
           }
         });
 
@@ -180,26 +222,24 @@ export function useCommunity(): CommunityContext {
             table: 'favorite',
             filter: `user_id=eq.${userId}`,
           },
-          (payload: any) => {
+          (payload) => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
 
             const actionKey = `favorite-${dealId}`;
             if (recentActions.current.has(actionKey)) {
-              console.log('⏭️ Skipping duplicate favorite event');
+              logger.info('⏭️ Skipping duplicate favorite event');
               return;
             }
 
             const isFavorited = payload.eventType === 'INSERT';
-            console.log('⚡ Realtime favorite:', payload.eventType, dealId);
+            logger.info('⚡ Realtime favorite:', payload.eventType, dealId);
 
-            setDeals(prevDeals => prevDeals.map(deal =>
-              deal.id === dealId ? { ...deal, isFavorited } : deal,
-            ));
+            setDeals((prevDeals) => applyFavoriteRealtimeUpdate(prevDeals, dealId, isFavorited));
           },
         )
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            console.log('📡 Community Favorite channel: SUBSCRIBED');
+            logger.info('📡 Community Favorite channel: SUBSCRIBED');
           }
         });
     };
@@ -213,6 +253,7 @@ export function useCommunity(): CommunityContext {
       if (favoriteChannel.current) {
         supabase.removeChannel(favoriteChannel.current);
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       recentActions.current.clear();
     };
   }, []);
@@ -224,7 +265,7 @@ export function useCommunity(): CommunityContext {
       const freshDeals = await dealCacheService.getDeals(true);
       setDeals(freshDeals);
     } catch (err) {
-      console.error('Error refreshing deals:', err);
+      logger.error('Error refreshing deals:', err);
     } finally {
       setRefreshing(false);
     }
@@ -236,9 +277,9 @@ export function useCommunity(): CommunityContext {
     if (selectedDeal) {
       const positionInFeed = deals.findIndex(d => d.id === dealId);
       logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
-        console.error('Failed to log click:', err);
+        logger.error('Failed to log click:', err);
       });
-      (navigation as any).navigate('DealDetail', { deal: selectedDeal });
+      (navigation).navigate('DealDetail', { deal: selectedDeal });
     }
   };
 

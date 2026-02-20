@@ -8,17 +8,21 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
-import {
-  STATIC,
-  GRAY,
-  BORDER_WIDTH,
-  SPACING,
-} from '../../../ui/alf';
+import { STATIC, GRAY, BORDER_WIDTH } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 
 export interface CommunityHeaderProps {
   onGoBack: () => void;
 }
+
+const communityHeaderBorderStyle = { borderBottomWidth: BORDER_WIDTH.hairline, borderBottomColor: GRAY[250] };
+const communityHeaderBackButtonStyle = {
+  width: 40,
+  height: 24,
+  justifyContent: 'center' as const,
+  alignItems: 'flex-start' as const,
+};
+const communityHeaderTitleStyle = { fontFamily: 'Inter' };
 
 export function CommunityHeader({ onGoBack }: CommunityHeaderProps) {
   return (
@@ -26,7 +30,7 @@ export function CommunityHeader({ onGoBack }: CommunityHeaderProps) {
       bg={STATIC.white}
       h={100}
       justify="flex-end"
-      style={{ borderBottomWidth: BORDER_WIDTH.hairline, borderBottomColor: GRAY[250] }}
+      style={communityHeaderBorderStyle}
     >
       <Box
         row
@@ -36,7 +40,7 @@ export function CommunityHeader({ onGoBack }: CommunityHeaderProps) {
       >
         <TouchableOpacity
           onPress={onGoBack}
-          style={{ width: 40, height: 24, justifyContent: 'center', alignItems: 'flex-start' }}
+          style={communityHeaderBackButtonStyle}
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color={STATIC.black} />
         </TouchableOpacity>
@@ -45,9 +49,9 @@ export function CommunityHeader({ onGoBack }: CommunityHeaderProps) {
           size="xl"
           color={STATIC.black}
           textAlign="center"
-          style={{ fontFamily: 'Inter' }}
+          style={communityHeaderTitleStyle}
         >
-          <Text weight="bold" style={{ fontFamily: 'Inter' }}>Featured Deals</Text>
+          <Text weight="bold" style={communityHeaderTitleStyle}>Featured Deals</Text>
         </Text>
 
         {/* Spacer to balance the back button for centering */}

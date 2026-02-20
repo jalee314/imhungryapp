@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 
-import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../ui/alf';
 
 interface PhotoActionModalProps {
   visible: boolean;

@@ -55,7 +55,7 @@ const AdminLoginScreen: React.FC = () => {
 
       // Successfully logged in as admin
       setLoading(false);
-    } catch (error: any) {
+    } catch (error) {
       // Login failed - exit admin mode
       exitAdminMode();
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
@@ -65,7 +65,7 @@ const AdminLoginScreen: React.FC = () => {
 
   const handleCancel = () => {
     // Navigate back to login screen
-    (navigation as any).navigate('LogIn');
+    (navigation).navigate('LogIn');
   };
 
   return (

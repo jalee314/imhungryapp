@@ -6,11 +6,10 @@ import {
     View,
     Text,
     StyleSheet,
-    
+
     Modal,
     TouchableOpacity,
     Image,
-    FlatList,
     Dimensions,
     SafeAreaView,
     Alert,
@@ -34,6 +33,7 @@ import {
     GAP,
     ITEM_WIDTH,
 } from '../utils/dragHelpers';
+import { logger } from '../utils/logger';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const MAX_PHOTOS = 5;
@@ -76,13 +76,32 @@ interface CropState {
     translateY: number;
 }
 
+const fullWidthStyle = { width: '100%' as const };
+const fullHeightStyle = { height: '100%' as const };
+const cropOverlayRowBaseStyle = { flexDirection: 'row' as const };
+
+const getCropOverlayTopBottomStyle = (height: number) => ({
+    ...fullWidthStyle,
+    height,
+});
+
+const getCropOverlayRowStyle = (height: number) => ({
+    ...cropOverlayRowBaseStyle,
+    height,
+});
+
+const getCropOverlaySideStyle = (width: number) => ({
+    ...fullHeightStyle,
+    width,
+});
+
 
 const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     visible,
     photos,
     originalPhotos: propOriginalPhotos,
     initialCropRegions,
-    thumbnailIndex,
+    thumbnailIndex: _thumbnailIndex,
     onClose,
     onDone,
     onAddMore,
@@ -90,7 +109,6 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const [currentIndex, setCurrentIndex] = useState(0);
     const [localPhotos, setLocalPhotos] = useState<string[]>(photos);
     const [localOriginalPhotos, setLocalOriginalPhotos] = useState<string[]>(propOriginalPhotos || photos);
-    const flatListRef = useRef<FlatList>(null);
 
     // Per-image crop states (saved when switching images)
     const [cropStates, setCropStates] = useState<Map<number, CropState>>(new Map());
@@ -99,7 +117,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const [cropAreaHeight, setCropAreaHeight] = useState(screenHeight * 0.6); // Default fallback
     const [cropAreaWidth, setCropAreaWidth] = useState(screenWidth); // Actual crop area width
-    
+
     // Track if any changes have been made
     const [hasChanges, setHasChanges] = useState(false);
     const initialPhotosRef = useRef<string[]>([]);
@@ -148,6 +166,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             cropWidth.value = frameDims.width;
             cropHeight.value = frameDims.height;
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cropAreaHeight, cropAreaWidth]);
 
     // Draggable thumbnail state
@@ -168,11 +187,11 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         if (visible) {
             const isFirstOpen = !wasVisible.current;
             const photosWereAdded = photos.length > prevPhotosLength.current;
-            
+
             // Always update local photos to reflect prop changes
             setLocalPhotos(photos);
             setLocalOriginalPhotos(propOriginalPhotos || photos);
-            
+
             if (isFirstOpen) {
                 // Fresh modal open - reset everything
                 setCurrentIndex(0);
@@ -204,13 +223,14 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 savedTranslateX.value = 0;
                 savedTranslateY.value = 0;
             }
-            
+
             wasVisible.current = true;
             prevPhotosLength.current = photos.length;
         } else {
             wasVisible.current = false;
             prevPhotosLength.current = photos.length;
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible, photos, propOriginalPhotos]);
 
     // Load image dimensions for current image and initialize crop state from initialCropRegions if available
@@ -246,7 +266,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                         // Update shared values for worklet access
                         displayWidth.value = calcDisplayWidth;
                         displayHeight.value = calcDisplayHeight;
-                        
+
                         // Initialize crop state from initialCropRegions if available and no existing state
                         if (initialCropRegions && initialCropRegions[currentIndex] && !cropStates.has(currentIndex)) {
                             const initialState = cropRegionToInitialState(
@@ -265,7 +285,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                         }
                     },
                     (error) => {
-                        console.error('Error getting image size:', error);
+                        logger.error('Error getting image size:', error);
                     }
                 );
             } else {
@@ -275,7 +295,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                     displayWidth.value = existing.width;
                     displayHeight.value = existing.height;
                 }
-                
+
                 // Check if we need to initialize from crop regions (e.g., when switching images)
                 if (initialCropRegions && initialCropRegions[currentIndex] && !cropStates.has(currentIndex)) {
                     const dims = imageDimensions.get(currentIndex);
@@ -296,6 +316,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 }
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible, currentIndex, localOriginalPhotos, cropAreaHeight, cropAreaWidth, initialCropRegions]);
 
     // Save crop state when switching images
@@ -305,16 +326,16 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             translateX: savedTranslateX.value,
             translateY: savedTranslateY.value,
         };
-        
+
         // Check if the crop state has been modified from default
-        const isModified = currentState.scale !== 1 || 
-                          currentState.translateX !== 0 || 
-                          currentState.translateY !== 0;
-        
+        const isModified = currentState.scale !== 1 ||
+            currentState.translateX !== 0 ||
+            currentState.translateY !== 0;
+
         if (isModified) {
             setHasChanges(true);
         }
-        
+
         setCropStates(prev => {
             const newMap = new Map(prev);
             newMap.set(currentIndex, currentState);
@@ -333,11 +354,11 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         const frameDims = getCropFrameDimensions();
         const imageAspect = imageWidth / imageHeight;
         const frameAspect = frameDims.width / frameDims.height;
-        
+
         // Calculate display dimensions (same logic as in the dimension loading effect)
         let calcDisplayWidth: number;
         let calcDisplayHeight: number;
-        
+
         if (imageAspect > frameAspect) {
             calcDisplayHeight = frameDims.height;
             calcDisplayWidth = calcDisplayHeight * imageAspect;
@@ -345,21 +366,21 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             calcDisplayWidth = frameDims.width;
             calcDisplayHeight = calcDisplayWidth / imageAspect;
         }
-        
+
         // Calculate the center of the selected crop region (in normalized 0-1 coords)
         const centerY = cropRegion.y + cropRegion.height / 2;
         const centerX = cropRegion.x + cropRegion.width / 2;
-        
+
         // Convert to translate values
         // At translateY=0, the center of the image (0.5) is shown
         // To show a different centerY, we translate by (0.5 - centerY) * displayHeight
         const translateY = (0.5 - centerY) * calcDisplayHeight;
         const translateX = (0.5 - centerX) * calcDisplayWidth;
-        
+
         // Clamp to valid bounds (max pan is half the overflow)
         const maxTranslateY = Math.max(0, (calcDisplayHeight - frameDims.height) / 2);
         const maxTranslateX = Math.max(0, (calcDisplayWidth - frameDims.width) / 2);
-        
+
         return {
             scale: 1,
             translateX: Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX)),
@@ -461,6 +482,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     }, []);
 
     // Reorder photos (drag and drop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const handleReorder = (fromIndex: number, toIndex: number) => {
         if (fromIndex === toIndex) return;
 
@@ -498,7 +520,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         const displaySize = displaySizes.get(index);
 
         if (!dimensions || !displaySize) {
-            console.log('Missing dimensions or displaySize for index', index);
+            logger.info('Missing dimensions or displaySize for index', index);
             return localPhotos[index];
         }
 
@@ -552,12 +574,12 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             finalOriginX + finalWidth > dimensions.width ||
             finalOriginY + finalHeight > dimensions.height ||
             finalWidth <= 0 || finalHeight <= 0) {
-            console.log('Invalid crop bounds, returning original photo');
+            logger.info('Invalid crop bounds, returning original photo');
             return localPhotos[index];
         }
 
         try {
-            console.log(`Cropping image ${index}: origin(${finalOriginX}, ${finalOriginY}) size(${finalWidth}x${finalHeight})`);
+            logger.info(`Cropping image ${index}: origin(${finalOriginX}, ${finalOriginY}) size(${finalWidth}x${finalHeight})`);
             const result = await manipulateAsync(
                 localOriginalPhotos[index],
                 [
@@ -576,7 +598,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             );
             return result.uri;
         } catch (error) {
-            console.error('Error cropping image:', error);
+            logger.error('Error cropping image:', error);
             return localPhotos[index];
         }
     };
@@ -629,7 +651,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             // First image is always the cover (thumbnailIndex = 0)
             onDone(croppedPhotos, 0, localOriginalPhotos);
         } catch (error) {
-            console.error('Error processing images:', error);
+            logger.error('Error processing images:', error);
             onDone(localPhotos, 0, localOriginalPhotos);
         } finally {
             setIsProcessing(false);
@@ -717,7 +739,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             translateY.value = withSpring(clampedY, { damping: 20, stiffness: 300 });
             savedTranslateX.value = clampedX;
             savedTranslateY.value = clampedY;
-            
+
             // Mark as changed if zoom level is not default
             if (scale.value !== 1) {
                 runOnJS(markCropChanged)();
@@ -761,7 +783,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             translateY.value = withSpring(clampedY, { damping: 20, stiffness: 300 });
             savedTranslateX.value = clampedX;
             savedTranslateY.value = clampedY;
-            
+
             // Mark as changed if position has been adjusted
             if (clampedX !== 0 || clampedY !== 0) {
                 runOnJS(markCropChanged)();
@@ -796,6 +818,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
         if (fromIndex !== toIndex && fromIndex >= 0 && toIndex >= 0) {
             handleReorder(fromIndex, toIndex);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [handleReorder]);
 
     const cancelDragging = React.useCallback(() => {
@@ -890,6 +913,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 currentTarget.value = -1;
                 runOnJS(cancelDragging)();
             });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [imageCount, startDragging, updateTargetIdx, endDragging, cancelDragging]);
 
     const currentDisplaySize = displaySizes.get(currentIndex) || { width: cropAreaWidth, height: cropAreaHeight };
@@ -958,18 +982,22 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                             {/* Crop Frame Overlay - shows the crop boundary */}
                             <View style={styles.cropOverlay} pointerEvents="none">
                                 {/* Top darkened area */}
-                                <View style={[styles.cropOverlayDark, {
-                                    height: (cropAreaHeight - cropFrameDimensions.height) / 2,
-                                    width: '100%',
-                                }]} />
+                                <View
+                                    style={[
+                                        styles.cropOverlayDark,
+                                        getCropOverlayTopBottomStyle((cropAreaHeight - cropFrameDimensions.height) / 2),
+                                    ]}
+                                />
 
                                 {/* Middle row with side darkened areas and transparent center */}
-                                <View style={{ flexDirection: 'row', height: cropFrameDimensions.height }}>
+                                <View style={getCropOverlayRowStyle(cropFrameDimensions.height)}>
                                     {/* Left darkened area */}
-                                    <View style={[styles.cropOverlayDark, {
-                                        width: (cropAreaWidth - cropFrameDimensions.width) / 2,
-                                        height: '100%',
-                                    }]} />
+                                    <View
+                                        style={[
+                                            styles.cropOverlayDark,
+                                            getCropOverlaySideStyle((cropAreaWidth - cropFrameDimensions.width) / 2),
+                                        ]}
+                                    />
 
                                     {/* Transparent center (the crop frame) */}
                                     <View style={[styles.cropFrame, {
@@ -978,17 +1006,21 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                                     }]} />
 
                                     {/* Right darkened area */}
-                                    <View style={[styles.cropOverlayDark, {
-                                        width: (cropAreaWidth - cropFrameDimensions.width) / 2,
-                                        height: '100%',
-                                    }]} />
+                                    <View
+                                        style={[
+                                            styles.cropOverlayDark,
+                                            getCropOverlaySideStyle((cropAreaWidth - cropFrameDimensions.width) / 2),
+                                        ]}
+                                    />
                                 </View>
 
                                 {/* Bottom darkened area */}
-                                <View style={[styles.cropOverlayDark, {
-                                    height: (cropAreaHeight - cropFrameDimensions.height) / 2,
-                                    width: '100%',
-                                }]} />
+                                <View
+                                    style={[
+                                        styles.cropOverlayDark,
+                                        getCropOverlayTopBottomStyle((cropAreaHeight - cropFrameDimensions.height) / 2),
+                                    ]}
+                                />
                             </View>
 
                             {/* Delete button */}
@@ -1073,9 +1105,6 @@ const DraggableThumbnailItem: React.FC<DraggableThumbnailItemProps> = ({
     gesture,
     onPress,
 }) => {
-    // Track previous offset to detect changes
-    const prevOffset = useSharedValue(0);
-
     const animatedStyle = useAnimatedStyle(() => {
         if (isDragging) {
             return {

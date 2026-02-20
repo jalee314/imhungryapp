@@ -6,11 +6,11 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import { Image } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 
 import SkeletonLoader from '../../../components/SkeletonLoader';
 import type { Deal } from '../../../types/deal';
-import { BRAND, GRAY, STATIC, SPACING, RADIUS, BORDER_WIDTH } from '../../../ui/alf';
+import { BRAND, STATIC, SPACING } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 import type { ViewData } from '../types';
 
@@ -21,21 +21,71 @@ export interface RestaurantInfoSectionProps {
   removeZipCode: (a: string) => string;
 }
 
+const ViewerMetaRow = ({
+  viewData,
+  viewerPhotos,
+}: {
+  viewData: ViewData;
+  viewerPhotos: string[];
+}) => {
+  if (viewData.isLoading) {
+    return (
+      <Box row align="center">
+        <SkeletonLoader width={60} height={12} borderRadius={4} />
+        <Box row align="center">
+          <SkeletonLoader width={20} height={20} borderRadius={10} style={styles.viewerSkeletonLead} />
+          <SkeletonLoader width={20} height={20} borderRadius={10} style={styles.viewerSkeletonOverlap} />
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <>
+      <Text
+        size="xs"
+        color={STATIC.black}
+        style={styles.viewCountText}
+      >
+        {viewData.viewCount ?? 0} viewed
+      </Text>
+      {viewerPhotos.length > 0 && (
+        <Box row align="center">
+          {viewerPhotos.map((photoUrl, index) => (
+            <Image
+              key={index}
+              source={{ uri: photoUrl }}
+              style={getViewerPhotoStyle(index, viewerPhotos.length)}
+            />
+          ))}
+        </Box>
+      )}
+    </>
+  );
+};
+
 export function RestaurantInfoSection({
   dealData,
   viewData,
   formatDate,
   removeZipCode,
 }: RestaurantInfoSectionProps) {
+  const viewerPhotos = viewData.viewerPhotos ?? [];
+  const cuisineLabel = dealData.cuisine?.trim() || '';
+  const dealTypeLabel = dealData.dealType?.trim() || '';
+  const hasCuisine = cuisineLabel !== '' && cuisineLabel !== 'Cuisine';
+  const hasDealType = dealTypeLabel !== '';
+  const showTags = hasCuisine || hasDealType;
+
   return (
     <Box px="2xl" pt="lg" pb="sm">
       {/* Restaurant name + view count */}
-      <Box style={{ position: 'relative', marginBottom: 2, minHeight: 20 }}>
+      <Box style={styles.titleRow}>
         <Text
           size="lg"
           weight="bold"
           color={STATIC.black}
-          style={{ fontFamily: 'Inter', lineHeight: 20, paddingRight: 80, marginBottom: 0 }}
+          style={styles.restaurantTitle}
         >
           {dealData.restaurant}
         </Text>
@@ -47,44 +97,7 @@ export function RestaurantInfoSection({
           row
           align="center"
         >
-          {viewData.isLoading ? (
-            <Box row align="center">
-              <SkeletonLoader width={60} height={12} borderRadius={4} />
-              <Box row align="center">
-                <SkeletonLoader width={20} height={20} borderRadius={10} style={{ marginLeft: 6 }} />
-                <SkeletonLoader width={20} height={20} borderRadius={10} style={{ marginLeft: -8 }} />
-              </Box>
-            </Box>
-          ) : (
-            <>
-              <Text
-                size="xs"
-                color={STATIC.black}
-                style={{ fontFamily: 'Inter', marginRight: 6 }}
-              >
-                {viewData.viewCount ?? 0} viewed
-              </Text>
-              {viewData.viewerPhotos && viewData.viewerPhotos.length > 0 && (
-                <Box row align="center">
-                  {viewData.viewerPhotos.map((photoUrl, index) => (
-                    <Image
-                      key={index}
-                      source={{ uri: photoUrl }}
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: STATIC.white,
-                        zIndex: viewData.viewerPhotos!.length - index,
-                        marginLeft: index > 0 ? -8 : 0,
-                      }}
-                    />
-                  ))}
-                </Box>
-              )}
-            </>
-          )}
+          <ViewerMetaRow viewData={viewData} viewerPhotos={viewerPhotos} />
         </Box>
       </Box>
 
@@ -92,15 +105,15 @@ export function RestaurantInfoSection({
       <Box w="100%" mt={0}>
         {/* Location */}
         <Box row align="center" mb="xs">
-          <MaterialCommunityIcons name="map-marker" size={12} color={BRAND.primary} style={{ marginRight: SPACING.xs }} />
-          <Text size="xs" style={{ lineHeight: 20, flex: 1 }} numberOfLines={1} ellipsizeMode="tail">
-            <Text size="xs" weight="regular" color={STATIC.black} style={{ fontFamily: 'Inter-Regular' }}>
+          <MaterialCommunityIcons name="map-marker" size={12} color={BRAND.primary} style={styles.infoIcon} />
+          <Text size="xs" style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+            <Text size="xs" weight="regular" color={STATIC.black} style={styles.interRegular}>
               {dealData.milesAway} away{' '}
             </Text>
-            <Text size="xs" weight="regular" color={STATIC.black} style={{ fontFamily: 'Inter-Light', fontWeight: '300' }}>
+            <Text size="xs" weight="regular" color={STATIC.black} style={styles.interLight}>
               •{' '}
             </Text>
-            <Text size="xs" weight="regular" color={STATIC.black} style={{ fontFamily: 'Inter-Regular' }}>
+            <Text size="xs" weight="regular" color={STATIC.black} style={styles.interRegular}>
               {removeZipCode(dealData.restaurantAddress || '14748 Beach Blvd, La Mirada, CA')}
             </Text>
           </Text>
@@ -108,37 +121,35 @@ export function RestaurantInfoSection({
 
         {/* Valid Until */}
         <Box row align="center" mb="xs">
-          <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={{ marginRight: SPACING.xs }} />
+          <MaterialCommunityIcons name="clock-outline" size={12} color="#555555" style={styles.infoIcon} />
           <Text
             size="xs"
             weight="regular"
             color={STATIC.black}
-            style={{ fontFamily: 'Inter-Regular', lineHeight: 20 }}
+            style={styles.infoText}
           >
             Valid Until • {formatDate(dealData.expirationDate || null)}
           </Text>
         </Box>
 
         {/* Category row (only if meaningful) */}
-        {((dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine') ||
-          (dealData.dealType && dealData.dealType.trim() !== '')) && (
+        {showTags && (
           <Box row align="center">
-            <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={{ marginRight: SPACING.xs }} />
-            <Text size="xs" style={{ lineHeight: 20 }}>
-              {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' && (
-                <Text size="xs" weight="regular" color={STATIC.black} style={{ fontFamily: 'Inter-Regular' }}>
-                  {dealData.cuisine}
+            <MaterialCommunityIcons name="tag-outline" size={12} color="#555555" style={styles.infoIcon} />
+            <Text size="xs" style={styles.rowText}>
+              {hasCuisine && (
+                <Text size="xs" weight="regular" color={STATIC.black} style={styles.interRegular}>
+                  {cuisineLabel}
                 </Text>
               )}
-              {dealData.cuisine && dealData.cuisine.trim() !== '' && dealData.cuisine !== 'Cuisine' &&
-                dealData.dealType && dealData.dealType.trim() !== '' && (
-                  <Text size="xs" weight="regular" color={STATIC.black} style={{ fontFamily: 'Inter-Light', fontWeight: '300' }}>
-                    {' '}•{' '}
-                  </Text>
-                )}
-              {dealData.dealType && dealData.dealType.trim() !== '' && (
-                <Text size="xs" weight="regular" color={STATIC.black} style={{ fontFamily: 'Inter-Regular' }}>
-                  {dealData.dealType}
+              {hasCuisine && hasDealType && (
+                <Text size="xs" weight="regular" color={STATIC.black} style={styles.interLight}>
+                  {' '}•{' '}
+                </Text>
+              )}
+              {hasDealType && (
+                <Text size="xs" weight="regular" color={STATIC.black} style={styles.interRegular}>
+                  {dealTypeLabel}
                 </Text>
               )}
             </Text>
@@ -148,3 +159,64 @@ export function RestaurantInfoSection({
     </Box>
   );
 }
+
+const getViewerPhotoStyle = (index: number, total: number) => [
+  styles.viewerPhoto,
+  index > 0 ? styles.viewerPhotoOverlap : undefined,
+  { zIndex: total - index },
+];
+
+const styles = StyleSheet.create({
+  titleRow: {
+    position: 'relative',
+    marginBottom: 2,
+    minHeight: 20,
+  },
+  restaurantTitle: {
+    fontFamily: 'Inter',
+    lineHeight: 20,
+    paddingRight: 80,
+    marginBottom: 0,
+  },
+  viewerSkeletonLead: {
+    marginLeft: 6,
+  },
+  viewerSkeletonOverlap: {
+    marginLeft: -8,
+  },
+  viewCountText: {
+    fontFamily: 'Inter',
+    marginRight: 6,
+  },
+  viewerPhoto: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: STATIC.white,
+  },
+  viewerPhotoOverlap: {
+    marginLeft: -8,
+  },
+  infoIcon: {
+    marginRight: SPACING.xs,
+  },
+  locationText: {
+    lineHeight: 20,
+    flex: 1,
+  },
+  infoText: {
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+  },
+  rowText: {
+    lineHeight: 20,
+  },
+  interRegular: {
+    fontFamily: 'Inter-Regular',
+  },
+  interLight: {
+    fontFamily: 'Inter-Light',
+    fontWeight: '300',
+  },
+});

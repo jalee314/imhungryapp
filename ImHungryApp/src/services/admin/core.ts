@@ -19,6 +19,13 @@ export function mapResolutionAction(
   }
 }
 
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'An unexpected error occurred';
+}
+
 export async function isAdmin(): Promise<boolean> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -42,7 +49,7 @@ export async function logAction(
   actionType: string,
   targetType: string,
   targetId: string,
-  actionDetails: any = {}
+  actionDetails: Record<string, unknown> = {}
 ) {
   try {
     const { data: { user } } = await supabase.auth.getUser();

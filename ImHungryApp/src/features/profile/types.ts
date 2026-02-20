@@ -4,13 +4,30 @@
  * Shared type definitions for the decomposed Profile feature sections and hooks.
  */
 
+import type { UserPost } from '../../services/userPostsService';
+import type { ProfileRecord, ProfileUserData } from '../../services/userProfileService';
+
 // ============================================================================
 // Params
 // ============================================================================
 
 export interface ProfileParams {
-  navigation: any;
-  route: any;
+  navigation: ProfileNavigation;
+  route: ProfileRoute;
+}
+
+export interface ProfileNavigation {
+  navigate: (screen: string, params?: unknown) => void;
+  goBack: () => void;
+  canGoBack: () => boolean;
+}
+
+export interface ProfileRoute {
+  params?: {
+    viewUser?: boolean;
+    userId?: string;
+    [key: string]: unknown;
+  };
 }
 
 // ============================================================================
@@ -18,8 +35,8 @@ export interface ProfileParams {
 // ============================================================================
 
 export interface ProfileDataState {
-  profile: any | null;
-  userData: any | null;
+  profile: ProfileRecord | null;
+  userData: ProfileUserData | null;
   photoUrl: string | null;
   currentUserPhotoUrl: string | null;
   dealCount: number;
@@ -27,7 +44,7 @@ export interface ProfileDataState {
 }
 
 export interface ProfileDataActions {
-  setProfile: React.Dispatch<React.SetStateAction<any | null>>;
+  setProfile: React.Dispatch<React.SetStateAction<ProfileRecord | null>>;
   setPhotoUrl: React.Dispatch<React.SetStateAction<string | null>>;
   setCurrentUserPhotoUrl: React.Dispatch<React.SetStateAction<string | null>>;
   setDealCount: React.Dispatch<React.SetStateAction<number>>;
@@ -40,14 +57,14 @@ export interface ProfileDataActions {
 // ============================================================================
 
 export interface ProfilePostsState {
-  userPosts: any[];
+  userPosts: UserPost[];
   postsLoading: boolean;
   postsInitialized: boolean;
   postsError: string | null;
 }
 
 export interface ProfilePostsActions {
-  setUserPosts: React.Dispatch<React.SetStateAction<any[]>>;
+  setUserPosts: React.Dispatch<React.SetStateAction<UserPost[]>>;
   loadUserPosts: () => Promise<void>;
 }
 
@@ -99,10 +116,10 @@ export interface ProfileModalHandlers {
 
 export interface UseProfileResult {
   // Data
-  profile: any | null;
+  profile: ProfileRecord | null;
   photoUrl: string | null;
   dealCount: number;
-  userPosts: any[];
+  userPosts: UserPost[];
   hasData: boolean;
   activeTab: 'posts' | 'settings';
   postsLoading: boolean;

@@ -9,9 +9,15 @@ import {
   updateCurrentUserProfile,
   getCurrentUserId
 } from '../services/profileUpdateService';
+import type { ProfileRecord } from '../services/userProfileService';
 
 interface UseProfileEditParams {
-  route: any;
+  route?: {
+    params?: {
+      profile?: ProfileRecord;
+      updatedCuisines?: string[];
+    };
+  };
 }
 
 interface UseProfileEditResult {
@@ -25,7 +31,7 @@ interface UseProfileEditResult {
 }
 
 export const useProfileEdit = ({ route }: UseProfileEditParams): UseProfileEditResult => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const profile = route?.params?.profile;
   const updatedCuisines = route?.params?.updatedCuisines as string[] | undefined;
   const hasUpdatedCuisines = useRef(false);

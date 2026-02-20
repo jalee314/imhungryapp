@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -10,7 +10,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 
-import { BRAND, SEMANTIC, ALPHA_COLORS } from '../ui/alf';
+import { BRAND, SEMANTIC } from '../ui/alf';
 import {
   getVisualIndex,
   getItemOffset,

@@ -16,8 +16,6 @@ import {
   BRAND,
   SPACING,
   RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
 } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 
@@ -26,7 +24,7 @@ import { Box, Text } from '../../../ui/primitives';
 // ============================================================================
 
 export interface ProfilePostsSectionProps {
-  userPosts: any[];
+  userPosts: unknown[];
   postsLoading: boolean;
   postsInitialized: boolean;
   postsError: string | null;

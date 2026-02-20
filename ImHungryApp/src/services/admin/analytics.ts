@@ -38,7 +38,7 @@ export async function getAnalytics(): Promise<AppAnalytics> {
       .select('user_id, user:user_id(display_name)')
       .not('user_id', 'is', null);
 
-    const userSessionCounts = (sessionData || []).reduce((acc: any, session: any) => {
+    const userSessionCounts = (sessionData || []).reduce((acc, session) => {
       const userId = session.user_id;
       if (!acc[userId]) {
         acc[userId] = {
@@ -52,7 +52,7 @@ export async function getAnalytics(): Promise<AppAnalytics> {
     }, {});
 
     const mostActiveUsersList = Object.values(userSessionCounts)
-      .sort((a: any, b: any) => b.deal_count - a.deal_count)
+      .sort((a, b) => b.deal_count - a.deal_count)
       .slice(0, 3);
 
     const { data: interactionData } = await supabase
@@ -70,7 +70,7 @@ export async function getAnalytics(): Promise<AppAnalytics> {
         )
       `);
 
-    const dealInteractionCounts = (interactionData || []).reduce((acc: any, interaction: any) => {
+    const dealInteractionCounts = (interactionData || []).reduce((acc, interaction) => {
       const dealId = interaction.deal_id;
       if (!acc[dealId] && interaction.deal_instance) {
         acc[dealId] = {
@@ -86,7 +86,7 @@ export async function getAnalytics(): Promise<AppAnalytics> {
     }, {});
 
     const mostPopularDeals = (Object.values(dealInteractionCounts)
-      .sort((a: any, b: any) => b.interaction_count - a.interaction_count)
+      .sort((a, b) => b.interaction_count - a.interaction_count)
       .slice(0, 10)) as Array<{
         deal_instance_id: string;
         title: string;
@@ -98,7 +98,7 @@ export async function getAnalytics(): Promise<AppAnalytics> {
       totalDeals: totalDeals || 0,
       totalReports: totalReports || 0,
       pendingReports: pendingReports || 0,
-      mostActiveUsers: mostActiveUsersList as any,
+      mostActiveUsers: mostActiveUsersList,
       mostPopularDeals: mostPopularDeals || [],
       recentSignups: recentSignups || 0,
       dealsThisWeek: dealsThisWeek || 0,

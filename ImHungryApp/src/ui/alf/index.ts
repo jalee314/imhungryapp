@@ -21,6 +21,13 @@
  * ```
  */
 
+// Re-export namespaces
+import * as atomStyles from './atoms';
+import * as themes from './themes';
+import * as tokens from './tokens';
+
+export { atomStyles, themes, tokens };
+
 // ============================================================================
 // TOKENS
 // ============================================================================
@@ -73,10 +80,6 @@ export {
   type CameraKey,
 } from './tokens';
 
-// Re-export all tokens as a namespace
-import * as tokens from './tokens';
-export { tokens };
-
 // ============================================================================
 // THEMES
 // ============================================================================
@@ -95,10 +98,6 @@ export {
   type ThemeName,
   type PaletteKey,
 } from './themes';
-
-// Re-export all themes as a namespace
-import * as themes from './themes';
-export { themes };
 
 // ============================================================================
 // ATOMS
@@ -156,7 +155,3 @@ export {
   inset,
   compose,
 } from './atoms';
-
-// Re-export all atoms as a namespace
-import * as atomStyles from './atoms';
-export { atomStyles };

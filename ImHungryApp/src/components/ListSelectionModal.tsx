@@ -11,7 +11,7 @@ import {
   FlatList,
 } from 'react-native';
 
-import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT } from '../ui/alf';
 
 import ModalHeader from './ui/ModalHeader';
 
@@ -57,6 +57,7 @@ const ListSelectionModal: React.FC<ListSelectionModalProps> = ({
     if (visible) {
       setSelectedItems(initialSelected);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, initialSelected.join(',')]);
 
   useEffect(() => {

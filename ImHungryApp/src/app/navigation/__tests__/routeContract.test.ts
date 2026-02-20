@@ -145,7 +145,7 @@ describe('Route Contract Tests', () => {
     });
 
     it('should not have empty or undefined route names', () => {
-      Object.entries(ALL_ROUTES).forEach(([key, value]) => {
+      Object.entries(ALL_ROUTES).forEach(([_key, value]) => {
         expect(value).toBeDefined();
         expect(value.length).toBeGreaterThan(0);
         expect(typeof value).toBe('string');

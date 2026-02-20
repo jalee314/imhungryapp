@@ -26,7 +26,7 @@ interface ThreeDotPopupProps {
 const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
   visible,
   onClose,
-  onReportContent,
+  onReportContent: _onReportContent,
   onBlockUser,
   dealId,
   uploaderUserId,
@@ -40,7 +40,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
   const handleEditPost = () => {
     onClose();
     if (dealId) {
-      (navigation as any).navigate('DealEdit', { dealId });
+      (navigation).navigate('DealEdit', { dealId });
     }
   };
 
@@ -57,7 +57,7 @@ const ThreeDotPopup: React.FC<ThreeDotPopupProps> = ({
     }
 
     if (dealId && uploaderUserId) {
-      (navigation as any).navigate('ReportContent', { dealId, uploaderUserId });
+      (navigation).navigate('ReportContent', { dealId, uploaderUserId });
     }
   };
 

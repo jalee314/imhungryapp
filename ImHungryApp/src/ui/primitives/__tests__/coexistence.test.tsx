@@ -9,7 +9,7 @@
 
 import { render } from '@testing-library/react-native';
 import React from 'react';
-import { StyleSheet, View as RNView, Text as RNText } from 'react-native';
+import { StyleSheet, Text as RNText } from 'react-native';
 
 import { ThemeProvider, Box, Text, Pressable } from '../index';
 

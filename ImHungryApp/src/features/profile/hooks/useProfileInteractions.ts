@@ -9,18 +9,19 @@ import { useFavorites } from '../../../hooks/useFavorites';
 import { calculateUpvoteToggle, calculateDownvoteToggle } from '../../../hooks/useFeedInteractionHandlers';
 import { deleteDeal } from '../../../services/dealService';
 import { logClick } from '../../../services/interactionService';
+import type { UserPost } from '../../../services/userPostsService';
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../../services/voteService';
-import type { ProfileInteractionHandlers } from '../types';
+import type { ProfileInteractionHandlers, ProfileNavigation } from '../types';
 
 // ============================================================================
 // Hook
 // ============================================================================
 
 export interface UseProfileInteractionsParams {
-  userPosts: any[];
-  setUserPosts: React.Dispatch<React.SetStateAction<any[]>>;
+  userPosts: UserPost[];
+  setUserPosts: React.Dispatch<React.SetStateAction<UserPost[]>>;
   setDealCount: React.Dispatch<React.SetStateAction<number>>;
-  navigation: any;
+  navigation: ProfileNavigation;
 }
 
 export function useProfileInteractions({
@@ -32,7 +33,7 @@ export function useProfileInteractions({
   const { markAsUnfavorited, markAsFavorited } = useFavorites();
 
   const onUpvote = (dealId: string) => {
-    let original: any | undefined;
+    let original: UserPost | undefined;
     setUserPosts((prev) =>
       prev.map((d) => {
         if (d.id === dealId) {
@@ -45,12 +46,15 @@ export function useProfileInteractions({
     );
     toggleUpvote(dealId).catch((err) => {
       console.error('Failed upvote revert', err);
-      if (original) setUserPosts((prev) => prev.map((d) => (d.id === dealId ? original! : d)));
+      const originalSnapshot = original;
+      if (originalSnapshot) {
+        setUserPosts((prev) => prev.map((d) => (d.id === dealId ? originalSnapshot : d)));
+      }
     });
   };
 
   const onDownvote = (dealId: string) => {
-    let original: any | undefined;
+    let original: UserPost | undefined;
     setUserPosts((prev) =>
       prev.map((d) => {
         if (d.id === dealId) {
@@ -63,7 +67,10 @@ export function useProfileInteractions({
     );
     toggleDownvote(dealId).catch((err) => {
       console.error('Failed downvote revert', err);
-      if (original) setUserPosts((prev) => prev.map((d) => (d.id === dealId ? original! : d)));
+      const originalSnapshot = original;
+      if (originalSnapshot) {
+        setUserPosts((prev) => prev.map((d) => (d.id === dealId ? originalSnapshot : d)));
+      }
     });
   };
 

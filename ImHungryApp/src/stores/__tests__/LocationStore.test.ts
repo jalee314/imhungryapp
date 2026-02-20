@@ -5,6 +5,7 @@
  * The store manages user location state and syncs with auth state.
  */
 
+import { checkLocationPermission, getCurrentUserLocation } from '../../services/locationService';
 import { useAuthStore } from '../AuthStore';
 import { useLocationStore } from '../LocationStore';
 
@@ -24,11 +25,6 @@ jest.mock('../AuthStore', () => ({
     })),
   },
 }));
-
-import {
-  getCurrentUserLocation,
-  checkLocationPermission,
-} from '../../services/locationService';
 
 describe('LocationStore', () => {
   beforeEach(() => {

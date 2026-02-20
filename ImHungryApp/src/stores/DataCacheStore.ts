@@ -5,7 +5,7 @@ import { create } from 'zustand';
 
 import { supabase } from '../../lib/supabase';
 import type { Category, Cuisine, Restaurant } from '../types/restaurant';
-
+import { logger } from '../utils/logger';
 interface DataCacheState {
   // Reactive state
   categories: Category[];
@@ -71,11 +71,11 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
   initialize: async () => {
     // Prevent multiple simultaneous initializations
     if (get()._initialized) {
-      console.log('DataCacheStore: Already initialized, skipping');
+      logger.info('DataCacheStore: Already initialized, skipping');
       return;
     }
 
-    console.log('DataCacheStore: Starting initialization');
+    logger.info('DataCacheStore: Starting initialization');
 
     try {
       // 1) Warm from cache first (with timeout)
@@ -87,7 +87,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
           'loadFromCache'
         );
       } catch (cacheError) {
-        console.warn('DataCacheStore: Cache load failed or timed out:', cacheError);
+        logger.warn('DataCacheStore: Cache load failed or timed out:', cacheError);
         // Continue without cache - will fetch fresh data
       }
 
@@ -101,7 +101,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
         );
         shouldFetchFresh = !lastFetchTime || (Date.now() - parseInt(lastFetchTime)) > 3600000; // 1 hour
       } catch (err) {
-        console.warn('DataCacheStore: Could not read last fetch time:', err);
+        logger.warn('DataCacheStore: Could not read last fetch time:', err);
         // Default to fetching fresh data
       }
 
@@ -115,7 +115,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
           // Update last fetch time (don't block on this)
           AsyncStorage.setItem(LAST_FETCH_KEY, Date.now().toString()).catch(() => { });
         } catch (fetchError) {
-          console.error('DataCacheStore: Fetch failed or timed out:', fetchError);
+          logger.error('DataCacheStore: Fetch failed or timed out:', fetchError);
           // If we had cached data, keep using it. Otherwise set error.
           if (!cacheLoaded) {
             set({ error: fetchError as Error });
@@ -132,7 +132,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
           try {
             await get().refreshIfStale(300000); // 5 minutes
           } catch (refreshError) {
-            console.warn('DataCacheStore: Background refresh failed:', refreshError);
+            logger.warn('DataCacheStore: Background refresh failed:', refreshError);
             // Don't crash - just log and continue
           }
         }
@@ -141,10 +141,10 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
       const sub = AppState.addEventListener('change', handleAppStateChange);
       set({ _appStateSubscription: sub, _initialized: true });
 
-      console.log('DataCacheStore: Initialization complete');
+      logger.info('DataCacheStore: Initialization complete');
     } catch (unexpectedError) {
       // Catch-all for any unexpected errors during initialization
-      console.error('DataCacheStore: Unexpected initialization error:', unexpectedError);
+      logger.error('DataCacheStore: Unexpected initialization error:', unexpectedError);
       set({ loading: false, error: unexpectedError as Error, _initialized: true });
     }
   },
@@ -168,7 +168,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
         const cuisines = JSON.parse(cuisinesJson) as Cuisine[];
         const restaurants = restaurantsJson ? (JSON.parse(restaurantsJson) as Restaurant[]) : [];
         set({ categories, cuisines, restaurants, loading: false });
-        console.log('DataCacheStore: Loaded from cache', {
+        logger.info('DataCacheStore: Loaded from cache', {
           categories: categories.length,
           cuisines: cuisines.length,
           restaurants: restaurants.length
@@ -177,7 +177,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
       }
       return false;
     } catch (e) {
-      console.error('DataCacheStore: Error loading cache:', e);
+      logger.error('DataCacheStore: Error loading cache:', e);
       return false;
     }
   },
@@ -199,19 +199,19 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
       if (cuis.error) throw cuis.error;
       if (rests.error) throw rests.error;
 
-      const categories: Category[] = (cats.data || []).map((item: any) => ({
+      const categories: Category[] = (cats.data || []).map((item) => ({
         id: item.category_id,
         name: item.category_name,
       }));
 
-      const cuisines: Cuisine[] = (cuis.data || []).map((item: any) => ({
+      const cuisines: Cuisine[] = (cuis.data || []).map((item) => ({
         id: item.cuisine_id,
         name: item.cuisine_name,
       }));
 
       const restaurants: Restaurant[] = (rests.data || [])
-        .filter((item: any) => item.lat !== null && item.lng !== null && !isNaN(item.lat) && !isNaN(item.lng))
-        .map((item: any) => ({
+        .filter((item) => item.lat !== null && item.lng !== null && !isNaN(item.lat) && !isNaN(item.lng))
+        .map((item) => ({
           id: item.restaurant_id,
           name: item.name,
           address: item.address,
@@ -230,16 +230,16 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
         AsyncStorage.setItem(RESTAURANTS_KEY, JSON.stringify(restaurants)),
         AsyncStorage.setItem(LAST_FETCH_KEY, Date.now().toString()),
       ]).catch((cacheError) => {
-        console.warn('DataCacheStore: Failed to cache data:', cacheError);
+        logger.warn('DataCacheStore: Failed to cache data:', cacheError);
       });
 
-      console.log('DataCacheStore: Fetched fresh data', {
+      logger.info('DataCacheStore: Fetched fresh data', {
         categories: categories.length,
         cuisines: cuisines.length,
         restaurants: restaurants.length
       });
     } catch (error) {
-      console.error('DataCacheStore: Error fetching data:', error);
+      logger.error('DataCacheStore: Error fetching data:', error);
       // Always set loading to false, even on error
       set({ loading: false, error: error as Error });
       throw error; // Re-throw so caller knows it failed
@@ -249,7 +249,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
   refreshIfStale: async (thresholdMs: number) => {
     // Prevent overlapping refresh operations
     if (get()._isRefreshing) {
-      console.log('DataCacheStore: Refresh already in progress, skipping');
+      logger.info('DataCacheStore: Refresh already in progress, skipping');
       return;
     }
 
@@ -265,7 +265,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
       const elapsed = lastFetchTime ? Date.now() - parseInt(lastFetchTime) : Infinity;
 
       if (elapsed > thresholdMs) {
-        console.log('DataCacheStore: Data is stale, refreshing...');
+        logger.info('DataCacheStore: Data is stale, refreshing...');
         await withTimeout(
           get().fetchAndCacheData(),
           OPERATION_TIMEOUT_MS,
@@ -273,7 +273,7 @@ export const useDataCacheStore = create<DataCacheState>((set, get) => ({
         );
       }
     } catch (error) {
-      console.warn('DataCacheStore: Refresh failed:', error);
+      logger.warn('DataCacheStore: Refresh failed:', error);
       // Don't crash the app, just log the error
     } finally {
       set({ _isRefreshing: false });

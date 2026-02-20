@@ -1,6 +1,6 @@
 import { supabase } from '../../../lib/supabase';
 
-import { logAction } from './core';
+import { getErrorMessage, logAction } from './core';
 import type { UserProfile, ServiceResult } from './types';
 
 export async function searchUsers(query: string): Promise<UserProfile[]> {
@@ -57,8 +57,8 @@ export async function warnUser(userId: string): Promise<ServiceResult> {
 
     await logAction('warn_user', 'user', userId, {});
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -76,8 +76,8 @@ export async function banUser(userId: string, reason?: string): Promise<ServiceR
 
     await logAction('ban_user', 'user', userId, { reason });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -95,8 +95,8 @@ export async function unbanUser(userId: string): Promise<ServiceResult> {
 
     await logAction('unban_user', 'user', userId, {});
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -118,8 +118,8 @@ export async function suspendUser(userId: string, days: number, reason?: string)
 
     await logAction('suspend_user', 'user', userId, { days, reason });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -138,8 +138,8 @@ export async function unsuspendUser(userId: string): Promise<ServiceResult> {
 
     await logAction('unsuspend_user', 'user', userId, {});
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -153,7 +153,7 @@ export async function deleteUser(userId: string): Promise<ServiceResult> {
 
     await logAction('delete_user', 'user', userId, {});
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }

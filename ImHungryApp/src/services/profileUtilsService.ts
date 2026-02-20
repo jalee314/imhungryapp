@@ -1,7 +1,25 @@
+interface JoinDateProfile {
+  created_at?: string | null;
+  createdAt?: string | null;
+  date_created?: string | null;
+  inserted_at?: string | null;
+  created?: string | null;
+  registered_at?: string | null;
+  signup_date?: string | null;
+}
+
+interface DisplayNameUserData {
+  username?: string | null;
+}
+
+interface DisplayNameProfile {
+  display_name?: string | null;
+}
+
 /**
  * Format join date from various possible date fields
  */
-export const formatJoinDate = (profile: any) => {
+export const formatJoinDate = (profile: JoinDateProfile | null | undefined): string => {
   if (!profile) return 'Joined recently';
 
   const dateString = profile.created_at || profile.createdAt || profile.date_created ||
@@ -21,7 +39,10 @@ export const formatJoinDate = (profile: any) => {
 /**
  * Get display name from userData or profile
  */
-export const getDisplayName = (userData: any, profile: any) => {
+export const getDisplayName = (
+  userData: DisplayNameUserData | null | undefined,
+  profile: DisplayNameProfile | null | undefined
+): string => {
   return userData?.username || profile?.display_name || '';
 };
 

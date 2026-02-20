@@ -8,23 +8,19 @@
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Image,
-  Share,
-  Linking,
-  Platform,
-  Alert,
   Dimensions,
   FlatList,
 } from 'react-native';
+import type { ImageLoadEventData, NativeSyntheticEvent } from 'react-native';
 
 import { supabase } from '../../../lib/supabase';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useSingleDealInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
-import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
+import { getDealViewCount, getDealViewerPhotos } from '../../services/interactionService';
 import type { Deal } from '../../types/deal';
+import { logger } from '../../utils/logger';
 
-import type {
-  DealDetailState,
+import {
   ViewData,
   ImageCarouselState,
   DealInteractions,
@@ -32,6 +28,17 @@ import type {
   ImageViewerState,
   MapModalState,
 } from './types';
+import {
+  buildTemplateImages,
+  fetchDealInstanceRecord,
+  formatDealDate,
+  mergeDealWithTemplate,
+  removeZipCode,
+  resolvePrimaryImageUri,
+  resolveSkeletonHeight,
+  toDealImageVariants,
+} from './useDealDetail.helpers';
+import { useDealDetailUi, type DealDetailNavigation } from './useDealDetailUi';
 
 // ---------------------------------------------------------------------------
 // Route type
@@ -60,7 +67,7 @@ export function useDealDetail() {
   const navigation = useNavigation();
   const route = useRoute<DealDetailRouteProp>();
   const { deal } = route.params;
-  const { updateDeal, postAdded, setPostAdded } = useDealUpdate();
+  const { updateDeal, postAdded } = useDealUpdate();
 
   // ----- Core state -------------------------------------------------------
   const [dealData, setDealData] = useState<Deal>(deal);
@@ -76,7 +83,7 @@ export function useDealDetail() {
         const { data: { user } } = await supabase.auth.getUser();
         setCurrentUserId(user?.id || null);
       } catch (error) {
-        console.error('Error getting current user:', error);
+        logger.error('Error getting current user:', error);
       }
     };
     fetchCurrentUserId();
@@ -116,7 +123,7 @@ export function useDealDetail() {
           filter: `deal_id=eq.${dealData.id}`,
         },
         (payload) => {
-          const interaction = payload.new as any;
+          const interaction = payload.new;
           if (interaction.interaction_type === 'click') {
             setViewCount(prev => (prev ?? 0) + 1);
           }
@@ -140,136 +147,75 @@ export function useDealDetail() {
   const [skeletonHeight, setSkeletonHeight] = useState(250);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
 
+  const applyCachedImages = useCallback((): boolean => {
+    const cached = dealImageCache.get(dealData.id);
+    if (!cached) {
+      return false;
+    }
+    setCarouselImageUris(cached.carouselUrls);
+    setOriginalImageUris(cached.originalUrls);
+    setImageLoading(false);
+    setHasFetchedFreshImages(true);
+    return true;
+  }, [dealData.id]);
+
   // Preload image dimensions for skeleton
   useEffect(() => {
-    const getImageSize = async () => {
+    let isMounted = true;
+    const loadSkeleton = async () => {
       try {
-        let uriToLoad = '';
-        if (dealData.imageVariants) {
-          uriToLoad = dealData.imageVariants.large || dealData.imageVariants.original || '';
-        } else if (typeof dealData.image === 'string') {
-          uriToLoad = dealData.image;
-        }
-        if (uriToLoad) {
-          const timeoutId = setTimeout(() => { setSkeletonHeight(250); }, 1000);
-          Image.getSize(
-            uriToLoad,
-            (width, height) => {
-              clearTimeout(timeoutId);
-              const aspectRatio = height / width;
-              const calculatedHeight = Math.min(aspectRatio * Dimensions.get('window').width, 400);
-              setSkeletonHeight(calculatedHeight);
-            },
-            () => { clearTimeout(timeoutId); setSkeletonHeight(250); },
-          );
-        } else {
-          setSkeletonHeight(250);
+        const uriToLoad = resolvePrimaryImageUri(
+          dealData.image,
+          dealData.imageVariants
+        );
+        const nextHeight = await resolveSkeletonHeight(uriToLoad, screenWidth);
+        if (isMounted) {
+          setSkeletonHeight(nextHeight);
         }
       } catch {
-        setSkeletonHeight(250);
+        if (isMounted) {
+          setSkeletonHeight(250);
+        }
       }
     };
-    getImageSize();
-  }, [dealData.id]);
+    loadSkeleton();
+    return () => {
+      isMounted = false;
+    };
+  }, [dealData.id, dealData.image, dealData.imageVariants]);
 
   // Fetch deal data + images from Supabase
   const fetchDealData = useCallback(async (forceRefresh = false) => {
-    const hasCachedImages = dealImageCache.has(dealData.id);
     try {
-      const { data: instance, error } = await supabase
-        .from('deal_instance')
-        .select(`
-          deal_id, template_id, is_anonymous, end_date,
-          deal_template!inner(
-            title, description, image_metadata_id,
-            user:user_id(display_name, profile_photo, image_metadata:profile_photo_metadata_id(variants)),
-            image_metadata:image_metadata_id(variants, original_path),
-            deal_images(image_metadata_id, display_order, is_thumbnail,
-              image_metadata:image_metadata_id(variants, original_path))
-          )
-        `)
-        .eq('deal_id', dealData.id)
-        .single();
+      const { instance, error } = await fetchDealInstanceRecord(dealData.id);
 
       if (error || !instance) {
-        if (hasCachedImages && !forceRefresh) {
-          const cached = dealImageCache.get(dealData.id)!;
-          setCarouselImageUris(cached.carouselUrls);
-          setOriginalImageUris(cached.originalUrls);
-          setImageLoading(false);
-          setHasFetchedFreshImages(true);
+        if (!forceRefresh) {
+          applyCachedImages();
         }
         return;
       }
 
-      const template = (instance as any).deal_template as any;
+      const template = instance.deal_template;
 
-      // Update deal metadata
       if (template) {
-        const isAnonymous = (instance as any).is_anonymous ?? false;
-        const endDate = (instance as any).end_date;
-        let userProfilePhotoUrl: string | undefined;
-        if (template.user?.image_metadata?.variants?.small) {
-          userProfilePhotoUrl = template.user.image_metadata.variants.small;
-        } else if (template.user?.image_metadata?.variants?.thumbnail) {
-          userProfilePhotoUrl = template.user.image_metadata.variants.thumbnail;
-        } else if (template.user?.profile_photo) {
-          userProfilePhotoUrl = template.user.profile_photo;
-        }
-        setDealData(prev => ({
-          ...prev,
-          title: template.title || prev.title,
-          details: template.description ?? prev.details,
-          isAnonymous,
-          author: isAnonymous ? 'Anonymous' : (template.user?.display_name || prev.author),
-          userDisplayName: template.user?.display_name || prev.userDisplayName,
-          userProfilePhoto: userProfilePhotoUrl || prev.userProfilePhoto,
-          expirationDate: endDate ?? prev.expirationDate,
-        }));
+        setDealData(prev => mergeDealWithTemplate(prev, instance, template));
       }
 
-      if (hasCachedImages && !forceRefresh) {
-        const cached = dealImageCache.get(dealData.id)!;
-        setCarouselImageUris(cached.carouselUrls);
-        setOriginalImageUris(cached.originalUrls);
-        setImageLoading(false);
-        setHasFetchedFreshImages(true);
+      if (!forceRefresh && applyCachedImages()) {
         return;
       }
 
-      // Process images
-      let images = (template?.deal_images || [])
-        .map((img: any) => {
-          const variants = img?.image_metadata?.variants;
-          const originalPath = img?.image_metadata?.original_path;
-          return {
-            displayOrder: img.display_order ?? 0,
-            variants,
-            displayUrl: variants?.large || variants?.medium || variants?.original || '',
-            originalUrl: originalPath || variants?.public || variants?.original || variants?.large || variants?.medium || '',
-          };
-        })
-        .filter((x: any) => x.displayUrl && x.originalUrl)
-        .sort((a: any, b: any) => a.displayOrder - b.displayOrder);
-
-      if (images.length === 0 && template?.image_metadata?.variants) {
-        const variants = template.image_metadata.variants;
-        const originalPath = template.image_metadata.original_path;
-        const displayUrl = variants.large || variants.medium || variants.original || '';
-        const originalUrl = originalPath || (variants as any)?.public || variants.original || variants.large || variants.medium || '';
-        if (displayUrl && originalUrl) {
-          images = [{ displayOrder: 0, variants, displayUrl, originalUrl }];
-        }
-      }
+      const images = buildTemplateImages(template);
 
       if (template && images.length > 0) {
-        const firstImageVariants = images[0].variants;
+        const firstImageVariants = toDealImageVariants(images[0].variants);
         setDealData(prev => ({ ...prev, imageVariants: firstImageVariants || prev.imageVariants }));
       }
 
       if (images.length > 0) {
-        const carouselUrls = images.map((x: any) => x.displayUrl);
-        const origUrls = images.map((x: any) => x.originalUrl);
+        const carouselUrls = images.map((x) => x.displayUrl);
+        const origUrls = images.map((x) => x.originalUrl);
         dealImageCache.set(dealData.id, { carouselUrls, originalUrls: origUrls });
         setCarouselImageUris(carouselUrls);
         setOriginalImageUris(origUrls);
@@ -280,7 +226,7 @@ export function useDealDetail() {
     } catch {
       setHasFetchedFreshImages(true);
     }
-  }, [dealData.id, dealData.title]);
+  }, [applyCachedImages, dealData.id]);
 
   // Initial fetch
   useEffect(() => { fetchDealData(false); }, [fetchDealData]);
@@ -299,7 +245,7 @@ export function useDealDetail() {
   useEffect(() => { updateDeal(dealData); }, [dealData, updateDeal]);
 
   // Image load / error handlers
-  const handleImageLoad = (event?: any) => {
+  const handleImageLoad = (event?: NativeSyntheticEvent<ImageLoadEventData>) => {
     setImageLoading(false);
     setImageError(false);
     if (event?.nativeEvent?.source) {
@@ -321,19 +267,13 @@ export function useDealDetail() {
   useEffect(() => {
     setImageError(false);
     setImageDimensions(null);
-    const cached = dealImageCache.get(dealData.id);
-    if (cached) {
-      setCarouselImageUris(cached.carouselUrls);
-      setOriginalImageUris(cached.originalUrls);
-      setHasFetchedFreshImages(true);
-      setImageLoading(false);
-    } else {
+    if (!applyCachedImages()) {
       setImageLoading(true);
       setHasFetchedFreshImages(false);
       setCarouselImageUris(null);
       setOriginalImageUris(null);
     }
-  }, [dealData.id]);
+  }, [applyCachedImages, dealData.id]);
 
   // ----- Interaction handlers (vote / fav) --------------------------------
   const { handleUpvote, handleDownvote, handleFavorite } = useSingleDealInteractionHandlers({
@@ -341,160 +281,16 @@ export function useDealDetail() {
     setDeal: setDealData,
   });
 
-  const handleShare = async () => {
-    try {
-      logShare(dealData.id, 'feed').catch(err => console.error('Failed to log share interaction:', err));
-      const result = await Share.share({
-        message: `Check out this deal at ${dealData.restaurant}: ${dealData.title}`,
-        title: dealData.title,
-      });
-      if (result.action === Share.sharedAction) {
-        console.log('Deal shared successfully');
-      }
-    } catch (error) {
-      console.error('Error sharing deal:', error);
-      Alert.alert('Error', 'Unable to share this deal');
-    }
-  };
-
-  // ----- Map / directions -------------------------------------------------
-  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
-
-  const handleDirections = () => {
-    logClickThrough(dealData.id, 'feed').catch(err => console.error('Failed to log click-through interaction:', err));
-    setIsMapModalVisible(true);
-  };
-
-  const handleSelectAppleMaps = async () => {
-    setIsMapModalVisible(false);
-    try {
-      const address = dealData.restaurantAddress || dealData.restaurant;
-      const encodedAddress = encodeURIComponent(address);
-      const appleMapsUrl = `maps://?daddr=${encodedAddress}`;
-      const supported = await Linking.canOpenURL(appleMapsUrl);
-      if (supported) {
-        await Linking.openURL(appleMapsUrl);
-      } else {
-        await Linking.openURL(`http://maps.apple.com/?daddr=${encodedAddress}`);
-      }
-    } catch {
-      Alert.alert('Error', 'Unable to open Apple Maps');
-    }
-  };
-
-  const handleSelectGoogleMaps = async () => {
-    setIsMapModalVisible(false);
-    try {
-      const address = dealData.restaurantAddress || dealData.restaurant;
-      const encodedAddress = encodeURIComponent(address);
-      let url: string;
-      if (Platform.OS === 'ios') {
-        url = `comgooglemaps://?daddr=${encodedAddress}`;
-        const supported = await Linking.canOpenURL(url);
-        if (!supported) {
-          url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
-        }
-      } else {
-        url = `google.navigation:q=${encodedAddress}`;
-        const supported = await Linking.canOpenURL(url);
-        if (!supported) {
-          url = `geo:0,0?q=${encodedAddress}`;
-          const geoSupported = await Linking.canOpenURL(url);
-          if (!geoSupported) {
-            url = `https://maps.google.com/maps?daddr=${encodedAddress}`;
-          }
-        }
-      }
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert('Error', 'Unable to open Google Maps');
-    }
-  };
-
-  // ----- Popup (three-dot) ------------------------------------------------
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
-
-  const handleMoreButtonPress = () => setIsPopupVisible(true);
-  const handleClosePopup = () => setIsPopupVisible(false);
-  const handleReportContent = () => setIsPopupVisible(false);
-  const handleBlockUser = () => {
-    setIsPopupVisible(false);
-    (navigation as any).navigate('BlockUser', {
-      dealId: dealData.id,
-      uploaderUserId: dealData.userId || '00000000-0000-0000-0000-000000000000',
-    });
-  };
-
-  // ----- User press -------------------------------------------------------
-  const handleUserPress = () => {
-    if (dealData.isAnonymous || !dealData.userId || !dealData.userDisplayName) return;
-    (navigation as any).navigate('UserProfile', {
-      viewUser: true,
-      username: dealData.userDisplayName,
-      userId: dealData.userId,
-    });
-  };
-
-  // ----- Image viewer modal -----------------------------------------------
-  const [isImageViewVisible, setImageViewVisible] = useState(false);
-  const [modalImageLoading, setModalImageLoading] = useState(false);
-  const [modalImageError, setModalImageError] = useState(false);
-  const [imageViewerKey, setImageViewerKey] = useState(0);
-
-  const openImageViewer = () => {
-    setModalImageLoading(true);
-    setModalImageError(false);
-    setImageViewVisible(true);
-    setImageViewerKey(prev => prev + 1);
-  };
-
-  // Derived: best-effort original-variant URI swap
-  const toOriginalVariantUri = (uri: string): string => {
-    if (!uri || typeof uri !== 'string') return uri;
-    if (uri.startsWith('https://res.cloudinary.com/')) return uri;
-    return uri
-      .replace('/large/', '/original/')
-      .replace('/medium/', '/original/')
-      .replace('/small/', '/original/')
-      .replace('/thumbnail/', '/original/')
-      .replace('large/', 'original/')
-      .replace('medium/', 'original/')
-      .replace('small/', 'original/')
-      .replace('thumbnail/', 'original/');
-  };
-
   const imagesForCarousel = carouselImageUris && carouselImageUris.length > 0
     ? carouselImageUris
     : (hasFetchedFreshImages && dealData.images && dealData.images.length > 0 ? dealData.images : null);
-
-  const fullScreenImageSource =
-    (originalImageUris && originalImageUris[currentImageIndex]) ||
-    (imagesForCarousel && imagesForCarousel[currentImageIndex] ? toOriginalVariantUri(imagesForCarousel[currentImageIndex]) : null) ||
-    dealData.imageVariants?.original ||
-    dealData.imageVariants?.large ||
-    (typeof dealData.image === 'string' ? toOriginalVariantUri(dealData.image) : dealData.image);
-
-  // ----- Helpers exposed to sections --------------------------------------
-  const formatDate = (dateString: string | null) => {
-    if (!dateString || dateString === 'Unknown') return 'Not Known';
-    const date = new Date(dateString);
-    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-    });
-  };
-
-  const removeZipCode = (address: string) => {
-    return address.replace(/,?\s*\d{5}(-\d{4})?$/, '').trim();
-  };
-
-  // Profile picture / display name derivations
-  const profilePicture = (dealData.isAnonymous || !dealData.userProfilePhoto)
-    ? require('../../../img/Default_pfp.svg.png')
-    : { uri: dealData.userProfilePhoto };
-
-  const displayName = dealData.isAnonymous
-    ? 'Anonymous'
-    : (dealData.userDisplayName || 'Unknown User');
+  const uiState = useDealDetailUi({
+    navigation: navigation as unknown as DealDetailNavigation,
+    dealData,
+    imagesForCarousel,
+    originalImageUris,
+    currentImageIndex,
+  });
 
   // ----- Return everything ------------------------------------------------
   return {
@@ -537,45 +333,24 @@ export function useDealDetail() {
       handleUpvote,
       handleDownvote,
       handleFavorite,
-      handleShare,
-      handleDirections,
+      handleShare: uiState.handleShare,
+      handleDirections: uiState.handleDirections,
     } as DealInteractions,
 
     // Popup
-    popup: {
-      isPopupVisible,
-      handleMoreButtonPress,
-      handleClosePopup,
-      handleReportContent,
-      handleBlockUser,
-    } as PopupActions,
+    popup: uiState.popup as PopupActions,
 
     // Image viewer modal
-    imageViewer: {
-      isVisible: isImageViewVisible,
-      open: openImageViewer,
-      close: () => setImageViewVisible(false),
-      modalImageLoading,
-      modalImageError,
-      setModalImageLoading,
-      setModalImageError,
-      fullScreenImageSource,
-      imageViewerKey,
-    } as ImageViewerState,
+    imageViewer: uiState.imageViewer as ImageViewerState,
 
     // Map modal
-    mapModal: {
-      isVisible: isMapModalVisible,
-      onClose: () => setIsMapModalVisible(false),
-      onSelectAppleMaps: handleSelectAppleMaps,
-      onSelectGoogleMaps: handleSelectGoogleMaps,
-    } as MapModalState,
+    mapModal: uiState.mapModal as MapModalState,
 
     // Helpers
-    formatDate,
+    formatDate: formatDealDate,
     removeZipCode,
-    profilePicture,
-    displayName,
-    handleUserPress,
+    profilePicture: uiState.profilePicture,
+    displayName: uiState.displayName,
+    handleUserPress: uiState.handleUserPress,
   };
 }

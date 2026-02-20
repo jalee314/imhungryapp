@@ -21,6 +21,11 @@ import {
 } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives';
 
+const profileUsernameSkeletonStyle = { marginBottom: 6 };
+const profileJoinDateSkeletonStyle = { marginBottom: 4 };
+const profileGridEvenStyle = { marginRight: 2 };
+const profileGridOddStyle = { marginLeft: 2 };
+
 export function ProfileSkeleton() {
   return (
     <SafeAreaView style={s.container}>
@@ -41,9 +46,9 @@ export function ProfileSkeleton() {
           >
             <Box flex={1} direction="column" gap="xs">
               {/* Username skeleton */}
-              <SkeletonLoader width={150} height={24} borderRadius={RADIUS.sm} style={{ marginBottom: 6 }} />
+              <SkeletonLoader width={150} height={24} borderRadius={RADIUS.sm} style={profileUsernameSkeletonStyle} />
               {/* Join date skeleton */}
-              <SkeletonLoader width={120} height={14} borderRadius={RADIUS.sm} style={{ marginBottom: 4 }} />
+              <SkeletonLoader width={120} height={14} borderRadius={RADIUS.sm} style={profileJoinDateSkeletonStyle} />
               {/* Location skeleton */}
               <SkeletonLoader width={100} height={14} borderRadius={RADIUS.sm} />
             </Box>
@@ -88,7 +93,7 @@ export function ProfileSkeleton() {
               <Box
                 key={item}
                 mb="xs"
-                style={index % 2 === 0 ? { marginRight: 2 } : { marginLeft: 2 }}
+                style={index % 2 === 0 ? profileGridEvenStyle : profileGridOddStyle}
               >
                 <DealCardSkeleton variant="vertical" />
               </Box>

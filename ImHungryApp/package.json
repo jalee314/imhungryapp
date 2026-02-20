@@ -10,6 +10,8 @@
     "web": "expo start --web",
     "lint": "ESLINT_USE_FLAT_CONFIG=true eslint src/ --config eslint.config.js --ignore-pattern 'node_modules/'",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=true eslint src/ --config eslint.config.js --fix --ignore-pattern 'node_modules/'",
+    "lint:report": "ESLINT_USE_FLAT_CONFIG=true eslint src/ --config eslint.config.js --ignore-pattern 'node_modules/' --format json --output-file lint-report.json; node -e \"const r=require('./lint-report.json');const w=r.reduce((a,f)=>a+f.warningCount,0);const e=r.reduce((a,f)=>a+f.errorCount,0);console.log('Lint summary — files: '+r.length+', errors: '+e+', warnings: '+w)\"",
+    "lint:strict": "ESLINT_USE_FLAT_CONFIG=true eslint src/ --config eslint.config.js --ignore-pattern 'node_modules/' --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",

@@ -18,8 +18,103 @@ import { dealCacheService } from '../../services/dealCacheService';
 import { logClick } from '../../services/interactionService';
 import { calculateVoteCounts } from '../../services/voteService';
 import type { Deal } from '../../types/deal';
+import { logger } from '../../utils/logger';
 
 import type { FeedContext } from './types';
+
+// ---------------------------------------------------------------------------
+// Local helpers
+// ---------------------------------------------------------------------------
+
+const applyVoteCountUpdate = (
+  deals: Deal[],
+  changedDealId: string,
+  voteCounts: Record<string, number>,
+): Deal[] =>
+  deals.map((deal) => (
+    deal.id === changedDealId
+      ? { ...deal, votes: voteCounts[changedDealId] ?? deal.votes }
+      : deal
+  ));
+
+const applyFavoriteRealtimeUpdate = (
+  deals: Deal[],
+  dealId: string | undefined,
+  isFavorited: boolean,
+): Deal[] => {
+  if (!dealId) return deals;
+  return deals.map((deal) => (
+    deal.id === dealId ? { ...deal, isFavorited } : deal
+  ));
+};
+
+const scheduleFavoriteRealtimeUpdate = (
+  setDeals: React.Dispatch<React.SetStateAction<Deal[]>>,
+  dealId: string | undefined,
+  isFavorited: boolean,
+) => {
+  setTimeout(() => {
+    setDeals((prevDeals) => applyFavoriteRealtimeUpdate(prevDeals, dealId, isFavorited));
+  }, 0);
+};
+
+const hasVariantDifference = (
+  cachedVariants: Deal['imageVariants'],
+  currentVariants: Deal['imageVariants'],
+): boolean => {
+  if (!cachedVariants && !currentVariants) return false;
+  if (!cachedVariants || !currentVariants) return true;
+  return cachedVariants.medium !== currentVariants.medium
+    || cachedVariants.small !== currentVariants.small
+    || cachedVariants.thumbnail !== currentVariants.thumbnail;
+};
+
+const shouldSyncFromCache = (
+  cachedDeals: Deal[],
+  prevDeals: Deal[],
+): boolean => {
+  if (cachedDeals.length !== prevDeals.length) return true;
+
+  const prevDealsById = new Map(prevDeals.map((deal) => [deal.id, deal] as const));
+  for (const cachedDeal of cachedDeals) {
+    const currentDeal = prevDealsById.get(cachedDeal.id);
+    if (!currentDeal) return true;
+    if (cachedDeal.isAnonymous !== currentDeal.isAnonymous) return true;
+    if (cachedDeal.author !== currentDeal.author) return true;
+    if (cachedDeal.title !== currentDeal.title) return true;
+    if (cachedDeal.details !== currentDeal.details) return true;
+    if (hasVariantDifference(cachedDeal.imageVariants, currentDeal.imageVariants)) return true;
+  }
+
+  return false;
+};
+
+const applyUpdatedDeals = (
+  prevDeals: Deal[],
+  getUpdatedDeal: (dealId: string) => Deal | undefined,
+) => {
+  let hasChanges = false;
+  const dealIdsToClear: string[] = [];
+
+  const updatedDeals = prevDeals.map((deal) => {
+    const updatedDeal = getUpdatedDeal(deal.id);
+    if (!updatedDeal) return deal;
+    hasChanges = true;
+    dealIdsToClear.push(deal.id);
+    return updatedDeal;
+  });
+
+  return { hasChanges, dealIdsToClear, updatedDeals };
+};
+
+const clearDealUpdates = (
+  dealIdsToClear: string[],
+  clearUpdatedDeal: (dealId: string) => void,
+) => {
+  for (const dealId of dealIdsToClear) {
+    clearUpdatedDeal(dealId);
+  }
+};
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -62,7 +157,7 @@ export function useFeed(): FeedContext {
       setDeals(cachedDeals);
       setError(null);
     } catch (err) {
-      console.error('Error loading deals:', err);
+      logger.error('Error loading deals:', err);
       setError('Failed to load deals. Please try again.');
     } finally {
       setLoading(false);
@@ -83,6 +178,7 @@ export function useFeed(): FeedContext {
     } else {
       setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCoordinates, hasLocationSet, isInitialLoad]);
 
   // ----- Realtime subscriptions ---------------------------------------------
@@ -107,7 +203,7 @@ export function useFeed(): FeedContext {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'interaction' },
-          async (payload: any) => {
+          async (payload) => {
             const interaction = payload.new || payload.old;
             if (interaction.interaction_type === 'click') return;
             if (interaction.user_id === userId) return;
@@ -121,15 +217,7 @@ export function useFeed(): FeedContext {
             const changedDealId = interaction.deal_id;
             const voteCounts = await calculateVoteCounts([changedDealId]);
 
-            setDeals(prevDeals => prevDeals.map(deal => {
-              if (deal.id === changedDealId) {
-                return {
-                  ...deal,
-                  votes: voteCounts[changedDealId] ?? deal.votes,
-                };
-              }
-              return deal;
-            }));
+            setDeals((prevDeals) => applyVoteCountUpdate(prevDeals, changedDealId, voteCounts));
           },
         )
         .subscribe();
@@ -139,14 +227,10 @@ export function useFeed(): FeedContext {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'favorite', filter: `user_id=eq.${userId}` },
-          (payload: any) => {
+          (payload) => {
             const dealId = payload.new?.deal_id || payload.old?.deal_id;
             const isFavorited = payload.eventType === 'INSERT';
-            setTimeout(() => {
-              setDeals(prevDeals => prevDeals.map(deal =>
-                deal.id === dealId ? { ...deal, isFavorited } : deal,
-              ));
-            }, 0);
+            scheduleFavoriteRealtimeUpdate(setDeals, dealId, isFavorited);
           },
         )
         .subscribe();
@@ -157,6 +241,7 @@ export function useFeed(): FeedContext {
     return () => {
       if (interactionChannel.current) supabase.removeChannel(interactionChannel.current);
       if (favoriteChannel.current) supabase.removeChannel(favoriteChannel.current);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       recentActions.current.clear();
     };
   }, []);
@@ -166,7 +251,7 @@ export function useFeed(): FeedContext {
     React.useCallback(() => {
       const syncWithCache = async () => {
         if (postAdded) {
-          console.log('📸 Feed: postAdded detected, syncing with fresh cache');
+          logger.info('📸 Feed: postAdded detected, syncing with fresh cache');
           const cachedDeals = dealCacheService.getCachedDeals();
           if (cachedDeals.length > 0) {
             setDeals(cachedDeals);
@@ -177,27 +262,9 @@ export function useFeed(): FeedContext {
 
         const cachedDeals = dealCacheService.getCachedDeals();
         if (cachedDeals.length > 0) {
-          setDeals(prevDeals => {
-            const hasChanges = cachedDeals.some((cachedDeal) => {
-              const currentDeal = prevDeals.find(d => d.id === cachedDeal.id);
-              if (!currentDeal) return true;
-
-              if (cachedDeal.isAnonymous !== currentDeal.isAnonymous) return true;
-              if (cachedDeal.author !== currentDeal.author) return true;
-              if (cachedDeal.title !== currentDeal.title) return true;
-              if (cachedDeal.details !== currentDeal.details) return true;
-
-              const cachedVariants = cachedDeal.imageVariants;
-              const currentVariants = currentDeal.imageVariants;
-              if (!cachedVariants && !currentVariants) return false;
-              if (!cachedVariants || !currentVariants) return true;
-              return cachedVariants.medium !== currentVariants.medium ||
-                cachedVariants.small !== currentVariants.small ||
-                cachedVariants.thumbnail !== currentVariants.thumbnail;
-            });
-
-            if (hasChanges || cachedDeals.length !== prevDeals.length) {
-              console.log('📸 Feed: Detected deal changes, syncing with cache');
+          setDeals((prevDeals) => {
+            if (shouldSyncFromCache(cachedDeals, prevDeals)) {
+              logger.info('📸 Feed: Detected deal changes, syncing with cache');
               return cachedDeals;
             }
             return prevDeals;
@@ -207,22 +274,12 @@ export function useFeed(): FeedContext {
       syncWithCache();
 
       const timeoutId = setTimeout(() => {
-        setDeals(prevDeals => {
-          let hasChanges = false;
-          const dealIdsToClear: string[] = [];
-          const updatedDeals = prevDeals.map(deal => {
-            const updatedDeal = getUpdatedDeal(deal.id);
-            if (updatedDeal) {
-              hasChanges = true;
-              dealIdsToClear.push(deal.id);
-              return updatedDeal;
-            }
-            return deal;
-          });
+        setDeals((prevDeals) => {
+          const { hasChanges, dealIdsToClear, updatedDeals } = applyUpdatedDeals(prevDeals, getUpdatedDeal);
 
           if (hasChanges) {
             setTimeout(() => {
-              dealIdsToClear.forEach(id => clearUpdatedDeal(id));
+              clearDealUpdates(dealIdsToClear, clearUpdatedDeal);
             }, 0);
           }
 
@@ -240,7 +297,7 @@ export function useFeed(): FeedContext {
       const freshDeals = await dealCacheService.getDeals(true);
       setTimeout(() => setDeals(freshDeals), 0);
     } catch (err) {
-      console.error('Error refreshing deals:', err);
+      logger.error('Error refreshing deals:', err);
     } finally {
       setRefreshing(false);
     }
@@ -265,9 +322,9 @@ export function useFeed(): FeedContext {
     if (selectedDeal) {
       const positionInFeed = filteredDeals.findIndex(d => d.id === dealId);
       logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
-        console.error('Failed to log click:', err);
+        logger.error('Failed to log click:', err);
       });
-      (navigation as any).navigate('DealDetail', { deal: selectedDeal });
+      (navigation).navigate('DealDetail', { deal: selectedDeal });
     }
   };
 

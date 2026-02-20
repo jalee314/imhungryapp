@@ -22,7 +22,7 @@ jest.mock('@react-navigation/native', () => ({
 
 // Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => ({
-  MaterialCommunityIcons: ({ name, size, color }: { name: string; size: number; color: string }) => {
+  MaterialCommunityIcons: ({ name, size: _size, color: _color }: { name: string; size: number; color: string }) => {
     const { Text } = require('react-native');
     return <Text testID={`icon-${name}`}>{name}</Text>;
   },

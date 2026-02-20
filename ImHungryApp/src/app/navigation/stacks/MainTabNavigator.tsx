@@ -9,8 +9,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 
 import { useAdmin } from '../../../hooks/useAdmin';
-
-// Tab stacks
 import type { TabParamList } from '../types';
 
 import { CustomTabBar } from './CustomTabBar';

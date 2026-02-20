@@ -13,6 +13,14 @@ export interface CommunityErrorStateProps {
   onRetry: () => void;
 }
 
+const interFont = { fontFamily: 'Inter' };
+const retryButtonStyle = {
+  backgroundColor: BRAND.accent,
+  paddingHorizontal: SPACING['2xl'],
+  paddingVertical: SPACING.md,
+  borderRadius: RADIUS.md,
+};
+
 export function CommunityErrorState({ message, onRetry }: CommunityErrorStateProps) {
   return (
     <Box flex={1} center py="5xl">
@@ -21,24 +29,19 @@ export function CommunityErrorState({ message, onRetry }: CommunityErrorStatePro
         color={GRAY[600]}
         textAlign="center"
         mb="lg"
-        style={{ fontFamily: 'Inter' }}
+        style={interFont}
       >
         {message}
       </Text>
       <TouchableOpacity
         onPress={onRetry}
-        style={{
-          backgroundColor: BRAND.accent,
-          paddingHorizontal: SPACING['2xl'],
-          paddingVertical: SPACING.md,
-          borderRadius: RADIUS.md,
-        }}
+        style={retryButtonStyle}
       >
         <Text
           size="md"
           weight="semibold"
           color={STATIC.white}
-          style={{ fontFamily: 'Inter' }}
+          style={interFont}
         >
           Retry
         </Text>

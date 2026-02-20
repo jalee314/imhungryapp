@@ -2,6 +2,7 @@ import React from 'react';
 import { create } from 'zustand';
 
 import { getCurrentUserLocation, checkLocationPermission } from '../services/locationService';
+import { logger } from '../utils/logger';
 
 import { useAuthStore } from './AuthStore';
 
@@ -25,7 +26,7 @@ interface LocationState {
   initialize: () => void;
   cleanup: () => void;
   setCurrentLocation: (location: string) => void;
-  updateLocation: (location: any) => void;
+  updateLocation: (location) => void;
   loadCurrentLocation: () => Promise<void>;
   refreshPermissionStatus: () => Promise<void>;
 }
@@ -83,7 +84,7 @@ export const useLocationStore = create<LocationState>((set, get) => ({
 
   setCurrentLocation: (location: string) => set({ currentLocation: location }),
 
-  updateLocation: (location: any) => {
+  updateLocation: (location) => {
     // State is now a 2-letter abbreviation for current location, or full state name for manual selection
     const stateValue = location?.state ?? '';
     // If state is 2 letters (abbreviation), use it directly; otherwise, extract abbreviation from full state name
@@ -102,7 +103,7 @@ export const useLocationStore = create<LocationState>((set, get) => ({
     }
 
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      console.log('Global location updated to:', location);
+      logger.info('Global location updated to:', location);
     }
   },
 
@@ -127,19 +128,19 @@ export const useLocationStore = create<LocationState>((set, get) => ({
           _hasLoadedLocation: true,
         });
         if (typeof __DEV__ !== 'undefined' && __DEV__) {
-          console.log(`✅ Location loaded in ${took}ms (from database, no geocoding):`, {
+          logger.info(`✅ Location loaded in ${took}ms (from database, no geocoding):`, {
             display: displayName,
             coordinates: { lat: location.lat, lng: location.lng },
           });
         }
       } else {
         if (typeof __DEV__ !== 'undefined' && __DEV__) {
-          console.log(`⚠️ No location found (${took}ms)`);
+          logger.info(`⚠️ No location found (${took}ms)`);
         }
         set({ hasLocationSet: false, isLoading: false, isInitialLoad: false });
       }
     } catch (e) {
-      console.error('Error loading current location:', e);
+      logger.error('Error loading current location:', e);
       set({ hasLocationSet: false, isLoading: false, isInitialLoad: false });
     }
   },
@@ -149,7 +150,7 @@ export const useLocationStore = create<LocationState>((set, get) => ({
       const hasPermission = await checkLocationPermission();
       set({ hasLocationPermission: hasPermission });
     } catch (e) {
-      console.error('Error checking location permission:', e);
+      logger.error('Error checking location permission:', e);
       set({ hasLocationPermission: false });
     }
   },

@@ -10,7 +10,31 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 
 import { useDealUpdate } from '../../../hooks/useDealUpdate';
 import { fetchUserPosts, transformDealForUI } from '../../../services/dealService';
+import type { UserPost } from '../../../services/userPostsService';
+import { logger } from '../../../utils/logger';
 import type { ProfilePostsState } from '../types';
+
+// ============================================================================
+// Local helpers
+// ============================================================================
+
+const clearUpdatedDealIds = (
+  dealIdsToClear: string[],
+  clearUpdatedDeal: (dealId: string) => void,
+) => {
+  for (const dealId of dealIdsToClear) {
+    clearUpdatedDeal(dealId);
+  }
+};
+
+const scheduleClearUpdatedDealIds = (
+  dealIdsToClear: string[],
+  clearUpdatedDeal: (dealId: string) => void,
+) => {
+  setTimeout(() => {
+    clearUpdatedDealIds(dealIdsToClear, clearUpdatedDeal);
+  }, 0);
+};
 
 // ============================================================================
 // Hook
@@ -24,7 +48,7 @@ export interface UseProfilePostsParams {
 }
 
 export interface UseProfilePostsResult extends ProfilePostsState {
-  setUserPosts: React.Dispatch<React.SetStateAction<any[]>>;
+  setUserPosts: React.Dispatch<React.SetStateAction<UserPost[]>>;
   loadUserPosts: () => Promise<void>;
   setPostsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setPostsInitialized: React.Dispatch<React.SetStateAction<boolean>>;
@@ -36,7 +60,7 @@ export function useProfilePosts({
   activeTab,
   refreshProfile,
 }: UseProfilePostsParams): UseProfilePostsResult {
-  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [userPosts, setUserPosts] = useState<UserPost[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsInitialized, setPostsInitialized] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
@@ -56,7 +80,7 @@ export function useProfilePosts({
       const unique = Array.from(new Map(transformed.map((p) => [p.id, p])).values());
       setUserPosts(unique);
     } catch (err) {
-      console.error('Error loading user posts:', err);
+      logger.error('Error loading user posts:', err);
       setPostsError('Failed to load your posts');
     } finally {
       setPostsLoading(false);
@@ -87,7 +111,7 @@ export function useProfilePosts({
       let cancelled = false;
       const run = async () => {
         if (postAdded) {
-          console.log('📸 Profile: postAdded detected, refreshing posts');
+          logger.info('📸 Profile: postAdded detected, refreshing posts');
           await loadUserPosts();
           if (!cancelled) setPostAdded(false);
         }
@@ -115,10 +139,8 @@ export function useProfilePosts({
             });
 
             if (hasChanges) {
-              console.log('📸 Profile: Applying deal updates from store');
-              setTimeout(() => {
-                dealIdsToClear.forEach((id) => clearUpdatedDeal(id));
-              }, 0);
+              logger.info('📸 Profile: Applying deal updates from store');
+              scheduleClearUpdatedDealIds(dealIdsToClear, clearUpdatedDeal);
             }
 
             return hasChanges ? updatedPosts : prevPosts;

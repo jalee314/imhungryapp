@@ -7,12 +7,13 @@
  */
 
 import { useFocusEffect } from '@react-navigation/native';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 
 import { ProfileCacheService } from '../../../services/profileCacheService';
 import { loadCriticalProfileData, updateUserProfileCache } from '../../../services/profileLoadingService';
-import { UserProfileCache } from '../../../services/userProfileService';
+import type { UserPost } from '../../../services/userPostsService';
+import type { ProfileRecord, ProfileUserData, UserProfileCache } from '../../../services/userProfileService';
 import type { ProfileDataState } from '../types';
 
 // ============================================================================
@@ -25,7 +26,7 @@ export interface UseProfileDataParams {
 }
 
 export interface UseProfileDataResult extends ProfileDataState {
-  userData: any;
+  userData: ProfileUserData | null;
   userProfileCache: Map<string, UserProfileCache>;
   /** Re-fetch own profile data (for use after post-added, photo upload, etc.) */
   refreshProfile: () => Promise<void>;
@@ -34,22 +35,22 @@ export interface UseProfileDataResult extends ProfileDataState {
   /** Load another user's profile & posts, returning posts via callback */
   loadOtherUserProfile: (
     targetUserId: string,
-    onPostsLoaded: (posts: any[]) => void,
+    onPostsLoaded: (posts: UserPost[]) => void,
     onPostsLoadStart: () => void,
     onPostsLoadEnd: (initialized: boolean) => void,
   ) => Promise<void>;
   // Setters needed by sibling hooks
-  setProfile: React.Dispatch<React.SetStateAction<any | null>>;
+  setProfile: React.Dispatch<React.SetStateAction<ProfileRecord | null>>;
   setPhotoUrl: React.Dispatch<React.SetStateAction<string | null>>;
   setCurrentUserPhotoUrl: React.Dispatch<React.SetStateAction<string | null>>;
   setDealCount: React.Dispatch<React.SetStateAction<number>>;
   setHasData: React.Dispatch<React.SetStateAction<boolean>>;
-  setUserData: React.Dispatch<React.SetStateAction<any>>;
+  setUserData: React.Dispatch<React.SetStateAction<ProfileUserData | null>>;
 }
 
-export function useProfileData({ viewUser, userId }: UseProfileDataParams): UseProfileDataResult {
-  const [profile, setProfile] = useState<any | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+export function useProfileData({ viewUser, userId: _userId }: UseProfileDataParams): UseProfileDataResult {
+  const [profile, setProfile] = useState<ProfileRecord | null>(null);
+  const [userData, setUserData] = useState<ProfileUserData | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [currentUserPhotoUrl, setCurrentUserPhotoUrl] = useState<string | null>(null);
   const [dealCount, setDealCount] = useState<number>(0);
@@ -90,7 +91,7 @@ export function useProfileData({ viewUser, userId }: UseProfileDataParams): UseP
   const loadOtherUserProfile = useCallback(
     async (
       targetUserId: string,
-      onPostsLoaded: (posts: any[]) => void,
+      onPostsLoaded: (posts: UserPost[]) => void,
       onPostsLoadStart: () => void,
       onPostsLoadEnd: (initialized: boolean) => void,
     ) => {
@@ -120,7 +121,7 @@ export function useProfileData({ viewUser, userId }: UseProfileDataParams): UseP
             dealCount: criticalData.dealCount,
             userData: criticalData.userData,
             userPosts: updatedPosts,
-          } as any;
+          };
           setUserProfileCache((prev) =>
             updateUserProfileCache(prev, targetUserId, cacheData),
           );

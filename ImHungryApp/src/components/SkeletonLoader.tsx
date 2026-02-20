@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { StyleSheet, Animated } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 import { GRAY } from '../ui/alf';
 
@@ -7,7 +8,7 @@ interface SkeletonLoaderProps {
   width?: number | string;
   height?: number;
   borderRadius?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({

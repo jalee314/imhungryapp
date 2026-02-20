@@ -11,8 +11,6 @@ import {
   STATIC,
   RADIUS,
   SPACING,
-  FONT_SIZE,
-  FONT_WEIGHT,
   ALPHA_COLORS,
 } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';

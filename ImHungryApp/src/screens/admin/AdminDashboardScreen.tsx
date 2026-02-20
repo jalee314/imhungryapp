@@ -13,6 +13,9 @@ import { adminService } from '../../services/adminService';
 import type { AppAnalytics } from '../../types/admin';
 import { BRAND, GRAY } from '../../ui/alf';
 
+const dashboardScreenStyle = { flex: 1, backgroundColor: GRAY[100] };
+const dashboardScrollStyle = { flex: 1 };
+
 const AdminDashboardScreen: React.FC = () => {
   const navigation = useNavigation();
   const { exitAdminMode, exitAdminModeToSettings } = useAdmin();
@@ -66,7 +69,7 @@ const AdminDashboardScreen: React.FC = () => {
   };
 
   const navigateTo = (screen: string) => {
-    (navigation as any).navigate(screen);
+    (navigation).navigate(screen);
   };
 
   if (loading) {
@@ -94,14 +97,14 @@ const AdminDashboardScreen: React.FC = () => {
   }));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+    <SafeAreaView style={dashboardScreenStyle}>
       <AdminHeader
         title="Admin Dashboard"
         rightIcon="log-out-outline"
         onRightPress={handleSignOut}
       />
       <ScrollView
-        style={{ flex: 1 }}
+        style={dashboardScrollStyle}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[BRAND.accent]} />
         }

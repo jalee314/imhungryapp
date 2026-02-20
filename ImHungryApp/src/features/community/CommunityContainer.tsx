@@ -21,6 +21,13 @@ import {
 } from './sections';
 import { useCommunity } from './useCommunity';
 
+const communityScrollStyle = { flex: 1, backgroundColor: STATIC.white };
+const communityScrollContentStyle = {
+  paddingHorizontal: SPACING.md,
+  paddingTop: SPACING.sm,
+  paddingBottom: 0,
+};
+
 const CommunityContainer: React.FC = () => {
   const ctx = useCommunity();
 
@@ -44,8 +51,8 @@ const CommunityContainer: React.FC = () => {
       <CommunityHeader onGoBack={ctx.goBack} />
 
       <ScrollView
-        style={{ flex: 1, backgroundColor: STATIC.white }}
-        contentContainerStyle={{ paddingHorizontal: SPACING.md, paddingTop: SPACING.sm, paddingBottom: 0 }}
+        style={communityScrollStyle}
+        contentContainerStyle={communityScrollContentStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

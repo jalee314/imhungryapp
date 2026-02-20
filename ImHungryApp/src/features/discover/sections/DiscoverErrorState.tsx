@@ -14,6 +14,9 @@ export interface DiscoverErrorStateProps {
   onRetry: () => void;
 }
 
+const discoverErrorTitleStyle = { fontFamily: 'Inter' };
+const discoverErrorBodyStyle = { fontFamily: 'Inter', lineHeight: 20 };
+
 export function DiscoverErrorState({ message, onRetry }: DiscoverErrorStateProps) {
   return (
     <Box flex={1} center py="6xl" px="4xl">
@@ -25,7 +28,7 @@ export function DiscoverErrorState({ message, onRetry }: DiscoverErrorStateProps
         textAlign="center"
         mt="lg"
         mb="sm"
-        style={{ fontFamily: 'Inter' }}
+        style={discoverErrorTitleStyle}
       >
         Unable to load restaurants
       </Text>
@@ -34,7 +37,7 @@ export function DiscoverErrorState({ message, onRetry }: DiscoverErrorStateProps
         color={GRAY[600]}
         textAlign="center"
         mb="2xl"
-        style={{ fontFamily: 'Inter', lineHeight: 20 }}
+        style={discoverErrorBodyStyle}
       >
         {message}
       </Text>
@@ -43,7 +46,7 @@ export function DiscoverErrorState({ message, onRetry }: DiscoverErrorStateProps
           size="md"
           weight="semibold"
           color={STATIC.white}
-          style={{ fontFamily: 'Inter' }}
+          style={discoverErrorTitleStyle}
         >
           Try Again
         </Text>

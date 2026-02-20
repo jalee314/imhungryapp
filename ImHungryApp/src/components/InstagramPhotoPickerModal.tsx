@@ -23,7 +23,7 @@ import Animated, {
     runOnJS,
 } from 'react-native-reanimated';
 
-import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+import { BRAND, STATIC, GRAY } from '../ui/alf';
 
 // Transform state for each photo's crop
 interface PhotoTransformState {
@@ -60,7 +60,6 @@ const MAX_PHOTOS = 5;
 // Preview area dimensions
 const MAX_PREVIEW_HEIGHT = SCREEN_WIDTH; // Maximum preview height
 const MIN_PREVIEW_HEIGHT = 100; // Collapsed preview height
-const ALBUM_ROW_HEIGHT = 50; // Height of the album selector row with drag handle
 
 interface InstagramPhotoPickerModalProps {
     visible: boolean;
@@ -130,7 +129,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
     const dragStartY = useSharedValue(0);
 
     // Track if expanded for React state (needed for FlatList)
-    const [isGridExpanded, setIsGridExpanded] = useState(false);
+    const [, setIsGridExpanded] = useState(false);
 
     // Calculate available slots
     const availableSlots = maxPhotos - existingPhotosCount;
@@ -147,6 +146,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                 }
             })();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible]);
 
 
@@ -163,6 +163,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
             setHasMore(true);
             photoTransforms.current.clear(); // Clear saved transforms
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible]);
 
     const resetGestures = () => {
@@ -691,7 +692,7 @@ const InstagramPhotoPickerModal: React.FC<InstagramPhotoPickerModalProps> = ({
                             <Ionicons name="close" size={28} color={STATIC.black} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>New Post</Text>
-                        <View style={{ width: 60 }} />
+                        <View style={styles.headerButton} />
                     </View>
                     <View style={styles.permissionDenied}>
                         <Ionicons name="images-outline" size={64} color={GRAY[350]} />

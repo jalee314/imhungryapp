@@ -1,5 +1,10 @@
-import { fetchUserPosts, updatePostsWithUserInfo, UserPost } from './userPostsService';
-import { fetchUserProfile, fetchCurrentUserPhoto, createUserProfileCache, UserProfileCache, UserProfileData } from './userProfileService';
+import {
+  fetchCurrentUserPhoto,
+  fetchUserProfile,
+  type ProfileRecord,
+  type ProfileUserData,
+  type UserProfileCache
+} from './userProfileService';
 
 
 /**
@@ -9,15 +14,10 @@ export const loadCriticalProfileData = async (
   targetUserId: string,
   currentUserPhotoUrl: string | null
 ): Promise<{
-  profile: any;
+  profile: ProfileRecord;
   photoUrl: string | null;
   dealCount: number;
-  userData: {
-    username: string;
-    profilePicture: string | null;
-    city: string;
-    state: string;
-  };
+  userData: ProfileUserData;
   currentUserPhotoUrl?: string | null;
 }> => {
   try {

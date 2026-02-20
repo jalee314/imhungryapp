@@ -14,7 +14,6 @@ import {
   BRAND,
   SPACING,
   RADIUS,
-  FONT_SIZE,
 } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 

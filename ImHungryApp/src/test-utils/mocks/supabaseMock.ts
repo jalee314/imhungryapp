@@ -126,10 +126,10 @@ export const createMockSupabaseClient = () => ({
     }),
   },
 
-  from: jest.fn((table: string) => createMockQueryBuilder()),
+  from: jest.fn((_table: string) => createMockQueryBuilder()),
 
   storage: {
-    from: jest.fn((bucket: string) => createMockStorageBucket()),
+    from: jest.fn((_bucket: string) => createMockStorageBucket()),
     listBuckets: jest.fn().mockResolvedValue({ data: [], error: null }),
     createBucket: jest.fn().mockResolvedValue({ data: null, error: null }),
     deleteBucket: jest.fn().mockResolvedValue({ data: null, error: null }),

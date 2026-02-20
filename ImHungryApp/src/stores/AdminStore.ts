@@ -47,7 +47,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
 
     // Listen for auth state changes to update admin flags
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data } = supabase.auth.onAuthStateChange(async (event, _session) => {
       if (event === 'SIGNED_OUT') {
         // On sign out, ensure admin mode is off and admin flag false
         set({ isAdminMode: false, isAdmin: false });

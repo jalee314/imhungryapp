@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
-import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
+import { BRAND, STATIC, GRAY, FONT_SIZE, RADIUS, ALPHA_COLORS } from '../ui/alf';
 
 import ModalHeader from './ui/ModalHeader';
 
@@ -57,7 +57,7 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
       visible={visible}
       onRequestClose={onClose}
     >
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
         <ModalHeader
           title="Expiration Date"
           onCancel={onClose}
@@ -123,21 +123,8 @@ export default function CalendarModal({ visible, onClose, onConfirm, initialDate
 }
 
 const styles = StyleSheet.create({
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: GRAY[200],
-  },
-  calendarHeaderText: {
-    fontSize: 17,
-    color: STATIC.black,
-  },
-  calendarHeaderTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+  safeArea: {
+    flex: 1,
   },
   selectedDateContainer: {
     padding: 16,

@@ -9,10 +9,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 
 import AuthGuard from '../../../components/AuthGuard';
-
-// Main tab navigator
-
-// Shared screens accessible from any tab
 import DealEditScreen from '../../../screens/contribution/DealEditScreen';
 import BlockUserScreen from '../../../screens/deal_feed/BlockUserScreen';
 import DealDetailScreen from '../../../screens/deal_feed/DealDetailScreen';

@@ -23,6 +23,7 @@ import {
   Image,
   FlatList,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -69,6 +70,7 @@ import {
   CAMERA,
 } from '../../ui/alf';
 import { Box, Text } from '../../ui/primitives';
+import { logger } from '../../utils/logger';
 import { invalidateDealImageCache } from '../deal_feed/DealDetailScreen';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -102,17 +104,17 @@ export default function DealEditScreen() {
     setIsLoading(true);
     setLoadError(null);
 
-    console.log('DealEditScreen: Loading deal for edit:', dealId);
+    logger.info('DealEditScreen: Loading deal for edit:', dealId);
     const result = await fetchDealForEdit(dealId);
 
     if (!result.success || !result.data) {
-      console.error('DealEditScreen: Failed to load deal:', result.error);
+      logger.error('DealEditScreen: Failed to load deal:', result.error);
       setLoadError(result.error || 'Failed to load deal');
       setIsLoading(false);
       return;
     }
 
-    console.log('DealEditScreen: Deal loaded successfully:', {
+    logger.info('DealEditScreen: Deal loaded successfully:', {
       title: result.data.title,
       imageCount: result.data.images.length,
     });
@@ -128,7 +130,7 @@ export default function DealEditScreen() {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+      <SafeAreaView style={styles.screenSafeArea}>
         <StatusBar style="dark" />
         <Box flex={1} center>
           <ActivityIndicator size="large" color={BRAND.accent} />
@@ -136,7 +138,7 @@ export default function DealEditScreen() {
             size="xs"
             color={GRAY[600]}
             mt="lg"
-            style={{ fontFamily: 'Inter' }}
+            style={styles.bodyText}
           >
             Loading deal...
           </Text>
@@ -148,7 +150,7 @@ export default function DealEditScreen() {
   // ── Error state ───────────────────────────────────────────────────────────
   if (loadError) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+      <SafeAreaView style={styles.screenSafeArea}>
         <StatusBar style="dark" />
         <Box flex={1} center px="2xl">
           <MaterialCommunityIcons name="alert-circle" size={48} color={SEMANTIC.error} />
@@ -156,29 +158,23 @@ export default function DealEditScreen() {
             size="xs"
             color={GRAY[600]}
             mt="lg"
-            style={{ textAlign: 'center', fontFamily: 'Inter' }}
+            style={styles.errorMessage}
           >
             {loadError}
           </Text>
           <TouchableOpacity
-            style={{
-              marginTop: SPACING['2xl'],
-              backgroundColor: ALPHA_COLORS.brandPrimary80,
-              paddingHorizontal: SPACING['3xl'],
-              paddingVertical: SPACING.md,
-              borderRadius: RADIUS.pill,
-            }}
+            style={styles.retryButton}
             onPress={loadDealData}
           >
-            <Text size="xs" color={STATIC.black} style={{ fontFamily: 'Inter' }}>
+            <Text size="xs" color={STATIC.black} style={styles.bodyText}>
               Retry
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={{ marginTop: SPACING.md, paddingVertical: SPACING.md }}
+            style={styles.goBackButton}
             onPress={() => navigation.goBack()}
           >
-            <Text size="xs" color={GRAY[600]} style={{ fontFamily: 'Inter' }}>
+            <Text size="xs" color={GRAY[600]} style={styles.bodyText}>
               Go Back
             </Text>
           </TouchableOpacity>
@@ -187,7 +183,7 @@ export default function DealEditScreen() {
     );
   }
 
-  return <DealEditForm dealId={dealId} dealData={dealData!} />;
+  return <DealEditForm dealId={dealId} dealData={dealData} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -269,6 +265,7 @@ function DealEditForm({
       prevUrlsRef.current = curr;
       form.setField('imageUris', curr);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeImageUrls]);
 
   // ── Dirty / changes detection ─────────────────────────────────────────────
@@ -318,7 +315,7 @@ function DealEditForm({
         setIsCropperVisible(true);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
+      logger.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo');
     }
   };
@@ -506,7 +503,7 @@ function DealEditForm({
           toIndex < 0 ||
           toIndex >= currentActiveImages.length
         ) {
-          console.warn('Invalid reorder indices:', {
+          logger.warn('Invalid reorder indices:', {
             fromIndex,
             toIndex,
             activeCount: currentActiveImages.length,
@@ -516,7 +513,7 @@ function DealEditForm({
 
         const fromImage = currentActiveImages[fromIndex];
         if (!fromImage) {
-          console.warn('Could not find image at fromIndex:', fromIndex);
+          logger.warn('Could not find image at fromIndex:', fromIndex);
           return prev;
         }
 
@@ -581,7 +578,7 @@ function DealEditForm({
       if (pendingNewImages.length > 0) {
         const addResult = await addDealImages(dealId, pendingNewImages);
         if (!addResult.success) {
-          console.warn('Some images failed to upload:', addResult.error);
+          logger.warn('Some images failed to upload:', addResult.error);
         } else if (addResult.newImages && addResult.newImages.length > 0) {
           // Map temp IDs to uploaded IDs
           const mappedCount = Math.min(
@@ -598,7 +595,8 @@ function DealEditForm({
             const updated = [...prev];
             for (let i = 0; i < mappedCount; i++) {
               const tempId = pendingNewImageTempIds[i];
-              const uploaded = addResult.newImages![i];
+              const uploaded = addResult.newImages[i];
+              if (!uploaded) continue;
               const idx = updated.findIndex((img) => img.imageMetadataId === tempId);
               if (idx !== -1) {
                 updated[idx] = {
@@ -649,7 +647,7 @@ function DealEditForm({
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
-      console.error('Error saving deal:', error);
+      logger.error('Error saving deal:', error);
       Alert.alert('Error', 'Failed to save changes. Please try again.');
     } finally {
       setIsSaving(false);
@@ -658,15 +656,12 @@ function DealEditForm({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+    <SafeAreaView style={styles.screenSafeArea}>
       <StatusBar style="dark" />
 
       <KeyboardAwareScrollView
-        style={{ flex: 1, width: '100%' }}
-        contentContainerStyle={{
-          paddingBottom: SPACING.xl,
-          paddingHorizontal: SPACING.md,
-        }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         enableOnAndroid={true}
         extraScrollHeight={DIMENSION.extraScrollHeight}
@@ -675,29 +670,17 @@ function DealEditForm({
         <Box row justify="space-between" align="center" mb="sm">
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={{
-              width: DIMENSION.hitArea,
-              height: DIMENSION.hitArea,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderRadius: RADIUS.circle,
-            }}
+            style={styles.iconButton}
           >
             <Ionicons name="arrow-back" size={ICON_SIZE.sm} color={STATIC.black} />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleSave}
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              paddingVertical: SPACING.sm,
-              paddingHorizontal: SPACING.lg,
-              backgroundColor: ALPHA_COLORS.brandPrimary80,
-              borderRadius: RADIUS.pill,
-              minWidth: DIMENSION.buttonMinWidth,
-              opacity: isSaving || !hasChanges ? OPACITY.disabled : OPACITY.full,
-            }}
+            style={[
+              styles.saveButton,
+              isSaving || !hasChanges ? styles.saveButtonDisabled : styles.saveButtonEnabled,
+            ]}
             disabled={isSaving || !hasChanges}
           >
             {isSaving ? (
@@ -706,7 +689,7 @@ function DealEditForm({
               <Text
                 size="xs"
                 color={!hasChanges ? GRAY[500] : STATIC.black}
-                style={{ fontFamily: 'Inter', fontWeight: '400' }}
+                style={styles.saveButtonText}
               >
                 Save
               </Text>
@@ -729,17 +712,14 @@ function DealEditForm({
               size="xs"
               weight="bold"
               color={STATIC.black}
-              style={{
-                lineHeight: DIMENSION.compactLineHeight,
-                marginBottom: SPACING['2xs'],
-              }}
+              style={styles.restaurantName}
             >
               {dealData.restaurantName}
             </Text>
             <Text
               size="xs"
               color={STATIC.black}
-              style={{ lineHeight: DIMENSION.compactLineHeight }}
+              style={styles.restaurantAddress}
             >
               {dealData.restaurantAddress}
             </Text>
@@ -766,7 +746,7 @@ function DealEditForm({
             <FormDivider />
 
             {/* Photos Section Header */}
-            <Box row gap="lg" py={6} px="lg" align="center" style={{ minHeight: 38 }}>
+            <Box row gap="lg" py={6} px="lg" align="center" style={styles.photosHeader}>
               <Ionicons name="camera-outline" size={ICON_SIZE.sm} color={GRAY[800]} />
               <Text size="xs" color={STATIC.black}>
                 Photos ({activeImages.length}/{IMAGES_MAX_COUNT})
@@ -777,13 +757,7 @@ function DealEditForm({
             <Box
               mx="lg"
               rounded={RADIUS.card}
-              style={{
-                height: 350,
-                overflow: 'hidden',
-                backgroundColor: GRAY[100],
-                borderWidth: 0.5,
-                borderColor: GRAY[475],
-              }}
+              style={styles.photoCarouselContainer}
             >
               {activeImages.length > 0 ? (
                 <FlatList
@@ -815,52 +789,29 @@ function DealEditForm({
                     index,
                   })}
                   renderItem={({ item, index }) => (
-                    <Box
-                      style={{
-                        width: screenWidth - 48,
-                        height: 350,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
+                    <Box style={styles.photoCarouselItem}>
                       <Image
                         source={{ uri: item.url }}
-                        style={{ width: '100%', height: '100%' }}
+                        style={styles.photoCarouselImage}
                         resizeMode="cover"
                       />
                       {/* Delete button */}
                       <TouchableOpacity
-                        style={{
-                          position: 'absolute',
-                          top: SPACING.md,
-                          right: SPACING.md,
-                          ...SHADOW.sm,
-                        }}
+                        style={styles.deleteImageButton}
                         onPress={() => handleRemoveImage(item.imageMetadataId)}
                       >
                         <Ionicons name="close-circle" size={26} color={SEMANTIC.error} />
                       </TouchableOpacity>
                       {/* Edit / Crop button */}
                       <TouchableOpacity
-                        style={{
-                          position: 'absolute',
-                          top: SPACING.sm,
-                          left: SPACING.sm,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                          paddingHorizontal: 10,
-                          paddingVertical: 6,
-                          borderRadius: 14,
-                          gap: SPACING.xs,
-                        }}
+                        style={styles.editImageButton}
                         onPress={() => handleEditImage(index)}
                       >
                         <Ionicons name="crop" size={14} color={STATIC.white} />
                         <Text
                           size="xs"
                           color={STATIC.white}
-                          style={{ fontSize: 11, fontWeight: '500', fontFamily: 'Inter' }}
+                          style={styles.editImageButtonText}
                         >
                           Edit
                         </Text>
@@ -875,7 +826,7 @@ function DealEditForm({
                     size="xs"
                     color={GRAY[500]}
                     mt="sm"
-                    style={{ fontFamily: 'Inter' }}
+                    style={styles.bodyText}
                   >
                     No photos
                   </Text>
@@ -960,3 +911,112 @@ function DealEditForm({
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  screenSafeArea: {
+    flex: 1,
+    backgroundColor: GRAY[100],
+  },
+  bodyText: {
+    fontFamily: 'Inter',
+  },
+  errorMessage: {
+    textAlign: 'center',
+    fontFamily: 'Inter',
+  },
+  retryButton: {
+    marginTop: SPACING['2xl'],
+    backgroundColor: ALPHA_COLORS.brandPrimary80,
+    paddingHorizontal: SPACING['3xl'],
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.pill,
+  },
+  goBackButton: {
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.md,
+  },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollContent: {
+    paddingBottom: SPACING.xl,
+    paddingHorizontal: SPACING.md,
+  },
+  iconButton: {
+    width: DIMENSION.hitArea,
+    height: DIMENSION.hitArea,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: RADIUS.circle,
+  },
+  saveButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    backgroundColor: ALPHA_COLORS.brandPrimary80,
+    borderRadius: RADIUS.pill,
+    minWidth: DIMENSION.buttonMinWidth,
+  },
+  saveButtonDisabled: {
+    opacity: OPACITY.disabled,
+  },
+  saveButtonEnabled: {
+    opacity: OPACITY.full,
+  },
+  saveButtonText: {
+    fontFamily: 'Inter',
+    fontWeight: '400',
+  },
+  restaurantName: {
+    lineHeight: DIMENSION.compactLineHeight,
+    marginBottom: SPACING['2xs'],
+  },
+  restaurantAddress: {
+    lineHeight: DIMENSION.compactLineHeight,
+  },
+  photosHeader: {
+    minHeight: 38,
+  },
+  photoCarouselContainer: {
+    height: 350,
+    overflow: 'hidden',
+    backgroundColor: GRAY[100],
+    borderWidth: 0.5,
+    borderColor: GRAY[475],
+  },
+  photoCarouselItem: {
+    width: screenWidth - 48,
+    height: 350,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoCarouselImage: {
+    width: '100%',
+    height: '100%',
+  },
+  deleteImageButton: {
+    position: 'absolute',
+    top: SPACING.md,
+    right: SPACING.md,
+    ...SHADOW.sm,
+  },
+  editImageButton: {
+    position: 'absolute',
+    top: SPACING.sm,
+    left: SPACING.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    gap: SPACING.xs,
+  },
+  editImageButtonText: {
+    fontSize: 11,
+    fontWeight: '500',
+    fontFamily: 'Inter',
+  },
+});

@@ -1,6 +1,7 @@
 import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
+import { logger } from '../utils/logger';
 
 import { checkEmailExists } from './userService';
 
@@ -38,13 +39,13 @@ export const getCurrentUser = async (): Promise<User | null> => {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error) {
-      console.error('Error getting current user:', error);
+      logger.error('Error getting current user:', error);
       return null;
     }
 
     return user;
   } catch (error) {
-    console.error('Error in getCurrentUser:', error);
+    logger.error('Error in getCurrentUser:', error);
     return null;
   }
 };
@@ -62,7 +63,7 @@ export const getCurrentSession = async (): Promise<AuthSessionResult> => {
     const { data: { session }, error } = await supabase.auth.getSession();
 
     if (error) {
-      console.error('Error getting session:', error);
+      logger.error('Error getting session:', error);
       return { isAuthenticated: false, user: null };
     }
 
@@ -71,7 +72,7 @@ export const getCurrentSession = async (): Promise<AuthSessionResult> => {
       user: session?.user || null
     };
   } catch (error) {
-    console.error('Error in getCurrentSession:', error);
+    logger.error('Error in getCurrentSession:', error);
     return { isAuthenticated: false, user: null };
   }
 };
@@ -88,11 +89,11 @@ export const signOut = async (): Promise<void> => {
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    console.error('Error signing out:', error);
+    logger.error('Error signing out:', error);
     throw error;
   }
 
-  console.log('✅ User signed out successfully');
+  logger.info('✅ User signed out successfully');
 };
 
 // ============================================
@@ -108,7 +109,7 @@ export const signOut = async (): Promise<void> => {
  * 
  * @example
  * const subscription = setupAuthStateListener(async (event, session) => {
- *   console.log('Auth event:', event);
+ *   logger.info('Auth event:', event);
  *   // Handle auth changes
  * });
  * 
@@ -135,7 +136,7 @@ export const validateEmail = async (email: string): Promise<boolean> => {
   try {
     return await checkEmailExists(email);
   } catch (error) {
-    console.error('Error validating email:', error);
+    logger.error('Error validating email:', error);
     return false;
   }
 };
@@ -191,7 +192,7 @@ export const sendPasswordResetEmail = async (
     });
 
     if (error) {
-      console.error('Supabase password reset error:', error);
+      logger.error('Supabase password reset error:', error);
       return {
         success: false,
         message: error.message || 'Failed to send password reset email.',
@@ -205,7 +206,7 @@ export const sendPasswordResetEmail = async (
     };
 
   } catch (error) {
-    console.error('Password reset error:', error);
+    logger.error('Password reset error:', error);
     return {
       success: false,
       message: 'An unexpected error occurred. Please try again.',
@@ -261,7 +262,7 @@ export const updateUserPassword = async (newPassword: string) => {
  * Sign out locally (clear session without network propagation)
  */
 export const signOutLocal = async () => {
-  return supabase.auth.signOut({ scope: 'local' as any });
+  return supabase.auth.signOut({ scope: 'local' });
 };
 
 /**

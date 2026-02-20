@@ -1,9 +1,59 @@
 import { supabase } from '../../../lib/supabase';
 
-import { logAction, mapResolutionAction } from './core';
+import { getErrorMessage, logAction, mapResolutionAction } from './core';
 import { deleteDeal } from './deals';
 import type { Report, ReportCounts, ModerationAction, ServiceResult } from './types';
 import { warnUser, banUser, suspendUser } from './users';
+
+interface ExecuteModerationActionParams {
+  action: ModerationAction;
+  dealId?: string;
+  userId?: string;
+  reason?: string;
+  suspensionDays?: number;
+}
+
+const handleDeleteDealAction = async ({ dealId }: ExecuteModerationActionParams): Promise<void> => {
+  if (!dealId) throw new Error('Missing deal ID for delete action');
+  const result = await deleteDeal(dealId);
+  if (!result.success) throw new Error(result.error || 'Failed to delete deal');
+};
+
+const handleWarnUserAction = async ({ userId }: ExecuteModerationActionParams): Promise<void> => {
+  if (!userId) throw new Error('Missing user ID for warn action');
+  const result = await warnUser(userId);
+  if (!result.success) throw new Error(result.error || 'Failed to warn user');
+};
+
+const handleBanUserAction = async ({ userId, reason }: ExecuteModerationActionParams): Promise<void> => {
+  if (!userId) throw new Error('Missing user ID for ban action');
+  const result = await banUser(userId, reason);
+  if (!result.success) throw new Error(result.error || 'Failed to ban user');
+};
+
+const handleSuspendUserAction = async ({ userId, reason, suspensionDays }: ExecuteModerationActionParams): Promise<void> => {
+  if (!userId) throw new Error('Missing user ID for suspension');
+  if (!suspensionDays || Number.isNaN(suspensionDays)) {
+    throw new Error('Suspension days are required');
+  }
+  const result = await suspendUser(userId, suspensionDays, reason);
+  if (!result.success) throw new Error(result.error || 'Failed to suspend user');
+};
+
+const moderationActionHandlers: Record<ModerationAction, (params: ExecuteModerationActionParams) => Promise<void>> = {
+  delete_deal: handleDeleteDealAction,
+  warn_user: handleWarnUserAction,
+  ban_user: handleBanUserAction,
+  suspend_user: handleSuspendUserAction,
+};
+
+const executeModerationAction = async ({
+  action,
+  ...rest
+}: ExecuteModerationActionParams): Promise<void> => {
+  const handler = moderationActionHandlers[action];
+  await handler({ action, ...rest });
+};
 
 export async function getReports(status?: string): Promise<Report[]> {
   try {
@@ -39,7 +89,7 @@ export async function getReports(status?: string): Promise<Report[]> {
     const { data, error } = await query;
     if (error) throw error;
 
-    const transformedData = (data || []).map((report: any) => {
+    const transformedData = (data || []).map((report) => {
       const template = report.deal?.deal_template || {};
       const restaurant = template?.restaurant || {};
       const variants = template?.image_metadata?.variants;
@@ -89,8 +139,8 @@ export async function updateReportStatus(
 
     await logAction('update_report_status', 'report', reportId, { status });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -143,8 +193,8 @@ export async function dismissReport(reportId: string): Promise<ServiceResult> {
 
     await logAction('resolve_report', 'report', reportId, { action: 'dismissed' });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -173,30 +223,11 @@ export async function resolveReportWithAction(
 
     if (reportError) throw reportError;
 
-    if (action === 'delete_deal') {
-      if (!dealId) throw new Error('Missing deal ID for delete action');
-      const result = await deleteDeal(dealId);
-      if (!result.success) throw new Error(result.error || 'Failed to delete deal');
-    } else if (action === 'warn_user') {
-      if (!userId) throw new Error('Missing user ID for warn action');
-      const result = await warnUser(userId);
-      if (!result.success) throw new Error(result.error || 'Failed to warn user');
-    } else if (action === 'ban_user') {
-      if (!userId) throw new Error('Missing user ID for ban action');
-      const result = await banUser(userId, reason);
-      if (!result.success) throw new Error(result.error || 'Failed to ban user');
-    } else if (action === 'suspend_user') {
-      if (!userId) throw new Error('Missing user ID for suspension');
-      if (!suspensionDays || Number.isNaN(suspensionDays)) {
-        throw new Error('Suspension days are required');
-      }
-      const result = await suspendUser(userId, suspensionDays, reason);
-      if (!result.success) throw new Error(result.error || 'Failed to suspend user');
-    }
+    await executeModerationAction({ action, dealId, userId, reason, suspensionDays });
 
     await logAction('resolve_report', 'report', reportId, { action, dealId, userId, reason });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }

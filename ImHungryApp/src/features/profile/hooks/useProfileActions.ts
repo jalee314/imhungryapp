@@ -13,25 +13,28 @@ import {
   getDisplayName,
   showProfilePhotoOptions,
 } from '../../../services/profileUtilsService';
-import type { ProfileActionHandlers } from '../types';
+import type { UserPost } from '../../../services/userPostsService';
+import type { ProfileRecord, ProfileUserData } from '../../../services/userProfileService';
+import { logger } from '../../../utils/logger';
+import type { ProfileActionHandlers, ProfileNavigation } from '../types';
 
 // ============================================================================
 // Hook
 // ============================================================================
 
 export interface UseProfileActionsParams {
-  navigation: any;
-  profile: any | null;
-  userData: any;
+  navigation: ProfileNavigation;
+  profile: ProfileRecord | null;
+  userData: ProfileUserData | null;
   photoUrl: string | null;
   viewUser: boolean | undefined;
-  setProfile: React.Dispatch<React.SetStateAction<any | null>>;
+  setProfile: React.Dispatch<React.SetStateAction<ProfileRecord | null>>;
   setPhotoUrl: React.Dispatch<React.SetStateAction<string | null>>;
   setCurrentUserPhotoUrl: React.Dispatch<React.SetStateAction<string | null>>;
-  setUserData: React.Dispatch<React.SetStateAction<any>>;
+  setUserData: React.Dispatch<React.SetStateAction<ProfileUserData | null>>;
   setDealCount: React.Dispatch<React.SetStateAction<number>>;
   setHasData: React.Dispatch<React.SetStateAction<boolean>>;
-  setUserPosts: React.Dispatch<React.SetStateAction<any[]>>;
+  setUserPosts: React.Dispatch<React.SetStateAction<UserPost[]>>;
   setPostsInitialized: React.Dispatch<React.SetStateAction<boolean>>;
   refreshProfile: () => Promise<void>;
   loadProfileData: () => Promise<void>;
@@ -41,7 +44,7 @@ export function useProfileActions({
   navigation,
   profile,
   userData,
-  photoUrl,
+  photoUrl: _photoUrl,
   viewUser,
   setProfile,
   setPhotoUrl,
@@ -96,7 +99,7 @@ export function useProfileActions({
         : `Check out my profile on ImHungri!`;
       await Share.share({ message });
     } catch (err) {
-      console.error('Error sharing profile:', err);
+      logger.error('Error sharing profile:', err);
       Alert.alert('Error', 'Could not share profile');
     }
   };
@@ -105,7 +108,7 @@ export function useProfileActions({
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      console.log('📸 Profile: No back route available, navigating to Feed');
+      logger.info('📸 Profile: No back route available, navigating to Feed');
       navigation.navigate('MainTabs', { screen: 'Feed' });
     }
   };

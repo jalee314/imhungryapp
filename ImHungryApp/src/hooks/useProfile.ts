@@ -7,8 +7,7 @@
  * Sub-hooks live in features/profile/hooks/ for focused unit-testing.
  */
 
-import { useFocusEffect } from '@react-navigation/native';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 
 import { useProfileActions } from '../features/profile/hooks/useProfileActions';
@@ -16,21 +15,22 @@ import { useProfileData } from '../features/profile/hooks/useProfileData';
 import { useProfileInteractions } from '../features/profile/hooks/useProfileInteractions';
 import { useProfileModals } from '../features/profile/hooks/useProfileModals';
 import { useProfilePosts } from '../features/profile/hooks/useProfilePosts';
+import type { ProfileNavigation, ProfileRoute } from '../features/profile/types';
 import { formatJoinDate, getDisplayName } from '../services/profileUtilsService';
 import { useAdminStore } from '../stores/AdminStore';
-
+import { logger } from '../utils/logger';
 // Re-export types from the feature module for back-compat
 export type { UseProfileResult } from '../features/profile/types';
 
 // Types kept intentionally broad to avoid tight coupling; can refine later
 export interface UseProfileParams {
-  navigation: any; // React Navigation object
-  route: any;      // Route (expects params viewUser?: boolean, userId?: string)
+  navigation: ProfileNavigation;
+  route: ProfileRoute;
 }
 
 // Hook encapsulating all profile/business logic previously in the screen
 export const useProfile = ({ navigation, route }: UseProfileParams) => {
-  const { viewUser, userId } = (route?.params as any) || {};
+  const { viewUser, userId } = (route?.params) || {};
 
   // Check if we should navigate to settings tab (from admin mode exit)
   const navigateToProfileSettings = useAdminStore((s) => s.navigateToProfileSettings);
@@ -97,7 +97,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams) => {
     if (viewUser && userId) {
       const isNewUser = prevUserId !== userId || !wasViewingOther;
       if (isNewUser) {
-        console.log('📸 Profile: Loading other user profile, showing skeleton');
+        logger.info('📸 Profile: Loading other user profile, showing skeleton');
         data.setProfile(null);
         data.setPhotoUrl(null);
         data.setUserData(null);
@@ -117,7 +117,7 @@ export const useProfile = ({ navigation, route }: UseProfileParams) => {
       );
     } else {
       if (wasViewingOther) {
-        console.log('📸 Profile: Switching from other user to own profile, resetting state');
+        logger.info('📸 Profile: Switching from other user to own profile, resetting state');
         data.setProfile(null);
         data.setPhotoUrl(null);
         data.setUserData(null);

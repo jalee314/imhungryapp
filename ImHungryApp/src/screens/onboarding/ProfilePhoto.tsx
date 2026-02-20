@@ -12,11 +12,11 @@ import { BRAND, STATIC, GRAY } from '../../ui/alf';
 export default function ProfilePhotoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const userData = (route.params as any)?.userData;
-  const existingProfilePhoto = (route.params as any)?.profilePhoto;
+  const userData = (route.params)?.userData;
+  const existingProfilePhoto = (route.params)?.profilePhoto;
 
   const [profilePhoto, setProfilePhoto] = useState<string | null>(existingProfilePhoto || null);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   const handleCameraPress = () => {
     Alert.alert(
@@ -113,7 +113,7 @@ export default function ProfilePhotoScreen() {
     }
 
     // Navigate to location permissions page with user data
-    (navigation as any).navigate('LocationPermissions', {
+    (navigation).navigate('LocationPermissions', {
       userData: {
         ...userData,
         profile_photo_url: profilePhoto,
@@ -128,7 +128,7 @@ export default function ProfilePhotoScreen() {
     }
 
     // Navigate to location permissions page with user data (default avatar)
-    (navigation as any).navigate('LocationPermissions', {
+    (navigation).navigate('LocationPermissions', {
       userData: {
         ...userData,
         profile_photo_url: 'default_avatar',
@@ -138,14 +138,14 @@ export default function ProfilePhotoScreen() {
 
   const handleGoBack = () => {
     // Navigate back to Username screen with the current profile photo preserved
-    (navigation as any).navigate('Username', {
+    (navigation).navigate('Username', {
       userData,
       profilePhoto,
     });
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -187,7 +187,7 @@ export default function ProfilePhotoScreen() {
                 <TouchableOpacity
                   style={[
                     styles.continueButton,
-                    loading && { opacity: 0.5 }
+                    loading && styles.loadingHalfOpacity
                   ]}
                   onPress={handleContinue}
                   disabled={loading}
@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
+  loadingHalfOpacity: { opacity: 0.5 },
 
   mainContainer: {
     flex: 1,
@@ -272,12 +273,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
     alignSelf: 'center'
-  },
-  photoInfo: {
-    marginTop: 12,
-    fontSize: 14,
-    color: GRAY[600],
-    fontFamily: 'Inter-Regular'
   },
   photoPlaceholder: {
     width: 200,

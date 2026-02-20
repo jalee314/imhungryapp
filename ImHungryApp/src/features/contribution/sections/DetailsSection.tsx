@@ -24,6 +24,20 @@ const DEFAULT_PLACEHOLDER =
   '• Are there any limitations or exclusions?\n' +
   '• Are there any codes or special instructions needed to redeem it?\n' +
   '• Is this a mobile deal or in-person deal?';
+const detailsInputStyle = {
+  fontFamily: 'Inter',
+  fontSize: 12,
+  color: '#000000',
+  flex: 1,
+  minHeight: 180,
+  textAlignVertical: 'top',
+  paddingHorizontal: 0,
+  paddingTop: 0,
+  paddingLeft: 2,
+  paddingBottom: 12,
+  lineHeight: 20,
+  includeFontPadding: false,
+};
 
 export function DetailsSection({
   value,
@@ -41,20 +55,7 @@ export function DetailsSection({
       <Box px={15} py={4} flex={1} minH={200}>
         <TextInput
           ref={inputRef}
-          style={{
-            fontFamily: 'Inter',
-            fontSize: 12,
-            color: '#000000',
-            flex: 1,
-            minHeight: 180,
-            textAlignVertical: 'top',
-            paddingHorizontal: 0,
-            paddingTop: 0,
-            paddingLeft: 2,
-            paddingBottom: 12,
-            lineHeight: 20,
-            includeFontPadding: false,
-          }}
+          style={detailsInputStyle}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

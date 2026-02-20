@@ -15,8 +15,8 @@ import {
 
 import MapSelectionModal from '../../components/MapSelectionModal';
 import ThreeDotPopup from '../../components/ThreeDotPopup';
-import { STATIC, GRAY, BORDER_WIDTH, SPACING } from '../../ui/alf';
-import { Box, Text } from '../../ui/primitives';
+import { STATIC, SPACING } from '../../ui/alf';
+import { Text } from '../../ui/primitives';
 
 import {
   DealDetailHeader,
@@ -30,11 +30,15 @@ import {
 } from './sections';
 import { useDealDetail } from './useDealDetail';
 
+const dealDetailScreenStyle = { flex: 1, backgroundColor: STATIC.white };
+const dealDetailScrollStyle = { flex: 1 };
+const dealTitleStyle = { fontFamily: 'Inter', lineHeight: 20, paddingHorizontal: SPACING['2xl'] };
+
 const DealDetailContainer: React.FC = () => {
   const ctx = useDealDetail();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <SafeAreaView style={dealDetailScreenStyle}>
       <StatusBar barStyle="dark-content" backgroundColor={STATIC.white} />
 
       {/* Fixed Header */}
@@ -44,7 +48,7 @@ const DealDetailContainer: React.FC = () => {
         onMore={ctx.popup.handleMoreButtonPress}
       />
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={dealDetailScrollStyle} showsVerticalScrollIndicator={false}>
         {/* Restaurant Header */}
         <RestaurantInfoSection
           dealData={ctx.dealData}
@@ -63,7 +67,7 @@ const DealDetailContainer: React.FC = () => {
           color={STATIC.black}
           mt="sm"
           mb="lg"
-          style={{ fontFamily: 'Inter', lineHeight: 20, paddingHorizontal: SPACING['2xl'] }}
+          style={dealTitleStyle}
         >
           {ctx.dealData.title}
         </Text>

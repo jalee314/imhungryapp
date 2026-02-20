@@ -36,6 +36,9 @@ import { useThemeSafe } from './ThemeProvider';
 type SpacingValue = SpacingKey | number;
 type RadiusValue = RadiusKey | number;
 type PaletteColorKey = keyof ThemePalette;
+type PressableStyleKey = keyof ViewStyle;
+type SpacingAssignment = readonly [SpacingValue | undefined, PressableStyleKey];
+type RawAssignment = readonly [unknown, PressableStyleKey];
 
 // ============================================================================
 // PROP TYPES
@@ -170,6 +173,25 @@ function resolveColor(
   return value;
 }
 
+function setStyleValue(style: ViewStyle, key: PressableStyleKey, value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  (style as Record<string, unknown>)[key] = value;
+}
+
+function applySpacingAssignments(style: ViewStyle, assignments: readonly SpacingAssignment[]): void {
+  for (const [value, key] of assignments) {
+    setStyleValue(style, key, resolveSpacing(value));
+  }
+}
+
+function applyRawAssignments(style: ViewStyle, assignments: readonly RawAssignment[]): void {
+  for (const [value, key] of assignments) {
+    setStyleValue(style, key, value);
+  }
+}
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -240,60 +262,64 @@ export const Pressable = forwardRef<View, PressablePrimitiveProps>(
     const baseStyle = useMemo<ViewStyle>(() => {
       const pressableStyle: ViewStyle = {};
 
-      // Spacing - Padding
-      if (p !== undefined) pressableStyle.padding = resolveSpacing(p);
-      if (px !== undefined) pressableStyle.paddingHorizontal = resolveSpacing(px);
-      if (py !== undefined) pressableStyle.paddingVertical = resolveSpacing(py);
-      if (pt !== undefined) pressableStyle.paddingTop = resolveSpacing(pt);
-      if (pb !== undefined) pressableStyle.paddingBottom = resolveSpacing(pb);
-      if (pl !== undefined) pressableStyle.paddingLeft = resolveSpacing(pl);
-      if (pr !== undefined) pressableStyle.paddingRight = resolveSpacing(pr);
+      applySpacingAssignments(pressableStyle, [
+        [p, 'padding'],
+        [px, 'paddingHorizontal'],
+        [py, 'paddingVertical'],
+        [pt, 'paddingTop'],
+        [pb, 'paddingBottom'],
+        [pl, 'paddingLeft'],
+        [pr, 'paddingRight'],
+      ]);
+      applySpacingAssignments(pressableStyle, [
+        [m, 'margin'],
+        [mx, 'marginHorizontal'],
+        [my, 'marginVertical'],
+        [mt, 'marginTop'],
+        [mb, 'marginBottom'],
+        [ml, 'marginLeft'],
+        [mr, 'marginRight'],
+        [gap, 'gap'],
+      ]);
+      applyRawAssignments(pressableStyle, [
+        [flex, 'flex'],
+        [direction, 'flexDirection'],
+        [align, 'alignItems'],
+        [justify, 'justifyContent'],
+        [alignSelf, 'alignSelf'],
+        [w, 'width'],
+        [h, 'height'],
+        [opacity, 'opacity'],
+        [overflow, 'overflow'],
+      ]);
 
-      // Spacing - Margin
-      if (m !== undefined) pressableStyle.margin = resolveSpacing(m);
-      if (mx !== undefined) pressableStyle.marginHorizontal = resolveSpacing(mx);
-      if (my !== undefined) pressableStyle.marginVertical = resolveSpacing(my);
-      if (mt !== undefined) pressableStyle.marginTop = resolveSpacing(mt);
-      if (mb !== undefined) pressableStyle.marginBottom = resolveSpacing(mb);
-      if (ml !== undefined) pressableStyle.marginLeft = resolveSpacing(ml);
-      if (mr !== undefined) pressableStyle.marginRight = resolveSpacing(mr);
-
-      // Spacing - Gap
-      if (gap !== undefined) pressableStyle.gap = resolveSpacing(gap);
-
-      // Layout
-      if (flex !== undefined) pressableStyle.flex = flex;
-      if (direction) pressableStyle.flexDirection = direction;
-      if (align) pressableStyle.alignItems = align;
-      if (justify) pressableStyle.justifyContent = justify;
-      if (alignSelf) pressableStyle.alignSelf = alignSelf;
-
-      // Sizing
-      if (w !== undefined) pressableStyle.width = w;
-      if (h !== undefined) pressableStyle.height = h;
-
-      // Borders
-      if (rounded !== undefined) pressableStyle.borderRadius = resolveRadius(rounded);
-      if (borderWidth !== undefined) pressableStyle.borderWidth = borderWidth;
-      if (borderColor !== undefined) pressableStyle.borderColor = resolveColor(borderColor, palette);
-
-      // Colors
-      if (bg !== undefined) pressableStyle.backgroundColor = resolveColor(bg, palette);
-
-      // Opacity
-      if (opacity !== undefined) pressableStyle.opacity = opacity;
-
-      // Overflow
-      if (overflow) pressableStyle.overflow = overflow;
+      if (rounded !== undefined) {
+        setStyleValue(pressableStyle, 'borderRadius', resolveRadius(rounded));
+      }
+      if (borderWidth !== undefined) {
+        setStyleValue(pressableStyle, 'borderWidth', borderWidth);
+      }
+      if (borderColor !== undefined) {
+        setStyleValue(pressableStyle, 'borderColor', resolveColor(borderColor, palette));
+      }
+      if (bg !== undefined) {
+        setStyleValue(pressableStyle, 'backgroundColor', resolveColor(bg, palette));
+      }
 
       // Convenience shortcuts
       if (center) {
-        pressableStyle.alignItems = 'center';
-        pressableStyle.justifyContent = 'center';
+        applyRawAssignments(pressableStyle, [
+          ['center', 'alignItems'],
+          ['center', 'justifyContent'],
+        ]);
       }
       if (row) {
-        pressableStyle.flexDirection = 'row';
-        pressableStyle.alignItems = pressableStyle.alignItems || 'center';
+        applyRawAssignments(pressableStyle, [['row', 'flexDirection']]);
+        setStyleValue(
+          pressableStyle,
+          'alignItems',
+          pressableStyle.alignItems ?? 'center'
+        );
       }
 
       return pressableStyle;

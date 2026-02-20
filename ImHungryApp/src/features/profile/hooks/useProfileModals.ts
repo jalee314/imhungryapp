@@ -6,15 +6,20 @@ import { useState } from 'react';
 
 import { handleUserLogout, handleAccountDeletion } from '../../../services/profileActionsService';
 import { showDeleteAccountConfirmation } from '../../../services/profileUtilsService';
-import type { ProfileModalState, ProfileModalHandlers } from '../types';
+import type { ProfileRecord } from '../../../services/userProfileService';
+import type {
+  ProfileModalHandlers,
+  ProfileModalState,
+  ProfileNavigation
+} from '../types';
 
 // ============================================================================
 // Hook
 // ============================================================================
 
 export interface UseProfileModalsParams {
-  navigation: any;
-  profile: any | null;
+  navigation: ProfileNavigation;
+  profile: ProfileRecord | null;
 }
 
 export function useProfileModals({

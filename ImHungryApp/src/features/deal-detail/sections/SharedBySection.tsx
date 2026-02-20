@@ -18,6 +18,16 @@ export interface SharedBySectionProps {
   onUserPress: () => void;
 }
 
+const sharedByRowStyle = {
+  flexDirection: 'row' as const,
+  alignItems: 'center' as const,
+  paddingVertical: SPACING.lg,
+  paddingHorizontal: SPACING['2xl'],
+  gap: SPACING.sm,
+};
+const sharedByAvatarStyle = { width: 58, height: 58, borderRadius: 29 };
+const sharedByTextStyle = { fontFamily: 'Inter', letterSpacing: 0.2, lineHeight: 15 };
+
 export function SharedBySection({
   dealData,
   displayName,
@@ -38,24 +48,18 @@ export function SharedBySection({
         onPress={onUserPress}
         activeOpacity={dealData.isAnonymous ? 1 : 0.7}
         disabled={dealData.isAnonymous}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingVertical: SPACING.lg,
-          paddingHorizontal: SPACING['2xl'],
-          gap: SPACING.sm,
-        }}
+        style={sharedByRowStyle}
       >
         <Image
           source={profilePicture}
-          style={{ width: 58, height: 58, borderRadius: 29 }}
+          style={sharedByAvatarStyle}
         />
         <Box flex={1}>
           <Text
             size={10}
             weight="regular"
             color={STATIC.black}
-            style={{ fontFamily: 'Inter', letterSpacing: 0.2, lineHeight: 15 }}
+            style={sharedByTextStyle}
           >
             Shared By
           </Text>
@@ -63,7 +67,7 @@ export function SharedBySection({
             size="xs"
             weight="bold"
             color={STATIC.black}
-            style={{ fontFamily: 'Inter', letterSpacing: 0.2, lineHeight: 15 }}
+            style={sharedByTextStyle}
           >
             {displayName}
           </Text>
@@ -71,7 +75,7 @@ export function SharedBySection({
             size={10}
             weight="regular"
             color={STATIC.black}
-            style={{ fontFamily: 'Inter', letterSpacing: 0.2, lineHeight: 15 }}
+            style={sharedByTextStyle}
           >
             {dealData.userCity || 'Unknown'}, {dealData.userState || 'CA'}
           </Text>

@@ -8,22 +8,16 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-import {
-  STATIC,
-  GRAY,
-  SPACING,
-  RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-} from '../../../ui/alf';
+import { STATIC, SPACING } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
+import type { ProfileNavigation } from '../types';
 
 // ============================================================================
 // Props
 // ============================================================================
 
 export interface ProfileSettingsSectionProps {
-  navigation: any;
+  navigation: ProfileNavigation;
   isAdmin: boolean;
   isAdminMode: boolean;
   onEditProfile: () => void;
@@ -69,8 +63,8 @@ export function ProfileSettingsSection({
     { icon: 'help-circle', label: 'FAQ', onPress: () => navigation.navigate('FAQPage' as never) },
     { icon: 'file-document', label: 'Privacy & Policy', onPress: () => navigation.navigate('PrivacyPolicyPage' as never) },
     { icon: 'file-document', label: 'Terms & Conditions', onPress: () => navigation.navigate('TermsConditionsPage' as never) },
-    { icon: 'headphones', label: 'Contact Us', onPress: () => (navigation as any).navigate('ContactUsPage') },
-    { icon: 'account-cancel', label: 'Blocked Users', onPress: () => (navigation as any).navigate('BlockedUsersPage') },
+    { icon: 'headphones', label: 'Contact Us', onPress: () => (navigation).navigate('ContactUsPage') },
+    { icon: 'account-cancel', label: 'Blocked Users', onPress: () => (navigation).navigate('BlockedUsersPage') },
     { icon: 'logout', label: 'Log Out', onPress: onLogout },
     { icon: 'delete', label: 'Delete Account', onPress: onDeleteAccount },
   ];

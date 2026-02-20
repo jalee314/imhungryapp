@@ -15,7 +15,7 @@ import ScreenHeader from '../ScreenHeader';
 
 // Mock @expo/vector-icons to return a renderable element
 jest.mock('@expo/vector-icons', () => ({
-  Ionicons: ({ name, size, color }: { name: string; size: number; color: string }) => {
+  Ionicons: ({ name, size: _size, color: _color }: { name: string; size: number; color: string }) => {
     const { Text } = require('react-native');
     return <Text testID={`icon-${name}`}>{name}</Text>;
   },
@@ -86,7 +86,10 @@ describe('ScreenHeader', () => {
       );
 
       const backIcon = getByTestId('icon-arrow-back');
-      fireEvent.press(backIcon.parent?.parent!);
+      const backPressTarget = backIcon.parent?.parent;
+      expect(backPressTarget).toBeTruthy();
+      if (!backPressTarget) throw new Error('Missing back button press target');
+      fireEvent.press(backPressTarget);
       expect(onBack).toHaveBeenCalledTimes(1);
     });
 
@@ -102,7 +105,10 @@ describe('ScreenHeader', () => {
       );
 
       const settingsIcon = getByTestId('icon-settings');
-      fireEvent.press(settingsIcon.parent?.parent!);
+      const settingsPressTarget = settingsIcon.parent?.parent;
+      expect(settingsPressTarget).toBeTruthy();
+      if (!settingsPressTarget) throw new Error('Missing settings button press target');
+      fireEvent.press(settingsPressTarget);
       expect(onPress).toHaveBeenCalledTimes(1);
     });
 

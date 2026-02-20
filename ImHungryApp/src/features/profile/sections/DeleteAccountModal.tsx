@@ -24,7 +24,6 @@ import {
   SPACING,
   RADIUS,
   FONT_SIZE,
-  FONT_WEIGHT,
   ALPHA_COLORS,
 } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
@@ -34,6 +33,7 @@ import { Box, Text } from '../../../ui/primitives';
 // ============================================================================
 
 const CONFIRMATION_PHRASE = 'DELETE ACCOUNT';
+const deleteAccountDescriptionStyle = { lineHeight: 20 };
 
 export interface DeleteAccountModalProps {
   visible: boolean;
@@ -78,7 +78,7 @@ export function DeleteAccountModal({ visible, onClose, onConfirm }: DeleteAccoun
                   <Text size="md" weight="semibold" color={SEMANTIC.errorDark} textAlign="center" mb="md">
                     ⚠️ This action is permanent and cannot be undone.
                   </Text>
-                  <Text size="sm" color={GRAY[700]} textAlign="center" mb="lg" style={{ lineHeight: 20 }}>
+                  <Text size="sm" color={GRAY[700]} textAlign="center" mb="lg" style={deleteAccountDescriptionStyle}>
                     All your data, posts, and account information will be permanently deleted.
                   </Text>
                   <Text size="sm" color={GRAY[800]} textAlign="center" mb="md">

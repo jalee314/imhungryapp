@@ -1,5 +1,8 @@
-import { supabase } from '../../lib/supabase';
+import type { ImageSourcePropType } from 'react-native';
 
+import { supabase } from '../../lib/supabase';
+import type { ImageVariants } from '../types/image';
+import { logger } from '../utils/logger';
 // Cache for user posts
 const postsCache = new Map<string, {
   data: UserPost[];
@@ -13,8 +16,8 @@ export interface UserPost {
   title: string;
   restaurant: string;
   details: string;
-  image: { uri: string } | any;
-  imageVariants?: any; // ✅ Add this for OptimizedImage
+  image: ImageSourcePropType;
+  imageVariants?: ImageVariants;
   votes: number;
   isUpvoted: boolean;
   isDownvoted: boolean;
@@ -31,22 +34,34 @@ export interface UserPost {
   isAnonymous?: boolean;
 }
 
+interface UserPostTransformInput {
+  deal_id?: string;
+  template_id: string;
+  title: string;
+  description: string;
+  image_metadata?: { variants?: ImageVariants } | null;
+  restaurant?: { name?: string; address?: string } | Array<{ name?: string; address?: string }>;
+  user_display_name?: string;
+  user_profile_photo?: string | null;
+  user_id?: string;
+}
+
 /**
  * Transform database post data to UI format
  */
-const transformDealForUI = (post: any): UserPost => {
+const transformDealForUI = (post: UserPostTransformInput): UserPost => {
   // Handle image source - ONLY use Cloudinary or placeholder
-  let imageSource;
-  let imageVariants = undefined;
+  let imageSource: ImageSourcePropType = require('../../img/default-rest.png');
+  let imageVariants: ImageVariants | undefined;
 
   if (post.image_metadata?.variants) {
     // Use Cloudinary variants (new deals)
-    console.log('✅ Using Cloudinary for user post:', post.title);
+    logger.info('✅ Using Cloudinary for user post:', post.title);
     imageSource = require('../../img/default-rest.png'); // Fallback for Image component
     imageVariants = post.image_metadata.variants; // OptimizedImage will use this
   } else {
     // Old deal without Cloudinary → use placeholder instead of slow Supabase Storage
-    console.log('⚠️ Old post, using placeholder:', post.title);
+    logger.info('⚠️ Old post, using placeholder:', post.title);
     imageSource = require('../../img/default-rest.png');
     imageVariants = undefined; // No variants = OptimizedImage won't be used
   }
@@ -93,7 +108,7 @@ export const fetchUserPosts = async (
     const now = Date.now();
 
     if (cached && (now - cached.timestamp) < POSTS_CACHE_DURATION) {
-      console.log('Using cached posts for user:', targetUserId);
+      logger.info('Using cached posts for user:', targetUserId);
       return cached.data;
     }
 
@@ -131,19 +146,19 @@ export const fetchUserPosts = async (
       .limit(limit);
 
     if (postsError) {
-      console.error('Error fetching user posts:', postsError);
+      logger.error('Error fetching user posts:', postsError);
       return [];
     }
 
     if (!postsData || postsData.length === 0) {
-      console.log('No posts data found for user:', targetUserId);
+      logger.info('No posts data found for user:', targetUserId);
       return [];
     }
 
-    console.log('Loading posts for user:', targetUserId, 'Found posts:', postsData.length);
+    logger.info('Loading posts for user:', targetUserId, 'Found posts:', postsData.length);
 
     // Transform posts to UI format
-    const transformedPosts = postsData.map((post: any) => {
+    const transformedPosts = postsData.map((post) => {
       // Get the actual deal_id from deal_instance (not template_id)
       const dealInstance = Array.isArray(post.deal_instance)
         ? post.deal_instance[0]
@@ -156,12 +171,12 @@ export const fetchUserPosts = async (
 
       if (dealImages.length > 0) {
         // Sort by display_order and use the first image (which is the cover/thumbnail)
-        const sortedImages = [...dealImages].sort((a: any, b: any) =>
+        const sortedImages = [...dealImages].sort((a, b) =>
           (a.display_order ?? 999) - (b.display_order ?? 999)
         );
-        const firstImage = sortedImages.find((img: any) => img.image_metadata?.variants);
+        const firstImage = sortedImages.find((img) => img.image_metadata?.variants);
         // Fallback to is_thumbnail flag for backward compatibility
-        const thumbnailImage = !firstImage ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
+        const thumbnailImage = !firstImage ? dealImages.find((img) => img.is_thumbnail && img.image_metadata?.variants) : null;
         const selectedImage = firstImage || thumbnailImage;
         if (selectedImage?.image_metadata?.variants) {
           imageMetadata = selectedImage.image_metadata;
@@ -196,7 +211,7 @@ export const fetchUserPosts = async (
 
     return transformedPosts;
   } catch (error) {
-    console.error('Error in fetchUserPosts:', error);
+    logger.error('Error in fetchUserPosts:', error);
     return [];
   }
 };

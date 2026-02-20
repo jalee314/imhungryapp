@@ -1,19 +1,10 @@
 import { useDataCacheStore } from '../stores/DataCacheStore';
-import type { Category, Cuisine, Restaurant } from '../types/restaurant';
 
-// Overload: allow selector or default bundle
-export function useDataCache<T>(selector: (state: any) => T, equality?: (a: T, b: T) => boolean): T;
-export function useDataCache(): {
-  categories: Category[];
-  cuisines: Cuisine[];
-  restaurants: Restaurant[];
-  loading: boolean;
-  error: Error | null;
-};
-export function useDataCache<T>(selector?: (state: any) => T) {
-  if (selector) {
-    return useDataCacheStore(selector as any) as unknown as T;
-  }
+/**
+ * Convenience hook for DataCacheStore.
+ * Subscribes to individual slices to avoid unnecessary re-renders.
+ */
+export function useDataCache() {
   const categories = useDataCacheStore((s) => s.categories);
   const cuisines = useDataCacheStore((s) => s.cuisines);
   const restaurants = useDataCacheStore((s) => s.restaurants);

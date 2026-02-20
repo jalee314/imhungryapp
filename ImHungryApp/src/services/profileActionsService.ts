@@ -1,15 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { toByteArray } from 'base64-js';
-import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 
 import { supabase } from '../../lib/supabase';
+import { logger } from '../utils/logger';
 
-import { processImageWithEdgeFunction, ImageType } from './imageProcessingService';
+import { processImageWithEdgeFunction } from './imageProcessingService';
 import { ProfileCacheService } from './profileCacheService';
 import { signOut } from './sessionService';
 import { clearUserCache } from './userService';
+
+interface ProfileWithPhoto {
+  profile_photo?: string | null;
+}
 
 
 
@@ -18,13 +21,13 @@ import { clearUserCache } from './userService';
  */
 export const uploadProfilePhoto = async (
   photoUri: string,
-  profile: any,
+  _profile: ProfileWithPhoto | null,
   setPhotoUrl: (url: string) => void,
   setCurrentUserPhotoUrl: (url: string) => void,
   refreshProfile: () => Promise<void>
 ) => {
   try {
-    console.log('Starting profile photo upload...');
+    logger.info('Starting profile photo upload...');
     
     // Process image with Cloudinary via edge function
     const result = await processImageWithEdgeFunction(photoUri, 'profile_image');
@@ -34,7 +37,7 @@ export const uploadProfilePhoto = async (
       return;
     }
     
-    console.log('Image processed successfully, metadataId:', result.metadataId);
+    logger.info('Image processed successfully, metadataId:', result.metadataId);
     
     // Update user profile with image_metadata_id
     const { data: { user } } = await supabase.auth.getUser();
@@ -48,7 +51,7 @@ export const uploadProfilePhoto = async (
       .eq('user_id', user.id);
     
     if (updateError) {
-      console.error('Error updating profile:', updateError);
+      logger.error('Error updating profile:', updateError);
       Alert.alert('Error', 'Failed to update profile photo');
       return;
     }
@@ -64,7 +67,7 @@ export const uploadProfilePhoto = async (
     Alert.alert('Success', 'Profile photo updated!');
     
   } catch (error) {
-    console.error('Error uploading photo:', error);
+    logger.error('Error uploading photo:', error);
     Alert.alert('Error', 'Failed to upload photo');
   }
 };
@@ -94,7 +97,7 @@ export const handleTakePhoto = async (
       await uploadPhoto(result.assets[0].uri);
     }
   } catch (error) {
-    console.error('Error taking photo:', error);
+    logger.error('Error taking photo:', error);
     Alert.alert('Error', 'Failed to take photo');
   }
 };
@@ -124,7 +127,7 @@ export const handleChooseFromLibrary = async (
       await uploadPhoto(result.assets[0].uri);
     }
   } catch (error) {
-    console.error('Error choosing photo:', error);
+    logger.error('Error choosing photo:', error);
     Alert.alert('Error', 'Failed to select photo');
   }
 };
@@ -155,15 +158,207 @@ export const handleUserLogout = async () => {
       'db_session_start_time'
     ]);
   } catch (error) {
-    console.error('Error during logout:', error);
+    logger.error('Error during logout:', error);
     Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+  }
+};
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const collectDeletionImageData = async (userId: string) => {
+  const { data: userImages } = await supabase
+    .from('deal_template')
+    .select('image_metadata_id')
+    .eq('user_id', userId)
+    .not('image_metadata_id', 'is', null);
+
+  const { data: profileImageMetadata } = await supabase
+    .from('user')
+    .select('profile_photo_metadata_id')
+    .eq('user_id', userId)
+    .not('profile_photo_metadata_id', 'is', null);
+
+  const imageMetadataIds = [
+    ...(userImages?.map((img) => img.image_metadata_id) || []),
+    ...(profileImageMetadata?.map((img) => img.profile_photo_metadata_id) || []),
+  ].filter(Boolean);
+
+  if (imageMetadataIds.length === 0) {
+    return { imageMetadataIds, cloudinaryPublicIds: [] as string[] };
+  }
+
+  const { data: imageMetadata } = await supabase
+    .from('image_metadata')
+    .select('cloudinary_public_id')
+    .in('image_metadata_id', imageMetadataIds);
+
+  const cloudinaryPublicIds = imageMetadata
+    ?.map((img) => img.cloudinary_public_id)
+    .filter(Boolean) || [];
+
+  return { imageMetadataIds, cloudinaryPublicIds };
+};
+
+const clearProfilePhotoMetadataReference = async (userId: string) => {
+  const { error } = await supabase
+    .from('user')
+    .update({ profile_photo_metadata_id: null })
+    .eq('user_id', userId);
+
+  if (error) {
+    logger.error('Error clearing profile photo metadata reference:', error);
+    return;
+  }
+
+  logger.info('Cleared profile photo metadata reference');
+};
+
+const deleteImageMetadataRecords = async (imageMetadataIds: string[]) => {
+  if (imageMetadataIds.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('image_metadata')
+    .delete()
+    .in('image_metadata_id', imageMetadataIds);
+
+  if (error) {
+    logger.error('Error deleting image metadata:', error);
+    return;
+  }
+
+  logger.info('Deleted image metadata records');
+};
+
+const deleteCloudinaryImages = async (cloudinaryPublicIds: string[]) => {
+  if (cloudinaryPublicIds.length === 0) {
+    return;
+  }
+
+  try {
+    logger.info('Attempting to delete Cloudinary images:', cloudinaryPublicIds.length);
+    const { error } = await supabase.functions.invoke('delete-cloudinary-images', {
+      body: { publicIds: cloudinaryPublicIds },
+    });
+
+    if (error) {
+      logger.error('Error deleting Cloudinary images:', error);
+      return;
+    }
+
+    logger.info('Successfully deleted Cloudinary images');
+  } catch (error) {
+    logger.error('Failed to call Cloudinary deletion function:', error);
+  }
+};
+
+const deleteLegacyProfilePhoto = async (profile: ProfileWithPhoto | null) => {
+  if (!profile?.profile_photo || profile.profile_photo === 'default_avatar.png') {
+    return;
+  }
+
+  const photoPath = profile.profile_photo.startsWith('public/')
+    ? profile.profile_photo
+    : `public/${profile.profile_photo}`;
+
+  const { error } = await supabase.storage
+    .from('avatars')
+    .remove([photoPath]);
+
+  if (error) {
+    logger.error('Error deleting legacy profile photo:', error);
+    return;
+  }
+
+  logger.info('Deleted legacy profile photo');
+};
+
+const logRemainingDeals = async (userId: string) => {
+  logger.info('Checking for any remaining user references before deletion...');
+  const { data: remainingDeals } = await supabase
+    .from('deal_template')
+    .select('template_id, user_id')
+    .eq('user_id', userId);
+
+  if (remainingDeals && remainingDeals.length > 0) {
+    logger.error('WARNING: Found remaining deal templates:', remainingDeals);
+    return;
+  }
+
+  logger.info('Good: No remaining deal templates found');
+};
+
+const deletePublicUserRecord = async (userId: string): Promise<boolean> => {
+  logger.info('Attempting to delete user from public.user table...');
+  const { error } = await supabase
+    .from('user')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) {
+    logger.error('Error deleting user from public.user:', error);
+    Alert.alert('Error', 'Failed to delete user profile. Please try again.');
+    return false;
+  }
+
+  logger.info('Deleted user profile - database cascades handled related data');
+  return true;
+};
+
+const verifyPublicUserDeleted = async (userId: string): Promise<boolean> => {
+  logger.info('Verifying user deletion from public.user table...');
+  const { data: remainingUser } = await supabase
+    .from('user')
+    .select('user_id')
+    .eq('user_id', userId)
+    .single();
+
+  if (remainingUser) {
+    logger.error('ERROR: User still exists in public.user table after deletion attempt!', remainingUser);
+    Alert.alert('Error', 'Failed to completely delete user profile. Please try again.');
+    return false;
+  }
+
+  logger.info('Confirmed: User successfully deleted from public.user table');
+  return true;
+};
+
+const deleteAuthUser = async (userId: string) => {
+  try {
+    logger.info('Attempting to delete user from auth.users via edge function');
+    const { error } = await supabase.functions.invoke('delete-auth-user', {
+      body: { userId },
+    });
+
+    if (error) {
+      logger.error('Error deleting user from auth.users:', error);
+      logger.info('All app data has been deleted. Auth user remains - may affect re-registration with same email.');
+      return;
+    }
+
+    logger.info('Successfully deleted user from auth.users - user can re-register with same credentials');
+  } catch (error) {
+    logger.error('Failed to call auth user deletion function:', error);
+    logger.info('All app data has been successfully deleted. Auth user may need manual cleanup.');
+  }
+};
+
+const clearLocalDeletionData = async () => {
+  await clearUserCache();
+  ProfileCacheService.clearCache();
+  await AsyncStorage.clear();
+
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    logger.error('Error signing out user:', error);
   }
 };
 
 /**
  * Handle account deletion - removes all user data from the database
  */
-export const handleAccountDeletion = async (profile: any) => {
+export const handleAccountDeletion = async (profile: ProfileWithPhoto | null) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -171,183 +366,31 @@ export const handleAccountDeletion = async (profile: any) => {
       return false;
     }
 
-    console.log('Starting comprehensive account deletion for user:', user.id);
+    logger.info('Starting comprehensive account deletion for user:', user.id);
 
-    // Get all user's image metadata IDs before deletion for cleanup
-    const { data: userImages } = await supabase
-      .from('deal_template')
-      .select('image_metadata_id')
-      .eq('user_id', user.id)
-      .not('image_metadata_id', 'is', null);
+    const { imageMetadataIds, cloudinaryPublicIds } = await collectDeletionImageData(user.id);
+    await clearProfilePhotoMetadataReference(user.id);
+    await deleteImageMetadataRecords(imageMetadataIds);
+    await deleteCloudinaryImages(cloudinaryPublicIds);
+    await deleteLegacyProfilePhoto(profile);
+    await logRemainingDeals(user.id);
 
-    const { data: profileImageMetadata } = await supabase
-      .from('user')
-      .select('profile_photo_metadata_id')
-      .eq('user_id', user.id)
-      .not('profile_photo_metadata_id', 'is', null);
-
-    // Get the actual image metadata with Cloudinary public IDs for deletion
-    const imageMetadataIds = [
-      ...(userImages?.map(img => img.image_metadata_id) || []),
-      ...(profileImageMetadata?.map(img => img.profile_photo_metadata_id) || [])
-    ].filter(Boolean);
-
-    let cloudinaryPublicIds: string[] = [];
-    if (imageMetadataIds.length > 0) {
-      const { data: imageMetadata } = await supabase
-        .from('image_metadata')
-        .select('cloudinary_public_id')
-        .in('image_metadata_id', imageMetadataIds);
-      
-      cloudinaryPublicIds = imageMetadata?.map(img => img.cloudinary_public_id).filter(Boolean) || [];
-    }
-
-    // FIRST: Clear the user's profile photo metadata reference to avoid foreign key constraint
-    const { error: clearPhotoError } = await supabase
-      .from('user')
-      .update({ profile_photo_metadata_id: null })
-      .eq('user_id', user.id);
-
-    if (clearPhotoError) {
-      console.error('Error clearing profile photo metadata reference:', clearPhotoError);
-    } else {
-      console.log('Cleared profile photo metadata reference');
-    }
-
-    // NOW: Delete image metadata records (after clearing references)
-    if (imageMetadataIds.length > 0) {
-      const { error: imageMetadataError } = await supabase
-        .from('image_metadata')
-        .delete()
-        .in('image_metadata_id', imageMetadataIds);
-
-      if (imageMetadataError) {
-        console.error('Error deleting image metadata:', imageMetadataError);
-      } else {
-        console.log('Deleted image metadata records');
-      }
-    }
-
-    // Try to delete Cloudinary images if we have public IDs
-    if (cloudinaryPublicIds.length > 0) {
-      try {
-        console.log('Attempting to delete Cloudinary images:', cloudinaryPublicIds.length);
-        // Call edge function to delete Cloudinary images
-        const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
-          body: { publicIds: cloudinaryPublicIds }
-        });
-        
-        if (cloudinaryError) {
-          console.error('Error deleting Cloudinary images:', cloudinaryError);
-          // Don't fail the deletion if Cloudinary cleanup fails
-        } else {
-          console.log('Successfully deleted Cloudinary images');
-        }
-      } catch (error) {
-        console.error('Failed to call Cloudinary deletion function:', error);
-        // Continue with account deletion even if image cleanup fails
-      }
-    }
-
-    // Delete legacy profile photo from storage if it exists
-    if (profile?.profile_photo && profile.profile_photo !== 'default_avatar.png') {
-      const photoPath = profile.profile_photo.startsWith('public/') 
-        ? profile.profile_photo 
-        : `public/${profile.profile_photo}`;
-        
-      const { error: deletePhotoError } = await supabase.storage
-        .from('avatars')
-        .remove([photoPath]);
-      
-      if (deletePhotoError) {
-        console.error('Error deleting legacy profile photo:', deletePhotoError);
-      } else {
-        console.log('Deleted legacy profile photo');
-      }
-    }
-
-    // Before deleting user, let's check what might still be referencing them
-    console.log('Checking for any remaining user references before deletion...');
-    
-    // Check for any remaining deal_templates (should be none after our deletion)
-    const { data: remainingDeals, error: dealCheckError } = await supabase
-      .from('deal_template')
-      .select('template_id, user_id')
-      .eq('user_id', user.id);
-    
-    if (remainingDeals && remainingDeals.length > 0) {
-      console.error('WARNING: Found remaining deal templates:', remainingDeals);
-    } else {
-      console.log('Good: No remaining deal templates found');
-    }
-
-    // Delete user from public.user table first
-    // This will trigger CASCADE deletes for all related data
-    console.log('Attempting to delete user from public.user table...');
-    const { error: deleteUserError } = await supabase
-      .from('user')
-      .delete()
-      .eq('user_id', user.id);
-
-    if (deleteUserError) {
-      console.error('Error deleting user from public.user:', deleteUserError);
-      Alert.alert('Error', 'Failed to delete user profile. Please try again.');
+    const didDeletePublicUser = await deletePublicUserRecord(user.id);
+    if (!didDeletePublicUser) {
       return false;
-    } else {
-      console.log('Deleted user profile - database cascades handled related data');
     }
 
-    // Verify the user was actually deleted from public.user table
-    console.log('Verifying user deletion from public.user table...');
-    const { data: remainingUser, error: checkError } = await supabase
-      .from('user')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (remainingUser) {
-      console.error('ERROR: User still exists in public.user table after deletion attempt!', remainingUser);
-      Alert.alert('Error', 'Failed to completely delete user profile. Please try again.');
+    const isPublicUserDeleted = await verifyPublicUserDeleted(user.id);
+    if (!isPublicUserDeleted) {
       return false;
-    } else {
-      console.log('Confirmed: User successfully deleted from public.user table');
     }
 
-    // Wait a moment for any database triggers/cascades to complete
-    console.log('Waiting for database operations to complete...');
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    logger.info('Waiting for database operations to complete...');
+    await wait(1000);
+    await deleteAuthUser(user.id);
+    await clearLocalDeletionData();
 
-    // Attempt to delete user from auth.users table via edge function
-    try {
-      console.log('Attempting to delete user from auth.users via edge function');
-      const { data: deleteResult, error: deleteAuthUserError } = await supabase.functions.invoke('delete-auth-user', {
-        body: { userId: user.id }
-      });
-      
-      if (deleteAuthUserError) {
-        console.error('Error deleting user from auth.users:', deleteAuthUserError);
-        console.log('All app data has been deleted. Auth user remains - may affect re-registration with same email.');
-      } else {
-        console.log('Successfully deleted user from auth.users - user can re-register with same credentials');
-      }
-    } catch (error) {
-      console.error('Failed to call auth user deletion function:', error);
-      console.log('All app data has been successfully deleted. Auth user may need manual cleanup.');
-    }
-
-    // Clear local cache
-    await clearUserCache();
-    ProfileCacheService.clearCache();
-    await AsyncStorage.clear();
-
-    // Sign out the user (this will end their session)
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) {
-      console.error('Error signing out user:', signOutError);
-      // Continue with deletion even if sign out fails
-    }
-
-    console.log('Account deletion completed successfully');
+    logger.info('Account deletion completed successfully');
     Alert.alert(
       'Success', 
       'Account and all associated data (including posts) deleted successfully. You will be automatically signed out.'
@@ -355,7 +398,7 @@ export const handleAccountDeletion = async (profile: any) => {
     
     return true; // Indicates successful deletion
   } catch (error) {
-    console.error('Error during account deletion:', error);
+    logger.error('Error during account deletion:', error);
     Alert.alert('Error', 'An unexpected error occurred during account deletion. Please try again.');
     return false;
   }

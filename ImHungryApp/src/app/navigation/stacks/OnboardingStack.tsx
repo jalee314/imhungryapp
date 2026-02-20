@@ -20,8 +20,6 @@ import ProfilePhoto from '../../../screens/onboarding/ProfilePhoto';
 import ResetPassword from '../../../screens/onboarding/ResetPassword';
 import SignUp from '../../../screens/onboarding/SignUp';
 import UsernameScreen from '../../../screens/onboarding/UsernameScreen';
-
-// Admin login accessible from onboarding
 import type { OnboardingStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
@@ -43,7 +41,7 @@ export const OnboardingStack = () => (
       name="SignUp"
       component={SignUp}
       options={({ route }) => ({
-        animation: (route.params as any)?.fromLogin ? 'slide_from_left' : 'slide_from_right'
+        animation: (route.params)?.fromLogin ? 'slide_from_left' : 'slide_from_right'
       })}
     />
     <Stack.Screen name="LogIn" component={LogIn} />

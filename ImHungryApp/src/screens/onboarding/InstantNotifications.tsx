@@ -1,11 +1,16 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  KeyboardAvoidingView, Platform, Alert, Image
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
 } from 'react-native';
 
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
@@ -13,7 +18,7 @@ import { BRAND, STATIC, GRAY } from '../../ui/alf';
 export default function InstantNotificationsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const userData = (route.params as any)?.userData;
+  const userData = (route.params)?.userData;
   const [loading, setLoading] = useState(false);
 
   const handleGetNotified = async () => {
@@ -23,16 +28,16 @@ export default function InstantNotificationsScreen() {
     } catch (error) {
       // Permission request failed, continue anyway
     }
-    (navigation as any).navigate('CuisinePreferences', { userData });
+    (navigation).navigate('CuisinePreferences', { userData });
     setLoading(false);
   };
 
   const handleSkip = () => {
-    (navigation as any).navigate('CuisinePreferences', { userData });
+    (navigation).navigate('CuisinePreferences', { userData });
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -68,7 +73,7 @@ export default function InstantNotificationsScreen() {
                 <TouchableOpacity
                   style={[
                     styles.continueButton,
-                    loading && { opacity: 0.7 }
+                    loading && styles.loadingDimOpacity
                   ]}
                   onPress={handleGetNotified}
                   disabled={loading}
@@ -121,6 +126,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
+  loadingDimOpacity: { opacity: 0.7 },
 
   mainContainer: {
     flex: 1,

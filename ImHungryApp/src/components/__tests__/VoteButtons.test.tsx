@@ -65,7 +65,7 @@ describe('VoteButtons', () => {
     });
 
     it('should call onDownvote when right area is pressed', () => {
-      const { getByTestId, UNSAFE_getAllByType } = renderWithTheme(
+      const { UNSAFE_getAllByType } = renderWithTheme(
         <VoteButtons
           votes={10}
           isUpvoted={false}

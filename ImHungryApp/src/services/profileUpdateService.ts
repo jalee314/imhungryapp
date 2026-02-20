@@ -54,7 +54,7 @@ const fetchUserCuisines = async (userId: string): Promise<string[]> => {
     .eq('user_id', userId);
   if (error) throw error;
   return (data || [])
-    .map((item: any) => item.cuisine?.cuisine_name)
+    .map((item) => item.cuisine?.cuisine_name)
     .filter(Boolean);
 };
 
@@ -78,7 +78,7 @@ export const saveUserCuisines = async (userId: string, cuisines: string[]): Prom
     .in('cuisine_name', cuisines);
   if (cuisineError) throw cuisineError;
 
-  const preferences = (cuisineData || []).map((c: any) => ({ user_id: userId, cuisine_id: c.cuisine_id }));
+  const preferences = (cuisineData || []).map((c) => ({ user_id: userId, cuisine_id: c.cuisine_id }));
   const { error: insertError } = await supabase
     .from('user_cuisine_preference')
     .insert(preferences);

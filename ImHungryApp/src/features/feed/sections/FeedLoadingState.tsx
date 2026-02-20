@@ -10,7 +10,14 @@ import SkeletonLoader from '../../../components/SkeletonLoader';
 import { SPACING } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives';
 
-const renderItemSeparator = () => <View style={{ width: 0 }} />;
+const feedLoadingItemSeparatorStyle = { width: 0 };
+const feedLoadingFilterContentStyle = { paddingLeft: 18.5, gap: SPACING.xs };
+const feedLoadingFilterItemStyle = { marginRight: SPACING.xs };
+const feedLoadingFeaturedContentStyle = { paddingLeft: 10.5, paddingRight: SPACING.md };
+const feedLoadingEvenCardStyle = { marginBottom: 0, marginRight: 2 };
+const feedLoadingOddCardStyle = { marginTop: 0, marginLeft: 2 };
+
+const renderItemSeparator = () => <View style={feedLoadingItemSeparatorStyle} />;
 
 export function FeedLoadingState() {
   return (
@@ -20,7 +27,7 @@ export function FeedLoadingState() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 18.5, gap: SPACING.xs }}
+          contentContainerStyle={feedLoadingFilterContentStyle}
         >
           {[60, 75, 55, 80, 65, 70].map((width, index) => (
             <SkeletonLoader
@@ -28,7 +35,7 @@ export function FeedLoadingState() {
               width={width}
               height={34}
               borderRadius={20}
-              style={{ marginRight: SPACING.xs }}
+              style={feedLoadingFilterItemStyle}
             />
           ))}
         </ScrollView>
@@ -45,7 +52,7 @@ export function FeedLoadingState() {
         keyExtractor={(item) => item.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 10.5, paddingRight: SPACING.md }}
+        contentContainerStyle={feedLoadingFeaturedContentStyle}
         ItemSeparatorComponent={renderItemSeparator}
       />
 
@@ -60,7 +67,7 @@ export function FeedLoadingState() {
         {[1, 2, 3, 4, 5, 6].map((item, index) => (
           <View
             key={item}
-            style={index % 2 === 0 ? { marginBottom: 0, marginRight: 2 } : { marginTop: 0, marginLeft: 2 }}
+            style={index % 2 === 0 ? feedLoadingEvenCardStyle : feedLoadingOddCardStyle}
           >
             <DealCardSkeleton variant="vertical" />
           </View>

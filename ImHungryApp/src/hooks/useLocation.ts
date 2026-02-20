@@ -1,22 +1,10 @@
 import { useLocationStore } from '../stores/LocationStore';
 
-export function useLocation<T>(selector: (state: any) => T, equality?: (a: T, b: T) => boolean): T;
-export function useLocation(): {
-  currentLocation: string;
-  isLoading: boolean;
-  isInitialLoad: boolean;
-  selectedCoordinates: { lat: number; lng: number } | null;
-  hasLocationSet: boolean;
-  hasLocationPermission: boolean;
-  setCurrentLocation: (location: string) => void;
-  updateLocation: (location: any) => void;
-  loadCurrentLocation: () => Promise<void>;
-  refreshPermissionStatus: () => Promise<void>;
-};
-export function useLocation<T>(selector?: (state: any) => T) {
-  if (selector) {
-    return useLocationStore(selector as any) as unknown as T;
-  }
+/**
+ * Convenience hook for LocationStore.
+ * Subscribes to individual slices to avoid unnecessary re-renders.
+ */
+export function useLocation() {
   const currentLocation = useLocationStore((s) => s.currentLocation);
   const isLoading = useLocationStore((s) => s.isLoading);
   const isInitialLoad = useLocationStore((s) => s.isInitialLoad);

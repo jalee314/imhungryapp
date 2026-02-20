@@ -21,6 +21,7 @@ import {
   toggleDownvote as canonicalToggleDownvote,
   toggleDealFavorite,
 } from '../features/interactions';
+import { logger } from '../utils/logger';
 
 import { clearFavoritesCache } from './favoritesService';
 
@@ -76,7 +77,7 @@ export const toggleDownvote = async (dealId: string): Promise<boolean> => {
  * @deprecated Use toggleDealFavorite from @/features/interactions directly
  */
 export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean): Promise<boolean> => {
-  console.log('🎯 toggleFavorite called:', { dealId, currentlyFavorited });
+  logger.info('🎯 toggleFavorite called:', { dealId, currentlyFavorited });
   
   const result = await toggleDealFavorite(dealId, currentlyFavorited);
   

@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import type { ImageSourcePropType, StyleProp, ViewStyle } from 'react-native';
 
-import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../ui/alf';
+import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS } from '../ui/alf';
 
 export interface RowCardData {
   id: string;
   title: string;
   subtitle: string;
-  image: string | any;
+  image: ImageSourcePropType;
   distance?: string;
   dealCount?: number;
   views?: number;
@@ -25,18 +26,12 @@ interface RowCardProps {
   variant: 'explore-deal-card' | 'rest-deal' | 'favorites-deal-card';
   onPress?: (id: string) => void;
   onUserPress?: (userId: string) => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
-const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress, style }) => {
+const RowCard: React.FC<RowCardProps> = ({ data, variant, onPress, onUserPress: _onUserPress, style }) => {
   const handlePress = () => {
     onPress?.(data.id);
-  };
-
-  const handleUserPress = () => {
-    if (data.userId && onUserPress) {
-      onUserPress(data.userId);
-    }
   };
 
   const renderContent = () => {
@@ -229,46 +224,6 @@ const styles = StyleSheet.create({
     paddingLeft: 5, // Match Anima CSS padding
     alignSelf: 'stretch',
     minWidth: 20, // Ensure arrow has consistent width
-  },
-
-  // Variant-specific styles
-  'explore-deal-card': {
-    height: 96,
-  },
-  'rest-deal': {
-    height: 96,
-  },
-  'favorites-deal-card': {
-    height: 96,
-  },
-  // User profile styles
-  userProfileSection: {
-    marginTop: 4,
-  },
-  userProfileContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userProfileImage: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 6,
-  },
-  userProfilePlaceholder: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: GRAY[150],
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-  },
-  userProfileText: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    fontWeight: '400',
-    color: GRAY[475],
   },
 });
 

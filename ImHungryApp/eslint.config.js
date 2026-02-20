@@ -166,13 +166,17 @@ module.exports = [
       'no-duplicate-imports': 'off', // Using import/no-duplicates
     },
   },
-  // Test files - relaxed rules
+  // Test files - relaxed rules (keep correctness rules like rules-of-hooks, exhaustive-deps)
   {
     files: ['**/*.test.ts', '**/*.test.tsx', '**/test-utils/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'max-lines': 'off',
       'no-console': 'off',
+      'max-nested-callbacks': 'off',
+      complexity: 'off',
+      'max-depth': 'off',
+      'react-native/no-inline-styles': 'off',
     },
   },
 ];

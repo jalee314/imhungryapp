@@ -9,10 +9,17 @@ interface AuthGuardProps {
   fallback?: ReactNode;
 }
 
+const authGuardFallbackStyle = {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  backgroundColor: BRAND.peach,
+};
+
 export const AuthGuard: React.FC<AuthGuardProps> = ({
   children,
   fallback = (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BRAND.peach }}>
+    <View style={authGuardFallbackStyle}>
       <ActivityIndicator size="large" color={BRAND.accent} />
     </View>
   )

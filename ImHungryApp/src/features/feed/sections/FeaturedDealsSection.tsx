@@ -17,8 +17,6 @@ import {
   GRAY,
   SPACING,
   RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
 } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 import type { FeedInteractions } from '../types';
@@ -27,6 +25,18 @@ export interface FeaturedDealsSectionProps {
   deals: Deal[];
   interactions: FeedInteractions;
 }
+
+const featuredDealsItemSeparatorStyle = { width: 0 };
+const featuredDealsTitleStyle = { fontFamily: 'Inter' };
+const featuredDealsArrowStyle = {
+  backgroundColor: GRAY[100],
+  borderRadius: RADIUS.full,
+  width: 30,
+  height: 30,
+  justifyContent: 'center' as const,
+  alignItems: 'center' as const,
+};
+const featuredDealsContentStyle = { paddingLeft: 10.5, paddingRight: SPACING.md };
 
 const renderCommunityDeal = (
   { item }: { item: Deal },
@@ -42,7 +52,7 @@ const renderCommunityDeal = (
   />
 );
 
-const renderItemSeparator = () => <View style={{ width: 0 }} />;
+const renderItemSeparator = () => <View style={featuredDealsItemSeparatorStyle} />;
 
 export function FeaturedDealsSection({ deals, interactions }: FeaturedDealsSectionProps) {
   const navigation = useNavigation();
@@ -64,19 +74,12 @@ export function FeaturedDealsSection({ deals, interactions }: FeaturedDealsSecti
           size={17}
           weight="bold"
           color={STATIC.black}
-          style={{ fontFamily: 'Inter' }}
+          style={featuredDealsTitleStyle}
         >
           ✨ Featured Deals
         </Text>
         <TouchableOpacity
-          style={{
-            backgroundColor: GRAY[100],
-            borderRadius: RADIUS.full,
-            width: 30,
-            height: 30,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          style={featuredDealsArrowStyle}
           onPress={() => navigation.navigate('CommunityUploaded' as never)}
         >
           <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
@@ -89,7 +92,7 @@ export function FeaturedDealsSection({ deals, interactions }: FeaturedDealsSecti
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 10.5, paddingRight: SPACING.md }}
+        contentContainerStyle={featuredDealsContentStyle}
         ItemSeparatorComponent={renderItemSeparator}
         extraData={deals.map(d => d.imageVariants?.cloudinary_id).join(',')}
       />

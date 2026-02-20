@@ -10,8 +10,8 @@ import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 export default function UsernameScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const userData = (route.params as any)?.userData;
-  const existingProfilePhoto = (route.params as any)?.profilePhoto;
+  const userData = (route.params)?.userData;
+  const existingProfilePhoto = (route.params)?.profilePhoto;
 
   const [username, setUsername] = useState(userData?.username || '');
   const [displayUsername, setDisplayUsername] = useState(userData?.username ? '@' + userData.username : '');
@@ -39,6 +39,7 @@ export default function UsernameScreen() {
       // We have a pre-filled username from navigation, validate it
       checkUsernameUniqueness(userData.username);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run once on mount
 
   // Prevent hardware back button (Android) from going back
@@ -144,7 +145,7 @@ export default function UsernameScreen() {
   };
 
   // Prevent cursor from being before the @ symbol
-  const handleSelectionChange = (e: any) => {
+  const handleSelectionChange = (e) => {
     const { start, end } = e.nativeEvent.selection;
     // Force cursor to always be at position 1 or later (after @)
     if (start < 1 || end < 1) {
@@ -162,14 +163,14 @@ export default function UsernameScreen() {
     if (!userData) return;
 
     // Navigate to ProfilePhoto screen with user data including username
-    (navigation as any).navigate('ProfilePhoto', {
+    (navigation).navigate('ProfilePhoto', {
       userData: { ...userData, username },
       profilePhoto: existingProfilePhoto,
     });
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
@@ -271,8 +272,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Inter-Bold'
   },
-
-  inputContainer: { width: '100%', alignItems: 'center', marginBottom: 30 },
   usernameInput: {
     backgroundColor: 'transparent',
     fontSize: 32,

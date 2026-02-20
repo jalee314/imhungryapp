@@ -22,6 +22,18 @@ export interface TitleSectionProps {
 }
 
 const DEFAULT_PLACEHOLDER = '$10 Sushi before 5pm on M-W';
+const titleInputStyle = {
+  fontFamily: 'Inter',
+  fontSize: 12,
+  color: '#000000',
+  minHeight: 50,
+  textAlignVertical: 'top',
+  lineHeight: 20,
+  paddingTop: 0,
+  paddingLeft: 4,
+  includeFontPadding: false,
+};
+const titleCounterStyle = { alignSelf: 'flex-end' };
 
 export function TitleSection({
   value,
@@ -39,17 +51,7 @@ export function TitleSection({
       <Box px={15} py={4} minH={70}>
         <TextInput
           ref={inputRef}
-          style={{
-            fontFamily: 'Inter',
-            fontSize: 12,
-            color: '#000000',
-            minHeight: 50,
-            textAlignVertical: 'top',
-            lineHeight: 20,
-            paddingTop: 0,
-            paddingLeft: 4,
-            includeFontPadding: false,
-          }}
+          style={titleInputStyle}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -58,7 +60,7 @@ export function TitleSection({
           maxLength={TITLE_MAX_LENGTH}
           onFocus={onFocus}
         />
-        <Text size="xs" color="#888889" style={{ alignSelf: 'flex-end' }} mt="xs">
+        <Text size="xs" color="#888889" style={titleCounterStyle} mt="xs">
           {value.length}/{TITLE_MAX_LENGTH}
         </Text>
       </Box>

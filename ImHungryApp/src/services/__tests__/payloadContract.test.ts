@@ -17,12 +17,7 @@
  * @see PR-038 / RF-038
  */
 
-import {
-  mockSupabase,
-  configureMockAuth,
-  mockUser,
-  mockSession,
-} from '../../test-utils/mocks/supabaseMock';
+import { mockSupabase, configureMockAuth, mockUser } from '../../test-utils/mocks/supabaseMock';
 import {
   CreateDealData,
   UpdateDealData,
@@ -33,9 +28,8 @@ import {
   addDealImages,
   removeDealImage,
   setDealThumbnail,
-  updateDealImageOrder} from '../dealService';
-
-// Mock image processing service
+  updateDealImageOrder
+} from '../dealService';
 import * as imageProcessingService from '../imageProcessingService';
 
 // Helper type for captured payloads
@@ -48,6 +42,14 @@ interface CapturedPayload {
 
 // Capture payloads sent to Supabase
 let capturedPayloads: CapturedPayload[] = [];
+
+const expectDefined = <T>(value: T | null | undefined): T => {
+  expect(value).toBeDefined();
+  if (value == null) {
+    throw new Error('Expected value to be defined');
+  }
+  return value;
+};
 
 // Helper to create a tracking query builder
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +66,7 @@ const createTrackingQueryBuilder = (
 
   const capturePayload = (): void => {
     if (payloadCaptured) return;
-    
+
     if (currentOperation === 'insert' && currentData !== null) {
       capturedPayloads.push({
         table,
@@ -168,11 +170,12 @@ describe('API Payload Contract Tests', () => {
     jest.clearAllMocks();
     capturedPayloads = [];
     configureMockAuth(mockUser);
-    
+
     // Mock image processing to return predictable IDs
     jest.spyOn(imageProcessingService, 'processImageWithEdgeFunction')
       .mockImplementation((uri: string) => {
-        const index = uri.match(/\d+/) ? parseInt(uri.match(/\d+/)![0]) : 1;
+        const match = uri.match(/\d+/);
+        const index = match ? parseInt(match[0], 10) : 1;
         return Promise.resolve({
           success: true,
           metadataId: `uploaded-image-meta-${index}`,
@@ -225,7 +228,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(templateInsert).toBeDefined();
-      expect(templateInsert!.data).toMatchSnapshot('deal_template_insert_payload');
+      expect(expectDefined(templateInsert).data).toMatchSnapshot('deal_template_insert_payload');
     });
 
     it('should snapshot deal_images insert payload structure', async () => {
@@ -236,7 +239,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(imagesInsert).toBeDefined();
-      expect(imagesInsert!.data).toMatchSnapshot('deal_images_insert_payload');
+      expect(expectDefined(imagesInsert).data).toMatchSnapshot('deal_images_insert_payload');
     });
 
     it('should include all required fields in deal_template insert', async () => {
@@ -247,7 +250,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(templateInsert).toBeDefined();
-      const payload = templateInsert!.data as Record<string, unknown>;
+      const payload = expectDefined(templateInsert).data as Record<string, unknown>;
 
       // Verify required field presence (contract enforcement)
       expect(payload).toHaveProperty('restaurant_id');
@@ -289,7 +292,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(imagesInsert).toBeDefined();
-      expect(imagesInsert!.data).toMatchSnapshot('deal_images_multi_insert_payload');
+      expect(expectDefined(imagesInsert).data).toMatchSnapshot('deal_images_multi_insert_payload');
     });
   });
 
@@ -333,8 +336,8 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(templateUpdate).toBeDefined();
-      expect(templateUpdate!.data).toMatchSnapshot('deal_template_title_update_payload');
-      expect(templateUpdate!.filters).toMatchSnapshot('deal_template_update_filters');
+      expect(expectDefined(templateUpdate).data).toMatchSnapshot('deal_template_title_update_payload');
+      expect(expectDefined(templateUpdate).filters).toMatchSnapshot('deal_template_update_filters');
     });
 
     it('should snapshot deal_template update payload for description change', async () => {
@@ -347,7 +350,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(templateUpdate).toBeDefined();
-      expect(templateUpdate!.data).toMatchSnapshot('deal_template_description_update_payload');
+      expect(expectDefined(templateUpdate).data).toMatchSnapshot('deal_template_description_update_payload');
     });
 
     it('should snapshot deal_instance update payload for expiration change', async () => {
@@ -360,8 +363,8 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(instanceUpdate).toBeDefined();
-      expect(instanceUpdate!.data).toMatchSnapshot('deal_instance_expiration_update_payload');
-      expect(instanceUpdate!.filters).toMatchSnapshot('deal_instance_update_filters');
+      expect(expectDefined(instanceUpdate).data).toMatchSnapshot('deal_instance_expiration_update_payload');
+      expect(expectDefined(instanceUpdate).filters).toMatchSnapshot('deal_instance_update_filters');
     });
 
     it('should snapshot deal_instance update payload for anonymous toggle', async () => {
@@ -374,7 +377,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(instanceUpdate).toBeDefined();
-      expect(instanceUpdate!.data).toMatchSnapshot('deal_instance_anonymous_update_payload');
+      expect(expectDefined(instanceUpdate).data).toMatchSnapshot('deal_instance_anonymous_update_payload');
     });
 
     it('should snapshot combined update payload', async () => {
@@ -401,7 +404,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(instanceUpdate).toBeDefined();
-      expect(instanceUpdate!.data).toMatchSnapshot('deal_instance_null_expiration_payload');
+      expect(expectDefined(instanceUpdate).data).toMatchSnapshot('deal_instance_null_expiration_payload');
     });
   });
 
@@ -456,7 +459,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(instanceDelete).toBeDefined();
-      expect(instanceDelete!.filters).toMatchSnapshot('deal_instance_delete_filters');
+      expect(expectDefined(instanceDelete).filters).toMatchSnapshot('deal_instance_delete_filters');
     });
 
     it('should snapshot deal_images delete filter', async () => {
@@ -467,7 +470,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(imagesDelete).toBeDefined();
-      expect(imagesDelete!.filters).toMatchSnapshot('deal_images_delete_filters');
+      expect(expectDefined(imagesDelete).filters).toMatchSnapshot('deal_images_delete_filters');
     });
 
     it('should snapshot deal_template delete filter', async () => {
@@ -478,7 +481,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(templateDelete).toBeDefined();
-      expect(templateDelete!.filters).toMatchSnapshot('deal_template_delete_filters');
+      expect(expectDefined(templateDelete).filters).toMatchSnapshot('deal_template_delete_filters');
     });
 
     it('should snapshot image_metadata bulk delete', async () => {
@@ -489,7 +492,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(metadataDelete).toBeDefined();
-      expect(metadataDelete!.filters).toMatchSnapshot('image_metadata_delete_filters');
+      expect(expectDefined(metadataDelete).filters).toMatchSnapshot('image_metadata_delete_filters');
     });
 
     it('should snapshot all delete operations in order', async () => {
@@ -550,7 +553,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(imageInsert).toBeDefined();
-      const payload = imageInsert!.data as Record<string, unknown>;
+      const payload = expectDefined(imageInsert).data as Record<string, unknown>;
       expect(payload).toHaveProperty('display_order');
       expect(payload).toHaveProperty('is_thumbnail', false);
     });
@@ -602,7 +605,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(imageDelete).toBeDefined();
-      expect(imageDelete!.filters).toMatchSnapshot('remove_deal_image_filters');
+      expect(expectDefined(imageDelete).filters).toMatchSnapshot('remove_deal_image_filters');
     });
 
     it('should snapshot image_metadata delete for cleanup', async () => {
@@ -613,7 +616,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(metadataDelete).toBeDefined();
-      expect(metadataDelete!.filters).toMatchSnapshot('remove_image_metadata_filters');
+      expect(expectDefined(metadataDelete).filters).toMatchSnapshot('remove_image_metadata_filters');
     });
 
     it('should snapshot all remove image operations', async () => {
@@ -662,7 +665,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(clearThumbnail).toBeDefined();
-      expect(clearThumbnail!.data).toMatchSnapshot('clear_thumbnail_payload');
+      expect(expectDefined(clearThumbnail).data).toMatchSnapshot('clear_thumbnail_payload');
     });
 
     it('should snapshot deal_images set thumbnail update', async () => {
@@ -676,8 +679,8 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(setThumbnail).toBeDefined();
-      expect(setThumbnail!.data).toMatchSnapshot('set_thumbnail_payload');
-      expect(setThumbnail!.filters).toMatchSnapshot('set_thumbnail_filters');
+      expect(expectDefined(setThumbnail).data).toMatchSnapshot('set_thumbnail_payload');
+      expect(expectDefined(setThumbnail).filters).toMatchSnapshot('set_thumbnail_filters');
     });
 
     it('should snapshot deal_template primary image update', async () => {
@@ -691,7 +694,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(templateUpdate).toBeDefined();
-      expect(templateUpdate!.data).toMatchSnapshot('template_primary_image_update');
+      expect(expectDefined(templateUpdate).data).toMatchSnapshot('template_primary_image_update');
     });
 
     it('should snapshot complete thumbnail change sequence', async () => {
@@ -751,7 +754,7 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(update).toBeDefined();
-      const payload = update!.data as Record<string, unknown>;
+      const payload = expectDefined(update).data as Record<string, unknown>;
       expect(payload).toHaveProperty('display_order');
     });
 
@@ -765,8 +768,8 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(update).toBeDefined();
-      expect(update!.filters).toHaveProperty('deal_template_id');
-      expect(update!.filters).toHaveProperty('image_metadata_id');
+      expect(expectDefined(update).filters).toHaveProperty('deal_template_id');
+      expect(expectDefined(update).filters).toHaveProperty('image_metadata_id');
     });
   });
 

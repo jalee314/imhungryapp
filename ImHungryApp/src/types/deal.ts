@@ -5,8 +5,8 @@ export interface Deal {
   title: string;
   restaurant: string;
   details: string;
-  image: string | any;
-  imageVariants?: any;
+  image: string | null;
+  imageVariants?: ImageVariants;
   images?: string[];
   votes: number;
   isUpvoted: boolean;

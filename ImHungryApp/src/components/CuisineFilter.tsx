@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../ui/alf';
 
@@ -10,7 +11,7 @@ export interface CuisineFilterProps {
   multiSelect?: boolean;
   onFilterSelect: (filter: string) => void;
   onFiltersSelect?: (filters: string[]) => void; // For multi-select
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   showAllOption?: boolean;
 }
 

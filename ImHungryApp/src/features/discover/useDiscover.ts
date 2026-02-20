@@ -14,6 +14,7 @@ import {
   getRestaurantsWithDealsDirect,
 } from '../../services/discoverService';
 import type { DiscoverRestaurant } from '../../types/discover';
+import { logger } from '../../utils/logger';
 
 import type { DiscoverContext } from './types';
 
@@ -49,7 +50,7 @@ export function useDiscover(): DiscoverContext {
         let result = await getRestaurantsWithDeals(coords || undefined);
 
         if (!result.success && result.error?.includes('function')) {
-          console.log(
+          logger.info(
             'RPC function not available, trying direct query...',
           );
           result = await getRestaurantsWithDealsDirect(coords || undefined);
@@ -61,7 +62,7 @@ export function useDiscover(): DiscoverContext {
           setError(result.error || 'Failed to load restaurants');
         }
       } catch (err) {
-        console.error('Error loading restaurants:', err);
+        logger.error('Error loading restaurants:', err);
         setError('Failed to load restaurants');
       } finally {
         setLoading(false);
@@ -102,7 +103,7 @@ export function useDiscover(): DiscoverContext {
     (id: string) => {
       const restaurant = restaurants.find((r) => r.restaurant_id === id);
       if (restaurant) {
-        (navigation as any).navigate('RestaurantDetail', { restaurant });
+        (navigation).navigate('RestaurantDetail', { restaurant });
       }
     },
     [restaurants, navigation],

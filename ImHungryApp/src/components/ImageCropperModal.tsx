@@ -5,7 +5,6 @@ import {
     Modal,
     View,
     Text,
-    StyleSheet,
     TouchableOpacity,
     Image,
     Dimensions,
@@ -17,6 +16,8 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
 } from 'react-native-reanimated';
+
+import { styles } from './ImageCropperModal.styles';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -33,6 +34,35 @@ interface ImageDimensions {
     height: number;
 }
 
+const overlayTopStaticStyle = { top: 0, left: 0, right: 0 };
+const overlayBottomStaticStyle = { bottom: 0, left: 0, right: 0 };
+const overlayLeftStaticStyle = { left: 0 };
+const overlayRightStaticStyle = { right: 0 };
+
+const getOverlayTopStyle = (height: number) => ({
+    ...overlayTopStaticStyle,
+    height,
+});
+
+const getOverlayBottomStyle = (height: number) => ({
+    ...overlayBottomStaticStyle,
+    height,
+});
+
+const getOverlayLeftStyle = (top: number, width: number, height: number) => ({
+    ...overlayLeftStaticStyle,
+    top,
+    width,
+    height,
+});
+
+const getOverlayRightStyle = (top: number, width: number, height: number) => ({
+    ...overlayRightStaticStyle,
+    top,
+    width,
+    height,
+});
+
 const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     visible,
     imageUri,
@@ -42,11 +72,11 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [imageDimensions, setImageDimensions] = useState<ImageDimensions | null>(null);
-    
+
     // Crop frame size (centered in screen)
     const CROP_WIDTH = SCREEN_WIDTH - 40;
     const CROP_HEIGHT = CROP_WIDTH / aspectRatio;
-    
+
     // Area for the full image display
     const IMAGE_AREA_HEIGHT = SCREEN_HEIGHT - 200; // Leave room for header and footer
 
@@ -61,7 +91,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     // Calculate initial display size to fit the image in the available area
     const [displaySize, setDisplaySize] = useState({ width: CROP_WIDTH, height: CROP_HEIGHT });
     // Minimum scale to ensure crop frame is covered (needed for valid crop)
-    const [minScale, setMinScale] = useState(1);
+    const [_minScale, setMinScale] = useState(1);
 
     // Reset on open
     useEffect(() => {
@@ -73,6 +103,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             savedTranslateX.value = 0;
             savedTranslateY.value = 0;
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible]);
 
     // Get image dimensions and calculate display size
@@ -82,16 +113,16 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                 imageUri,
                 (width, height) => {
                     setImageDimensions({ width, height });
-                    
+
                     const imageAspect = width / height;
                     const availableWidth = SCREEN_WIDTH - 40;
                     const availableHeight = IMAGE_AREA_HEIGHT - 40;
-                    
+
                     // Calculate display size to CONTAIN the entire image (fit mode)
                     // This shows the full image at scale 1
                     let displayWidth: number;
                     let displayHeight: number;
-                    
+
                     if (imageAspect > (availableWidth / availableHeight)) {
                         // Image is wider - constrain by width
                         displayWidth = availableWidth;
@@ -101,13 +132,13 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                         displayHeight = availableHeight;
                         displayWidth = displayHeight * imageAspect;
                     }
-                    
+
                     // Calculate minimum scale needed to cover the crop frame
                     const minScaleX = CROP_WIDTH / displayWidth;
                     const minScaleY = CROP_HEIGHT / displayHeight;
                     const calculatedMinScale = Math.max(minScaleX, minScaleY, 1);
                     setMinScale(calculatedMinScale);
-                    
+
                     setDisplaySize({ width: displayWidth, height: displayHeight });
                 },
                 (error) => {
@@ -115,6 +146,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                 }
             );
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible, imageUri]);
 
     // Pinch gesture for zoom - allow zooming from 1 (full image) to 4x
@@ -157,9 +189,9 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 
     const handleCrop = async () => {
         if (!imageDimensions) return;
-        
+
         setIsProcessing(true);
-        
+
         try {
             const currentScale = scale.value;
             const currentTranslateX = translateX.value;
@@ -182,11 +214,11 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             // Convert to original image coordinates
             const cropWidth = cropFrameWidthInDisplay * scaleToOriginalX;
             const cropHeight = cropFrameHeightInDisplay * scaleToOriginalY;
-            
+
             // Calculate origin (top-left of crop area in original image)
             const centerX = imageDimensions.width / 2;
             const centerY = imageDimensions.height / 2;
-            
+
             let originX = centerX + (visibleCenterX * scaleToOriginalX) - (cropWidth / 2);
             let originY = centerY + (visibleCenterY * scaleToOriginalY) - (cropHeight / 2);
 
@@ -212,7 +244,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                 ],
                 { compress: 0.8, format: SaveFormat.JPEG }
             );
-            
+
             onComplete(result.uri);
         } catch (error) {
             console.error('Error cropping image:', error);
@@ -241,15 +273,15 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             <GestureHandlerRootView style={styles.container}>
                 <SafeAreaView style={styles.container}>
                     <StatusBar style="light" />
-                    
+
                     {/* Header */}
                     <View style={styles.header}>
                         <TouchableOpacity style={styles.headerButton} onPress={onCancel}>
                             <Text style={styles.cancelText}>Cancel</Text>
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>Move and Scale</Text>
-                        <TouchableOpacity 
-                            style={styles.headerButton} 
+                        <TouchableOpacity
+                            style={styles.headerButton}
                             onPress={handleCrop}
                             disabled={isProcessing}
                         >
@@ -281,60 +313,40 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 
                         {/* Dark overlays for areas outside crop frame */}
                         {/* Top overlay */}
-                        <View 
+                        <View
                             style={[
-                                styles.overlay, 
-                                { 
-                                    top: 0, 
-                                    left: 0, 
-                                    right: 0, 
-                                    height: overlayTopHeight 
-                                }
-                            ]} 
-                            pointerEvents="none" 
+                                styles.overlay,
+                                getOverlayTopStyle(overlayTopHeight),
+                            ]}
+                            pointerEvents="none"
                         />
                         {/* Bottom overlay */}
-                        <View 
+                        <View
                             style={[
-                                styles.overlay, 
-                                { 
-                                    bottom: 0, 
-                                    left: 0, 
-                                    right: 0, 
-                                    height: overlayBottomHeight 
-                                }
-                            ]} 
-                            pointerEvents="none" 
+                                styles.overlay,
+                                getOverlayBottomStyle(overlayBottomHeight),
+                            ]}
+                            pointerEvents="none"
                         />
                         {/* Left overlay */}
-                        <View 
+                        <View
                             style={[
-                                styles.overlay, 
-                                { 
-                                    top: overlayTopHeight, 
-                                    left: 0, 
-                                    width: overlaySideWidth, 
-                                    height: CROP_HEIGHT 
-                                }
-                            ]} 
-                            pointerEvents="none" 
+                                styles.overlay,
+                                getOverlayLeftStyle(overlayTopHeight, overlaySideWidth, CROP_HEIGHT),
+                            ]}
+                            pointerEvents="none"
                         />
                         {/* Right overlay */}
-                        <View 
+                        <View
                             style={[
-                                styles.overlay, 
-                                { 
-                                    top: overlayTopHeight, 
-                                    right: 0, 
-                                    width: overlaySideWidth, 
-                                    height: CROP_HEIGHT 
-                                }
-                            ]} 
-                            pointerEvents="none" 
+                                styles.overlay,
+                                getOverlayRightStyle(overlayTopHeight, overlaySideWidth, CROP_HEIGHT),
+                            ]}
+                            pointerEvents="none"
                         />
 
                         {/* Crop frame border */}
-                        <View 
+                        <View
                             style={[
                                 styles.cropFrame,
                                 {
@@ -365,104 +377,5 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
         </Modal>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#000000',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#1A1A1A',
-    },
-    headerButton: {
-        minWidth: 60,
-    },
-    headerTitle: {
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
-    },
-    cancelText: {
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fontWeight: '400',
-        color: '#FFFFFF',
-    },
-    doneText: {
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFA05C',
-        textAlign: 'right',
-    },
-    imageArea: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    imageWrapper: {
-        position: 'absolute',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    overlay: {
-        position: 'absolute',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    },
-    cropFrame: {
-        position: 'absolute',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.5)',
-    },
-    corner: {
-        position: 'absolute',
-        width: 20,
-        height: 20,
-        borderColor: '#FFFFFF',
-    },
-    cornerTL: {
-        top: -1,
-        left: -1,
-        borderTopWidth: 2,
-        borderLeftWidth: 2,
-    },
-    cornerTR: {
-        top: -1,
-        right: -1,
-        borderTopWidth: 2,
-        borderRightWidth: 2,
-    },
-    cornerBL: {
-        bottom: -1,
-        left: -1,
-        borderBottomWidth: 2,
-        borderLeftWidth: 2,
-    },
-    cornerBR: {
-        bottom: -1,
-        right: -1,
-        borderBottomWidth: 2,
-        borderRightWidth: 2,
-    },
-    footer: {
-        paddingVertical: 20,
-        paddingHorizontal: 16,
-        backgroundColor: '#1A1A1A',
-    },
-    instructionText: {
-        fontFamily: 'Inter',
-        fontSize: 14,
-        fontWeight: '400',
-        color: '#888888',
-        textAlign: 'center',
-    },
-});
 
 export default ImageCropperModal;

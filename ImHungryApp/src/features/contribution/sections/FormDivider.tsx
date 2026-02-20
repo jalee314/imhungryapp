@@ -9,11 +9,16 @@ import { StyleSheet } from 'react-native';
 
 import { Box } from '../../../ui/primitives';
 
+const dividerStyle = {
+  height: StyleSheet.hairlineWidth,
+  backgroundColor: '#C1C1C1',
+};
+
 export function FormDivider() {
   return (
     <Box
       my={4}
-      style={{ height: StyleSheet.hairlineWidth, backgroundColor: '#C1C1C1' }}
+      style={dividerStyle}
     />
   );
 }

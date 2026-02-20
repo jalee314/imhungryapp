@@ -15,7 +15,6 @@ import {
   DealFormAPI,
   DealFormOptions,
   DealFormValues,
-  FormMode,
   ValidationResult,
 } from './types';
 import { validateDealForm } from './validation';

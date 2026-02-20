@@ -26,7 +26,7 @@ import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 // --- Debounce Helper Function ---
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number
 ): (...args: Parameters<T>) => void {
@@ -125,6 +125,7 @@ const AdminMassUploadScreen: React.FC = () => {
   };
 
   // Debounced Google Places search
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce(async (query: string) => {
       if (!query || query.trim().length < 2) {
@@ -196,13 +197,18 @@ const AdminMassUploadScreen: React.FC = () => {
       if (selectedPlace && selectedPlace.google_place_id) {
         setIsSearchModalVisible(false);
 
+        if (selectedPlace.lat == null || selectedPlace.lng == null) {
+          Alert.alert('Location unavailable', 'Selected place is missing coordinates. Please try another result.');
+          return;
+        }
+
         try {
           const result = await getOrCreateRestaurant({
             google_place_id: selectedPlace.google_place_id,
             name: selectedPlace.name,
             address: selectedPlace.address,
-            lat: selectedPlace.lat!,
-            lng: selectedPlace.lng!,
+            lat: selectedPlace.lat,
+            lng: selectedPlace.lng,
             distance_miles: 0,
           });
 
@@ -280,7 +286,7 @@ const AdminMassUploadScreen: React.FC = () => {
     setDealForms(dealForms.filter((form) => form.id !== id));
   };
 
-  const updateForm = (id: string, field: keyof DealForm, value: any) => {
+  const updateForm = (id: string, field: keyof DealForm, value) => {
     setDealForms(
       dealForms.map((form) =>
         form.id === id ? { ...form, [field]: value } : form
@@ -293,6 +299,56 @@ const AdminMassUploadScreen: React.FC = () => {
     if (!form.restaurant) return false;
     if (!form.category) return false;
     if (!form.cuisine) return false;
+    return true;
+  };
+
+  const resetDealForms = () => {
+    setDealForms([
+      {
+        id: '1',
+        title: '',
+        description: '',
+        restaurant: null,
+        category: '',
+        cuisine: '',
+        expirationDate: '',
+        imageUri: null,
+      },
+    ]);
+  };
+
+  const uploadDealTemplate = async (form: DealForm, userId: string): Promise<boolean> => {
+    if (!form.restaurant?.id) {
+      return false;
+    }
+
+    const category = categories.find((c) => c.name === form.category);
+    const cuisine = cuisines.find((c) => c.name === form.cuisine);
+    if (!category || !cuisine) {
+      return false;
+    }
+
+    let imageMetadataId: string | null = null;
+    if (form.imageUri) {
+      const imageResult = await processImageWithEdgeFunction(form.imageUri, 'deal_image');
+      if (imageResult.success && imageResult.metadataId) {
+        imageMetadataId = imageResult.metadataId;
+      }
+    }
+
+    const { error } = await supabase.from('deal_template').insert({
+      restaurant_id: form.restaurant.id,
+      user_id: userId,
+      title: form.title,
+      description: form.description || null,
+      image_metadata_id: imageMetadataId,
+      category_id: category.id,
+      cuisine_id: cuisine.id,
+      is_anonymous: false,
+      source_type: 'admin_uploaded',
+    });
+
+    if (error) throw error;
     return true;
   };
 
@@ -325,49 +381,12 @@ const AdminMassUploadScreen: React.FC = () => {
 
               for (const form of dealForms) {
                 try {
-                  // Restaurant is already created and stored during selection
-                  if (!form.restaurant || !form.restaurant.id) {
+                  const uploaded = await uploadDealTemplate(form, user.id);
+                  if (uploaded) {
+                    successCount++;
+                  } else {
                     errorCount++;
-                    continue;
                   }
-
-                  // Find category and cuisine IDs
-                  const category = categories.find(
-                    (c) => c.name === form.category
-                  );
-                  const cuisine = cuisines.find(
-                    (c) => c.name === form.cuisine
-                  );
-
-                  if (!category || !cuisine) {
-                    errorCount++;
-                    continue;
-                  }
-
-                  // Upload image if provided
-                  let imageMetadataId: string | null = null;
-                  if (form.imageUri) {
-                    const imageResult = await processImageWithEdgeFunction(form.imageUri, 'deal_image');
-                    if (imageResult.success && imageResult.metadataId) {
-                      imageMetadataId = imageResult.metadataId;
-                    }
-                  }
-
-                  // Create deal template
-                  const { error } = await supabase.from('deal_template').insert({
-                    restaurant_id: form.restaurant.id,
-                    user_id: user.id,
-                    title: form.title,
-                    description: form.description || null,
-                    image_metadata_id: imageMetadataId,
-                    category_id: category.id,
-                    cuisine_id: cuisine.id,
-                    is_anonymous: false,
-                    source_type: 'admin_uploaded',
-                  });
-
-                  if (error) throw error;
-                  successCount++;
                 } catch (error) {
                   console.error('Error uploading deal:', error);
                   errorCount++;
@@ -383,21 +402,7 @@ const AdminMassUploadScreen: React.FC = () => {
                   {
                     text: 'OK',
                     onPress: () => {
-                      if (successCount > 0) {
-                        // Reset forms
-                        setDealForms([
-                          {
-                            id: '1',
-                            title: '',
-                            description: '',
-                            restaurant: null,
-                            category: '',
-                            cuisine: '',
-                            expirationDate: '',
-                            imageUri: null,
-                          },
-                        ]);
-                      }
+                      if (successCount > 0) resetDealForms();
                     },
                   },
                 ]

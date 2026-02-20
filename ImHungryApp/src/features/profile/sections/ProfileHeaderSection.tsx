@@ -135,7 +135,7 @@ const s = StyleSheet.create({
     letterSpacing: 0.48,
     lineHeight: FONT_SIZE['2xl'],
     marginTop: -1,
-    fontWeight: FONT_WEIGHT.bold as any,
+    fontWeight: FONT_WEIGHT.bold,
   },
   joinDate: {
     letterSpacing: 0.36,

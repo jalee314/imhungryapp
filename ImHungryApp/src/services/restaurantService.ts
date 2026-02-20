@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { logger } from '../utils/logger';
 
 import { mapAndCreateRestaurantCuisine } from './cuisineMappingService';
 
@@ -18,6 +19,45 @@ export interface RestaurantSearchResult {
   count: number;
   error?: string;
 }
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return '';
+};
+
+const ensureRestaurantCuisineMapping = async (
+  restaurantId: string,
+  placeData: GooglePlaceResult,
+): Promise<void> => {
+  try {
+    const { data: existingCuisineMapping } = await supabase
+      .from('restaurant_cuisine')
+      .select('restaurant_id')
+      .eq('restaurant_id', restaurantId)
+      .limit(1);
+
+    if (existingCuisineMapping && existingCuisineMapping.length > 0) {
+      logger.info('ℹ️ Restaurant already has cuisine mapping, skipping');
+      return;
+    }
+
+    logger.info('🍽️ Applying cuisine mapping for restaurant:', placeData.name);
+    const cuisineMappingSuccess = await mapAndCreateRestaurantCuisine(
+      restaurantId,
+      placeData.types || []
+    );
+
+    if (cuisineMappingSuccess) {
+      logger.info('✅ Cuisine mapping applied successfully');
+    } else {
+      logger.warn('⚠️ Cuisine mapping failed, but restaurant creation succeeded');
+    }
+  } catch (cuisineError) {
+    logger.error('Error applying cuisine mapping:', cuisineError);
+  }
+};
 
 /**
  * Search restaurants using Google Places API via Edge Function
@@ -43,7 +83,7 @@ export const searchRestaurants = async (
       return { success: false, restaurants: [], count: 0, error: 'Search cancelled' };
     }
 
-    console.log(`🔍 Searching for "${query}" (max radius: ~31 miles)...`);
+    logger.info(`🔍 Searching for "${query}" (max radius: ~31 miles)...`);
 
     // Create a timeout promise
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -68,11 +108,11 @@ export const searchRestaurants = async (
       },
     });
 
-    const result = await Promise.race([searchPromise, timeoutPromise]);
-    const { data, error } = result as { data: any; error: any };
+    const result = await Promise.race([searchPromise, timeoutPromise]) as Awaited<typeof searchPromise>;
+    const { data, error } = result;
 
     if (error) {
-      console.error('Edge function error:', error);
+      logger.error('Edge function error:', error);
       return {
         success: false,
         restaurants: [],
@@ -81,16 +121,18 @@ export const searchRestaurants = async (
       };
     }
 
-    console.log(`✅ Found ${data.count} restaurants`);
-    return data;
-  } catch (error: any) {
-    console.error('Error searching restaurants:', error);
+    const searchData = data as RestaurantSearchResult;
+    logger.info(`✅ Found ${searchData.count} restaurants`);
+    return searchData;
+  } catch (error: unknown) {
+    logger.error('Error searching restaurants:', error);
 
     // Provide more specific error messages
+    const errorText = getErrorMessage(error);
     let errorMessage = 'An unexpected error occurred';
-    if (error?.message?.includes('timed out')) {
+    if (errorText.includes('timed out')) {
       errorMessage = 'Search timed out. Please try again.';
-    } else if (error?.message?.includes('cancelled')) {
+    } else if (errorText.includes('cancelled')) {
       errorMessage = 'Search cancelled';
     }
 
@@ -113,7 +155,7 @@ export const getOrCreateRestaurant = async (
   placeData: GooglePlaceResult
 ): Promise<{ success: boolean; restaurant_id?: string; error?: string }> => {
   try {
-    console.log('🔄 Getting/creating restaurant via RPC:', placeData.name);
+    logger.info('🔄 Getting/creating restaurant via RPC:', placeData.name);
 
     // First, check if restaurant already exists to determine if we need cuisine mapping
     const { data: existingRestaurant } = await supabase
@@ -135,47 +177,20 @@ export const getOrCreateRestaurant = async (
       });
 
     if (rpcError) {
-      console.error('RPC error:', rpcError);
+      logger.error('RPC error:', rpcError);
       return { success: false, error: 'Failed to create/fetch restaurant' };
     }
 
-    console.log('✅ Restaurant ID:', restaurantId);
+    logger.info('✅ Restaurant ID:', restaurantId);
 
     // If restaurant was newly created or doesn't have cuisine mapping yet, apply cuisine mapping
     if (!restaurantExisted || restaurantId) {
-      try {
-        // Check if restaurant already has cuisine mappings
-        const { data: existingCuisineMapping } = await supabase
-          .from('restaurant_cuisine')
-          .select('restaurant_id')
-          .eq('restaurant_id', restaurantId)
-          .limit(1);
-
-        // Only create cuisine mapping if none exists
-        if (!existingCuisineMapping || existingCuisineMapping.length === 0) {
-          console.log('🍽️ Applying cuisine mapping for restaurant:', placeData.name);
-          const cuisineMappingSuccess = await mapAndCreateRestaurantCuisine(
-            restaurantId,
-            placeData.types || []
-          );
-
-          if (cuisineMappingSuccess) {
-            console.log('✅ Cuisine mapping applied successfully');
-          } else {
-            console.warn('⚠️ Cuisine mapping failed, but restaurant creation succeeded');
-          }
-        } else {
-          console.log('ℹ️ Restaurant already has cuisine mapping, skipping');
-        }
-      } catch (cuisineError) {
-        console.error('Error applying cuisine mapping:', cuisineError);
-        // Don't fail the whole operation if cuisine mapping fails
-      }
+      await ensureRestaurantCuisineMapping(restaurantId, placeData);
     }
 
     return { success: true, restaurant_id: restaurantId };
   } catch (error) {
-    console.error('Error in getOrCreateRestaurant:', error);
+    logger.error('Error in getOrCreateRestaurant:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
 };

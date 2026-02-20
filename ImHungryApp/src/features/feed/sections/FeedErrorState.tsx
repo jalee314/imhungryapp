@@ -15,6 +15,14 @@ export interface FeedErrorStateProps {
   onRetry: () => void;
 }
 
+const feedErrorTextStyle = { fontFamily: 'Inter' };
+const feedErrorButtonStyle = {
+  backgroundColor: BRAND.accent,
+  paddingHorizontal: SPACING['2xl'],
+  paddingVertical: SPACING.md,
+  borderRadius: RADIUS.md,
+};
+
 export function FeedErrorState({ message, onRetry }: FeedErrorStateProps) {
   return (
     <Box flex={1} center py="5xl">
@@ -23,24 +31,19 @@ export function FeedErrorState({ message, onRetry }: FeedErrorStateProps) {
         color={GRAY[600]}
         textAlign="center"
         mb="lg"
-        style={{ fontFamily: 'Inter' }}
+        style={feedErrorTextStyle}
       >
         {message}
       </Text>
       <TouchableOpacity
         onPress={onRetry}
-        style={{
-          backgroundColor: BRAND.accent,
-          paddingHorizontal: SPACING['2xl'],
-          paddingVertical: SPACING.md,
-          borderRadius: RADIUS.md,
-        }}
+        style={feedErrorButtonStyle}
       >
         <Text
           size="md"
           weight="semibold"
           color={STATIC.white}
-          style={{ fontFamily: 'Inter' }}
+          style={feedErrorTextStyle}
         >
           Retry
         </Text>

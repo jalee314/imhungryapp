@@ -1,9 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '../../lib/supabase';
-
-
-
+import { logger } from '../utils/logger';
 // Define the User interface to match your database schema
 interface User {
   user_id: string;
@@ -34,7 +32,7 @@ const getCurrentUserId = async (): Promise<string | null> => {
     const { data: { user } } = await supabase.auth.getUser();
     return user?.id || null;
   } catch (error) {
-    console.error('Error getting current user:', error);
+    logger.error('Error getting current user:', error);
     return null;
   }
 };
@@ -61,7 +59,7 @@ export const fetchUserData = async (): Promise<UserDisplayData> => {
     if (error) throw error;
     if (!user) throw new Error('User not found');
 
-    console.log('📸 User data fetched:', {
+    logger.info('📸 User data fetched:', {
       hasImageMetadata: !!user.image_metadata,
       variants: user.image_metadata?.variants,
       oldProfilePhoto: user.profile_photo
@@ -73,7 +71,7 @@ export const fetchUserData = async (): Promise<UserDisplayData> => {
       || user.image_metadata?.variants?.thumbnail
       || user.profile_photo;  // Fallback to old path
 
-    console.log('📸 Final profilePicture URL:', profilePicture);
+    logger.info('📸 Final profilePicture URL:', profilePicture);
 
     return {
       username: user.display_name || 'User',
@@ -82,7 +80,7 @@ export const fetchUserData = async (): Promise<UserDisplayData> => {
       state: 'CA'
     };
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    logger.error('Error fetching user data:', error);
     throw error;
   }
 };
@@ -105,7 +103,7 @@ export const getFullUserProfile = async (): Promise<User | null> => {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error fetching full user profile:', error);
+    logger.error('Error fetching full user profile:', error);
     return null;
   }
 };
@@ -128,13 +126,13 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
     });
 
     if (error) {
-      console.error('Error checking email existence:', error);
+      logger.error('Error checking email existence:', error);
       throw new Error('Unable to verify email address');
     }
 
     return data || false;
   } catch (error) {
-    console.error('Error in checkEmailExists:', error);
+    logger.error('Error in checkEmailExists:', error);
     throw error;
   }
 };
@@ -146,13 +144,13 @@ export const checkPhoneExists = async (phoneInput: string): Promise<boolean> => 
   try {
     const { data, error } = await supabase.rpc('check_phone_exists', { phone_input: phoneInput });
     if (error) {
-      console.error('Error checking phone existence:', error);
+      logger.error('Error checking phone existence:', error);
       throw new Error('Unable to verify phone number');
     }
     return data || false;
   } catch (error) {
-    console.error('Error in checkPhoneExists:', error);
-    throw error as any;
+    logger.error('Error in checkPhoneExists:', error);
+    throw error;
   }
 };
 
@@ -164,6 +162,6 @@ export const clearUserCache = async (): Promise<void> => {
     await AsyncStorage.removeItem('userData');
     await AsyncStorage.removeItem('userDataTimestamp');
   } catch (error) {
-    console.error('Error clearing user cache:', error);
+    logger.error('Error clearing user cache:', error);
   }
 };

@@ -7,6 +7,7 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
+import { logger } from '../../../utils/logger';
 import { getCurrentUserId } from '../selectors/voteSelectors';
 import {
   FavoriteMutationResult,
@@ -43,17 +44,17 @@ export const addDealToFavorites = async (
     });
 
     if (error) {
-      console.error('[interactions/mutations] Error adding deal to favorites:', error);
+      logger.error('[interactions/mutations] Error adding deal to favorites:', error);
       return { success: false, error: error.message };
     }
 
     // Log the favorite interaction (non-blocking)
     await logFavoriteEvent(dealId, source);
 
-    console.log('✅ Deal favorite added successfully');
+    logger.info('✅ Deal favorite added successfully');
     return { success: true, isFavorited: true };
   } catch (error) {
-    console.error('[interactions/mutations] Error adding deal to favorites:', error);
+    logger.error('[interactions/mutations] Error adding deal to favorites:', error);
     return { success: false, error: 'Failed to add to favorites' };
   }
 };
@@ -76,17 +77,17 @@ export const removeDealFromFavorites = async (dealId: string): Promise<FavoriteM
       .eq('deal_id', dealId);
 
     if (error) {
-      console.error('[interactions/mutations] Error removing deal from favorites:', error);
+      logger.error('[interactions/mutations] Error removing deal from favorites:', error);
       return { success: false, error: error.message };
     }
 
     // Also remove favorite interactions
     await removeFavoriteInteractionsForDeal(dealId);
 
-    console.log('✅ Deal favorite removed successfully');
+    logger.info('✅ Deal favorite removed successfully');
     return { success: true, isFavorited: false };
   } catch (error) {
-    console.error('[interactions/mutations] Error removing deal from favorites:', error);
+    logger.error('[interactions/mutations] Error removing deal from favorites:', error);
     return { success: false, error: 'Failed to remove from favorites' };
   }
 };
@@ -131,17 +132,17 @@ export const addRestaurantToFavorites = async (
     });
 
     if (error) {
-      console.error('[interactions/mutations] Error adding restaurant to favorites:', error);
+      logger.error('[interactions/mutations] Error adding restaurant to favorites:', error);
       return { success: false, error: error.message };
     }
 
     // Log the favorite interaction (non-blocking)
     await logRestaurantFavoriteEvent(restaurantId, source);
 
-    console.log('✅ Restaurant favorite added successfully');
+    logger.info('✅ Restaurant favorite added successfully');
     return { success: true, isFavorited: true };
   } catch (error) {
-    console.error('[interactions/mutations] Error adding restaurant to favorites:', error);
+    logger.error('[interactions/mutations] Error adding restaurant to favorites:', error);
     return { success: false, error: 'Failed to add to favorites' };
   }
 };
@@ -167,14 +168,14 @@ export const removeRestaurantFromFavorites = async (
       .is('deal_id', null);
 
     if (error) {
-      console.error('[interactions/mutations] Error removing restaurant from favorites:', error);
+      logger.error('[interactions/mutations] Error removing restaurant from favorites:', error);
       return { success: false, error: error.message };
     }
 
-    console.log('✅ Restaurant favorite removed successfully');
+    logger.info('✅ Restaurant favorite removed successfully');
     return { success: true, isFavorited: false };
   } catch (error) {
-    console.error('[interactions/mutations] Error removing restaurant from favorites:', error);
+    logger.error('[interactions/mutations] Error removing restaurant from favorites:', error);
     return { success: false, error: 'Failed to remove from favorites' };
   }
 };

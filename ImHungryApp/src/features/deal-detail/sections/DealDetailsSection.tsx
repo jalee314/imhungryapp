@@ -13,6 +13,9 @@ export interface DealDetailsSectionProps {
   details: string | undefined;
 }
 
+const dealDetailsHeadingStyle = { fontFamily: 'Inter', lineHeight: 20 };
+const dealDetailsBodyStyle = { fontFamily: 'Inter', lineHeight: 18 };
+
 export function DealDetailsSection({ details }: DealDetailsSectionProps) {
   if (!details || details.trim() === '') return null;
 
@@ -32,7 +35,7 @@ export function DealDetailsSection({ details }: DealDetailsSectionProps) {
           weight="bold"
           color={STATIC.black}
           mb="sm"
-          style={{ fontFamily: 'Inter', lineHeight: 20 }}
+          style={dealDetailsHeadingStyle}
         >
           Details
         </Text>
@@ -40,7 +43,7 @@ export function DealDetailsSection({ details }: DealDetailsSectionProps) {
           size="xs"
           weight="regular"
           color={STATIC.black}
-          style={{ fontFamily: 'Inter', lineHeight: 18 }}
+          style={dealDetailsBodyStyle}
         >
           {details}
         </Text>

@@ -21,27 +21,32 @@ interface StatCardProps {
   onPress: () => void;
 }
 
+const statCardStyle = {
+  flex: 1,
+  minWidth: '45%',
+  backgroundColor: STATIC.white,
+  borderRadius: RADIUS.lg,
+  padding: SPACING.lg,
+  alignItems: 'center' as const,
+  ...SHADOW.md,
+};
+const statValueStyle = { marginTop: SPACING.sm };
+const statLabelStyle = { marginTop: SPACING.xs };
+const statSubtextStyle = { marginTop: SPACING['2xs'] };
+
 const StatCard: React.FC<StatCardProps> = ({ icon, iconColor, value, label, subtext, onPress }) => (
   <TouchableOpacity
     onPress={onPress}
-    style={{
-      flex: 1,
-      minWidth: '45%',
-      backgroundColor: STATIC.white,
-      borderRadius: RADIUS.lg,
-      padding: SPACING.lg,
-      alignItems: 'center',
-      ...SHADOW.md,
-    }}
+    style={statCardStyle}
   >
     <Ionicons name={icon} size={32} color={iconColor} />
-    <Text size="2xl" weight="bold" color={STATIC.black} style={{ marginTop: SPACING.sm }}>
+    <Text size="2xl" weight="bold" color={STATIC.black} style={statValueStyle}>
       {value}
     </Text>
-    <Text size="sm" color={GRAY[600]} style={{ marginTop: SPACING.xs }}>
+    <Text size="sm" color={GRAY[600]} style={statLabelStyle}>
       {label}
     </Text>
-    <Text size="xs" color={GRAY[500]} style={{ marginTop: SPACING['2xs'] }}>
+    <Text size="xs" color={GRAY[500]} style={statSubtextStyle}>
       {subtext}
     </Text>
   </TouchableOpacity>

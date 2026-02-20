@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
-import { SPACING, GRAY, STATIC } from '../../ui/alf/tokens';
+import { GRAY } from '../../ui/alf/tokens';
 import { Box, Text } from '../../ui/primitives';
 
 type RightConfig = {

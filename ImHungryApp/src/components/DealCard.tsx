@@ -1,9 +1,10 @@
 import { Monicon } from '@monicon/native';
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import type { GestureResponderEvent } from 'react-native';
 
 import type { Deal } from '../types/deal';
-import { BRAND, STATIC, GRAY, SEMANTIC, FONT_WEIGHT, RADIUS } from '../ui/alf';
+import { STATIC, GRAY, SEMANTIC } from '../ui/alf';
 
 
 import OptimizedImage, { preloadImage } from './OptimizedImage';
@@ -53,21 +54,21 @@ const DealCard: React.FC<DealCardProps> = ({
   onDownvote,
   onFavorite,
   onPress,
-  hideAuthor = false,
+  hideAuthor: _hideAuthor = false,
   showDelete = false,
   onDelete,
 }) => {
-  const handleUpvote = (e?: any) => {
+  const handleUpvote = (e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
     onUpvote?.(deal.id);
   };
 
-  const handleDownvote = (e?: any) => {
+  const handleDownvote = (e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
     onDownvote?.(deal.id);
   };
 
-  const handleFavorite = (e?: any) => {
+  const handleFavorite = (e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
     onFavorite?.(deal.id);
   };
@@ -89,7 +90,7 @@ const DealCard: React.FC<DealCardProps> = ({
     onPress?.(deal.id);
   };
 
-  const handleDelete = (e?: any) => {
+  const handleDelete = (e?: GestureResponderEvent) => {
     e?.stopPropagation?.();
     onDelete?.(deal.id);
   };
@@ -293,40 +294,6 @@ const styles = StyleSheet.create({
     width: '100%',
     overflow: 'visible',
   },
-  horizontalVoteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: GRAY[100],
-    borderWidth: 1,
-    borderColor: GRAY[325],
-    borderRadius: 30,
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(2),
-    height: scale(28),
-    width: scale(85),
-    justifyContent: 'space-between',
-  },
-  horizontalVoteButton: {
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: scale(20),
-    height: scale(24),
-    borderRadius: 4,
-  },
-  horizontalVoteCount: {
-    fontFamily: 'Inter',
-    fontSize: scale(10),
-    fontWeight: '400',
-    color: STATIC.black,
-    marginHorizontal: scale(6),
-  },
-  horizontalVoteSeparator: {
-    width: 1,
-    height: scale(12),
-    backgroundColor: GRAY[250],
-    marginHorizontal: scale(6),
-  },
   horizontalFavoriteWrapper: {
     width: scale(62),
     alignItems: 'flex-end',
@@ -386,40 +353,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  verticalVoteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: GRAY[100],
-    borderWidth: 1,
-    borderColor: GRAY[325],
-    borderRadius: 30,
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(2),
-    height: scale(28),
-    width: scale(85),
-    justifyContent: 'space-between',
-  },
-  verticalVoteButton: {
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: scale(20),
-    height: scale(20),
-    borderRadius: 4,
-  },
-  verticalVoteCount: {
-    fontFamily: 'Inter',
-    fontSize: scale(10),
-    fontWeight: '400',
-    color: STATIC.black,
-    marginHorizontal: scale(6),
-  },
-  verticalVoteSeparator: {
-    width: 1,
-    height: scale(12),
-    backgroundColor: GRAY[250],
-    marginHorizontal: scale(6),
-  },
   verticalFavoriteButton: {
     backgroundColor: STATIC.white,
     borderWidth: 1,
@@ -442,28 +375,6 @@ const styles = StyleSheet.create({
   },
 
   // Shared styles
-  arrowIconContainer: {
-    width: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  upvotedcom: {
-    // No background change - only icon color changes
-    // marginBottom: 2, // Removed to prevent shifting
-  },
-  downvotedcom: {
-    // No background change - only icon color changes
-    // marginBottom: 1, // Removed to prevent shifting
-  },
-  upvoteddeals: {
-    // No background change - only icon color changes
-    // marginBottom: 5, // Removed to prevent shifting
-  },
-  downvoteddeals: {
-    // No background change - only icon color changes
-    // marginBottom: 2, // Removed to prevent shifting
-  },
   favorited: {
     // Don't change background - only the heart icon color changes
   },

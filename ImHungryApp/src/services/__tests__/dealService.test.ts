@@ -14,7 +14,6 @@
  */
 
 import {
-  mockSupabase,
   configureMockAuth,
   mockUser,
 } from '../../test-utils/mocks/supabaseMock';
@@ -25,9 +24,6 @@ import {
   UpdateDealData,
   DealEditData,
 } from '../dealService';
-
-// Type for the mock query builder
-type MockQueryBuilder = ReturnType<typeof mockSupabase.from>;
 
 describe('dealService', () => {
   beforeEach(() => {

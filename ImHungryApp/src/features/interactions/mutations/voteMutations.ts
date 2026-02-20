@@ -7,6 +7,7 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
+import { logger } from '../../../utils/logger';
 import { getCurrentUserId } from '../selectors/voteSelectors';
 import {
   VoteType,
@@ -66,13 +67,13 @@ export const removeVote = async (interactionId: string): Promise<MutationResult>
       .eq('interaction_id', interactionId);
 
     if (error) {
-      console.error('[interactions/mutations] Error removing vote:', error);
+      logger.error('[interactions/mutations] Error removing vote:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('[interactions/mutations] Error removing vote:', error);
+    logger.error('[interactions/mutations] Error removing vote:', error);
     return { success: false, error: 'Failed to remove vote' };
   }
 };
@@ -94,7 +95,7 @@ export const addVote = async (
 
     return result;
   } catch (error) {
-    console.error('[interactions/mutations] Error adding vote:', error);
+    logger.error('[interactions/mutations] Error adding vote:', error);
     return { success: false, error: 'Failed to add vote' };
   }
 };
@@ -125,7 +126,7 @@ export const toggleUpvote = async (
       if (currentVote.voteType === 'upvote') {
         // Already upvoted - REMOVE the upvote
         await removeVote(currentVote.interactionId);
-        console.log('🗑️ Upvote removed');
+        logger.info('🗑️ Upvote removed');
         return {
           success: true,
           newVoteState: {
@@ -143,7 +144,7 @@ export const toggleUpvote = async (
     // Add new upvote
     const result = await addVote(dealId, 'upvote', source);
     if (result.success) {
-      console.log('✅ Upvote added');
+      logger.info('✅ Upvote added');
       return {
         success: true,
         newVoteState: {
@@ -156,7 +157,7 @@ export const toggleUpvote = async (
 
     return { success: false, error: result.error };
   } catch (error) {
-    console.error('[interactions/mutations] Error toggling upvote:', error);
+    logger.error('[interactions/mutations] Error toggling upvote:', error);
     return { success: false, error: 'Failed to toggle upvote' };
   }
 };
@@ -183,7 +184,7 @@ export const toggleDownvote = async (
       if (currentVote.voteType === 'downvote') {
         // Already downvoted - REMOVE the downvote
         await removeVote(currentVote.interactionId);
-        console.log('🗑️ Downvote removed');
+        logger.info('🗑️ Downvote removed');
         return {
           success: true,
           newVoteState: {
@@ -201,7 +202,7 @@ export const toggleDownvote = async (
     // Add new downvote
     const result = await addVote(dealId, 'downvote', source);
     if (result.success) {
-      console.log('✅ Downvote added');
+      logger.info('✅ Downvote added');
       return {
         success: true,
         newVoteState: {
@@ -214,7 +215,7 @@ export const toggleDownvote = async (
 
     return { success: false, error: result.error };
   } catch (error) {
-    console.error('[interactions/mutations] Error toggling downvote:', error);
+    logger.error('[interactions/mutations] Error toggling downvote:', error);
     return { success: false, error: 'Failed to toggle downvote' };
   }
 };

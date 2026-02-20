@@ -7,6 +7,12 @@ import React from 'react';
 import { STATIC, GRAY, BORDER_WIDTH } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 
+const favoritesHeaderBorderStyle = {
+  borderBottomWidth: BORDER_WIDTH.hairline,
+  borderBottomColor: GRAY[250],
+};
+const favoritesHeaderTitleStyle = { fontFamily: 'Inter' };
+
 export function FavoritesHeader() {
   return (
     <Box
@@ -15,16 +21,13 @@ export function FavoritesHeader() {
       justify="flex-end"
       pb="sm"
       px="lg"
-      style={{
-        borderBottomWidth: BORDER_WIDTH.hairline,
-        borderBottomColor: GRAY[250],
-      }}
+      style={favoritesHeaderBorderStyle}
     >
       <Text
         size="2xl"
         weight="semibold"
         color={STATIC.black}
-        style={{ fontFamily: 'Inter' }}
+        style={favoritesHeaderTitleStyle}
       >
         Favorites
       </Text>

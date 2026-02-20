@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 
 import { supabase } from '../../lib/supabase';
-
+import { logger } from '../utils/logger';
 interface UserLocation {
   lat: number;
   lng: number;
@@ -17,34 +17,34 @@ export const getCurrentUserLocation = async (): Promise<UserLocation | null> => 
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.log('No authenticated user found');
+      logger.info('No authenticated user found');
       return null;
     }
 
-    console.log('Fetching location for user:', user.id);
+    logger.info('Fetching location for user:', user.id);
 
     // Query to extract lat/lng/city from PostGIS geography column
     const { data: userData, error } = await supabase
       .rpc('get_user_location_coords', { user_uuid: user.id });
 
     if (error) {
-      console.error('Error fetching user location:', error);
+      logger.error('Error fetching user location:', error);
       return null;
     }
 
     if (!userData || userData.length === 0) {
-      console.log('No location data found for user');
+      logger.info('No location data found for user');
       return null;
     }
 
     const locationData = userData[0];
 
     if (!locationData.lat || !locationData.lng) {
-      console.error('No coordinates found in location data');
+      logger.error('No coordinates found in location data');
       return null;
     }
 
-    console.log('✅ Location found (with city/state from DB):', {
+    logger.info('✅ Location found (with city/state from DB):', {
       lat: locationData.lat,
       lng: locationData.lng,
       city: locationData.city,
@@ -58,7 +58,7 @@ export const getCurrentUserLocation = async (): Promise<UserLocation | null> => 
       state: locationData.state
     };
   } catch (error) {
-    console.error('Error getting user location:', error);
+    logger.error('Error getting user location:', error);
     return null;
   }
 };
@@ -104,7 +104,7 @@ export const getRestaurantLocationsBatch = async (
       .in('restaurant_id', restaurantIds);
 
     if (error) {
-      console.error('Error fetching restaurant locations:', error);
+      logger.error('Error fetching restaurant locations:', error);
       return {};
     }
 
@@ -121,7 +121,7 @@ export const getRestaurantLocationsBatch = async (
 
     return locations;
   } catch (error) {
-    console.error('Error in getRestaurantLocationsBatch:', error);
+    logger.error('Error in getRestaurantLocationsBatch:', error);
     return {};
   }
 };
@@ -134,7 +134,7 @@ export const checkLocationPermission = async (): Promise<boolean> => {
     const { status } = await Location.getForegroundPermissionsAsync();
     return status === 'granted';
   } catch (error) {
-    console.error('Error checking location permission:', error);
+    logger.error('Error checking location permission:', error);
     return false;
   }
 };
@@ -157,7 +157,7 @@ export const getLocationPermissionStatus = async (): Promise<{
       status: permissionResult.status
     };
   } catch (error) {
-    console.error('Error getting location permission status:', error);
+    logger.error('Error getting location permission status:', error);
     return {
       isGranted: false,
       isDenied: false,
@@ -175,7 +175,7 @@ export const requestLocationPermission = async (): Promise<boolean> => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     return status === 'granted';
   } catch (error) {
-    console.error('Error requesting location permission:', error);
+    logger.error('Error requesting location permission:', error);
     return false;
   }
 };
@@ -187,7 +187,7 @@ export const getDeviceLocation = async (): Promise<{ latitude: number; longitude
   try {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
-      console.log('Location permission denied');
+      logger.info('Location permission denied');
       return null;
     }
 
@@ -202,7 +202,7 @@ export const getDeviceLocation = async (): Promise<{ latitude: number; longitude
       longitude: location.coords.longitude,
     };
   } catch (error) {
-    console.error('Error getting device location:', error);
+    logger.error('Error getting device location:', error);
     return null;
   }
 };
@@ -262,7 +262,7 @@ export const getCityFromCoordinates = async (latitude: number, longitude: number
       return location.city || location.subregion || location.region || 'Unknown City';
     }
   } catch (error) {
-    console.warn('Failed to get city from coordinates:', error);
+    logger.warn('Failed to get city from coordinates:', error);
   }
   return 'Unknown City';
 };
@@ -285,7 +285,7 @@ export const getCityAndStateFromCoordinates = async (latitude: number, longitude
       return { city, stateAbbr };
     }
   } catch (error) {
-    console.warn('Failed to get city and state from coordinates:', error);
+    logger.warn('Failed to get city and state from coordinates:', error);
   }
   return { city: 'Unknown City', stateAbbr: '' };
 };
@@ -305,7 +305,7 @@ export const getCoordinatesFromCity = async (cityName: string, state: string = '
       };
     }
   } catch (error) {
-    console.warn('Failed to get coordinates from city:', error);
+    logger.warn('Failed to get coordinates from city:', error);
   }
   return null;
 };
@@ -325,7 +325,7 @@ export const updateUserLocation = async (
 
     // Validate coordinates
     if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-      console.error('Invalid coordinates:', { latitude, longitude });
+      logger.error('Invalid coordinates:', { latitude, longitude });
       return false;
     }
 
@@ -339,14 +339,14 @@ export const updateUserLocation = async (
     });
 
     if (error) {
-      console.error('Error updating user location:', error);
+      logger.error('Error updating user location:', error);
       return false;
     }
 
-    console.log('Location updated successfully');
+    logger.info('Location updated successfully');
     return true;
   } catch (error) {
-    console.error('Error in updateUserLocation:', error);
+    logger.error('Error in updateUserLocation:', error);
     return false;
   }
 };

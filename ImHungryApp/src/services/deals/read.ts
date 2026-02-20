@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../../../lib/supabase';
+import { logger } from '../../utils/logger';
 import { calculateDistance, getRestaurantLocationsBatch } from '../locationService';
 import { getUserVoteStates, calculateVoteCounts } from '../voteService';
 
@@ -32,7 +33,7 @@ const getRankedDealsMeta = async (): Promise<RankedDealMeta[]> => {
       }
     });
     const rankingTime = Date.now() - startTime;
-    console.log(`⏱️ Ranking function took: ${rankingTime}ms`);
+    logger.info(`⏱️ Ranking function took: ${rankingTime}ms`);
 
     if (error) {
       return [];
@@ -43,7 +44,7 @@ const getRankedDealsMeta = async (): Promise<RankedDealMeta[]> => {
     }
 
     return data
-      .map((item: any) => ({
+      .map((item) => ({
         deal_id: item.deal_id,
         distance: item.distance ?? null
       }))
@@ -58,11 +59,11 @@ const getRankedDealsMeta = async (): Promise<RankedDealMeta[]> => {
  */
 export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
   try {
-    console.log('🔍 fetchRankedDeals: Starting to fetch deals...');
+    logger.info('🔍 fetchRankedDeals: Starting to fetch deals...');
     const rankedMeta = await getRankedDealsMeta();
     const rankedIds = rankedMeta.map(item => item.deal_id);
     const distanceMap = new Map(rankedMeta.map(item => [item.deal_id, item.distance ?? null]));
-    console.log('🔍 fetchRankedDeals: Ranked IDs:', rankedIds.length);
+    logger.info('🔍 fetchRankedDeals: Ranked IDs:', rankedIds.length);
 
     if (rankedIds.length === 0) {
       return [];
@@ -123,39 +124,39 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
     if (error) throw error;
 
     const transformedDeals = deals?.map(deal => {
-      const dealImages = ((deal.deal_template as any)?.deal_images || [])
-        .map((img: any) => ({
+      const dealImages = ((deal.deal_template)?.deal_images || [])
+        .map((img) => ({
           image_metadata_id: img.image_metadata_id,
           display_order: img.display_order,
           is_thumbnail: img.is_thumbnail,
           variants: img.image_metadata?.variants || null,
         }))
-        .sort((a: any, b: any) => a.display_order - b.display_order);
+        .sort((a, b) => a.display_order - b.display_order);
 
       return {
         deal_id: deal.deal_id,
         template_id: deal.template_id,
-        title: (deal.deal_template as any).title,
-        description: (deal.deal_template as any).description,
-        image_url: (deal.deal_template as any).image_url,
-        restaurant_name: (deal.deal_template as any).restaurant.name,
-        restaurant_address: (deal.deal_template as any).restaurant.address,
-        cuisine_name: (deal.deal_template as any).cuisine?.cuisine_name || null,
-        cuisine_id: (deal.deal_template as any).cuisine_id,
-        category_name: (deal.deal_template as any).category?.category_name || null,
+        title: (deal.deal_template).title,
+        description: (deal.deal_template).description,
+        image_url: (deal.deal_template).image_url,
+        restaurant_name: (deal.deal_template).restaurant.name,
+        restaurant_address: (deal.deal_template).restaurant.address,
+        cuisine_name: (deal.deal_template).cuisine?.cuisine_name || null,
+        cuisine_id: (deal.deal_template).cuisine_id,
+        category_name: (deal.deal_template).category?.category_name || null,
         created_at: deal.created_at,
         start_date: deal.start_date,
         end_date: deal.end_date,
         is_anonymous: deal.is_anonymous,
-        user_id: (deal.deal_template as any).user_id,
-        user_display_name: (deal.deal_template as any).user?.display_name || null,
-        user_profile_photo: (deal.deal_template as any).user?.profile_photo || null,
-        user_city: (deal.deal_template as any).user?.location_city || null,
+        user_id: (deal.deal_template).user_id,
+        user_display_name: (deal.deal_template).user?.display_name || null,
+        user_profile_photo: (deal.deal_template).user?.profile_photo || null,
+        user_city: (deal.deal_template).user?.location_city || null,
         user_state: 'CA',
-        restaurant_id: (deal.deal_template as any).restaurant_id,
-        image_metadata: (deal.deal_template as any).image_metadata || null,
+        restaurant_id: (deal.deal_template).restaurant_id,
+        image_metadata: (deal.deal_template).image_metadata || null,
         deal_images: dealImages.length > 0 ? dealImages : undefined,
-        user_profile_metadata: (deal.deal_template as any).user?.image_metadata || null,
+        user_profile_metadata: (deal.deal_template).user?.image_metadata || null,
         distance_miles: distanceMap.get(deal.deal_id) ?? null
       };
     }) || [];
@@ -167,7 +168,7 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
 
     return orderedDeals;
   } catch (error) {
-    console.error('Error fetching ranked deals:', error);
+    logger.error('Error fetching ranked deals:', error);
     return [];
   }
 };
@@ -238,7 +239,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching user posts:', error);
+      logger.error('Error fetching user posts:', error);
       throw error;
     }
 
@@ -247,7 +248,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
     }
 
     // Get all restaurant locations for distance calculation
-    const restaurantIds = deals.map(d => (d.deal_template as any).restaurant.restaurant_id);
+    const restaurantIds = deals.map(d => (d.deal_template).restaurant.restaurant_id);
     const locationMap = await getRestaurantLocationsBatch(restaurantIds);
 
     // Get vote states and vote counts
@@ -258,7 +259,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
     ]);
 
     const transformedDeals: DatabaseDeal[] = deals.map(deal => {
-      const template = deal.deal_template as any;
+      const template = deal.deal_template;
       const restaurant = template.restaurant;
       const restaurantLocation = locationMap[restaurant.restaurant_id];
 
@@ -279,13 +280,13 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
       };
 
       const dealImages = (template?.deal_images || [])
-        .map((img: any) => ({
+        .map((img) => ({
           image_metadata_id: img.image_metadata_id,
           display_order: img.display_order,
           is_thumbnail: img.is_thumbnail,
           variants: img.image_metadata?.variants || null,
         }))
-        .sort((a: any, b: any) => a.display_order - b.display_order);
+        .sort((a, b) => a.display_order - b.display_order);
 
       return {
         deal_id: deal.deal_id,
@@ -321,7 +322,7 @@ export const fetchUserPosts = async (): Promise<DatabaseDeal[]> => {
 
     return transformedDeals;
   } catch (error) {
-    console.error('Error in fetchUserPosts:', error);
+    logger.error('Error in fetchUserPosts:', error);
     throw error;
   }
 };
@@ -345,7 +346,7 @@ export const getDealUploaderId = async (dealId: string): Promise<string | null> 
       return null;
     }
 
-    const userId = (data.deal_template as any)?.user_id;
+    const userId = (data.deal_template)?.user_id;
     return userId;
   } catch (error) {
     return null;

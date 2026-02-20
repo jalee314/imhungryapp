@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-
+import { logger } from '../utils/logger';
 /**
  * Maps Google Places API types to cuisine names in our database
  * Based on the Google Places types returned in the search results
@@ -114,7 +114,7 @@ const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): string | 
     if (googlePlacesTypes.includes(priorityType)) {
       const cuisine = GOOGLE_PLACES_CUISINE_MAPPING[priorityType];
       if (cuisine) {
-        console.log(`🍽️ Mapped Google Places type '${priorityType}' to cuisine '${cuisine}'`);
+        logger.info(`🍽️ Mapped Google Places type '${priorityType}' to cuisine '${cuisine}'`);
         return cuisine;
       }
     }
@@ -124,13 +124,13 @@ const getCuisineFromGooglePlacesTypes = (googlePlacesTypes: string[]): string | 
   for (const type of googlePlacesTypes) {
     const cuisine = GOOGLE_PLACES_CUISINE_MAPPING[type.toLowerCase()];
     if (cuisine) {
-      console.log(`🍽️ Mapped Google Places type '${type}' to cuisine '${cuisine}'`);
+      logger.info(`🍽️ Mapped Google Places type '${type}' to cuisine '${cuisine}'`);
       return cuisine;
     }
   }
 
   // Default fallback
-  console.log(`🍽️ No cuisine mapping found for types [${googlePlacesTypes.join(', ')}], defaulting to 'American'`);
+  logger.info(`🍽️ No cuisine mapping found for types [${googlePlacesTypes.join(', ')}], defaulting to 'American'`);
   return 'American';
 };
 
@@ -148,13 +148,13 @@ const getCuisineIdByName = async (cuisineName: string): Promise<string | null> =
       .single();
 
     if (error) {
-      console.error(`Error fetching cuisine_id for ${cuisineName}:`, error);
+      logger.error(`Error fetching cuisine_id for ${cuisineName}:`, error);
       return null;
     }
 
     return data?.cuisine_id || null;
   } catch (error) {
-    console.error(`Unexpected error fetching cuisine_id for ${cuisineName}:`, error);
+    logger.error(`Unexpected error fetching cuisine_id for ${cuisineName}:`, error);
     return null;
   }
 };
@@ -178,14 +178,14 @@ const createRestaurantCuisineEntry = async (
       });
 
     if (error) {
-      console.error('Error creating restaurant_cuisine entry:', error);
+      logger.error('Error creating restaurant_cuisine entry:', error);
       return false;
     }
 
-    console.log(`✅ Created restaurant_cuisine entry: ${restaurantId} -> ${cuisineId}`);
+    logger.info(`✅ Created restaurant_cuisine entry: ${restaurantId} -> ${cuisineId}`);
     return true;
   } catch (error) {
-    console.error('Unexpected error creating restaurant_cuisine entry:', error);
+    logger.error('Unexpected error creating restaurant_cuisine entry:', error);
     return false;
   }
 };
@@ -205,14 +205,14 @@ export const mapAndCreateRestaurantCuisine = async (
     // Get the best cuisine match
     const cuisineName = getCuisineFromGooglePlacesTypes(googlePlacesTypes);
     if (!cuisineName) {
-      console.log('⚠️ No cuisine mapping found, skipping restaurant_cuisine creation');
+      logger.info('⚠️ No cuisine mapping found, skipping restaurant_cuisine creation');
       return false;
     }
 
     // Get the cuisine_id from database  
     const cuisineId = await getCuisineIdByName(cuisineName);
     if (!cuisineId) {
-      console.error(`❌ Cuisine '${cuisineName}' not found in database`);
+      logger.error(`❌ Cuisine '${cuisineName}' not found in database`);
       return false;
     }
 
@@ -225,14 +225,14 @@ export const mapAndCreateRestaurantCuisine = async (
       .single();
 
     if (existingEntry) {
-      console.log(`ℹ️ Restaurant_cuisine entry already exists for ${restaurantId} -> ${cuisineId}`);
+      logger.info(`ℹ️ Restaurant_cuisine entry already exists for ${restaurantId} -> ${cuisineId}`);
       return true;
     }
 
     // Create the restaurant_cuisine entry
     return await createRestaurantCuisineEntry(restaurantId, cuisineId);
   } catch (error) {
-    console.error('Error in mapAndCreateRestaurantCuisine:', error);
+    logger.error('Error in mapAndCreateRestaurantCuisine:', error);
     return false;
   }
 };

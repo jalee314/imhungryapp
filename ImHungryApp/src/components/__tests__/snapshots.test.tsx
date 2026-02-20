@@ -37,7 +37,7 @@ jest.mock('@monicon/native', () => {
 
 // Mock OptimizedImage
 jest.mock('../OptimizedImage', () => {
-  const { View, Image } = require('react-native');
+  const { Image } = require('react-native');
   const MockOptimizedImage = ({ source, style }: any) => {
     const src = typeof source === 'string' ? { uri: source } : source;
     return <Image source={src} style={style} testID="optimized-image" />;

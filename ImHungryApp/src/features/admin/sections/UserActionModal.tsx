@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, TouchableOpacity, TextInput } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 
-import { BRAND, STATIC, GRAY, SPACING, RADIUS, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
+import { STATIC, GRAY, SPACING, RADIUS, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 import type { UserProfile } from '../types';
@@ -23,6 +24,38 @@ interface UserActionModalProps {
   onDelete: () => void;
 }
 
+const userActionSheetStyle = { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 };
+const userActionNameStyle = { marginBottom: SPACING.xs };
+const userActionDaysInputStyle = {
+  borderWidth: BORDER_WIDTH.thin,
+  borderColor: GRAY[300],
+  borderRadius: RADIUS.md,
+  paddingHorizontal: SPACING.md,
+  paddingVertical: SPACING.md,
+  width: 80,
+  textAlign: 'center' as const,
+};
+const userActionReasonInputStyle = {
+  borderWidth: BORDER_WIDTH.thin,
+  borderColor: GRAY[300],
+  borderRadius: RADIUS.md,
+  paddingHorizontal: SPACING.md,
+  paddingVertical: SPACING.md,
+  minHeight: 80,
+  textAlignVertical: 'top' as const,
+};
+const userActionFlexStyle = { flex: 1 };
+const actionBtnBaseStyle = {
+  paddingVertical: SPACING.md,
+  borderRadius: RADIUS.md,
+  alignItems: 'center' as const,
+};
+const getActionBtnStyle = (bg: string, disabled?: boolean) => ({
+  ...actionBtnBaseStyle,
+  backgroundColor: bg,
+  opacity: disabled ? 0.5 : 1,
+});
+
 const UserActionModal: React.FC<UserActionModalProps> = ({
   visible,
   user,
@@ -41,7 +74,7 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
   <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
     <Box flex={1} bg="rgba(0,0,0,0.5)" justify="flex-end">
       <Box bg={STATIC.white} rounded="xl" p="xl" maxH="80%"
-        style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
+        style={userActionSheetStyle}>
         <Box row justify="space-between" align="center" mb="xl">
           <Text size="xl" weight="bold" color={STATIC.black}>Manage User</Text>
           <TouchableOpacity onPress={onClose}>
@@ -49,7 +82,7 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
           </TouchableOpacity>
         </Box>
 
-        <Text size="md" weight="bold" color={STATIC.black} style={{ marginBottom: SPACING.xs }}>
+        <Text size="md" weight="bold" color={STATIC.black} style={userActionNameStyle}>
           {user?.display_name}
         </Text>
 
@@ -58,15 +91,7 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
 
           <Box direction="row" gap="md">
             <TextInput
-              style={{
-                borderWidth: BORDER_WIDTH.thin,
-                borderColor: GRAY[300],
-                borderRadius: RADIUS.md,
-                paddingHorizontal: SPACING.md,
-                paddingVertical: SPACING.md,
-                width: 80,
-                textAlign: 'center',
-              }}
+              style={userActionDaysInputStyle}
               value={suspensionDays}
               onChangeText={onSuspensionDaysChange}
               keyboardType="number-pad"
@@ -77,7 +102,7 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
               bg="#FF5722"
               onPress={onSuspend}
               disabled={user?.is_suspended}
-              style={{ flex: 1 }}
+              style={userActionFlexStyle}
             />
           </Box>
 
@@ -86,15 +111,7 @@ const UserActionModal: React.FC<UserActionModalProps> = ({
           )}
 
           <TextInput
-            style={{
-              borderWidth: BORDER_WIDTH.thin,
-              borderColor: GRAY[300],
-              borderRadius: RADIUS.md,
-              paddingHorizontal: SPACING.md,
-              paddingVertical: SPACING.md,
-              minHeight: 80,
-              textAlignVertical: 'top',
-            }}
+            style={userActionReasonInputStyle}
             value={actionReason}
             onChangeText={onActionReasonChange}
             placeholder="Reason for ban/suspension (optional)"
@@ -119,19 +136,13 @@ const ActionBtn: React.FC<{
   bg: string;
   onPress: () => void;
   disabled?: boolean;
-  style?: Record<string, any>;
+  style?: StyleProp<ViewStyle>;
 }> = ({ label, bg, onPress, disabled, style: extra }) => (
   <TouchableOpacity
     onPress={onPress}
     disabled={disabled}
     style={[
-      {
-        paddingVertical: SPACING.md,
-        borderRadius: RADIUS.md,
-        alignItems: 'center',
-        backgroundColor: bg,
-        opacity: disabled ? 0.5 : 1,
-      },
+      getActionBtnStyle(bg, disabled),
       extra,
     ]}
   >

@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 
-import { BRAND, GRAY, STATIC, SPACING, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
+import { GRAY, STATIC, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 
@@ -14,6 +14,10 @@ interface AdminHeaderProps {
   rightColor?: string;
   onRightPress?: () => void;
 }
+
+const adminHeaderBorderStyle = { borderTopWidth: 0, borderLeftWidth: 0, borderRightWidth: 0 };
+const adminHeaderBackButtonStyle = { width: 40 };
+const adminHeaderRightButtonStyle = { width: 40, alignItems: 'flex-end' as const };
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   title,
@@ -33,10 +37,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
       bg={STATIC.white}
       borderWidth={BORDER_WIDTH.thin}
       borderColor={GRAY[300]}
-      style={{ borderTopWidth: 0, borderLeftWidth: 0, borderRightWidth: 0 }}
+      style={adminHeaderBorderStyle}
     >
       {showBack ? (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ width: 40 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={adminHeaderBackButtonStyle}>
           <Ionicons name="arrow-back" size={24} color={STATIC.black} />
         </TouchableOpacity>
       ) : (
@@ -44,7 +48,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
       )}
       <Text size="lg" weight="bold" color={STATIC.black}>{title}</Text>
       {rightIcon && onRightPress ? (
-        <TouchableOpacity onPress={onRightPress} style={{ width: 40, alignItems: 'flex-end' }}>
+        <TouchableOpacity onPress={onRightPress} style={adminHeaderRightButtonStyle}>
           <Ionicons name={rightIcon} size={24} color={rightColor} />
         </TouchableOpacity>
       ) : (

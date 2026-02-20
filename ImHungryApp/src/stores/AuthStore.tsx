@@ -11,9 +11,13 @@ import {
   resetPasswordWithTokens as resetPasswordWithTokensSvc,
   type AuthSubscription,
 } from '../services/authService';
-import { completeSignup as completeSignupSvc, completeSignupSkip as completeSignupSkipSvc } from '../services/onboardingService';
+import {
+  completeSignup as completeSignupSvc,
+  completeSignupSkip as completeSignupSkipSvc,
+  type SignupUserData
+} from '../services/onboardingService';
 import { initializeAuthSession, setupAppStateListener } from '../services/sessionService';
-
+import { logger } from '../utils/logger';
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -29,9 +33,13 @@ interface AuthState {
   setPasswordResetMode: (enabled: boolean) => void;
   cleanup: () => void;
   signIn: (email: string, password: string) => Promise<void>;
-  completeSignup: (userData: any, selectedCuisines: string[]) => Promise<void>;
-  completeSignupSkip: (userData: any) => Promise<void>;
-  resetPasswordWithTokens: (accessToken: string, refreshToken: string, newPassword: string) => Promise<{ error: any } | { error: null }>;
+  completeSignup: (userData: SignupUserData, selectedCuisines: string[]) => Promise<void>;
+  completeSignupSkip: (userData: SignupUserData) => Promise<void>;
+  resetPasswordWithTokens: (
+    accessToken: string,
+    refreshToken: string,
+    newPassword: string
+  ) => Promise<{ error: unknown } | { error: null }>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -56,7 +64,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ user });
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      logger.error('Error checking auth status:', error);
       set({ isAuthenticated: false, user: null });
     } finally {
       set({ isLoading: false });
@@ -65,17 +73,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const currentState = get();
       
       const newCount = currentState.authEventCount + 1;
-      console.log(`Auth event: ${event} (count: ${newCount})`);
+      logger.info(`Auth event: ${event} (count: ${newCount})`);
       
       if (newCount > 10) {
-        console.warn('Too many auth events detected, ignoring to prevent infinite loop');
+        logger.warn('Too many auth events detected, ignoring to prevent infinite loop');
         return;
       }
       
       set({ authEventCount: newCount });
       
       if (currentState.isPasswordResetMode) {
-        console.log('Password reset mode active, ignoring auth event:', event);
+        logger.info('Password reset mode active, ignoring auth event:', event);
         return;
       }
       const newAuthState = !!session;
@@ -88,7 +96,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       
       if (event === 'SIGNED_OUT') {
-        console.log('User signed out, clearing auth state');
+        logger.info('User signed out, clearing auth state');
         set({ 
           isAuthenticated: false,
           user: null
@@ -107,7 +115,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: null
       });
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
       throw error;
     }
   },
@@ -115,7 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return authServiceValidateEmail(email);
   },
   setPasswordResetMode: (enabled: boolean) => {
-    console.log('Setting password reset mode:', enabled);
+    logger.info('Setting password reset mode:', enabled);
     
     set({ 
       isPasswordResetMode: enabled,
@@ -127,7 +135,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     state._authSubscription?.unsubscribe();
     state._appStateCleanup?.();
     set({ _authSubscription: null, _appStateCleanup: null, _initialized: false });
-    console.log('🧹 Auth store cleaned up');
+    logger.info('🧹 Auth store cleaned up');
   },
   signIn: async (email: string, password: string) => {
     const { error } = await signInWithPassword(email, password);
@@ -135,10 +143,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw error;
     }
   },
-  completeSignup: async (userData: any, selectedCuisines: string[]) => {
+  completeSignup: async (userData: SignupUserData, selectedCuisines: string[]) => {
     await completeSignupSvc(userData, selectedCuisines);
   },
-  completeSignupSkip: async (userData: any) => {
+  completeSignupSkip: async (userData: SignupUserData) => {
     await completeSignupSkipSvc(userData);
   },
   resetPasswordWithTokens: async (accessToken: string, refreshToken: string, newPassword: string) => {

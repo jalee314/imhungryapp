@@ -7,6 +7,8 @@ import React from 'react';
 import { GRAY } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 
+const interFont = { fontFamily: 'Inter' };
+
 export function CommunityEmptyState() {
   return (
     <Box flex={1} center py="5xl">
@@ -16,7 +18,7 @@ export function CommunityEmptyState() {
         color={GRAY[600]}
         textAlign="center"
         mb="sm"
-        style={{ fontFamily: 'Inter' }}
+        style={interFont}
       >
         No community deals available
       </Text>
@@ -24,7 +26,7 @@ export function CommunityEmptyState() {
         size="sm"
         color={GRAY[500]}
         textAlign="center"
-        style={{ fontFamily: 'Inter' }}
+        style={interFont}
       >
         Check back later for new deals!
       </Text>

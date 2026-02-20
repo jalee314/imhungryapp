@@ -5,6 +5,7 @@ import { useLocation } from '../hooks/useLocation';
 import Feed from '../screens/deal_feed/Feed';
 import DiscoverFeed from '../screens/discover_feed/DiscoverFeed';
 import { STATIC } from '../ui/alf';
+import { logger } from '../utils/logger';
 
 import Header from './Header';
 import LocationModal from './LocationModal';
@@ -16,7 +17,7 @@ interface FeedTabNavigatorProps {
 
 const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
   currentTab = 'feed',
-  onTabChange
+  onTabChange: _onTabChange
 }) => {
   const { currentLocation, updateLocation, refreshPermissionStatus } = useLocation();
   const [locationModalVisible, setLocationModalVisible] = useState(false);
@@ -29,7 +30,7 @@ const FeedTabNavigator: React.FC<FeedTabNavigatorProps> = ({
 
   const handleLocationUpdate = useCallback((location: { id: string; city: string; state: string; coordinates?: { lat: number; lng: number } }) => {
     updateLocation(location);
-    console.log('Location updated to:', location);
+    logger.info('Location updated to:', location);
   }, [updateLocation]);
 
   const handleLocationModalClose = useCallback(() => {

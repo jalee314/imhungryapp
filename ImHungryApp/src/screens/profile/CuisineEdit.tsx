@@ -5,13 +5,13 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-na
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { useDataCache } from '../../hooks/useDataCache';
-import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS } from '../../ui/alf';
-
+import { BRAND, STATIC, GRAY } from '../../ui/alf';
+import { logger } from '../../utils/logger';
 export default function CuisineEdit() {
   const navigation = useNavigation();
   const route = useRoute();
   const { cuisines: cachedCuisines, loading: cuisinesLoading } = useDataCache();
-  const initialCuisines = (route.params as any)?.selectedCuisines || [];
+  const initialCuisines = (route.params)?.selectedCuisines || [];
 
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>(initialCuisines);
 
@@ -30,19 +30,19 @@ export default function CuisineEdit() {
 
   const handleBack = () => {
     // Pass the updated cuisines back to the previous screen (ProfileEdit)
-    console.log('CuisineEdit: Navigating back with cuisines:', selectedCuisines);
-    console.log('CuisineEdit: Profile param:', (route.params as any)?.profile);
+    logger.info('CuisineEdit: Navigating back with cuisines:', selectedCuisines);
+    logger.info('CuisineEdit: Profile param:', (route.params)?.profile);
 
     // Get the navigation state to find the ProfileEdit route key
     const state = navigation.getState();
-    const profileEditRoute = state?.routes.find((r: any) => r.name === 'ProfileEdit');
+    const profileEditRoute = state?.routes.find((r) => r.name === 'ProfileEdit');
 
     if (profileEditRoute?.key) {
       // Set params on ProfileEdit screen before going back
       navigation.dispatch({
         ...CommonActions.setParams({
           updatedCuisines: selectedCuisines,
-          profile: (route.params as any)?.profile
+          profile: (route.params)?.profile
         }),
         source: profileEditRoute.key,
       });

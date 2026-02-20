@@ -7,13 +7,9 @@
 
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentDatabaseSessionId } from '../../../services/sessionService';
+import { logger } from '../../../utils/logger';
 import { getCurrentUserId } from '../selectors/voteSelectors';
-import {
-  InteractionType,
-  InteractionSource,
-  InteractionLogParams,
-  InteractionLogResult,
-} from '../types';
+import { InteractionSource, InteractionLogParams, InteractionLogResult } from '../types';
 
 // ==========================================
 // Interaction Logging
@@ -36,11 +32,11 @@ export const logInteractionEvent = async (
 
     const sessionId = await getCurrentDatabaseSessionId();
     if (!sessionId) {
-      console.warn('[interactions/logging] No session ID available for interaction');
+      logger.warn('[interactions/logging] No session ID available for interaction');
       return { success: false, error: 'No session available' };
     }
 
-    const insertData: Record<string, any> = {
+    const insertData: Record<string, unknown> = {
       user_id: userId,
       session_id: sessionId,
       interaction_type: interactionType,
@@ -64,14 +60,14 @@ export const logInteractionEvent = async (
     const { error } = await supabase.from('interaction').insert(insertData);
 
     if (error) {
-      console.error('[interactions/logging] Error logging interaction:', error);
+      logger.error('[interactions/logging] Error logging interaction:', error);
       return { success: false, error: error.message };
     }
 
-    console.log(`✅ ${interactionType} logged for ${dealId || restaurantId} from ${source}`);
+    logger.info(`✅ ${interactionType} logged for ${dealId || restaurantId} from ${source}`);
     return { success: true };
   } catch (error) {
-    console.error('[interactions/logging] Error in logInteractionEvent:', error);
+    logger.error('[interactions/logging] Error in logInteractionEvent:', error);
     return { success: false, error: 'Failed to log interaction' };
   }
 };
@@ -176,14 +172,14 @@ export const removeFavoriteInteractionsForDeal = async (
       .eq('interaction_type', 'favorite');
 
     if (error) {
-      console.error('[interactions/logging] Error removing favorite interactions:', error);
+      logger.error('[interactions/logging] Error removing favorite interactions:', error);
       return { success: false, error: error.message };
     }
 
-    console.log(`🗑️ Favorite interactions removed for deal ${dealId}`);
+    logger.info(`🗑️ Favorite interactions removed for deal ${dealId}`);
     return { success: true };
   } catch (error) {
-    console.error('[interactions/logging] Error in removeFavoriteInteractionsForDeal:', error);
+    logger.error('[interactions/logging] Error in removeFavoriteInteractionsForDeal:', error);
     return { success: false, error: 'Failed to remove favorite interactions' };
   }
 };

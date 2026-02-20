@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform , AppState, AppStateStatus } from 'react-native';
 
 import { supabase } from '../../lib/supabase';
-
+import { logger } from '../utils/logger';
 // Cache keys
 const AUTH_SESSION_KEY = 'supabase_auth_session';
 const DB_SESSION_ID_KEY = 'current_db_session_id';
@@ -42,23 +42,23 @@ export const initializeAuthSession = async (): Promise<boolean> => {
     const { data: { session }, error } = await supabase.auth.getSession();
 
     if (error) {
-      console.error('Error getting auth session:', error);
+      logger.error('Error getting auth session:', error);
       return false;
     }
 
     if (session) {
-      console.log('✅ User is logged in:', session.user.email);
+      logger.info('✅ User is logged in:', session.user.email);
 
       // Create or resume database session for analytics
       await createDatabaseSession();
 
       return true;
     } else {
-      console.log('❌ No active auth session');
+      logger.info('❌ No active auth session');
       return false;
     }
   } catch (error) {
-    console.error('Error initializing auth session:', error);
+    logger.error('Error initializing auth session:', error);
     return false;
   }
 };
@@ -70,7 +70,7 @@ const createDatabaseSession = async (): Promise<string | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.log('No user found, cannot create database session');
+      logger.info('No user found, cannot create database session');
       return null;
     }
 
@@ -83,7 +83,7 @@ const createDatabaseSession = async (): Promise<string | null> => {
       const thirtyMinutes = 30 * 60 * 1000;
 
       if (sessionAge < thirtyMinutes) {
-        console.log('📱 Reusing existing session:', cachedSessionId);
+        logger.info('📱 Reusing existing session:', cachedSessionId);
         return cachedSessionId;
       } else {
         // Session expired, end it
@@ -105,7 +105,7 @@ const createDatabaseSession = async (): Promise<string | null> => {
       .single();
 
     if (error) {
-      console.error('Error creating database session:', error);
+      logger.error('Error creating database session:', error);
       return null;
     }
 
@@ -113,10 +113,10 @@ const createDatabaseSession = async (): Promise<string | null> => {
     await AsyncStorage.setItem(DB_SESSION_ID_KEY, data.session_id);
     await AsyncStorage.setItem(DB_SESSION_START_KEY, Date.now().toString());
 
-    console.log('✅ New database session created:', data.session_id);
+    logger.info('✅ New database session created:', data.session_id);
     return data.session_id;
   } catch (error) {
-    console.error('Error in createDatabaseSession:', error);
+    logger.error('Error in createDatabaseSession:', error);
     return null;
   }
 };
@@ -142,7 +142,7 @@ export const getCurrentDatabaseSessionId = async (): Promise<string | null> => {
     // Create new session
     return await createDatabaseSession();
   } catch (error) {
-    console.error('Error getting database session:', error);
+    logger.error('Error getting database session:', error);
     return null;
   }
 };
@@ -163,9 +163,9 @@ const endDatabaseSession = async (sessionId?: string): Promise<void> => {
     await AsyncStorage.removeItem(DB_SESSION_ID_KEY);
     await AsyncStorage.removeItem(DB_SESSION_START_KEY);
 
-    console.log('📱 Database session ended:', sessionIdToEnd);
+    logger.info('📱 Database session ended:', sessionIdToEnd);
   } catch (error) {
-    console.error('Error ending database session:', error);
+    logger.error('Error ending database session:', error);
   }
 };
 
@@ -180,16 +180,16 @@ export const signOut = async (): Promise<void> => {
     // Sign out from Supabase auth
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
       throw error;
     }
 
     // Clear auth cache
     await AsyncStorage.removeItem(AUTH_SESSION_KEY);
 
-    console.log('✅ Signed out successfully');
+    logger.info('✅ Signed out successfully');
   } catch (error) {
-    console.error('Error in signOut:', error);
+    logger.error('Error in signOut:', error);
     throw error;
   }
 };
@@ -216,10 +216,10 @@ export const setupAppStateListener = (): (() => void) => {
     // Only log when transitioning to background (not inactive)
     // This prevents duplicate logs since iOS fires both 'inactive' and 'background'
     if (nextAppState === 'background' && lastState !== 'background') {
-      console.log('📱 App going to background - ending session');
+      logger.info('📱 App going to background - ending session');
       await endDatabaseSession();
     } else if (nextAppState === 'active' && lastState !== 'active') {
-      console.log('📱 App coming to foreground - creating session');
+      logger.info('📱 App coming to foreground - creating session');
       const isAuth = await isAuthenticated();
       if (isAuth) {
         await createDatabaseSession();

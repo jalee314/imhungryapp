@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, TouchableOpacity } from 'react-native';
 
-import { BRAND, STATIC, GRAY, SPACING, RADIUS, BORDER_WIDTH } from '../../../ui/alf';
+import { BRAND, STATIC, GRAY, SPACING, RADIUS } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
 import type { UserProfile } from '../types';
@@ -14,11 +14,20 @@ interface UserDetailModalProps {
   onManage: () => void;
 }
 
+const userDetailSheetStyle = { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 };
+const userManageButtonStyle = {
+  backgroundColor: BRAND.accent,
+  paddingVertical: SPACING.md,
+  borderRadius: RADIUS.md,
+  alignItems: 'center' as const,
+};
+const detailFieldLabelStyle = { marginTop: SPACING.md, marginBottom: SPACING.xs };
+
 const UserDetailModal: React.FC<UserDetailModalProps> = ({ visible, user, onClose, onManage }) => (
   <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
     <Box flex={1} bg="rgba(0,0,0,0.5)" justify="flex-end">
       <Box bg={STATIC.white} rounded="xl" p="xl" maxH="80%"
-        style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
+        style={userDetailSheetStyle}>
         <Box row justify="space-between" align="center" mb="xl">
           <Text size="xl" weight="bold" color={STATIC.black}>User Details</Text>
           <TouchableOpacity onPress={onClose}>
@@ -38,12 +47,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ visible, user, onClos
 
         <TouchableOpacity
           onPress={onManage}
-          style={{
-            backgroundColor: BRAND.accent,
-            paddingVertical: SPACING.md,
-            borderRadius: RADIUS.md,
-            alignItems: 'center',
-          }}
+          style={userManageButtonStyle}
         >
           <Text size="md" weight="semibold" color={STATIC.white}>Manage User</Text>
         </TouchableOpacity>
@@ -54,7 +58,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ visible, user, onClos
 
 const DetailField: React.FC<{ label: string; value?: string }> = ({ label, value }) => (
   <>
-    <Text size="xs" color={GRAY[600]} style={{ marginTop: SPACING.md, marginBottom: SPACING.xs }}>
+    <Text size="xs" color={GRAY[600]} style={detailFieldLabelStyle}>
       {label}
     </Text>
     <Text size="md" color={STATIC.black}>{value ?? '—'}</Text>

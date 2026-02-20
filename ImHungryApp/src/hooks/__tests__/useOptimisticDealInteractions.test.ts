@@ -16,7 +16,7 @@
  * - Vote count changes with each transition
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { renderHook, act } from '@testing-library/react-native';
 
 import { useFavoritesStore } from '../../stores/FavoritesStore';
 import {
@@ -133,7 +133,7 @@ describe('useOptimisticDealInteractions', () => {
 
       it('should transition idle → pending → committed on success', async () => {
         // Use a delayed mock to capture intermediate states
-        let resolveServerCall: (value: boolean) => void;
+        let resolveServerCall: ((value: boolean) => void) | undefined;
         mockToggleUpvote.mockImplementation(
           () => new Promise((resolve) => { resolveServerCall = resolve; })
         );
@@ -148,7 +148,7 @@ describe('useOptimisticDealInteractions', () => {
         );
 
         // Start the action (don't await yet)
-        let actionPromise: Promise<void>;
+        let actionPromise: Promise<void> | undefined;
         act(() => {
           actionPromise = result.current.actions.toggleUpvote();
         });
@@ -160,8 +160,11 @@ describe('useOptimisticDealInteractions', () => {
 
         // Resolve the server call
         await act(async () => {
-          resolveServerCall!(true);
-          await actionPromise!;
+          if (!resolveServerCall || !actionPromise) {
+            throw new Error('Expected pending upvote action to be initialized');
+          }
+          resolveServerCall(true);
+          await actionPromise;
         });
 
         expect(mockToggleUpvote).toHaveBeenCalledWith(defaultDealId);
@@ -470,7 +473,7 @@ describe('useOptimisticDealInteractions', () => {
   describe('Concurrent action prevention', () => {
     it('should ignore actions when another action is pending', async () => {
       // Use a delayed mock for upvote
-      let resolveUpvote: (value: boolean) => void;
+      let resolveUpvote: ((value: boolean) => void) | undefined;
       mockToggleUpvote.mockImplementation(
         () => new Promise((resolve) => { resolveUpvote = resolve; })
       );
@@ -483,7 +486,7 @@ describe('useOptimisticDealInteractions', () => {
       );
 
       // Start first action (don't await yet)
-      let promise1: Promise<void>;
+      let promise1: Promise<void> | undefined;
       act(() => {
         promise1 = result.current.actions.toggleUpvote();
       });
@@ -498,8 +501,11 @@ describe('useOptimisticDealInteractions', () => {
 
       // Resolve the first action
       await act(async () => {
-        resolveUpvote!(true);
-        await promise1!;
+        if (!resolveUpvote || !promise1) {
+          throw new Error('Expected pending upvote action to be initialized');
+        }
+        resolveUpvote(true);
+        await promise1;
       });
 
       // Only upvote should have been processed

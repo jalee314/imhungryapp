@@ -1,24 +1,13 @@
-import { useFavoritesStore, FavoriteDealData } from '../stores/FavoritesStore';
+import { useFavoritesStore } from '../stores/FavoritesStore';
 
 // Re-export for convenience
 export type { FavoriteDealData } from '../stores/FavoritesStore';
 
-// Allow selector overload like other hooks.
-export function useFavorites<T>(selector: (state: any) => T, equality?: (a: T, b: T) => boolean): T;
-export function useFavorites(): {
-  unfavoritedItems: Set<string>;
-  unfavoritedRestaurants: Set<string>;
-  markAsUnfavorited: (id: string, type: 'deal' | 'restaurant') => void;
-  markAsFavorited: (id: string, type: 'deal' | 'restaurant', dealData?: FavoriteDealData) => void;
-  isUnfavorited: (id: string, type: 'deal' | 'restaurant') => boolean;
-  getNewlyFavoritedDeals: () => FavoriteDealData[];
-  clearUnfavorited: () => void;
-  clearNewlyFavorited: () => void;
-};
-export function useFavorites<T>(selector?: (state: any) => T) {
-  if (selector) {
-    return useFavoritesStore(selector as any) as unknown as T;
-  }
+/**
+ * Convenience hook for FavoritesStore.
+ * Subscribes to individual slices to avoid unnecessary re-renders.
+ */
+export function useFavorites() {
   const unfavoritedItems = useFavoritesStore((s) => s.unfavoritedItems);
   const unfavoritedRestaurants = useFavoritesStore((s) => s.unfavoritedRestaurants);
   const markAsUnfavorited = useFavoritesStore((s) => s.markAsUnfavorited);
@@ -28,14 +17,14 @@ export function useFavorites<T>(selector?: (state: any) => T) {
   const clearUnfavorited = useFavoritesStore((s) => s.clearUnfavorited);
   const clearNewlyFavorited = useFavoritesStore((s) => s.clearNewlyFavorited);
 
-  return { 
-    unfavoritedItems, 
-    unfavoritedRestaurants, 
-    markAsUnfavorited, 
+  return {
+    unfavoritedItems,
+    unfavoritedRestaurants,
+    markAsUnfavorited,
     markAsFavorited,
-    isUnfavorited, 
+    isUnfavorited,
     getNewlyFavoritedDeals,
     clearUnfavorited,
-    clearNewlyFavorited
+    clearNewlyFavorited,
   };
 }

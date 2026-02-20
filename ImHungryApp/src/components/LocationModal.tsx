@@ -15,9 +15,9 @@ import {
   Linking,
 } from 'react-native';
 
-import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCityAndStateFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
-import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
-
+import { updateUserLocation, getCityAndStateFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
+import { BRAND, STATIC, GRAY } from '../ui/alf';
+import { logger } from '../utils/logger';
 interface LocationItem {
   id: string;
   city: string;
@@ -27,13 +27,11 @@ interface LocationItem {
     lng: number;
   };
 }
-
 interface LocationModalProps {
   visible: boolean;
   onClose: () => void;
   onLocationUpdate: (location: LocationItem) => void;
 }
-
 const LocationModal: React.FC<LocationModalProps> = ({
   visible,
   onClose,
@@ -41,12 +39,9 @@ const LocationModal: React.FC<LocationModalProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<LocationItem | null>(null);
   const [searchResults, setSearchResults] = useState<LocationItem[]>([]);
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-
-  // Sample data - in production, you'd want to search through a real location database
   const sampleLocations: LocationItem[] = [
     { id: '1', city: 'Fullerton', state: 'CA' },
     { id: '2', city: 'Anaheim', state: 'CA' },
@@ -57,19 +52,17 @@ const LocationModal: React.FC<LocationModalProps> = ({
     { id: '7', city: 'La Habra', state: 'CA' },
     { id: '8', city: 'Buena Park', state: 'CA' },
   ];
-
   useEffect(() => {
     if (visible) {
       setSearchResults(sampleLocations);
       setSelectedLocation(null);
       setSearchText('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
-
   useEffect(() => {
     if (searchText.trim()) {
       setIsSearching(true);
-      // Simulate search delay
       const timeoutId = setTimeout(() => {
         const filtered = sampleLocations.filter(location =>
           location.city.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -78,40 +71,21 @@ const LocationModal: React.FC<LocationModalProps> = ({
         setSearchResults(filtered);
         setIsSearching(false);
       }, 300);
-
       return () => clearTimeout(timeoutId);
     } else {
       setSearchResults(sampleLocations);
       setIsSearching(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchText]);
-
-  const loadCurrentLocation = async () => {
-    try {
-      const location = await getCurrentUserLocation();
-      if (location) {
-        const cityName = location.city || await getCityFromCoordinates(location.lat, location.lng);
-        setCurrentLocation({
-          id: 'current',
-          city: cityName,
-          state: 'Current Location',
-          coordinates: { lat: location.lat, lng: location.lng }
-        });
-      }
-    } catch (error) {
-      console.error('Error loading current location:', error);
-    }
-  };
 
   const handleCurrentLocationRequest = async () => {
     const hasPermission = await checkLocationPermission();
 
     if (!hasPermission) {
-      // Get detailed permission status
       const permissionStatus = await getLocationPermissionStatus();
 
       if (permissionStatus.isDenied) {
-        // User has already denied permission before, go straight to settings guidance
         Alert.alert(
           'Location Access Required',
           'To use your current location, please enable location permissions for this app in your device settings.',
@@ -129,10 +103,8 @@ const LocationModal: React.FC<LocationModalProps> = ({
         return;
       }
 
-      // First time asking (status is likely 'undetermined') - request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        // User denied it for the first time, explain how to re-enable
         Alert.alert(
           'Location Access Required',
           'To use your current location, please enable location permissions for this app in your device settings.',
@@ -151,20 +123,17 @@ const LocationModal: React.FC<LocationModalProps> = ({
       }
     }
 
-    // Permission granted, proceed with location request
     setSelectedLocation('current');
   };
 
   const requestCurrentLocation = async (): Promise<LocationItem | null> => {
     try {
-      // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        console.error('Location permission denied');
+        logger.error('Location permission denied');
         return null;
       }
 
-      // Get current position with higher accuracy
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
         timeInterval: 10000,
@@ -172,10 +141,8 @@ const LocationModal: React.FC<LocationModalProps> = ({
       });
       const { latitude, longitude } = location.coords;
 
-      // Get city name and state abbreviation
       const { city: cityName, stateAbbr } = await getCityAndStateFromCoordinates(latitude, longitude);
 
-      // Update user location in database (now includes state)
       const success = await updateUserLocation(latitude, longitude, cityName, stateAbbr);
       if (success) {
         const newLocation: LocationItem = {
@@ -188,7 +155,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
       }
       return null;
     } catch (error) {
-      console.error('Error getting current location:', error);
+      logger.error('Error getting current location:', error);
       return null;
     }
   };
@@ -197,63 +164,61 @@ const LocationModal: React.FC<LocationModalProps> = ({
     setSelectedLocation(locationId);
   };
 
-  const handleDone = async () => {
-    if (!selectedLocation) return;
+  const buildManualLocationUpdate = async (
+    selectedLocationItem: LocationItem,
+  ): Promise<LocationItem> => {
+    setIsUpdatingLocation(true);
+    try {
+      const coordinates = await getCoordinatesFromCity(
+        selectedLocationItem.city,
+        selectedLocationItem.state,
+      );
+      const locationToUpdate: LocationItem = {
+        ...selectedLocationItem,
+        coordinates: coordinates || undefined,
+      };
 
-    let locationToUpdate: LocationItem | null = null;
-
-    if (selectedLocation === 'current') {
-      // Close modal immediately for current location
-      onClose();
-
-      // Get current location in the background
-      const currentLoc = await requestCurrentLocation();
-      if (currentLoc) {
-        onLocationUpdate(currentLoc);
-      }
-    } else {
-      // Get the selected location from search results
-      const selectedLocationItem = searchResults.find(loc => loc.id === selectedLocation);
-      if (selectedLocationItem) {
-        // Get coordinates for the selected city
-        setIsUpdatingLocation(true);
-        try {
-          const coordinates = await getCoordinatesFromCity(selectedLocationItem.city, selectedLocationItem.state);
-          locationToUpdate = {
-            ...selectedLocationItem,
-            coordinates: coordinates || undefined
-          };
-
-          // Save the selected location to the database
-          if (coordinates) {
-            console.log('💾 Saving manual location to database:', coordinates);
-            const success = await updateUserLocation(coordinates.lat, coordinates.lng, selectedLocationItem.city, selectedLocationItem.state);
-            if (success) {
-              console.log('✅ Manual location saved to database successfully');
-            } else {
-              console.log('❌ Failed to save manual location to database');
-            }
-          }
-        } catch (error) {
-          console.error('Error getting coordinates for city:', error);
-          locationToUpdate = selectedLocationItem;
-        } finally {
-          setIsUpdatingLocation(false);
+      if (coordinates) {
+        logger.info('💾 Saving manual location to database:', coordinates);
+        const success = await updateUserLocation(
+          coordinates.lat,
+          coordinates.lng,
+          selectedLocationItem.city,
+          selectedLocationItem.state,
+        );
+        if (success) {
+          logger.info('✅ Manual location saved to database successfully');
+        } else {
+          logger.info('❌ Failed to save manual location to database');
         }
       }
 
-      if (locationToUpdate) {
-        onLocationUpdate(locationToUpdate);
-        onClose();
-      }
+      return locationToUpdate;
+    } catch (error) {
+      logger.error('Error getting coordinates for city:', error);
+      return selectedLocationItem;
+    } finally {
+      setIsUpdatingLocation(false);
     }
   };
 
-  const handleCancel = () => {
-    setSelectedLocation(null);
-    setSearchText('');
+  const handleDone = async () => {
+    if (!selectedLocation) return;
+    if (selectedLocation === 'current') {
+      onClose();
+      const currentLoc = await requestCurrentLocation();
+      if (currentLoc) onLocationUpdate(currentLoc);
+      return;
+    }
+    const selectedLocationItem = searchResults.find(loc => loc.id === selectedLocation);
+    if (!selectedLocationItem) return;
+
+    const locationToUpdate = await buildManualLocationUpdate(selectedLocationItem);
+    onLocationUpdate(locationToUpdate);
     onClose();
   };
+
+  const handleCancel = () => { setSelectedLocation(null); setSearchText(''); onClose(); };
 
   const renderCurrentLocationItem = () => {
     return (
@@ -263,7 +228,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
       >
         <View style={styles.locationTextContainer}>
           <Text style={styles.locationText}>Use Current Location</Text>
-          <Ionicons name="navigate" size={16} color={BRAND.primary} style={{ marginLeft: 8 }} />
+          <Ionicons name="navigate" size={16} color={BRAND.primary} style={styles.locationIcon} />
         </View>
         {selectedLocation === 'current' ? (
           <View style={styles.checkmark}>
@@ -299,7 +264,6 @@ const LocationModal: React.FC<LocationModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleCancel}>
             <Text style={styles.headerButtonText}>Cancel</Text>
@@ -319,7 +283,6 @@ const LocationModal: React.FC<LocationModalProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={GRAY[475]} />
           <TextInput
@@ -332,9 +295,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
           />
         </View>
 
-        {/* Content */}
         <View style={styles.content}>
-          {/* Search Results */}
           {isSearching ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color={BRAND.primary} />
@@ -348,7 +309,6 @@ const LocationModal: React.FC<LocationModalProps> = ({
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContentContainer}
               ListHeaderComponent={
-                // Only show "Use Current Location" when not searching
                 !searchText.trim() ? (
                   <>
                     {renderCurrentLocationItem()}
@@ -429,6 +389,9 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 16,
     color: STATIC.black,
+  },
+  locationIcon: {
+    marginLeft: 8,
   },
   checkmark: {
     width: 20,

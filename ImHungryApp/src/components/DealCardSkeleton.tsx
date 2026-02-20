@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 
-import { STATIC, GRAY, RADIUS } from '../ui/alf';
+import { STATIC, GRAY } from '../ui/alf';
 
 const { width: screenWidth } = Dimensions.get('window');
 // Calculate dynamic card width: subtract horizontal padding (20px) and gap between cards (4px), then divide by 2

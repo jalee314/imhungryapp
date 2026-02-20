@@ -13,6 +13,9 @@ export interface FavoritesEmptyStateProps {
   activeTab: FavoritesTab;
 }
 
+const favoritesTitleStyle = { fontFamily: 'Inter' };
+const favoritesSubtitleStyle = { fontFamily: 'Inter', lineHeight: 20 };
+
 export function FavoritesEmptyState({ activeTab }: FavoritesEmptyStateProps) {
   const noun = activeTab === 'restaurants' ? 'Restaurants' : 'Deals';
   const cta =
@@ -30,7 +33,7 @@ export function FavoritesEmptyState({ activeTab }: FavoritesEmptyStateProps) {
         textAlign="center"
         mt="lg"
         mb="sm"
-        style={{ fontFamily: 'Inter' }}
+        style={favoritesTitleStyle}
       >
         No {noun} Favorited
       </Text>
@@ -38,7 +41,7 @@ export function FavoritesEmptyState({ activeTab }: FavoritesEmptyStateProps) {
         size="sm"
         color={GRAY[600]}
         textAlign="center"
-        style={{ fontFamily: 'Inter', lineHeight: 20 }}
+        style={favoritesSubtitleStyle}
       >
         {cta}
       </Text>

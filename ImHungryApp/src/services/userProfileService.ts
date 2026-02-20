@@ -1,4 +1,8 @@
 import { supabase } from '../../lib/supabase';
+import type { ImageVariants } from '../types/image';
+import { logger } from '../utils/logger';
+
+import type { UserPost } from './userPostsService';
 
 // Simple cache for profile data
 const profileCache = new Map<string, {
@@ -8,30 +12,56 @@ const profileCache = new Map<string, {
 
 const CACHE_DURATION = 60000; // 1 minute cache
 
+type ProfileImageMetadata = {
+  variants?: ImageVariants | null;
+} | null;
+
+export interface ProfileRecord {
+  user_id: string;
+  display_name: string | null;
+  location_city: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  profile_photo?: string | null;
+  image_metadata?: ProfileImageMetadata;
+  [key: string]: unknown;
+}
+
+export interface ProfileUserData {
+  username: string;
+  profilePicture: string | null;
+  city: string;
+  state: string;
+}
+
 export interface UserProfileData {
-  profile: any;
+  profile: ProfileRecord;
   photoUrl: string | null;
   dealCount: number;
-  userData: {
-    username: string;
-    profilePicture: string | null;
-    city: string;
-    state: string;
-  };
+  userData: ProfileUserData;
 }
 
 export interface UserProfileCache {
-  profile: any;
+  profile: ProfileRecord;
   photoUrl: string | null;
   dealCount: number;
-  userData: {
-    username: string;
-    profilePicture: string | null;
-    city: string;
-    state: string;
-  };
-  userPosts: any[];
+  userData: ProfileUserData;
+  userPosts: UserPost[];
 }
+
+const getPreferredPhotoUrl = (
+  imageMetadata: ProfileImageMetadata,
+  preferred: 'medium' | 'thumbnail'
+): string | null => {
+  const variants = imageMetadata?.variants;
+  if (!variants) return null;
+
+  if (preferred === 'medium') {
+    return variants.medium || variants.small || variants.thumbnail || null;
+  }
+
+  return variants.thumbnail || variants.small || variants.medium || null;
+};
 
 /**
  * Fetch user profile data including basic info, photo, and deal count
@@ -43,7 +73,7 @@ export const fetchUserProfile = async (targetUserId: string): Promise<UserProfil
     const now = Date.now();
 
     if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-      console.log('Using cached profile data for user:', targetUserId);
+      logger.info('Using cached profile data for user:', targetUserId);
       return cached.data;
     }
 
@@ -68,27 +98,26 @@ export const fetchUserProfile = async (targetUserId: string): Promise<UserProfil
 
     const { data: userProfile, error: profileError } = userProfileResult;
     if (profileError) {
-      console.error('Error fetching user profile:', profileError);
+      logger.error('Error fetching user profile:', profileError);
       throw new Error('Could not load user profile');
     }
 
     const { count: dealCount, error: dealCountError } = dealCountResult;
     if (dealCountError) {
-      console.error('Error fetching deal count:', dealCountError);
+      logger.error('Error fetching deal count:', dealCountError);
     }
 
-    // Process profile photo URL
-    const variants = (userProfile as any)?.image_metadata?.variants as any;
-    const photoUrl = variants?.medium || null;
+    const profile = userProfile as ProfileRecord;
+    const photoUrl = getPreferredPhotoUrl(profile.image_metadata ?? null, 'medium');
 
-    const result = {
-      profile: userProfile,
+    const result: UserProfileData = {
+      profile,
       photoUrl,
       dealCount: dealCount || 0,
       userData: {
-        username: userProfile.display_name,
+        username: profile.display_name || '',
         profilePicture: photoUrl,
-        city: userProfile.location_city || 'Unknown',
+        city: profile.location_city || 'Unknown',
         state: 'CA',
       }
     };
@@ -101,7 +130,7 @@ export const fetchUserProfile = async (targetUserId: string): Promise<UserProfil
 
     return result;
   } catch (error) {
-    console.error('Error in fetchUserProfile:', error);
+    logger.error('Error in fetchUserProfile:', error);
     throw error;
   }
 };
@@ -125,14 +154,10 @@ export const fetchCurrentUserPhoto = async (): Promise<string | null> => {
       .eq('user_id', user.id)
       .single();
 
-    if (currentUserData) {
-      const variants = (currentUserData as any)?.image_metadata?.variants as any;
-      return variants?.thumbnail || null;
-    }
-
-    return null;
+    const currentProfile = currentUserData as { image_metadata?: ProfileImageMetadata } | null;
+    return getPreferredPhotoUrl(currentProfile?.image_metadata ?? null, 'thumbnail');
   } catch (error) {
-    console.error('Error fetching current user photo:', error);
+    logger.error('Error fetching current user photo:', error);
     return null;
   }
 };
@@ -141,11 +166,11 @@ export const fetchCurrentUserPhoto = async (): Promise<string | null> => {
  * Create cache data for user profile
  */
 export const createUserProfileCache = (
-  profile: any,
+  profile: ProfileRecord,
   photoUrl: string | null,
   dealCount: number,
-  userData: any,
-  userPosts: any[]
+  userData: ProfileUserData,
+  userPosts: UserPost[]
 ): UserProfileCache => {
   return {
     profile,
@@ -155,4 +180,3 @@ export const createUserProfileCache = (
     userPosts
   };
 };
-

@@ -10,7 +10,7 @@ import { TouchableOpacity } from 'react-native';
 
 import VoteButtons from '../../../components/VoteButtons';
 import type { Deal } from '../../../types/deal';
-import { STATIC, GRAY, RADIUS, SPACING, BORDER_WIDTH } from '../../../ui/alf';
+import { STATIC, GRAY, RADIUS, BORDER_WIDTH } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives';
 import type { DealInteractions } from '../types';
 
@@ -18,6 +18,17 @@ export interface DealActionsBarProps {
   dealData: Deal;
   interactions: DealInteractions;
 }
+
+const actionButtonStyle = {
+  backgroundColor: STATIC.white,
+  borderWidth: BORDER_WIDTH.thin,
+  borderColor: GRAY[325],
+  borderRadius: RADIUS.pill,
+  width: 40,
+  height: 28,
+  justifyContent: 'center' as const,
+  alignItems: 'center' as const,
+};
 
 export function DealActionsBar({ dealData, interactions }: DealActionsBarProps) {
   return (
@@ -38,16 +49,7 @@ export function DealActionsBar({ dealData, interactions }: DealActionsBarProps) 
 
       <Box row gap="xs">
         <TouchableOpacity
-          style={{
-            backgroundColor: STATIC.white,
-            borderWidth: BORDER_WIDTH.thin,
-            borderColor: GRAY[325],
-            borderRadius: RADIUS.pill,
-            width: 40,
-            height: 28,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          style={actionButtonStyle}
           onPress={interactions.handleFavorite}
           activeOpacity={0.6}
         >
@@ -58,16 +60,7 @@ export function DealActionsBar({ dealData, interactions }: DealActionsBarProps) 
           />
         </TouchableOpacity>
         <TouchableOpacity
-          style={{
-            backgroundColor: STATIC.white,
-            borderWidth: BORDER_WIDTH.thin,
-            borderColor: GRAY[325],
-            borderRadius: RADIUS.pill,
-            width: 40,
-            height: 28,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          style={actionButtonStyle}
           onPress={interactions.handleShare}
         >
           <Monicon name="mdi-light:share" size={24} color={STATIC.black} />

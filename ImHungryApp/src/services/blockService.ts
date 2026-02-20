@@ -23,6 +23,19 @@ export interface BlockSubmissionResult {
   blockId?: string;
 }
 
+export interface BlockedUser {
+  block_id: string;
+  blocked_user_id: string;
+  reason_code_id: string;
+  reason_text: string | null;
+  created_at: string;
+  blocked_user: {
+    user_id: string;
+    display_name: string | null;
+    profile_photo: string | null;
+  };
+}
+
 // Get current user ID from Supabase auth
 const getCurrentUserId = async (): Promise<string | null> => {
   try {
@@ -105,7 +118,7 @@ export const getBlockReasonCodes = async (): Promise<BlockReasonCode[]> => {
     }
 
     // Normalize shape to BlockReasonCode interface
-    return (data || []).map((item: any) => ({
+    return (data || []).map((item) => ({
       reason_code_id: item.reason_code_id,
       reason_code: item.reason_code,
       description: item.description ?? null,
@@ -166,7 +179,7 @@ export const unblockUser = async (blockedUserId: string): Promise<BlockSubmissio
 };
 
 // Get blocked users for current user
-export const getBlockedUsers = async (): Promise<any[]> => {
+export const getBlockedUsers = async (): Promise<BlockedUser[]> => {
   try {
     const currentUser = await getCurrentUserId();
     if (!currentUser) {
@@ -194,7 +207,7 @@ export const getBlockedUsers = async (): Promise<any[]> => {
       return [];
     }
 
-    return data || [];
+    return (data || []) as BlockedUser[];
   } catch (error) {
     return [];
   }

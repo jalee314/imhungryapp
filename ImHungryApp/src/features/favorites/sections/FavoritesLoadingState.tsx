@@ -9,6 +9,8 @@ import SkeletonLoader from '../../../components/SkeletonLoader';
 import { STATIC, RADIUS } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives';
 
+const favoritesLoadingHeaderStyle = { borderBottomWidth: 0.5, borderBottomColor: '#DEDEDE' };
+
 /**
  * Full-screen skeleton shown on initial load (header + tabs + cards).
  */
@@ -21,7 +23,7 @@ export function FavoritesFullSkeleton() {
         justify="flex-end"
         pb="sm"
         px="lg"
-        style={{ borderBottomWidth: 0.5, borderBottomColor: '#DEDEDE' }}
+        style={favoritesLoadingHeaderStyle}
       >
         <SkeletonLoader width={120} height={28} borderRadius={RADIUS.sm} />
       </Box>

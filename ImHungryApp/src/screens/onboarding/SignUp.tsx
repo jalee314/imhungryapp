@@ -1,8 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions, ScrollView } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { TextInput } from 'react-native-paper';
@@ -11,9 +9,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { checkPhoneExists } from '../../services/userService';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
-const debounce = (func: (...args: any[]) => void, delay: number) => {
+const debounce = (func: (...args: unknown[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
-  return (...args: any[]) => {
+  return (...args: unknown[]) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
       func(...args);
@@ -25,7 +23,7 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
 export default function SignUpScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const existingUserData = (route.params as any)?.userData;
+  const existingUserData = (route.params)?.userData;
   const { width, height } = useWindowDimensions();
   const { validateEmail } = useAuth();
 
@@ -55,9 +53,9 @@ export default function SignUpScreen() {
     email: existingUserData?.email || '',
     password: existingUserData?.password || '',
   });
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [errors, setErrors] = useState({ email: '', phoneNumber: '' });
-  const [isChecking, setIsChecking] = useState({ email: false, phoneNumber: false });
+  const [, setIsChecking] = useState({ email: false, phoneNumber: false });
   const [showPassword, setShowPassword] = useState(false);
 
   const checkUniqueness = async (field: 'email' | 'phoneNumber', value: string) => {
@@ -65,8 +63,6 @@ export default function SignUpScreen() {
 
     setIsChecking(prev => ({ ...prev, [field]: true }));
     setErrors(prev => ({ ...prev, [field]: '' }));
-
-    const dbField = field === 'phoneNumber' ? 'phone_number' : field;
 
     // format value for DB query
     let queryValue = value;
@@ -103,6 +99,7 @@ export default function SignUpScreen() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedCheck = useCallback(debounce(checkUniqueness, 500), []);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
@@ -141,7 +138,7 @@ export default function SignUpScreen() {
     if (phoneDigits.length < 10) {
       Alert.alert('Error', 'Please enter a complete phone number: (xxx)xxx-xxxx'); return;
     }
-    (navigation as any).navigate('Username', {
+    (navigation).navigate('Username', {
       userData: { ...formData },
     });
   };
@@ -155,14 +152,14 @@ export default function SignUpScreen() {
   ];
 
   const handleLogin = () => {
-    (navigation as any).navigate('LogIn');
+    (navigation).navigate('LogIn');
   };
 
   const handleTermsPress = () => { };
   const handlePrivacyPress = () => { };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -192,7 +189,7 @@ export default function SignUpScreen() {
                     <TextInput
                       label={cfg.label}
                       mode="outlined"
-                      value={(formData as any)[cfg.field]}
+                      value={(formData)[cfg.field]}
                       onChangeText={t => handleInputChange(cfg.field, t)}
                       placeholder={cfg.placeholder}
                       outlineColor={BRAND.accent}
@@ -227,7 +224,7 @@ export default function SignUpScreen() {
 
               {/* Continue */}
               <TouchableOpacity
-                style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+                style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && styles.loadingDimOpacity]}
                 onPress={handleContinue}
                 disabled={loading}
               >
@@ -287,12 +284,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
+  loadingDimOpacity: { opacity: 0.7 },
 
   formContainer: { width: '100%' },
-  paperInput: {
-    // Only spacing, no height
-  }, // field bg; spacing added responsively
-
   textInputStyle: {
     backgroundColor: STATIC.white,
     minHeight: 56,

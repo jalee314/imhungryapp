@@ -16,9 +16,11 @@
 
 import { Alert } from 'react-native';
 
-import { validateDealForm, DEAL_FORM_DEFAULTS } from '../../../features/contribution/engine';
-import type { DealFormValues } from '../../../features/contribution/engine';
-
+const {
+  validateDealForm,
+  DEAL_FORM_DEFAULTS,
+} = require('../../../features/contribution/engine') as typeof import('../../../features/contribution/engine');
+type DealFormValues = import('../../../features/contribution/engine').DealFormValues;
 // Mock @monicon/native
 jest.mock('@monicon/native', () => ({
   Monicon: () => null,

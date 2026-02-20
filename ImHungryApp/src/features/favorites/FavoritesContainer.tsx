@@ -23,6 +23,9 @@ import {
 } from './sections';
 import { useFavoritesScreen } from './useFavoritesScreen';
 
+const favoritesScrollStyle = { flex: 1, paddingTop: SPACING.sm };
+const favoritesScrollContentStyle = { paddingBottom: 100 };
+
 const FavoritesContainer: React.FC = () => {
   const ctx = useFavoritesScreen();
 
@@ -76,8 +79,8 @@ const FavoritesContainer: React.FC = () => {
       />
 
       <ScrollView
-        style={{ flex: 1, paddingTop: SPACING.sm }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        style={favoritesScrollStyle}
+        contentContainerStyle={favoritesScrollContentStyle}
         refreshControl={
           <RefreshControl
             refreshing={ctx.state.refreshing}

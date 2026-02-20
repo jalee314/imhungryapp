@@ -17,14 +17,17 @@ export interface PhotoRowProps {
   onPress: () => void;
 }
 
+const rowMinHeightStyle = { minHeight: 38 };
+const photoCountStyle = { fontSize: 11 };
+
 export function PhotoRow({ photoCount, onPress }: PhotoRowProps) {
   return (
-    <Pressable row gap="lg" py={6} px="lg" align="center" style={{ minHeight: 38 }} onPress={onPress}>
+    <Pressable row gap="lg" py={6} px="lg" align="center" style={rowMinHeightStyle} onPress={onPress}>
       <Ionicons name="camera-outline" size={20} color="#404040" />
       <Box flex={1}>
         <Text size="xs" color="#000000">Add Photo *</Text>
         {photoCount > 0 && (
-          <Text style={{ fontSize: 11 }} color="#888889" mt="2xs">
+          <Text style={photoCountStyle} color="#888889" mt="2xs">
             {photoCount} Photo{photoCount !== 1 ? 's' : ''} Added
           </Text>
         )}

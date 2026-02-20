@@ -21,6 +21,9 @@ export interface PickerRowProps {
   onPress: () => void;
 }
 
+const rowMinHeightStyle = { minHeight: 38 };
+const pickerLabelStyle = { fontSize: 11 };
+
 export function PickerRow({
   icon,
   label,
@@ -28,12 +31,12 @@ export function PickerRow({
   onPress,
 }: PickerRowProps) {
   return (
-    <Pressable row gap="lg" py={6} px="lg" align="center" style={{ minHeight: 38 }} onPress={onPress}>
+    <Pressable row gap="lg" py={6} px="lg" align="center" style={rowMinHeightStyle} onPress={onPress}>
       <Ionicons name={icon} size={20} color="#606060" />
       <Box flex={1}>
         <Text size="xs" color="#000000">{label}</Text>
         {!!selectedLabel && (
-          <Text style={{ fontSize: 11 }} color="#888889" mt="2xs" numberOfLines={1}>
+          <Text style={pickerLabelStyle} color="#888889" mt="2xs" numberOfLines={1}>
             {selectedLabel}
           </Text>
         )}

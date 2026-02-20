@@ -3,6 +3,24 @@ import { supabase } from '../../lib/supabase';
 import { processImageWithEdgeFunction } from './imageProcessingService';
 import { clearUserCache } from './userService';
 
+interface SignupLocationData {
+  latitude: number;
+  longitude: number;
+  city?: string | null;
+  state?: string | null;
+}
+
+export interface SignupUserData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  username: string;
+  locationData?: SignupLocationData | null;
+  profile_photo_url?: string | null;
+}
+
 /**
  * Check if a username is available
  * Returns true when available, false when already taken
@@ -20,7 +38,7 @@ export const isUsernameAvailable = async (username: string): Promise<boolean> =>
 /**
  * Complete signup with cuisine preferences and optional location + profile photo
  */
-export const completeSignup = async (userData: any, selectedCuisines: string[]) => {
+export const completeSignup = async (userData: SignupUserData, selectedCuisines: string[]) => {
   // Convert phone to E.164
   const phoneDigits = userData.phoneNumber.replace(/\D/g, '');
   const e164Phone = phoneDigits.length === 10 ? `+1${phoneDigits}` : `+${phoneDigits}`;
@@ -70,7 +88,7 @@ export const completeSignup = async (userData: any, selectedCuisines: string[]) 
 /**
  * Complete signup when user skips cuisine selection
  */
-export const completeSignupSkip = async (userData: any) => {
+export const completeSignupSkip = async (userData: SignupUserData) => {
   const phoneDigits = userData.phoneNumber.replace(/\D/g, '');
   const e164Phone = phoneDigits.length === 10 ? `+1${phoneDigits}` : `+${phoneDigits}`;
 
@@ -126,7 +144,7 @@ const insertUserCuisinePreferences = async (userId: string, cuisines: string[]) 
   if (preferencesError) throw preferencesError;
 };
 
-const saveUserLocation = async (userId: string, locationData: any) => {
+const saveUserLocation = async (userId: string, locationData: SignupLocationData | null | undefined) => {
   if (!locationData || !locationData.latitude || !locationData.longitude) return;
   if (
     locationData.latitude < -90 ||
@@ -150,7 +168,7 @@ const ensureUserRecordExists = async (userId: string) => {
   const maxRetries = 5;
   while (retries < maxRetries) {
     await new Promise((r) => setTimeout(r, 1000 * (retries + 1)));
-    const { data: userCheck, error: userCheckError } = await supabase
+    const { error: userCheckError } = await supabase
       .from('user')
       .select('user_id')
       .eq('user_id', userId)

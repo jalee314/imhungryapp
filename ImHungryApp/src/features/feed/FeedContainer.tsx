@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { View, ScrollView, StatusBar, RefreshControl } from 'react-native';
+import { ScrollView, StatusBar, RefreshControl } from 'react-native';
 
 import { STATIC, BRAND } from '../../ui/alf';
 import { Box } from '../../ui/primitives';
@@ -22,6 +22,8 @@ import {
   FeedSectionDivider,
 } from './sections';
 import { useFeed } from './useFeed';
+
+const feedScrollStyle = { flex: 1, backgroundColor: STATIC.white, paddingTop: 4 };
 
 const FeedContainer: React.FC = () => {
   const ctx = useFeed();
@@ -78,7 +80,7 @@ const FeedContainer: React.FC = () => {
     <Box flex={1} bg={STATIC.white}>
       <StatusBar barStyle="dark-content" backgroundColor={STATIC.white} />
       <ScrollView
-        style={{ flex: 1, backgroundColor: STATIC.white, paddingTop: 4 }}
+        style={feedScrollStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

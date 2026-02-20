@@ -3,12 +3,18 @@ import * as Location from 'expo-location';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  KeyboardAvoidingView, Platform, Alert, Image
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
 } from 'react-native';
 
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
-
+import { logger } from '../../utils/logger';
 interface LocationData {
   latitude: number;
   longitude: number;
@@ -18,7 +24,7 @@ interface LocationData {
 export default function LocationPermissionsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const userData = (route.params as any)?.userData;
+  const userData = (route.params)?.userData;
 
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +41,7 @@ export default function LocationPermissionsScreen() {
         return location.city || location.subregion || location.region || 'Unknown City';
       }
     } catch (error) {
-      console.warn('Failed to get city from coordinates:', error);
+      logger.warn('Failed to get city from coordinates:', error);
     }
     return 'Unknown City';
   };
@@ -65,15 +71,15 @@ export default function LocationPermissionsScreen() {
             city,
           };
 
-          console.log('Location captured:', locationData);
+          logger.info('Location captured:', locationData);
         } catch (locationError) {
-          console.warn('Failed to get location:', locationError);
+          logger.warn('Failed to get location:', locationError);
           // Continue without location data
         }
       }
 
       // Pass location data (or null) to next screen
-      (navigation as any).navigate('InstantNotifications', {
+      (navigation).navigate('InstantNotifications', {
         userData: {
           ...userData,
           locationData
@@ -81,9 +87,9 @@ export default function LocationPermissionsScreen() {
       });
 
     } catch (error) {
-      console.error('Location permission error:', error);
+      logger.error('Location permission error:', error);
       // Continue without location data
-      (navigation as any).navigate('InstantNotifications', { userData });
+      (navigation).navigate('InstantNotifications', { userData });
     } finally {
       setLoading(false);
     }
@@ -91,11 +97,11 @@ export default function LocationPermissionsScreen() {
 
   const handleSkip = () => {
     // Continue without location data
-    (navigation as any).navigate('InstantNotifications', { userData });
+    (navigation).navigate('InstantNotifications', { userData });
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -131,7 +137,7 @@ export default function LocationPermissionsScreen() {
                 <TouchableOpacity
                   style={[
                     styles.continueButton,
-                    loading && { opacity: 0.7 }
+                    loading && styles.loadingDimOpacity
                   ]}
                   onPress={handleLocationPermission}
                   disabled={loading}
@@ -184,6 +190,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontFamily: 'Inter-Regular'
   },
+  loadingDimOpacity: { opacity: 0.7 },
 
   mainContainer: {
     flex: 1,

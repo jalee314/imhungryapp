@@ -17,6 +17,9 @@ export interface CommunityDealsGridProps {
   interactions: CommunityInteractions;
 }
 
+const evenCardSpacing = { marginBottom: 4, marginRight: 2 };
+const oddCardSpacing = { marginBottom: 4, marginLeft: 2 };
+
 export function CommunityDealsGrid({ deals, interactions }: CommunityDealsGridProps) {
   return (
     <Box direction="row" wrap="wrap" justify="flex-start" pb={100}>
@@ -25,8 +28,8 @@ export function CommunityDealsGrid({ deals, interactions }: CommunityDealsGridPr
           key={deal.id}
           style={
             index % 2 === 0
-              ? { marginBottom: 4, marginRight: 2 }
-              : { marginBottom: 4, marginLeft: 2 }
+              ? evenCardSpacing
+              : oddCardSpacing
           }
         >
           <DealCard

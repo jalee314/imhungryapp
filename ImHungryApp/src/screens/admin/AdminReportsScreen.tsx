@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, FlatList, RefreshControl, Alert } from 'react-native';
 
@@ -15,8 +14,15 @@ import { BRAND, GRAY, SEMANTIC, SPACING } from '../../ui/alf';
 import { Box } from '../../ui/primitives/Box';
 import { Text } from '../../ui/primitives/Text';
 
+const reportsScreenStyle = { flex: 1, backgroundColor: GRAY[100] };
+const reportsContentContainerStyle = {
+  paddingHorizontal: SPACING.md,
+  paddingBottom: SPACING['2xl'],
+};
+const reportsEmptyContentStyle = { flexGrow: 1, justifyContent: 'center' };
+const reportsEmptyTextStyle = { marginTop: SPACING.lg };
+
 const AdminReportsScreen: React.FC = () => {
-  const navigation = useNavigation();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -56,6 +62,7 @@ const AdminReportsScreen: React.FC = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadReports({ status: statusFilter }); }, [statusFilter]);
   useEffect(() => { loadCounts(); }, []);
 
@@ -154,7 +161,7 @@ const AdminReportsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+    <SafeAreaView style={reportsScreenStyle}>
       <AdminHeader
         title="Content Moderation"
         showBack
@@ -180,13 +187,13 @@ const AdminReportsScreen: React.FC = () => {
             />
           }
           contentContainerStyle={[
-            { paddingHorizontal: SPACING.md, paddingBottom: SPACING['2xl'] },
-            reports.length === 0 && { flexGrow: 1, justifyContent: 'center' },
+            reportsContentContainerStyle,
+            reports.length === 0 && reportsEmptyContentStyle,
           ]}
           ListEmptyComponent={
             <Box flex={1} center>
               <Ionicons name="checkmark-circle" size={64} color={SEMANTIC.success} />
-              <Text size="lg" color={GRAY[600]} style={{ marginTop: SPACING.lg }}>
+              <Text size="lg" color={GRAY[600]} style={reportsEmptyTextStyle}>
                 No{' '}
                 {statusFilter === 'all'
                   ? ''

@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../../../lib/supabase';
+import { logger } from '../../utils/logger';
 import { processImageWithEdgeFunction } from '../imageProcessingService';
 
 /**
@@ -14,7 +15,7 @@ export const getCurrentUserId = async (): Promise<string | null> => {
     const { data: { user } } = await supabase.auth.getUser();
     return user?.id || null;
   } catch (error) {
-    console.error('Error getting current user:', error);
+    logger.error('Error getting current user:', error);
     return null;
   }
 };
@@ -26,7 +27,7 @@ export const getUserLocation = async (): Promise<{ lat: number; lng: number } | 
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.log('No authenticated user found');
+      logger.info('No authenticated user found');
       return null;
     }
 
@@ -63,20 +64,20 @@ export const uploadDealImage = async (imageUri: string): Promise<string | null> 
   try {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      console.error('User not authenticated:', authError);
+      logger.error('User not authenticated:', authError);
       return null;
     }
 
     const result = await processImageWithEdgeFunction(imageUri, 'deal_image');
 
     if (!result.success || !result.metadataId) {
-      console.error('Failed to process image:', result.error);
+      logger.error('Failed to process image:', result.error);
       return null;
     }
 
     return result.metadataId;
   } catch (error) {
-    console.error('Error in uploadDealImage:', error);
+    logger.error('Error in uploadDealImage:', error);
     return null;
   }
 };

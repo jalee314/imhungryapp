@@ -35,9 +35,9 @@ export const feedService = {
       }
 
       // Transform the data to match your Deal interface
-      const deals: Deal[] = data.map((deal: any) => {
+      const deals: Deal[] = data.map((deal) => {
         const user = deal.deal_template.user;
-        const variants = user?.image_metadata?.variants as any;
+        const variants = user?.image_metadata?.variants;
         const photoUrl = variants?.thumbnail || null;
 
         return {
@@ -98,9 +98,9 @@ export const feedService = {
         return null;
       }
 
-      const template = data.deal_template as any;
+      const template = data.deal_template;
       const user = template.user;
-      const variants = user?.image_metadata?.variants as any;
+      const variants = user?.image_metadata?.variants;
       const photoUrl = variants?.thumbnail || null;
 
       return {

@@ -2,29 +2,35 @@ import { useNavigation } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
-  ScrollView, TextInput as RNTextInput, Alert
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  TextInput as RNTextInput,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import LocationModal from '../../components/LocationModal';
 import { useProfileEdit } from '../../hooks/useProfileEdit';
+import type { ProfileRecord } from '../../services/userProfileService';
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
-
+import { logger } from '../../utils/logger';
 interface ProfileEditProps {
   route?: {
     params?: {
-      profile?: any;
+      profile?: ProfileRecord;
       updatedCuisines?: string[];
     };
   };
 }
 
 const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const profile = route?.params?.profile;
 
-  console.log('ProfileEdit: Component rendered with params:', {
+  logger.info('ProfileEdit: Component rendered with params:', {
     hasProfile: !!profile,
     updatedCuisines: route?.params?.updatedCuisines,
     city: profile?.location_city
@@ -129,9 +135,9 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ route }) => {
               style={styles.groupedContainer}
               onPress={handleCuisinePress}
             >
-              <View style={styles.cuisineRow}>
-                <View style={styles.cuisineContent}>
-                  <Text style={[styles.fieldLabel, { width: 'auto' }]}>Favorite Cuisines</Text>
+                <View style={styles.cuisineRow}>
+                  <View style={styles.cuisineContent}>
+                  <Text style={[styles.fieldLabel, styles.fieldLabelAutoWidth]}>Favorite Cuisines</Text>
                   <Text style={styles.cuisineText}>
                     {userCuisines.length > 0
                       ? userCuisines.join(', ')
@@ -224,6 +230,9 @@ const styles = StyleSheet.create({
     width: 100,
     letterSpacing: -0.31,
     fontFamily: 'Inter',
+  },
+  fieldLabelAutoWidth: {
+    width: 'auto',
   },
   fieldInputContainer: {
     flex: 1,

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
@@ -15,9 +14,27 @@ import { BRAND, GRAY, STATIC, SPACING, RADIUS } from '../../ui/alf';
 import { Box } from '../../ui/primitives/Box';
 import { Text } from '../../ui/primitives/Text';
 
+const adminDealsScreenStyle = { flex: 1, backgroundColor: GRAY[100] };
+const adminDealsSearchBorderStyle = { borderTopWidth: 0, borderLeftWidth: 0, borderRightWidth: 0 };
+const adminDealsSearchInputStyle = {
+  flex: 1,
+  backgroundColor: GRAY[100],
+  borderRadius: RADIUS.md,
+  paddingHorizontal: SPACING.md,
+  paddingVertical: SPACING.sm,
+  fontSize: 14,
+};
+const adminDealsSearchButtonStyle = {
+  backgroundColor: BRAND.accent,
+  width: 40,
+  height: 40,
+  borderRadius: RADIUS.md,
+  justifyContent: 'center' as const,
+  alignItems: 'center' as const,
+};
+
 
 const AdminDealsScreen: React.FC = () => {
-  const navigation = useNavigation();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -135,7 +152,7 @@ const AdminDealsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+    <SafeAreaView style={adminDealsScreenStyle}>
       <AdminHeader title="Deal Management" showBack />
 
       {/* Search */}
@@ -147,17 +164,10 @@ const AdminDealsScreen: React.FC = () => {
         gap="sm"
         borderWidth={1}
         borderColor={GRAY[300]}
-        style={{ borderTopWidth: 0, borderLeftWidth: 0, borderRightWidth: 0 }}
+        style={adminDealsSearchBorderStyle}
       >
         <TextInput
-          style={{
-            flex: 1,
-            backgroundColor: GRAY[100],
-            borderRadius: RADIUS.md,
-            paddingHorizontal: SPACING.md,
-            paddingVertical: SPACING.sm,
-            fontSize: 14,
-          }}
+          style={adminDealsSearchInputStyle}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search deals by title..."
@@ -166,14 +176,7 @@ const AdminDealsScreen: React.FC = () => {
         />
         <TouchableOpacity
           onPress={handleSearch}
-          style={{
-            backgroundColor: BRAND.accent,
-            width: 40,
-            height: 40,
-            borderRadius: RADIUS.md,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          style={adminDealsSearchButtonStyle}
         >
           <Ionicons name="search" size={20} color={STATIC.white} />
         </TouchableOpacity>

@@ -5,11 +5,11 @@
  * The store manages admin status and admin mode state.
  */
 
-import { useAdminStore } from '../AdminStore';
-
 import { act } from '@testing-library/react-native';
 
+import { adminService } from '../../services/adminService';
 import { mockSupabase } from '../../test-utils/mocks/supabaseMock';
+import { useAdminStore } from '../AdminStore';
 
 // Mock admin service
 jest.mock('../../services/adminService', () => ({
@@ -17,8 +17,6 @@ jest.mock('../../services/adminService', () => ({
     isAdmin: jest.fn(),
   },
 }));
-
-import { adminService } from '../../services/adminService';
 
 // Get the supabase mock from the global mock (already set up in jest.setup.ts)
 const supabase = mockSupabase;
@@ -41,7 +39,7 @@ describe('AdminStore', () => {
     jest.clearAllMocks();
 
     // Re-setup the onAuthStateChange mock after clearing
-    (supabase.auth.onAuthStateChange as jest.Mock).mockImplementation((callback) => ({
+    (supabase.auth.onAuthStateChange as jest.Mock).mockImplementation((_callback) => ({
       data: {
         subscription: {
           unsubscribe: mockUnsubscribe,

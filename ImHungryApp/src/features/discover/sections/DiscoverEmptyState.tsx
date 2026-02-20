@@ -12,6 +12,9 @@ export interface DiscoverEmptyStateProps {
   searchQuery: string;
 }
 
+const discoverTitleStyle = { fontFamily: 'Inter' };
+const discoverSubtitleStyle = { fontFamily: 'Inter', lineHeight: 20 };
+
 export function DiscoverEmptyState({ searchQuery }: DiscoverEmptyStateProps) {
   return (
     <Box flex={1} center py="6xl" px="4xl">
@@ -23,7 +26,7 @@ export function DiscoverEmptyState({ searchQuery }: DiscoverEmptyStateProps) {
         textAlign="center"
         mt="lg"
         mb="sm"
-        style={{ fontFamily: 'Inter' }}
+        style={discoverTitleStyle}
       >
         No restaurants found
       </Text>
@@ -31,7 +34,7 @@ export function DiscoverEmptyState({ searchQuery }: DiscoverEmptyStateProps) {
         size="sm"
         color={GRAY[500]}
         textAlign="center"
-        style={{ fontFamily: 'Inter', lineHeight: 20 }}
+        style={discoverSubtitleStyle}
       >
         {searchQuery
           ? 'Try a different search term'

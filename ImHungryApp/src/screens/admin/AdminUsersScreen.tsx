@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
 
@@ -15,8 +14,26 @@ import { BRAND, GRAY, STATIC, SPACING, RADIUS } from '../../ui/alf';
 import { Box } from '../../ui/primitives/Box';
 import { Text } from '../../ui/primitives/Text';
 
+const adminUsersScreenStyle = { flex: 1, backgroundColor: GRAY[100] };
+const adminUsersSearchBorderStyle = { borderTopWidth: 0, borderLeftWidth: 0, borderRightWidth: 0 };
+const adminUsersSearchInputStyle = {
+  flex: 1,
+  backgroundColor: GRAY[100],
+  borderRadius: RADIUS.md,
+  paddingHorizontal: SPACING.md,
+  paddingVertical: SPACING.sm,
+  fontSize: 14,
+};
+const adminUsersSearchButtonStyle = {
+  backgroundColor: BRAND.accent,
+  width: 40,
+  height: 40,
+  borderRadius: RADIUS.md,
+  justifyContent: 'center' as const,
+  alignItems: 'center' as const,
+};
+
 const AdminUsersScreen: React.FC = () => {
-  const navigation = useNavigation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,7 +166,7 @@ const AdminUsersScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>
+    <SafeAreaView style={adminUsersScreenStyle}>
       <AdminHeader title="User Management" showBack />
 
       {/* Search */}
@@ -161,17 +178,10 @@ const AdminUsersScreen: React.FC = () => {
         gap="sm"
         borderWidth={1}
         borderColor={GRAY[300]}
-        style={{ borderTopWidth: 0, borderLeftWidth: 0, borderRightWidth: 0 }}
+        style={adminUsersSearchBorderStyle}
       >
         <TextInput
-          style={{
-            flex: 1,
-            backgroundColor: GRAY[100],
-            borderRadius: RADIUS.md,
-            paddingHorizontal: SPACING.md,
-            paddingVertical: SPACING.sm,
-            fontSize: 14,
-          }}
+          style={adminUsersSearchInputStyle}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search by username or email..."
@@ -180,14 +190,7 @@ const AdminUsersScreen: React.FC = () => {
         />
         <TouchableOpacity
           onPress={handleSearch}
-          style={{
-            backgroundColor: BRAND.accent,
-            width: 40,
-            height: 40,
-            borderRadius: RADIUS.md,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          style={adminUsersSearchButtonStyle}
         >
           <Ionicons name="search" size={20} color={STATIC.white} />
         </TouchableOpacity>

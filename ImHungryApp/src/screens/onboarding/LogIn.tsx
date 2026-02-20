@@ -8,7 +8,7 @@ import { TextInput } from 'react-native-paper';
 
 import { useAuth } from '../../hooks/useAuth';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
-
+import { logger } from '../../utils/logger';
 export default function LogInScreen() {
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
@@ -61,8 +61,8 @@ export default function LogInScreen() {
     try {
       await signIn(formData.email, formData.password);
       // Auth listeners will update navigation flow automatically
-      console.log('Login successful, auth store will handle navigation');
-    } catch (err: any) {
+      logger.info('Login successful, auth store will handle navigation');
+    } catch (err) {
       const message = err?.message || '';
 
       if (message.includes('Invalid login credentials')) {
@@ -80,11 +80,11 @@ export default function LogInScreen() {
   };
 
   const handleBack = () => {
-    (navigation as any).navigate('SignUp', { fromLogin: true });
+    (navigation).navigate('SignUp', { fromLogin: true });
   };
 
   const handleForgotPassword = () => {
-    (navigation as any).navigate('ForgotPassword');
+    (navigation).navigate('ForgotPassword');
   };
 
   const handleTermsPress = () => { };
@@ -103,7 +103,7 @@ export default function LogInScreen() {
     // Check if 7 taps achieved
     if (newTapCount >= 7) {
       // Navigate to admin login
-      (navigation as any).navigate('AdminLogin');
+      (navigation).navigate('AdminLogin');
       // Reset counter
       setTapCount(0);
       return;
@@ -116,7 +116,7 @@ export default function LogInScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -210,7 +210,7 @@ export default function LogInScreen() {
 
                 {/* Login Button */}
                 <TouchableOpacity
-                  style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+                  style={[styles.continueButton, responsive.continueButton, CONSTRAIN, loading && styles.loadingDimOpacity]}
                   onPress={handleLogin}
                   disabled={loading || authLoading}
                 >
@@ -269,10 +269,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
+  loadingDimOpacity: { opacity: 0.7 },
 
   formContainer: { width: '100%' },
-  paperInput: {},
-
   textInputStyle: {
     backgroundColor: STATIC.white,
     minHeight: 56,

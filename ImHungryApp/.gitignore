@@ -56,4 +56,7 @@ eas.json
 .env.production
 .env
 
+# Lint reports
+lint-report.json
+
 .*

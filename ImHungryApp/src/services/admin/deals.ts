@@ -1,7 +1,82 @@
 import { supabase } from '../../../lib/supabase';
+import { logger } from '../../utils/logger';
 
-import { logAction } from './core';
+import { getErrorMessage, logAction } from './core';
 import type { Deal, ServiceResult } from './types';
+
+type DealTemplateImageSource = {
+  image_metadata?: { variants?: { medium?: string | null; large?: string | null; original?: string | null; small?: string | null } } | null;
+  deal_images?: Array<{
+    display_order?: number | null;
+    is_thumbnail?: boolean | null;
+    image_metadata?: { variants?: { medium?: string | null; large?: string | null; original?: string | null; small?: string | null } } | null;
+  }> | null;
+} | null;
+
+const getFirstAvailableVariantUrl = (
+  variants?: { medium?: string | null; large?: string | null; original?: string | null; small?: string | null } | null,
+): string | null => {
+  if (!variants) return null;
+  const variantKeys: Array<keyof typeof variants> = ['medium', 'large', 'original', 'small'];
+  for (const key of variantKeys) {
+    const value = variants[key];
+    if (value) return value;
+  }
+  return null;
+};
+
+const getTemplateImageUrl = (template: DealTemplateImageSource): string | null => {
+  const dealImages = template?.deal_images || [];
+  const sortedDealImages = [...dealImages].sort((a, b) =>
+    (a.display_order ?? 999) - (b.display_order ?? 999)
+  );
+  const firstImageByOrder = sortedDealImages.find((img) => img.image_metadata?.variants);
+  const thumbnailImage = dealImages.find((img) => img.is_thumbnail && img.image_metadata?.variants);
+  const candidateVariants = [
+    firstImageByOrder?.image_metadata?.variants,
+    thumbnailImage?.image_metadata?.variants,
+    template?.image_metadata?.variants,
+  ];
+
+  for (const variants of candidateVariants) {
+    const url = getFirstAvailableVariantUrl(variants);
+    if (url) return url;
+  }
+
+  return null;
+};
+
+const cleanupCloudinaryImageByMetadataId = async (imageMetadataId: string): Promise<void> => {
+  try {
+    const { data: imageMetadata, error: metadataError } = await supabase
+      .from('image_metadata')
+      .select('cloudinary_public_id')
+      .eq('image_metadata_id', imageMetadataId)
+      .single();
+
+    if (metadataError || !imageMetadata?.cloudinary_public_id) {
+      return;
+    }
+
+    logger.info('Admin deleting Cloudinary image:', imageMetadata.cloudinary_public_id);
+    const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
+      body: { publicIds: [imageMetadata.cloudinary_public_id] }
+    });
+
+    if (cloudinaryError) {
+      logger.warn('Failed to delete image from Cloudinary:', cloudinaryError);
+    } else {
+      logger.info('Successfully deleted Cloudinary image');
+    }
+
+    await supabase
+      .from('image_metadata')
+      .delete()
+      .eq('image_metadata_id', imageMetadataId);
+  } catch (cloudinaryCleanupError) {
+    logger.warn('Error during Cloudinary cleanup:', cloudinaryCleanupError);
+  }
+};
 
 export async function getDeals(searchQuery?: string, limit: number = 100): Promise<Deal[]> {
   try {
@@ -50,32 +125,14 @@ export async function getDeals(searchQuery?: string, limit: number = 100): Promi
     let results = data || [];
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
-      results = results.filter((deal: any) =>
+      results = results.filter((deal) =>
         deal.deal_template?.title?.toLowerCase().includes(lowerQuery) ||
         deal.deal_template?.description?.toLowerCase().includes(lowerQuery)
       );
     }
 
-    return results.map((deal: any) => {
-      let imageUrl = null;
-      const dealImages = deal.deal_template?.deal_images || [];
-      const sortedDealImages = [...dealImages].sort((a: any, b: any) =>
-        (a.display_order ?? 999) - (b.display_order ?? 999)
-      );
-      const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
-      const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
-
-      if (firstImageByOrder?.image_metadata?.variants) {
-        const variants = firstImageByOrder.image_metadata.variants;
-        imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
-      } else if (thumbnailImage?.image_metadata?.variants) {
-        const variants = thumbnailImage.image_metadata.variants;
-        imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
-      } else if (deal.deal_template?.image_metadata?.variants) {
-        const variants = deal.deal_template.image_metadata.variants;
-        imageUrl = variants.medium || variants.large || variants.original || variants.small || null;
-      }
-
+    return results.map((deal) => {
+      const imageUrl = getTemplateImageUrl(deal.deal_template as DealTemplateImageSource);
       return {
         deal_instance_id: deal.deal_id,
         deal_template_id: deal.template_id,
@@ -92,7 +149,7 @@ export async function getDeals(searchQuery?: string, limit: number = 100): Promi
       };
     });
   } catch (error) {
-    console.error('Error fetching deals:', error);
+    logger.error('Error fetching deals:', error);
     return [];
   }
 }
@@ -115,7 +172,11 @@ export async function updateDeal(
 
     if (fetchError) throw fetchError;
 
-    const templateUpdates: any = {};
+    const templateUpdates: {
+      title?: string;
+      description?: string;
+      image_metadata_id?: string | null;
+    } = {};
     if (updates.title) templateUpdates.title = updates.title;
     if (updates.description) templateUpdates.description = updates.description;
     if (updates.image_metadata_id !== undefined) templateUpdates.image_metadata_id = updates.image_metadata_id;
@@ -140,8 +201,8 @@ export async function updateDeal(
 
     await logAction('edit_deal', 'deal', dealInstanceId, updates);
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -159,39 +220,12 @@ export async function deleteDeal(dealInstanceId: string): Promise<ServiceResult>
       .single();
 
     if (fetchError) {
-      console.warn('Could not fetch deal for image cleanup:', fetchError);
+      logger.warn('Could not fetch deal for image cleanup:', fetchError);
     }
 
-    const imageMetadataId = (dealInstance?.deal_template as any)?.image_metadata_id;
+    const imageMetadataId = (dealInstance?.deal_template)?.image_metadata_id;
     if (imageMetadataId) {
-      try {
-        const { data: imageMetadata, error: metadataError } = await supabase
-          .from('image_metadata')
-          .select('cloudinary_public_id')
-          .eq('image_metadata_id', imageMetadataId)
-          .single();
-
-        if (!metadataError && imageMetadata?.cloudinary_public_id) {
-          console.log('Admin deleting Cloudinary image:', imageMetadata.cloudinary_public_id);
-
-          const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
-            body: { publicIds: [imageMetadata.cloudinary_public_id] }
-          });
-
-          if (cloudinaryError) {
-            console.warn('Failed to delete image from Cloudinary:', cloudinaryError);
-          } else {
-            console.log('Successfully deleted Cloudinary image');
-          }
-
-          await supabase
-            .from('image_metadata')
-            .delete()
-            .eq('image_metadata_id', imageMetadataId);
-        }
-      } catch (cloudinaryCleanupError) {
-        console.warn('Error during Cloudinary cleanup:', cloudinaryCleanupError);
-      }
+      await cleanupCloudinaryImageByMetadataId(imageMetadataId);
     }
 
     const { error } = await supabase
@@ -203,8 +237,8 @@ export async function deleteDeal(dealInstanceId: string): Promise<ServiceResult>
 
     await logAction('delete_deal', 'deal', dealInstanceId, {});
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -213,7 +247,11 @@ export async function featureDeal(dealInstanceId: string, featured: boolean): Pr
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const updates: any = {
+    const updates: {
+      is_featured: boolean;
+      featured_at: string | null;
+      featured_by: string | null;
+    } = {
       is_featured: featured,
       featured_at: featured ? new Date().toISOString() : null,
       featured_by: featured ? user.id : null,
@@ -228,8 +266,8 @@ export async function featureDeal(dealInstanceId: string, featured: boolean): Pr
 
     await logAction('feature_deal', 'deal', dealInstanceId, { featured });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -244,7 +282,7 @@ export async function pinDeal(dealInstanceId: string, pinOrder: number | null): 
 
     await logAction('pin_deal', 'deal', dealInstanceId, { pinOrder });
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }

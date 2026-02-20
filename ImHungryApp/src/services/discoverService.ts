@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
+import { logger } from '../utils/logger';
 
 import { getCurrentUserLocation } from './locationService';
 
@@ -11,13 +12,13 @@ export type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
  */
 export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
   try {
-    console.log('🔍 Fetching restaurants with deals...');
+    logger.info('🔍 Fetching restaurants with deals...');
 
     // Get location for distance calculation
     let locationToUse: { lat: number; lng: number } | null = null;
 
     if (customCoordinates) {
-      console.log('📍 Using custom coordinates:', customCoordinates);
+      logger.info('📍 Using custom coordinates:', customCoordinates);
       locationToUse = customCoordinates;
     } else {
       // Get current user location for distance calculation
@@ -30,7 +31,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
           error: 'User location not available'
         };
       }
-      console.log('📍 User location:', userLocation);
+      logger.info('📍 User location:', userLocation);
       locationToUse = userLocation;
     }
 
@@ -42,7 +43,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     });
 
     if (error) {
-      console.error('Error fetching restaurants with deals:', error);
+      logger.error('Error fetching restaurants with deals:', error);
       return {
         success: false,
         restaurants: [],
@@ -52,7 +53,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     }
 
     if (!data || data.length === 0) {
-      console.log('No restaurants found');
+      logger.info('No restaurants found');
       return {
         success: true,
         restaurants: [],
@@ -61,7 +62,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     }
 
     // Transform the data to match our interface
-    const restaurants: DiscoverRestaurant[] = data.map((restaurant: any) => ({
+    const restaurants: DiscoverRestaurant[] = data.map((restaurant) => ({
       restaurant_id: restaurant.restaurant_id,
       name: restaurant.name,
       address: restaurant.address,
@@ -90,7 +91,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
       .sort((a, b) => a.distance_miles - b.distance_miles);
 
-    console.log(`✅ Found ${filteredRestaurants.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
+    logger.info(`✅ Found ${filteredRestaurants.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
     return {
       success: true,
       restaurants: filteredRestaurants,
@@ -98,7 +99,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     };
 
   } catch (error) {
-    console.error('Error in getRestaurantsWithDeals:', error);
+    logger.error('Error in getRestaurantsWithDeals:', error);
     return {
       success: false,
       restaurants: [],
@@ -115,13 +116,13 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
  */
 export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
   try {
-    console.log('🔍 Fetching restaurants with deals (direct query)...');
+    logger.info('🔍 Fetching restaurants with deals (direct query)...');
 
     // Get location for distance calculation
     let locationToUse: { lat: number; lng: number } | null = null;
 
     if (customCoordinates) {
-      console.log('📍 Using custom coordinates:', customCoordinates);
+      logger.info('📍 Using custom coordinates:', customCoordinates);
       locationToUse = customCoordinates;
     } else {
       // Get current user location
@@ -148,7 +149,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       .not('deal_template.restaurant_id', 'is', null);
 
     if (idsError) {
-      console.error('Error fetching restaurant IDs:', idsError);
+      logger.error('Error fetching restaurant IDs:', idsError);
       return {
         success: false,
         restaurants: [],
@@ -159,7 +160,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
 
     // Extract unique restaurant IDs
     const uniqueRestaurantIds = Array.from(
-      new Set(restaurantIds.map((item: any) => item.deal_template.restaurant_id))
+      new Set(restaurantIds.map((item) => item.deal_template.restaurant_id))
     );
 
     if (uniqueRestaurantIds.length === 0) {
@@ -177,7 +178,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       .in('restaurant_id', uniqueRestaurantIds);
 
     if (restaurantsError) {
-      console.error('Error fetching restaurant details:', restaurantsError);
+      logger.error('Error fetching restaurant details:', restaurantsError);
       return {
         success: false,
         restaurants: [],
@@ -196,9 +197,9 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       });
 
       if (distanceError) {
-        console.error('Error fetching restaurant distances:', distanceError);
+        logger.error('Error fetching restaurant distances:', distanceError);
       } else {
-        distanceRows?.forEach((row: any) => {
+        distanceRows?.forEach((row) => {
           if (row.restaurant_id) {
             distanceMap.set(row.restaurant_id, row.distance_miles ?? null);
           }
@@ -261,7 +262,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
       .sort((a, b) => a.distance_miles - b.distance_miles);
 
-    console.log(`✅ Found ${filteredResult.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
+    logger.info(`✅ Found ${filteredResult.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
     return {
       success: true,
       restaurants: filteredResult,
@@ -269,7 +270,7 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
     };
 
   } catch (error) {
-    console.error('Error in getRestaurantsWithDealsDirect:', error);
+    logger.error('Error in getRestaurantsWithDealsDirect:', error);
     return {
       success: false,
       restaurants: [],
@@ -277,6 +278,51 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       error: 'An unexpected error occurred'
     };
   }
+};
+
+type DiscoverTemplateImage = {
+  variants?: {
+    medium?: string;
+    small?: string;
+    large?: string;
+    original?: string;
+  } | null;
+};
+
+type DiscoverDealImage = {
+  display_order?: number | null;
+  is_thumbnail?: boolean | null;
+  image_metadata?: DiscoverTemplateImage | null;
+};
+
+type DiscoverMostLikedTemplate = {
+  deal_images?: DiscoverDealImage[] | null;
+  image_metadata?: DiscoverTemplateImage | DiscoverTemplateImage[] | null;
+  image_url?: string | null;
+};
+
+const getDiscoverTemplateImageUrl = (template: DiscoverMostLikedTemplate): string => {
+  const dealImages = template.deal_images || [];
+  const sortedDealImages = [...dealImages].sort((a, b) =>
+    (a.display_order ?? 999) - (b.display_order ?? 999)
+  );
+  const firstImageByOrder = sortedDealImages.find((img) => img.image_metadata?.variants);
+  const thumbnailImage = dealImages.find((img) => img.is_thumbnail && img.image_metadata?.variants);
+  const imageMetadata = Array.isArray(template.image_metadata)
+    ? template.image_metadata[0]
+    : template.image_metadata;
+  const variantCandidates = [
+    firstImageByOrder?.image_metadata?.variants,
+    thumbnailImage?.image_metadata?.variants,
+    imageMetadata?.variants,
+  ];
+
+  for (const variants of variantCandidates) {
+    const imageUrl = variants?.medium || variants?.small || variants?.large || '';
+    if (imageUrl) return imageUrl;
+  }
+
+  return template.image_url || '';
 };
 
 /**
@@ -354,7 +400,7 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
     });
 
     // Step 4: For each restaurant, find the deal with most upvotes
-    const mostLikedByRestaurant: Record<string, any> = {};
+    const mostLikedByRestaurant: Record<string, { template: DiscoverMostLikedTemplate; upvote_count: number }> = {};
 
     dealTemplates.forEach(template => {
       const restaurantId = template.restaurant_id;
@@ -374,59 +420,15 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
     const result = new Map<string, string>();
 
     Object.entries(mostLikedByRestaurant).forEach(([restaurantId, data]) => {
-      const template = data.template;
-
-      // Sort deal_images by display_order and get the first one (which is the cover/thumbnail)
-      const dealImages = template.deal_images || [];
-      const sortedDealImages = [...dealImages].sort((a: any, b: any) =>
-        (a.display_order ?? 999) - (b.display_order ?? 999)
-      );
-      const firstImageByOrder = sortedDealImages.find((img: any) => img.image_metadata?.variants);
-      // Fallback: check for is_thumbnail flag (for backward compatibility)
-      const thumbnailImage = !firstImageByOrder ? dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants) : null;
-
-      if (firstImageByOrder?.image_metadata?.variants) {
-        // Use first image by display_order (preferred - this is the cover)
-        const variants = firstImageByOrder.image_metadata.variants;
-        const imageUrl = variants.medium || variants.small || variants.large || '';
-        if (imageUrl) {
-          result.set(restaurantId, imageUrl);
-          return;
-        }
-      }
-
-      if (thumbnailImage?.image_metadata?.variants) {
-        // Fallback to is_thumbnail flag
-        const variants = thumbnailImage.image_metadata.variants;
-        const imageUrl = variants.medium || variants.small || variants.large || '';
-        if (imageUrl) {
-          result.set(restaurantId, imageUrl);
-          return;
-        }
-      }
-
-      // Fallback: Handle image_metadata from deal_template
-      const imageMetadata = Array.isArray(template.image_metadata)
-        ? template.image_metadata[0]
-        : template.image_metadata;
-
-      // Try to get image from Cloudinary variants first
-      if (imageMetadata?.variants) {
-        const variants = imageMetadata.variants;
-        const imageUrl = variants.medium || variants.small || variants.large || '';
-        if (imageUrl) {
-          result.set(restaurantId, imageUrl);
-        }
-      }
-      // Fallback to image_url
-      else if (template.image_url) {
-        result.set(restaurantId, template.image_url);
+      const imageUrl = getDiscoverTemplateImageUrl(data.template);
+      if (imageUrl) {
+        result.set(restaurantId, imageUrl);
       }
     });
 
     return result;
   } catch (error) {
-    console.error('Error fetching most liked deals:', error);
+    logger.error('Error fetching most liked deals:', error);
     return new Map();
   }
 }

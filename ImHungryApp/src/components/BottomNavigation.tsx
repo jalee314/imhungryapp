@@ -9,6 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 import { useAuth } from '../hooks/useAuth';
 import DealCreationScreen from '../screens/contribution/DealCreationScreen';
@@ -28,15 +29,15 @@ const ICON_SIZE = Math.round(scale(25));
 const PROFILE_SIZE = Math.round(scale(25));
 
 interface BottomNavigationProps {
-  photoUrl?: any;
+  photoUrl?: ImageSourcePropType | string | null;
   activeTab?: string;
   onTabPress?: (tab: string) => void;
 }
 
-const BottomNavigation: React.FC<BottomNavigationProps> = ({ 
-  photoUrl: propPhotoUrl, 
+const BottomNavigation: React.FC<BottomNavigationProps> = ({
+  photoUrl: propPhotoUrl,
   activeTab = 'profile',
-  onTabPress 
+  onTabPress
 }) => {
   const navigation = useNavigation();
   const { isAuthenticated } = useAuth();
@@ -51,7 +52,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         setUserPhotoUrl(null);
         return false;
       }
-      
+
       const userData = await fetchUserData();
       const hasProfilePicture = !!userData.profilePicture;
       setUserPhotoUrl(userData.profilePicture);
@@ -65,41 +66,43 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const attemptLoadWithRetry = async () => {
       if (!isAuthenticated || !isMounted) return;
-      
+
       // Initial load
       const hasPicture = await loadUserData();
-      
+
       // If we already have a profile picture, no need to retry
       if (hasPicture) return;
-      
+
       // Retry with increasing delays until we get a profile picture or timeout
       const refreshAttempts = [2000, 5000, 10000, 15000]; // Retry at 2s, 5s, 10s, 15s
-      
+
       for (const delay of refreshAttempts) {
         if (!isMounted) return;
-        
+
         await new Promise(resolve => setTimeout(resolve, delay));
-        
+
         if (!isAuthenticated || !isMounted) return;
-        
+
         const hasPictureNow = await loadUserData();
         if (hasPictureNow) break; // Stop retrying once we have a profile picture
       }
     };
-    
+
     attemptLoadWithRetry();
-    
+
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   useFocusEffect(
     React.useCallback(() => {
       loadUserData();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
   );
 
@@ -131,55 +134,67 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     }
   };
 
-  const renderNavItem = (item: { id: string; icon: any; activeIcon: any; label: string; screen: string }) => {
-    // Contribute button should never be considered active
-    const isActive = item.id !== 'contribute' && activeTab === item.id;
-    const isContributePressed = item.id === 'contribute' && contributePressed;
-    
-    if (item.id === 'profile') {
-      const displayPhotoUrl = propPhotoUrl || userPhotoUrl;
-      
-      return (
-        <TouchableOpacity
-          key={item.id}
-          style={styles.navItem}
-          onPress={() => handleTabPress(item.screen)}
-        >
-          <Box w={ICON_SIZE} h={ICON_SIZE} center>
-            {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
-              <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
-            ) : displayPhotoUrl ? (
-              <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
-            ) : (
-              <Box w={PROFILE_SIZE} h={PROFILE_SIZE} rounded="full" bg={GRAY[300]} center style={[styles.navProfilePlaceholderBorder, isActive && styles.activeNavProfilePhoto]}>
-                <Text size="xs" color="textMuted">👤</Text>
-              </Box>
-            )}
-          </Box>
-          <Text size="xs" color={isActive ? 'text' : 'textMuted'} style={styles.navLabelMargin}>{item.label}</Text>
-        </TouchableOpacity>
-      );
-    }
-
+  const renderProfileNavItem = (
+    item: { id: string; icon: string; activeIcon: string; label: string; screen: string },
+    isActive: boolean,
+  ) => {
+    const displayPhotoUrl = propPhotoUrl || userPhotoUrl;
     return (
       <TouchableOpacity
         key={item.id}
-        style={[
-          styles.navItem, 
-          isContributePressed && { opacity: 0.5 }
-        ]}
+        style={styles.navItem}
         onPress={() => handleTabPress(item.screen)}
       >
         <Box w={ICON_SIZE} h={ICON_SIZE} center>
-          <MaterialCommunityIcons
-            name={isActive ? item.activeIcon : item.icon} 
-            size={ICON_SIZE} 
-            color={isActive ? STATIC.black : GRAY[600]} 
-          />
+          {displayPhotoUrl && typeof displayPhotoUrl === 'string' ? (
+            <Image source={{ uri: displayPhotoUrl }} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+          ) : displayPhotoUrl ? (
+            <Image source={displayPhotoUrl} style={[styles.navProfilePhoto, isActive && styles.activeNavProfilePhoto]} />
+          ) : (
+            <Box w={PROFILE_SIZE} h={PROFILE_SIZE} rounded="full" bg={GRAY[300]} center style={[styles.navProfilePlaceholderBorder, isActive && styles.activeNavProfilePhoto]}>
+              <Text size="xs" color="textMuted">👤</Text>
+            </Box>
+          )}
         </Box>
         <Text size="xs" color={isActive ? 'text' : 'textMuted'} style={styles.navLabelMargin}>{item.label}</Text>
       </TouchableOpacity>
     );
+  };
+
+  const renderDefaultNavItem = (
+    item: { id: string; icon: string; activeIcon: string; label: string; screen: string },
+    isActive: boolean,
+    isContributePressed: boolean,
+  ) => (
+    <TouchableOpacity
+      key={item.id}
+      style={[
+        styles.navItem,
+        isContributePressed && styles.contributePressed
+      ]}
+      onPress={() => handleTabPress(item.screen)}
+    >
+      <Box w={ICON_SIZE} h={ICON_SIZE} center>
+        <MaterialCommunityIcons
+          name={isActive ? item.activeIcon : item.icon}
+          size={ICON_SIZE}
+          color={isActive ? STATIC.black : GRAY[600]}
+        />
+      </Box>
+      <Text size="xs" color={isActive ? 'text' : 'textMuted'} style={styles.navLabelMargin}>{item.label}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderNavItem = (item: { id: string; icon: string; activeIcon: string; label: string; screen: string }) => {
+    // Contribute button should never be considered active
+    const isActive = item.id !== 'contribute' && activeTab === item.id;
+    const isContributePressed = item.id === 'contribute' && contributePressed;
+
+    if (item.id === 'profile') {
+      return renderProfileNavItem(item, isActive);
+    }
+
+    return renderDefaultNavItem(item, isActive, isContributePressed);
   };
 
   return (
@@ -197,7 +212,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       >
         {navItems.map(renderNavItem)}
       </Box>
-      
+
       <DealCreationScreen
         visible={showContributeModal}
         onClose={() => {
@@ -224,6 +239,9 @@ const styles = StyleSheet.create({
     minWidth: scale(65),
     paddingHorizontal: scale(4),
     flex: 1,
+  },
+  contributePressed: {
+    opacity: 0.5,
   },
   navLabelMargin: {
     marginTop: scale(4),

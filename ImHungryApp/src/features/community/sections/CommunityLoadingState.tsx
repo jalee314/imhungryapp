@@ -8,6 +8,9 @@ import { View } from 'react-native';
 import DealCardSkeleton from '../../../components/DealCardSkeleton';
 import { Box } from '../../../ui/primitives';
 
+const evenSkeletonSpacing = { marginBottom: 4, marginRight: 2 };
+const oddSkeletonSpacing = { marginBottom: 4, marginLeft: 2 };
+
 export function CommunityLoadingState() {
   return (
     <Box flex={1}>
@@ -17,8 +20,8 @@ export function CommunityLoadingState() {
             key={item}
             style={
               index % 2 === 0
-                ? { marginBottom: 4, marginRight: 2 }
-                : { marginBottom: 4, marginLeft: 2 }
+                ? evenSkeletonSpacing
+                : oddSkeletonSpacing
             }
           >
             <DealCardSkeleton variant="vertical" />

@@ -232,7 +232,7 @@ export const getDealViewerPhotos = async (dealId: string, limit: number = 3): Pr
       
       // Prefer small/medium optimized version for avatars from variants
       if (user.image_metadata) {
-        const metadata = user.image_metadata as any;
+        const metadata = user.image_metadata;
         if (metadata.variants) {
           // variants is an object with size keys like 'small', 'medium', 'large', 'original'
           photoUrl = metadata.variants.small || metadata.variants.medium || metadata.variants.original;

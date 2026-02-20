@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
@@ -69,7 +68,7 @@ export default function ForgotPasswordScreen() {
   const handlePrivacyPress = () => { };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -122,7 +121,7 @@ export default function ForgotPasswordScreen() {
 
               {/* Reset Password Button */}
               <TouchableOpacity
-                style={[styles.resetButton, responsive.resetButton, CONSTRAIN, loading && { opacity: 0.7 }]}
+                style={[styles.resetButton, responsive.resetButton, CONSTRAIN, loading && styles.loadingDimOpacity]}
                 onPress={handleResetPassword}
                 disabled={loading}
               >
@@ -151,12 +150,12 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: { flex: 1 },
   pagePad: { flex: 1 },
   mainContainer: { alignItems: 'center', justifyContent: 'flex-start' },
+  loadingDimOpacity: { opacity: 0.7 },
   backButton: { alignSelf: 'flex-start' },
   welcomeSection: { alignSelf: 'stretch' },
   welcomeTitle: { fontSize: 20, color: STATIC.black, fontFamily: 'Inter-Bold' },
   welcomeSubtitle: { fontSize: 16, color: STATIC.black, lineHeight: 24, fontFamily: 'Inter-Regular' },
   formContainer: { width: '100%' },
-  paperInput: { backgroundColor: STATIC.white },
   textInputStyle: {
     backgroundColor: STATIC.white,
     minHeight: 56,

@@ -5,9 +5,19 @@
  * They serve as a safety net to ensure refactors don't change observable behavior.
  */
 
-import { useAuthStore } from '../AuthStore';
-
 import { act } from '@testing-library/react-native';
+
+import {
+  getCurrentUser,
+  setupAuthStateListener,
+  signOut as authServiceSignOut,
+  validateEmail,
+  signInWithPassword,
+  resetPasswordWithTokens,
+} from '../../services/authService';
+import { completeSignup, completeSignupSkip } from '../../services/onboardingService';
+import { initializeAuthSession, setupAppStateListener } from '../../services/sessionService';
+import { useAuthStore } from '../AuthStore';
 
 // Mock services that AuthStore depends on
 jest.mock('../../services/authService', () => ({
@@ -28,18 +38,6 @@ jest.mock('../../services/sessionService', () => ({
   initializeAuthSession: jest.fn(),
   setupAppStateListener: jest.fn(() => jest.fn()),
 }));
-
-// Import mocks after mocking
-import {
-  getCurrentUser,
-  setupAuthStateListener,
-  signOut as authServiceSignOut,
-  validateEmail,
-  signInWithPassword,
-  resetPasswordWithTokens,
-} from '../../services/authService';
-import { completeSignup, completeSignupSkip } from '../../services/onboardingService';
-import { initializeAuthSession, setupAppStateListener } from '../../services/sessionService';
 
 describe('AuthStore', () => {
   beforeEach(() => {

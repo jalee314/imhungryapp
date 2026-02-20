@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Image, ImageProps, PixelRatio, Dimensions } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 import { getOptimalImageVariant, getImageUrl } from '../services/imageProcessingService';
 import type { ImageVariants, VariantContext } from '../types/image';
-
+import { logger } from '../utils/logger';
 // Static set to track preloaded images
 const preloadedImages = new Set<string>();
 
 /**
  * Preload an image before displaying it
  */
-export const preloadImage = async (imageSource: any, variants?: ImageVariants, displaySize?: { width: number; height: number }) => {
+export const preloadImage = async (
+  imageSource: ImageSourcePropType | string,
+  variants?: ImageVariants,
+  displaySize?: { width: number; height: number }
+) => {
   try {
     let uriToLoad = '';
     
@@ -24,7 +29,7 @@ export const preloadImage = async (imageSource: any, variants?: ImageVariants, d
       };
       const optimalVariant = getOptimalImageVariant(variants, context);
       if (!optimalVariant || optimalVariant.trim() === '') {
-        console.warn('No valid variant found for preload');
+        logger.warn('No valid variant found for preload');
         return;
       }
       uriToLoad = getImageUrl(optimalVariant);
@@ -40,18 +45,18 @@ export const preloadImage = async (imageSource: any, variants?: ImageVariants, d
     
     // Validate URI before prefetching to prevent nil URIs
     if (!uriToLoad || uriToLoad.trim() === '') {
-      console.warn('Cannot preload image: invalid URI');
+      logger.warn('Cannot preload image: invalid URI');
       return;
     }
     
     if (uriToLoad && !preloadedImages.has(uriToLoad)) {
-      console.log('🖼️ Preloading image:', uriToLoad);
+      logger.info('🖼️ Preloading image:', uriToLoad);
       await Image.prefetch(uriToLoad);
       preloadedImages.add(uriToLoad);
-      console.log('✅ Image preloaded:', uriToLoad);
+      logger.info('✅ Image preloaded:', uriToLoad);
     }
   } catch (error) {
-    console.error('Error preloading image:', error);
+    logger.error('Error preloading image:', error);
   }
 };
 
@@ -59,7 +64,7 @@ interface OptimizedImageProps extends Omit<ImageProps, 'source'> {
   variants: ImageVariants;
   componentType: 'profile' | 'deal' | 'restaurant' | 'franchise_logo';
   displaySize: { width: number; height: number };
-  fallbackSource?: any;
+  fallbackSource?: ImageSourcePropType;
   networkType?: 'slow-2g' | '2g' | '3g' | '4g' | 'wifi';
 }
 

@@ -20,6 +20,9 @@ export interface DateRowProps {
   onClear?: () => void;
 }
 
+const rowMinHeightStyle = { minHeight: 38 };
+const dateLabelStyle = { fontSize: 11 };
+
 /**
  * Format storage date into a human-readable display string.
  * Matches the formatting used in DealCreationScreen.
@@ -42,12 +45,12 @@ export function DateRow({ expirationDate, onPress, onClear }: DateRowProps) {
   const displayText = formatDisplayDate(expirationDate);
 
   return (
-    <Pressable row gap="lg" py={6} px="lg" align="center" style={{ minHeight: 38 }} onPress={onPress}>
+    <Pressable row gap="lg" py={6} px="lg" align="center" style={rowMinHeightStyle} onPress={onPress}>
       <Ionicons name="time-outline" size={20} color="#4E4E4E" />
       <Box flex={1}>
         <Text size="xs" color="#000000">Expiration Date</Text>
         {displayText && (
-          <Text style={{ fontSize: 11 }} color="#888889" mt="2xs">{displayText}</Text>
+          <Text style={dateLabelStyle} color="#888889" mt="2xs">{displayText}</Text>
         )}
       </Box>
       {onClear && expirationDate ? (

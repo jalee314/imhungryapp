@@ -4,6 +4,12 @@
  * Shared type definitions for the decomposed DealDetail feature sections.
  */
 
+import type {
+  ImageLoadEventData,
+  ImageSourcePropType,
+  NativeSyntheticEvent
+} from 'react-native';
+
 import type { Deal } from '../../types/deal';
 
 /**
@@ -50,7 +56,7 @@ export interface ImageCarouselState {
   /** Resolved image dimensions after load */
   imageDimensions: { width: number; height: number } | null;
   /** Image load success handler */
-  handleImageLoad: (event?: any) => void;
+  handleImageLoad: (event?: NativeSyntheticEvent<ImageLoadEventData>) => void;
   /** Image load error handler */
   handleImageError: () => void;
 }
@@ -89,7 +95,7 @@ export interface ImageViewerState {
   setModalImageLoading: (v: boolean) => void;
   setModalImageError: (v: boolean) => void;
   /** Derived full-resolution source for the current image */
-  fullScreenImageSource: any;
+  fullScreenImageSource: ImageSourcePropType | null;
   imageViewerKey: number;
 }
 

@@ -19,12 +19,11 @@ import {
   View,
   ViewProps,
   ViewStyle,
-  StyleSheet,
   StyleProp,
 } from 'react-native';
 
 import { ThemePalette } from '../alf/themes';
-import { SPACING, RADIUS, BORDER_WIDTH, SpacingKey, RadiusKey } from '../alf/tokens';
+import { SPACING, RADIUS, SpacingKey, RadiusKey } from '../alf/tokens';
 
 import { useThemeSafe } from './ThemeProvider';
 
@@ -35,6 +34,9 @@ import { useThemeSafe } from './ThemeProvider';
 type SpacingValue = SpacingKey | number;
 type RadiusValue = RadiusKey | number;
 type PaletteColorKey = keyof ThemePalette;
+type BoxStyleKey = keyof ViewStyle;
+type SpacingAssignment = readonly [SpacingValue | undefined, BoxStyleKey];
+type RawAssignment = readonly [unknown, BoxStyleKey];
 
 // ============================================================================
 // PROP TYPES
@@ -186,6 +188,25 @@ function resolveColor(
   return value;
 }
 
+function setStyleValue(style: ViewStyle, key: BoxStyleKey, value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  (style as Record<string, unknown>)[key] = value;
+}
+
+function applySpacingAssignments(style: ViewStyle, assignments: readonly SpacingAssignment[]): void {
+  for (const [value, key] of assignments) {
+    setStyleValue(style, key, resolveSpacing(value));
+  }
+}
+
+function applyRawAssignments(style: ViewStyle, assignments: readonly RawAssignment[]): void {
+  for (const [value, key] of assignments) {
+    setStyleValue(style, key, value);
+  }
+}
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -264,81 +285,88 @@ export const Box = forwardRef<View, BoxProps>(
     const computedStyle = useMemo<StyleProp<ViewStyle>>(() => {
       const boxStyle: ViewStyle = {};
 
-      // Spacing - Padding
-      if (p !== undefined) boxStyle.padding = resolveSpacing(p);
-      if (px !== undefined) boxStyle.paddingHorizontal = resolveSpacing(px);
-      if (py !== undefined) boxStyle.paddingVertical = resolveSpacing(py);
-      if (pt !== undefined) boxStyle.paddingTop = resolveSpacing(pt);
-      if (pb !== undefined) boxStyle.paddingBottom = resolveSpacing(pb);
-      if (pl !== undefined) boxStyle.paddingLeft = resolveSpacing(pl);
-      if (pr !== undefined) boxStyle.paddingRight = resolveSpacing(pr);
+      applySpacingAssignments(boxStyle, [
+        [p, 'padding'],
+        [px, 'paddingHorizontal'],
+        [py, 'paddingVertical'],
+        [pt, 'paddingTop'],
+        [pb, 'paddingBottom'],
+        [pl, 'paddingLeft'],
+        [pr, 'paddingRight'],
+      ]);
+      applySpacingAssignments(boxStyle, [
+        [m, 'margin'],
+        [mx, 'marginHorizontal'],
+        [my, 'marginVertical'],
+        [mt, 'marginTop'],
+        [mb, 'marginBottom'],
+        [ml, 'marginLeft'],
+        [mr, 'marginRight'],
+      ]);
+      applySpacingAssignments(boxStyle, [
+        [gap, 'gap'],
+        [rowGap, 'rowGap'],
+        [colGap, 'columnGap'],
+      ]);
 
-      // Spacing - Margin
-      if (m !== undefined) boxStyle.margin = resolveSpacing(m);
-      if (mx !== undefined) boxStyle.marginHorizontal = resolveSpacing(mx);
-      if (my !== undefined) boxStyle.marginVertical = resolveSpacing(my);
-      if (mt !== undefined) boxStyle.marginTop = resolveSpacing(mt);
-      if (mb !== undefined) boxStyle.marginBottom = resolveSpacing(mb);
-      if (ml !== undefined) boxStyle.marginLeft = resolveSpacing(ml);
-      if (mr !== undefined) boxStyle.marginRight = resolveSpacing(mr);
+      applyRawAssignments(boxStyle, [
+        [flex, 'flex'],
+        [direction, 'flexDirection'],
+        [align, 'alignItems'],
+        [justify, 'justifyContent'],
+        [wrap, 'flexWrap'],
+        [alignSelf, 'alignSelf'],
+        [w, 'width'],
+        [h, 'height'],
+        [minW, 'minWidth'],
+        [minH, 'minHeight'],
+        [maxW, 'maxWidth'],
+        [maxH, 'maxHeight'],
+        [position, 'position'],
+        [top, 'top'],
+        [bottom, 'bottom'],
+        [left, 'left'],
+        [right, 'right'],
+        [overflow, 'overflow'],
+        [opacity, 'opacity'],
+      ]);
 
-      // Spacing - Gap
-      if (gap !== undefined) boxStyle.gap = resolveSpacing(gap);
-      if (rowGap !== undefined) boxStyle.rowGap = resolveSpacing(rowGap);
-      if (colGap !== undefined) boxStyle.columnGap = resolveSpacing(colGap);
-
-      // Layout
-      if (flex !== undefined) boxStyle.flex = flex;
-      if (direction) boxStyle.flexDirection = direction;
-      if (align) boxStyle.alignItems = align;
-      if (justify) boxStyle.justifyContent = justify;
-      if (wrap) boxStyle.flexWrap = wrap;
-      if (alignSelf) boxStyle.alignSelf = alignSelf;
-
-      // Sizing
-      if (w !== undefined) boxStyle.width = w;
-      if (h !== undefined) boxStyle.height = h;
-      if (minW !== undefined) boxStyle.minWidth = minW;
-      if (minH !== undefined) boxStyle.minHeight = minH;
-      if (maxW !== undefined) boxStyle.maxWidth = maxW;
-      if (maxH !== undefined) boxStyle.maxHeight = maxH;
-
-      // Borders
-      if (rounded !== undefined) boxStyle.borderRadius = resolveRadius(rounded);
-      if (borderWidth !== undefined) boxStyle.borderWidth = borderWidth;
-      if (borderColor !== undefined) boxStyle.borderColor = resolveColor(borderColor, palette);
-
-      // Colors
-      if (bg !== undefined) boxStyle.backgroundColor = resolveColor(bg, palette);
-
-      // Position
-      if (position) boxStyle.position = position;
-      if (top !== undefined) boxStyle.top = top;
-      if (bottom !== undefined) boxStyle.bottom = bottom;
-      if (left !== undefined) boxStyle.left = left;
-      if (right !== undefined) boxStyle.right = right;
-
-      // Overflow
-      if (overflow) boxStyle.overflow = overflow;
-
-      // Opacity
-      if (opacity !== undefined) boxStyle.opacity = opacity;
+      if (rounded !== undefined) {
+        setStyleValue(boxStyle, 'borderRadius', resolveRadius(rounded));
+      }
+      if (borderWidth !== undefined) {
+        setStyleValue(boxStyle, 'borderWidth', borderWidth);
+      }
+      if (borderColor !== undefined) {
+        setStyleValue(boxStyle, 'borderColor', resolveColor(borderColor, palette));
+      }
+      if (bg !== undefined) {
+        setStyleValue(boxStyle, 'backgroundColor', resolveColor(bg, palette));
+      }
 
       // Convenience shortcuts
       if (center) {
-        boxStyle.alignItems = 'center';
-        boxStyle.justifyContent = 'center';
+        applyRawAssignments(boxStyle, [
+          ['center', 'alignItems'],
+          ['center', 'justifyContent'],
+        ]);
       }
       if (row) {
-        boxStyle.flexDirection = 'row';
-        boxStyle.alignItems = boxStyle.alignItems || 'center';
+        applyRawAssignments(boxStyle, [['row', 'flexDirection']]);
+        setStyleValue(
+          boxStyle,
+          'alignItems',
+          boxStyle.alignItems ?? 'center'
+        );
       }
       if (absoluteFill) {
-        boxStyle.position = 'absolute';
-        boxStyle.top = 0;
-        boxStyle.left = 0;
-        boxStyle.right = 0;
-        boxStyle.bottom = 0;
+        applyRawAssignments(boxStyle, [
+          ['absolute', 'position'],
+          [0, 'top'],
+          [0, 'left'],
+          [0, 'right'],
+          [0, 'bottom'],
+        ]);
       }
 
       return [boxStyle, style];

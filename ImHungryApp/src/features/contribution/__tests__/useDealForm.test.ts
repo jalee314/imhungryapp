@@ -190,12 +190,12 @@ describe('useDealForm — reset', () => {
 describe('useDealForm — validate', () => {
   it('should report errors for empty create form', () => {
     const { result } = renderHook(() => useDealForm(createOptions()));
-    let validation: ReturnType<typeof result.current.validate>;
+    let validation: ReturnType<typeof result.current.validate> | undefined;
     act(() => {
       validation = result.current.validate();
     });
-    expect(validation!.valid).toBe(false);
-    expect(validation!.errors.length).toBeGreaterThan(0);
+    expect(validation?.valid).toBe(false);
+    expect(validation?.errors.length ?? 0).toBeGreaterThan(0);
   });
 
   it('should pass validation when form is complete', () => {
@@ -207,11 +207,11 @@ describe('useDealForm — validate', () => {
         restaurant: { id: 'r1', name: 'R', address: 'A' },
       }),
     );
-    let validation: ReturnType<typeof result.current.validate>;
+    let validation: ReturnType<typeof result.current.validate> | undefined;
     act(() => {
       validation = result.current.validate();
     });
-    expect(validation!.valid).toBe(true);
+    expect(validation?.valid).toBe(true);
   });
 });
 

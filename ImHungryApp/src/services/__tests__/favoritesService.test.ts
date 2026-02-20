@@ -22,8 +22,6 @@ import {
   fetchFavoriteRestaurants,
   toggleRestaurantFavorite,
   clearFavoritesCache,
-  FavoriteDeal,
-  FavoriteRestaurant,
 } from '../favoritesService';
 
 // Type for the mock query builder to satisfy TypeScript
@@ -132,7 +130,7 @@ describe('favoritesService', () => {
 
     describe('image variant prioritization', () => {
       it('should prioritize deal_images by display_order over is_thumbnail', async () => {
-        const mockState = setupMocksForDealTransform({
+        setupMocksForDealTransform({
           dealImages: [
             {
               display_order: 2,
@@ -701,10 +699,8 @@ function setupMocksForDealTransform(options: {
     categoryName = 'Happy Hour',
   } = options;
 
-  let tableCallCount = 0;
   mockSupabase.from.mockImplementation((table: string) => {
     const mock = createChainableMock();
-    tableCallCount++;
 
     if (table === 'favorite') {
       setMockData(mock, [

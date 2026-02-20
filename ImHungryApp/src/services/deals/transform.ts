@@ -5,10 +5,54 @@
 
 import { supabase } from '../../../lib/supabase';
 import type { Deal } from '../../types/deal';
+import { logger } from '../../utils/logger';
 import { getUserVoteStates, calculateVoteCounts } from '../voteService';
 
 import { DatabaseDeal } from './types';
 import { getTimeAgo } from './utils';
+
+const DEFAULT_DEAL_IMAGE = require('../../../img/default-rest.png');
+
+const sortDealImagesByDisplayOrder = (dbDeal: DatabaseDeal) =>
+  [...(dbDeal.deal_images || [])].sort((a, b) =>
+    (a.display_order ?? 999) - (b.display_order ?? 999)
+  );
+
+const getImageVariantsForDeal = (
+  dbDeal: DatabaseDeal,
+  sortedDealImages: ReturnType<typeof sortDealImagesByDisplayOrder>,
+) => {
+  const firstImageByOrder = sortedDealImages.find(img => img.variants);
+  if (firstImageByOrder?.variants) return firstImageByOrder.variants;
+
+  const thumbnailImage = dbDeal.deal_images?.find(img => img.is_thumbnail && img.variants);
+  if (thumbnailImage?.variants) return thumbnailImage.variants;
+
+  return dbDeal.image_metadata?.variants;
+};
+
+const getUserProfilePhotoUrl = (dbDeal: DatabaseDeal): string | null =>
+  dbDeal.user_profile_metadata?.variants?.small
+  || dbDeal.user_profile_metadata?.variants?.thumbnail
+  || null;
+
+const getMilesAwayLabel = (distanceMiles: number | null | undefined): string => {
+  if (distanceMiles === null || distanceMiles === undefined) return '?mi';
+  return `${Math.round(distanceMiles * 10) / 10}mi`;
+};
+
+const getCarouselImageUrls = (
+  sortedDealImages: ReturnType<typeof sortDealImagesByDisplayOrder>,
+): string[] | undefined => {
+  if (sortedDealImages.length === 0) return undefined;
+
+  const images = sortedDealImages
+    .filter(img => img.variants)
+    .map(img => img.variants?.large || img.variants?.medium || img.variants?.original || '')
+    .filter(url => url !== '');
+
+  return images.length > 0 ? images : undefined;
+};
 
 /**
  * Add vote information (counts, user vote state) to deals
@@ -40,7 +84,7 @@ export const addVotesToDeals = async (deals: DatabaseDeal[]): Promise<DatabaseDe
       };
     });
   } catch (error) {
-    console.error('Error adding votes to deals:', error);
+    logger.error('Error adding votes to deals:', error);
     return deals;
   }
 };
@@ -58,7 +102,7 @@ export const addDistancesToDeals = async (
       return deals;
     }
 
-    console.log('📍 Using custom coordinates for distance calculation:', customCoordinates);
+    logger.info('📍 Using custom coordinates for distance calculation:', customCoordinates);
     const restaurantIds = Array.from(new Set(deals.map(deal => deal.restaurant_id)));
     if (restaurantIds.length === 0) {
       return deals;
@@ -71,12 +115,12 @@ export const addDistancesToDeals = async (
     });
 
     if (error) {
-      console.error('Error fetching custom distance overrides:', error);
+      logger.error('Error fetching custom distance overrides:', error);
       return deals;
     }
 
     const distanceMap = new Map<string, number | null>();
-    data?.forEach((row: any) => {
+    data?.forEach((row) => {
       if (row.restaurant_id) {
         distanceMap.set(row.restaurant_id, row.distance_miles ?? null);
       }
@@ -89,7 +133,7 @@ export const addDistancesToDeals = async (
         : deal.distance_miles ?? null
     }));
   } catch (error) {
-    console.error('Error adding distances to deals:', error);
+    logger.error('Error adding distances to deals:', error);
     return deals;
   }
 };
@@ -99,64 +143,18 @@ export const addDistancesToDeals = async (
  */
 export const transformDealForUI = (dbDeal: DatabaseDeal): Deal => {
   const timeAgo = getTimeAgo(new Date(dbDeal.created_at));
-
-  // Handle image source - ONLY use Cloudinary or placeholder
-  // PRIORITY: 1. First image by display_order, 2. is_thumbnail flag, 3. Primary image from deal_template
-  let imageSource;
-  let imageVariants = undefined;
-
-  // Sort deal_images by display_order and get the first one
-  const sortedDealImages = [...(dbDeal.deal_images || [])].sort((a, b) => 
-    (a.display_order ?? 999) - (b.display_order ?? 999)
-  );
-  const firstImageByOrder = sortedDealImages.find(img => img.variants);
-  const thumbnailImage = !firstImageByOrder 
-    ? dbDeal.deal_images?.find(img => img.is_thumbnail && img.variants) 
-    : null;
-
-  if (firstImageByOrder?.variants) {
-    imageSource = require('../../../img/default-rest.png');
-    imageVariants = firstImageByOrder.variants;
-  } else if (thumbnailImage?.variants) {
-    imageSource = require('../../../img/default-rest.png');
-    imageVariants = thumbnailImage.variants;
-  } else if (dbDeal.image_metadata?.variants) {
-    imageSource = require('../../../img/default-rest.png');
-    imageVariants = dbDeal.image_metadata.variants;
-  } else {
-    imageSource = require('../../../img/default-rest.png');
-    imageVariants = undefined;
-  }
-
-  // Get user profile photo
-  let userProfilePhoto = null;
-  if (dbDeal.user_profile_metadata?.variants?.small) {
-    userProfilePhoto = dbDeal.user_profile_metadata.variants.small;
-  } else if (dbDeal.user_profile_metadata?.variants?.thumbnail) {
-    userProfilePhoto = dbDeal.user_profile_metadata.variants.thumbnail;
-  }
-
-  // Format distance
-  let milesAway = '?mi';
-  if (dbDeal.distance_miles !== null && dbDeal.distance_miles !== undefined) {
-    milesAway = `${Math.round(dbDeal.distance_miles * 10) / 10}mi`;
-  }
-
-  // Extract image URLs from deal_images for carousel
-  let images: string[] | undefined = undefined;
-  if (sortedDealImages && sortedDealImages.length > 0) {
-    images = sortedDealImages
-      .filter(img => img.variants)
-      .map(img => img.variants?.large || img.variants?.medium || img.variants?.original || '')
-      .filter(url => url !== '');
-  }
+  const sortedDealImages = sortDealImagesByDisplayOrder(dbDeal);
+  const imageVariants = getImageVariantsForDeal(dbDeal, sortedDealImages);
+  const userProfilePhoto = getUserProfilePhotoUrl(dbDeal);
+  const milesAway = getMilesAwayLabel(dbDeal.distance_miles);
+  const images = getCarouselImageUrls(sortedDealImages);
 
   return {
     id: dbDeal.deal_id,
     title: dbDeal.title,
     restaurant: dbDeal.restaurant_name,
     details: dbDeal.description || '',
-    image: imageSource,
+    image: DEFAULT_DEAL_IMAGE,
     imageVariants: imageVariants,
     images: images,
     votes: dbDeal.votes || 0,

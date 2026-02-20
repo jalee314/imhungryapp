@@ -1,7 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -11,7 +11,7 @@ export default function CuisinePreferencesScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { cuisines, loading: cuisinesLoading } = useDataCache();
-  const userData = (route.params as any)?.userData;
+  const userData = (route.params)?.userData;
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { completeSignup, completeSignupSkip } = useAuth();
@@ -52,20 +52,20 @@ export default function CuisinePreferencesScreen() {
     try {
       try {
         await completeSignup(userData, selectedCuisines);
-      } catch (error: any) {
+      } catch (error) {
         const message = error?.message || 'An unexpected error occurred.';
         if (typeof message === 'string' && (message.includes('duplicate key') || message.includes('unique constraint'))) {
           Alert.alert(
             'Account Already Exists',
             'An account with this email, phone number, or username already exists. Please try logging in or use different information.',
-            [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
+            [{ text: 'Go Back', onPress: () => (navigation).navigate('SignUp', { userData }) }]
           );
         } else if (typeof message === 'string' && (message.includes('ST_GeogFromText') || message.includes('PostGIS'))) {
           Alert.alert('Location Error', 'There was an issue processing your location. Please try again.', [{ text: 'Go Back', onPress: () => navigation.goBack() }]);
         } else if (typeof message === 'string' && message.includes('User creation failed')) {
-          Alert.alert('Database Error', `Account creation failed: ${message}. Please contact support if this continues.`, [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]);
+          Alert.alert('Database Error', `Account creation failed: ${message}. Please contact support if this continues.`, [{ text: 'Go Back', onPress: () => (navigation).navigate('SignUp', { userData }) }]);
         } else {
-          Alert.alert('Account Creation Failed', 'An unexpected error occurred. Please try again or contact support.', [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]);
+          Alert.alert('Account Creation Failed', 'An unexpected error occurred. Please try again or contact support.', [{ text: 'Go Back', onPress: () => (navigation).navigate('SignUp', { userData }) }]);
         }
         return;
       }
@@ -97,11 +97,11 @@ export default function CuisinePreferencesScreen() {
     try {
       try {
         await completeSignupSkip(userData);
-      } catch (error: any) {
+      } catch (error) {
         Alert.alert(
           'Account Creation Failed',
           'An account with this email, phone number, or username may already exist. Please go back and check your information.',
-          [{ text: 'Go Back', onPress: () => (navigation as any).navigate('SignUp', { userData }) }]
+          [{ text: 'Go Back', onPress: () => (navigation).navigate('SignUp', { userData }) }]
         );
         return;
       }
@@ -119,7 +119,7 @@ export default function CuisinePreferencesScreen() {
   const availableCuisines = cuisines.map(c => c.name);
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -131,7 +131,7 @@ export default function CuisinePreferencesScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.skipLink, loading && { opacity: 0.5 }]}
+                style={[styles.skipLink, loading && styles.loadingHalfOpacity]}
                 onPress={handleSkip}
                 disabled={loading}
               >
@@ -181,7 +181,7 @@ export default function CuisinePreferencesScreen() {
                 <TouchableOpacity
                   style={[
                     styles.continueButton,
-                    loading && { opacity: 0.7 }
+                    loading && styles.loadingDimOpacity
                   ]}
                   onPress={handleFinish}
                   disabled={loading}
@@ -228,6 +228,8 @@ const styles = StyleSheet.create({
   },
 
   skipLink: { paddingVertical: 8, paddingHorizontal: 4 },
+  loadingHalfOpacity: { opacity: 0.5 },
+  loadingDimOpacity: { opacity: 0.7 },
   skipText: {
     fontSize: 16,
     color: GRAY[800],

@@ -1,9 +1,11 @@
+import type { ImageVariants } from './image';
+
 export interface FavoriteDeal {
   id: string;
   title: string;
   description: string;
   imageUrl: string;
-  imageVariants?: any;
+  imageVariants?: ImageVariants;
   restaurantName: string;
   restaurantAddress: string;
   distance: string;

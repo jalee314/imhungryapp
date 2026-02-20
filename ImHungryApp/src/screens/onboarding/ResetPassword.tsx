@@ -8,12 +8,12 @@ import { TextInput } from 'react-native-paper';
 
 import { useAuth } from '../../hooks/useAuth';
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
-
+import { logger } from '../../utils/logger';
 export default function ResetPasswordScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { width, height } = useWindowDimensions();
-  const { setPasswordResetMode } = useAuth();
+  const { setPasswordResetMode, resetPasswordWithTokens } = useAuth();
 
   const H = Math.max(16, Math.min(28, Math.round(width * 0.06)));
   const V = Math.max(12, Math.min(24, Math.round(height * 0.02)));
@@ -49,14 +49,14 @@ export default function ResetPasswordScreen() {
   useEffect(() => {
     // Prevent multiple initializations
     if (hasInitializedRef.current) {
-      console.log('ResetPassword: Already initialized, skipping');
+      logger.info('ResetPassword: Already initialized, skipping');
       return;
     }
 
     hasInitializedRef.current = true;
 
     // Enable password reset mode FIRST to prevent AuthContext from reacting to session changes
-    console.log('ResetPassword: Enabling password reset mode');
+    logger.info('ResetPassword: Enabling password reset mode');
     setPasswordResetMode(true);
 
     // React Navigation passes the URL query params to the route.
@@ -77,7 +77,7 @@ export default function ResetPasswordScreen() {
           setSessionReady(false);
         }
       } catch (error) {
-        console.error('Token validation error:', error);
+        logger.error('Token validation error:', error);
         Alert.alert('Error', 'This password reset link is invalid or has expired.');
         setSessionReady(false);
       }
@@ -91,13 +91,14 @@ export default function ResetPasswordScreen() {
     return () => {
       // Only disable password reset mode if not currently updating
       if (!isUpdatingRef.current) {
-        console.log('ResetPassword: Component unmounting, disabling password reset mode');
+        logger.info('ResetPassword: Component unmounting, disabling password reset mode');
         setPasswordResetMode(false);
         hasInitializedRef.current = false; // Reset for potential remount
       } else {
-        console.log('ResetPassword: Component unmounting but update in progress, keeping password reset mode active');
+        logger.info('ResetPassword: Component unmounting but update in progress, keeping password reset mode active');
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once on mount
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
@@ -139,28 +140,26 @@ export default function ResetPasswordScreen() {
         return;
       }
 
-      // Use store-backed helper to set session, update password, and sign out locally
-      const { resetPasswordWithTokens } = useAuth();
       const result = await resetPasswordWithTokens(accessToken, refreshToken, formData.newPassword);
-      if ((result as any).error) {
+      if ((result).error) {
         Alert.alert('Error', 'This password reset link is invalid or has expired.');
         isUpdatingRef.current = false;
       } else {
         // Success - sign out FIRST (synchronously), then disable password reset mode, then navigate
-        console.log('Password updated successfully, signing out...');
+        logger.info('Password updated successfully, signing out...');
 
         // Wait a moment for the sign out to propagate
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        console.log('Disabling password reset mode...');
+        logger.info('Disabling password reset mode...');
         setPasswordResetMode(false);
         isUpdatingRef.current = false;
 
         // Wait another moment before navigation to ensure clean state
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        console.log('Navigating to login screen...');
-        (navigation as any).navigate('LogIn');
+        logger.info('Navigating to login screen...');
+        (navigation).navigate('LogIn');
 
         // Show success message after navigation
         setTimeout(() => {
@@ -171,7 +170,7 @@ export default function ResetPasswordScreen() {
         }, 300);
       }
     } catch (err) {
-      console.error('Password update error:', err);
+      logger.error('Password update error:', err);
       Alert.alert('Error', 'An unexpected error occurred');
       isUpdatingRef.current = false;
     } finally {
@@ -187,7 +186,7 @@ export default function ResetPasswordScreen() {
   const handlePrivacyPress = () => { };
 
   return (
-    <View style={{ flex: 1, backgroundColor: STATIC.white }}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
 
@@ -241,11 +240,11 @@ export default function ResetPasswordScreen() {
                               name={showNewPassword ? 'eye-off' : 'eye'}
                               size={20}
                               color={GRAY[600]}
-                              style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                              style={isNewPasswordFocused ? styles.iconVisible : styles.iconHidden}
                             />
                           )}
                           onPress={() => setShowNewPassword(!showNewPassword)}
-                          style={{ opacity: isNewPasswordFocused ? 1 : 0 }}
+                          style={isNewPasswordFocused ? styles.iconVisible : styles.iconHidden}
                         />
                       )}
                     />
@@ -278,11 +277,11 @@ export default function ResetPasswordScreen() {
                               name={showConfirmPassword ? 'eye-off' : 'eye'}
                               size={20}
                               color={GRAY[600]}
-                              style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                              style={isConfirmPasswordFocused ? styles.iconVisible : styles.iconHidden}
                             />
                           )}
                           onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                          style={{ opacity: isConfirmPasswordFocused ? 1 : 0 }}
+                          style={isConfirmPasswordFocused ? styles.iconVisible : styles.iconHidden}
                         />
                       )}
                     />
@@ -291,7 +290,7 @@ export default function ResetPasswordScreen() {
 
                 {/* Update Password Button */}
                 <TouchableOpacity
-                  style={[styles.resetButton, responsive.resetButton, CONSTRAIN, (!sessionReady || loading) && { opacity: 0.7 }]}
+                  style={[styles.resetButton, responsive.resetButton, CONSTRAIN, (!sessionReady || loading) && styles.loadingDimOpacity]}
                   onPress={handleUpdatePassword}
                   disabled={!sessionReady || loading}
                 >
@@ -351,8 +350,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     textAlign: 'left'
   },
+  iconVisible: { opacity: 1 },
+  iconHidden: { opacity: 0 },
+  loadingDimOpacity: { opacity: 0.7 },
   formContainer: { width: '100%' },
-  paperInput: { backgroundColor: STATIC.white },
   textInputStyle: {
     backgroundColor: STATIC.white,
     minHeight: 56,

@@ -4,10 +4,70 @@
  */
 
 import { supabase } from '../../../lib/supabase';
+import { logger } from '../../utils/logger';
 
 import { checkDealContentForProfanity } from './moderation';
 import { DealEditData, UpdateDealData } from './types';
 import { getCurrentUserId } from './utils';
+
+const getImageUrlFromVariants = (
+  variants?: { large?: string; medium?: string; original?: string },
+): string => variants?.large || variants?.medium || variants?.original || '';
+
+const buildDealEditImages = (
+  template: DealEditData['images'][number] & {
+    deal_images?: Array<{
+      image_metadata_id: string;
+      display_order: number;
+      is_thumbnail: boolean;
+      image_metadata?: { variants?: { large?: string; medium?: string; original?: string } };
+    }>;
+    image_metadata?: { variants?: { large?: string; medium?: string; original?: string } };
+    image_metadata_id: string;
+  },
+) => {
+  const mappedImages = (template.deal_images || [])
+    .map((img) => ({
+      imageMetadataId: img.image_metadata_id,
+      displayOrder: img.display_order,
+      isThumbnail: img.is_thumbnail,
+      url: getImageUrlFromVariants(img.image_metadata?.variants),
+    }))
+    .filter((img) => img.url !== '')
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+
+  if (mappedImages.length > 0 || !template.image_metadata) {
+    return mappedImages;
+  }
+
+  const primaryUrl = getImageUrlFromVariants(template.image_metadata.variants);
+  if (!primaryUrl) return mappedImages;
+
+  return [{
+    imageMetadataId: template.image_metadata_id,
+    displayOrder: 0,
+    isThumbnail: true,
+    url: primaryUrl,
+  }];
+};
+
+const buildTemplateUpdates = (updates: UpdateDealData): { title?: string; description?: string } => {
+  const templateUpdates: { title?: string; description?: string } = {};
+  if (updates.title !== undefined) templateUpdates.title = updates.title;
+  if (updates.description !== undefined) templateUpdates.description = updates.description;
+  return templateUpdates;
+};
+
+const buildInstanceUpdates = (updates: UpdateDealData): { end_date?: string | null; is_anonymous?: boolean } => {
+  const instanceUpdates: { end_date?: string | null; is_anonymous?: boolean } = {};
+  if (updates.expirationDate !== undefined) {
+    instanceUpdates.end_date = updates.expirationDate === 'Unknown' ? null : updates.expirationDate;
+  }
+  if (updates.isAnonymous !== undefined) {
+    instanceUpdates.is_anonymous = updates.isAnonymous;
+  }
+  return instanceUpdates;
+};
 
 /**
  * Fetch deal data for editing
@@ -16,7 +76,7 @@ export const fetchDealForEdit = async (
   dealId: string
 ): Promise<{ success: boolean; data?: DealEditData; error?: string }> => {
   try {
-    console.log('📝 fetchDealForEdit: Starting to fetch deal:', dealId);
+    logger.info('📝 fetchDealForEdit: Starting to fetch deal:', dealId);
     
     const userId = await getCurrentUserId();
     if (!userId) {
@@ -62,17 +122,17 @@ export const fetchDealForEdit = async (
       .single();
 
     if (fetchError || !dealInstance) {
-      console.error('❌ fetchDealForEdit: Error fetching deal:', fetchError);
+      logger.error('❌ fetchDealForEdit: Error fetching deal:', fetchError);
       return { success: false, error: 'Deal not found' };
     }
 
-    const template = dealInstance.deal_template as any;
-    console.log('📝 fetchDealForEdit: Deal template data:', {
+    const template = dealInstance.deal_template;
+    logger.info('📝 fetchDealForEdit: Deal template data:', {
       templateId: template.template_id,
       imageMetadataId: template.image_metadata_id,
       hasImageMetadata: !!template.image_metadata,
       dealImagesCount: template.deal_images?.length || 0,
-      dealImages: template.deal_images?.map((img: any) => ({
+      dealImages: template.deal_images?.map((img) => ({
         id: img.image_metadata_id,
         hasVariants: !!img.image_metadata?.variants,
       })),
@@ -82,26 +142,14 @@ export const fetchDealForEdit = async (
       return { success: false, error: 'You can only edit your own posts' };
     }
 
-    let images = (template.deal_images || [])
-      .map((img: any) => ({
-        imageMetadataId: img.image_metadata_id,
-        displayOrder: img.display_order,
-        isThumbnail: img.is_thumbnail,
-        url: img.image_metadata?.variants?.large || 
-             img.image_metadata?.variants?.medium || 
-             img.image_metadata?.variants?.original || '',
-      }))
-      .filter((img: any) => img.url !== '')
-      .sort((a: any, b: any) => a.displayOrder - b.displayOrder);
+    let images = buildDealEditImages(template);
 
-    console.log('📷 fetchDealForEdit: Images from deal_images table:', images.length);
+    logger.info('📷 fetchDealForEdit: Images from deal_images table:', images.length);
 
     // Fallback to primary image on deal_template
     if (images.length === 0 && template.image_metadata) {
-      console.log('📷 fetchDealForEdit: Using fallback - primary image from deal_template');
-      const primaryUrl = template.image_metadata.variants?.large ||
-                        template.image_metadata.variants?.medium ||
-                        template.image_metadata.variants?.original || '';
+      logger.info('📷 fetchDealForEdit: Using fallback - primary image from deal_template');
+      const primaryUrl = getImageUrlFromVariants(template.image_metadata.variants);
       if (primaryUrl) {
         images = [{
           imageMetadataId: template.image_metadata_id,
@@ -109,11 +157,11 @@ export const fetchDealForEdit = async (
           isThumbnail: true,
           url: primaryUrl,
         }];
-        console.log('✅ fetchDealForEdit: Found primary image:', primaryUrl.substring(0, 50) + '...');
+        logger.info('✅ fetchDealForEdit: Found primary image:', primaryUrl.substring(0, 50) + '...');
       }
     }
 
-    console.log('✅ fetchDealForEdit: Final image count:', images.length);
+    logger.info('✅ fetchDealForEdit: Final image count:', images.length);
 
     return {
       success: true,
@@ -133,7 +181,7 @@ export const fetchDealForEdit = async (
       },
     };
   } catch (error) {
-    console.error('Error in fetchDealForEdit:', error);
+    logger.error('Error in fetchDealForEdit:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
 };
@@ -165,11 +213,10 @@ export const updateDealFields = async (
       return { success: false, error: 'Deal not found' };
     }
 
-    if ((dealInstance.deal_template as any).user_id !== userId) {
+    if ((dealInstance.deal_template).user_id !== userId) {
       return { success: false, error: 'You can only edit your own posts' };
     }
 
-    // Check for profanity if title or description changed
     if (updates.title || updates.description) {
       const profanityCheck = await checkDealContentForProfanity(
         updates.title || '',
@@ -180,45 +227,35 @@ export const updateDealFields = async (
       }
     }
 
-    // Update deal_template for title/description
-    if (updates.title !== undefined || updates.description !== undefined) {
-      const templateUpdates: any = {};
-      if (updates.title !== undefined) templateUpdates.title = updates.title;
-      if (updates.description !== undefined) templateUpdates.description = updates.description;
-
+    const templateUpdates = buildTemplateUpdates(updates);
+    if (Object.keys(templateUpdates).length > 0) {
       const { error: templateError } = await supabase
         .from('deal_template')
         .update(templateUpdates)
         .eq('template_id', dealInstance.template_id);
 
       if (templateError) {
-        console.error('Error updating deal template:', templateError);
+        logger.error('Error updating deal template:', templateError);
         return { success: false, error: 'Failed to update deal' };
       }
     }
 
-    // Update deal_instance for expiration date and anonymous flag
-    if (updates.expirationDate !== undefined || updates.isAnonymous !== undefined) {
-      const instanceUpdates: any = {};
-      if (updates.expirationDate !== undefined) {
-        instanceUpdates.end_date = updates.expirationDate === 'Unknown' ? null : updates.expirationDate;
-      }
-      if (updates.isAnonymous !== undefined) instanceUpdates.is_anonymous = updates.isAnonymous;
-
+    const instanceUpdates = buildInstanceUpdates(updates);
+    if (Object.keys(instanceUpdates).length > 0) {
       const { error: instanceError } = await supabase
         .from('deal_instance')
         .update(instanceUpdates)
         .eq('deal_id', dealId);
 
       if (instanceError) {
-        console.error('Error updating deal instance:', instanceError);
+        logger.error('Error updating deal instance:', instanceError);
         return { success: false, error: 'Failed to update deal' };
       }
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error in updateDealFields:', error);
+    logger.error('Error in updateDealFields:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
 };

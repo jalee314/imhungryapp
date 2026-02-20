@@ -3,9 +3,9 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
 import type { Deal } from '../types/deal';
+import { logger } from '../utils/logger';
 
 import { fetchRankedDeals, transformDealForUI, addDistancesToDeals, addVotesToDeals } from './dealService';
-import { getUserVoteStates, calculateVoteCounts } from './voteService';
 
 
 const CACHE_KEY = 'cached_deals';
@@ -27,11 +27,11 @@ class DealCacheService {
       if (dealsJson) {
         const deals = JSON.parse(dealsJson) as Deal[];
         this.cachedDeals = deals;
-        console.log(`📦 Loaded ${deals.length} deals from cache`);
+        logger.info(`📦 Loaded ${deals.length} deals from cache`);
         return deals;
       }
     } catch (error) {
-      console.error('Error loading deals from cache:', error);
+      logger.error('Error loading deals from cache:', error);
     }
     return [];
   }
@@ -59,28 +59,28 @@ class DealCacheService {
 
     // Check if we need to fetch (unless forced)
     if (!force && !await this.isCacheStale()) {
-      console.log('✅ Cache is fresh, using cached deals');
+      logger.info('✅ Cache is fresh, using cached deals');
       return this.cachedDeals;
     }
 
     this.isFetching = true;
     
     try {
-      console.log('🔄 Fetching fresh deals...');
+      logger.info('🔄 Fetching fresh deals...');
       const fetchStart = Date.now();
       const dbDeals = await fetchRankedDeals();
       const fetchTime = Date.now() - fetchStart;
-      console.log(`📊 Fetched ${dbDeals.length} deals in ${fetchTime}ms`);
+      logger.info(`📊 Fetched ${dbDeals.length} deals in ${fetchTime}ms`);
       
       // ⚡ OPTIMIZATION: Only recompute distances when the caller overrides coordinates
-      console.log('⚡ Adding vote information (and custom distance overrides when requested)...');
+      logger.info('⚡ Adding vote information (and custom distance overrides when requested)...');
       const enrichStart = Date.now();
       const baseDeals = customCoordinates
         ? await addDistancesToDeals(dbDeals, customCoordinates)
         : dbDeals;
       const enrichedDeals = await addVotesToDeals(baseDeals);
       const enrichTime = Date.now() - enrichStart;
-      console.log(`✅ Enrichment completed in ${enrichTime}ms`);
+      logger.info(`✅ Enrichment completed in ${enrichTime}ms`);
       
       // Log some vote states for debugging
       const voteSample = enrichedDeals.slice(0, 3).map(deal => ({
@@ -91,7 +91,7 @@ class DealCacheService {
         isDownvoted: deal.is_downvoted,
         isFavorited: deal.is_favorited
       }));
-      console.log('🔍 Vote sample:', voteSample);
+      logger.info('🔍 Vote sample:', voteSample);
       
       const transformedDeals = enrichedDeals.map(transformDealForUI);
       
@@ -103,14 +103,14 @@ class DealCacheService {
         AsyncStorage.setItem(CACHE_TIMESTAMP_KEY, JSON.stringify(new Date().toISOString()))
       ]);
       
-      console.log(`✅ Fetched and cached ${transformedDeals.length} deals with votes and distances`);
+      logger.info(`✅ Fetched and cached ${transformedDeals.length} deals with votes and distances`);
       
       // Notify all subscribers
       this.notifySubscribers(transformedDeals);
       
       return transformedDeals;
     } catch (error) {
-      console.error('Error fetching deals:', error);
+      logger.error('Error fetching deals:', error);
       throw error;
     } finally {
       this.isFetching = false;
@@ -162,7 +162,7 @@ class DealCacheService {
           table: 'deal_instance',
         },
         () => {
-          console.log('⚡ Deal change detected, scheduling refresh...');
+          logger.info('⚡ Deal change detected, scheduling refresh...');
           this.scheduleRefresh();
         }
       )
@@ -174,13 +174,13 @@ class DealCacheService {
           table: 'deal_images',
         },
         () => {
-          console.log('⚡ Deal images change detected, scheduling refresh...');
+          logger.info('⚡ Deal images change detected, scheduling refresh...');
           this.scheduleRefresh();
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('📡 Deal cache realtime: SUBSCRIBED');
+          logger.info('📡 Deal cache realtime: SUBSCRIBED');
           this.isInitialized = true;
         }
       });
@@ -193,7 +193,7 @@ class DealCacheService {
     }
     
     this.refreshTimeout = setTimeout(async () => {
-      console.log('⏰ Executing scheduled refresh');
+      logger.info('⏰ Executing scheduled refresh');
       await this.fetchAndCache(true);
     }, 2000); // 2 second debounce
   }
@@ -221,7 +221,7 @@ class DealCacheService {
     
     // Update AsyncStorage
     AsyncStorage.setItem(CACHE_KEY, JSON.stringify(this.cachedDeals)).catch(err => {
-      console.error('Error updating cache:', err);
+      logger.error('Error updating cache:', err);
     });
     
     // Notify subscribers
@@ -230,7 +230,7 @@ class DealCacheService {
 
   // Invalidate cache and force a fresh fetch (call after deal modifications)
   async invalidateAndRefresh() {
-    console.log('🔄 Invalidating cache and forcing refresh...');
+    logger.info('🔄 Invalidating cache and forcing refresh...');
     // Clear ALL cache data to ensure no stale data
     this.cachedDeals = [];
     await AsyncStorage.removeItem(CACHE_KEY);
@@ -239,7 +239,7 @@ class DealCacheService {
     this.isFetching = false;
     // Fetch fresh data
     const freshDeals = await this.fetchAndCache(true);
-    console.log(`✅ Cache refreshed with ${freshDeals.length} deals`);
+    logger.info(`✅ Cache refreshed with ${freshDeals.length} deals`);
     return freshDeals;
   }
 
@@ -247,7 +247,7 @@ class DealCacheService {
   removeDealFromCache(dealId: string) {
     this.cachedDeals = this.cachedDeals.filter(deal => deal.id !== dealId);
     AsyncStorage.setItem(CACHE_KEY, JSON.stringify(this.cachedDeals)).catch(err => {
-      console.error('Error updating cache:', err);
+      logger.error('Error updating cache:', err);
     });
     this.notifySubscribers(this.cachedDeals);
   }
@@ -273,7 +273,7 @@ class DealCacheService {
       AsyncStorage.removeItem(CACHE_KEY),
       AsyncStorage.removeItem(CACHE_TIMESTAMP_KEY)
     ]);
-    console.log('🗑️ Deal cache cleared');
+    logger.info('🗑️ Deal cache cleared');
   }
 }
 

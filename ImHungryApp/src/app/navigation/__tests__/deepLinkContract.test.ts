@@ -75,7 +75,6 @@ describe('Deep-Link Contract Tests', () => {
 
     it('should generate correct reset-password URL with imhungri scheme', () => {
       const resetPath = DEEP_LINK_CONFIG.screens[ONBOARDING_ROUTES.ResetPassword];
-      const expectedUrl = `imhungri://${resetPath}`;
       
       // Verify the path generates correctly
       expect(`imhungri://${resetPath}`).toBe('imhungri://reset-password');

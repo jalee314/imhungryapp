@@ -14,18 +14,22 @@ export interface FeedEmptyStateProps {
   reason: 'needs_location' | 'no_deals';
 }
 
+const feedEmptyIconStyle = { marginBottom: SPACING.lg };
+const feedEmptyTitleStyle = { fontFamily: 'Inter' };
+const feedEmptyBodyStyle = { fontFamily: 'Inter', paddingHorizontal: SPACING.xl };
+
 export function FeedEmptyState({ reason }: FeedEmptyStateProps) {
   if (reason === 'needs_location') {
     return (
       <Box flex={1} center py="5xl" minH={300}>
-        <Ionicons name="location-outline" size={48} color={BRAND.primary} style={{ marginBottom: SPACING.lg }} />
+        <Ionicons name="location-outline" size={48} color={BRAND.primary} style={feedEmptyIconStyle} />
         <Text
           size="lg"
           weight="semibold"
           color={GRAY[600]}
           textAlign="center"
           mb="sm"
-          style={{ fontFamily: 'Inter' }}
+          style={feedEmptyTitleStyle}
         >
           Set your location to see deals
         </Text>
@@ -33,7 +37,7 @@ export function FeedEmptyState({ reason }: FeedEmptyStateProps) {
           size="sm"
           color={GRAY[500]}
           textAlign="center"
-          style={{ fontFamily: 'Inter', paddingHorizontal: SPACING.xl }}
+          style={feedEmptyBodyStyle}
         >
           Click the location icon above to get personalized deals in your area!
         </Text>
@@ -49,7 +53,7 @@ export function FeedEmptyState({ reason }: FeedEmptyStateProps) {
         color={GRAY[600]}
         textAlign="center"
         mb="sm"
-        style={{ fontFamily: 'Inter' }}
+        style={feedEmptyTitleStyle}
       >
         No Deals Found
       </Text>
@@ -57,7 +61,7 @@ export function FeedEmptyState({ reason }: FeedEmptyStateProps) {
         size="sm"
         color={GRAY[500]}
         textAlign="center"
-        style={{ fontFamily: 'Inter', paddingHorizontal: SPACING.xl }}
+        style={feedEmptyBodyStyle}
       >
         Try a different filter or check back later!
       </Text>

@@ -6,6 +6,7 @@
  */
 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { supabase } from '../../../lib/supabase';
@@ -20,6 +21,26 @@ import { toggleFavorite } from '../../services/voteService';
 import type { FavoriteDeal, FavoriteRestaurant } from '../../types/favorites';
 
 import type { FavoritesTab, FavoritesContext } from './types';
+
+// ---------------------------------------------------------------------------
+// Local helpers
+// ---------------------------------------------------------------------------
+
+const removeDealById = (
+  deals: FavoriteDeal[],
+  dealId: string | undefined,
+): FavoriteDeal[] => {
+  if (!dealId) return deals;
+  return deals.filter((deal) => deal.id !== dealId);
+};
+
+const removeRestaurantById = (
+  restaurants: FavoriteRestaurant[],
+  restaurantId: string | undefined,
+): FavoriteRestaurant[] => {
+  if (!restaurantId) return restaurants;
+  return restaurants.filter((restaurant) => restaurant.id !== restaurantId);
+};
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -47,7 +68,7 @@ export function useFavoritesScreen(): FavoritesContext {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [hasLoadedDeals, setHasLoadedDeals] = useState(false);
   const [hasLoadedRestaurants, setHasLoadedRestaurants] = useState(false);
-  const favoriteChannel = useRef<any>(null);
+  const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [realtimeEnabled] = useState(true);
 
@@ -140,7 +161,7 @@ export function useFavoritesScreen(): FavoritesContext {
             table: 'favorite',
             filter: `user_id=eq.${userId}`,
           },
-          (payload: any) => {
+          (payload) => {
             const payloadUserId =
               payload.new?.user_id || payload.old?.user_id;
             if (payloadUserId !== userId) return;
@@ -148,13 +169,9 @@ export function useFavoritesScreen(): FavoritesContext {
             if (payload.eventType === 'DELETE') {
               const oldFavorite = payload.old;
               if (oldFavorite.deal_id) {
-                setDeals((prev) =>
-                  prev.filter((deal) => deal.id !== oldFavorite.deal_id),
-                );
+                setDeals((prev) => removeDealById(prev, oldFavorite.deal_id));
               } else if (oldFavorite.restaurant_id) {
-                setRestaurants((prev) =>
-                  prev.filter((r) => r.id !== oldFavorite.restaurant_id),
-                );
+                setRestaurants((prev) => removeRestaurantById(prev, oldFavorite.restaurant_id));
               }
             } else if (payload.eventType === 'INSERT') {
               if (activeTab === 'deals') {
@@ -165,7 +182,7 @@ export function useFavoritesScreen(): FavoritesContext {
             }
           },
         )
-        .subscribe((status: any) => {
+        .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             if (refreshInterval.current) {
               clearInterval(refreshInterval.current);
@@ -285,6 +302,7 @@ export function useFavoritesScreen(): FavoritesContext {
           supabase.removeChannel(favoriteChannel.current);
         }
       };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, hasLoadedInitialData]),
   );
 
@@ -325,7 +343,7 @@ export function useFavoritesScreen(): FavoritesContext {
           lat: 0,
           lng: 0,
         };
-        (navigation as any).navigate('RestaurantDetail', {
+        (navigation).navigate('RestaurantDetail', {
           restaurant: restaurantForDetail,
         });
       }
@@ -361,7 +379,7 @@ export function useFavoritesScreen(): FavoritesContext {
           restaurantAddress: deal.restaurantAddress,
           isAnonymous: deal.isAnonymous,
         };
-        (navigation as any).navigate('DealDetail', { deal: dealForDetail });
+        (navigation).navigate('DealDetail', { deal: dealForDetail });
       }
     },
     [deals, navigation],
@@ -371,7 +389,7 @@ export function useFavoritesScreen(): FavoritesContext {
     (userId: string) => {
       const deal = deals.find((d) => d.userId === userId);
       if (deal && deal.userDisplayName) {
-        (navigation as any).navigate('UserProfile', {
+        (navigation).navigate('UserProfile', {
           viewUser: true,
           username: deal.userDisplayName,
           userId,

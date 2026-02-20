@@ -5,7 +5,7 @@
  * optimistic update logic for Feed and CommunityUploadedScreen surfaces.
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { renderHook, act } from '@testing-library/react-native';
 
 import type { Deal } from '../../types/deal';
 import { useFeedInteractionHandlers, useSingleDealInteractionHandlers } from '../useFeedInteractionHandlers';
