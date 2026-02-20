@@ -5,12 +5,13 @@
  * Validates visual parity, interaction semantics, and snapshot consistency.
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import React from 'react';
 import { Text as RNText } from 'react-native';
+
 import { ThemeProvider } from '../../../ui/primitives';
-import ScreenHeader from '../ScreenHeader';
 import ModalHeader from '../ModalHeader';
+import ScreenHeader from '../ScreenHeader';
 
 // Mock @expo/vector-icons to return a renderable element
 jest.mock('@expo/vector-icons', () => ({

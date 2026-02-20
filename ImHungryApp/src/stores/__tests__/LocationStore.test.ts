@@ -5,8 +5,8 @@
  * The store manages user location state and syncs with auth state.
  */
 
-import { useLocationStore } from '../LocationStore';
 import { useAuthStore } from '../AuthStore';
+import { useLocationStore } from '../LocationStore';
 
 // Mock services that LocationStore depends on
 jest.mock('../../services/locationService', () => ({

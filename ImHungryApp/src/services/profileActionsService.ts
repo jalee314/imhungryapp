@@ -1,13 +1,17 @@
-import { Alert } from 'react-native';
-import { supabase } from '../../lib/supabase';
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { toByteArray } from 'base64-js';
-import { clearUserCache } from './userService';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
+import { Alert } from 'react-native';
+
+import { supabase } from '../../lib/supabase';
+
+import { processImageWithEdgeFunction, ImageType } from './imageProcessingService';
 import { ProfileCacheService } from './profileCacheService';
 import { signOut } from './sessionService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { processImageWithEdgeFunction, ImageType } from './imageProcessingService';
+import { clearUserCache } from './userService';
+
+
 
 /**
  * Handle profile photo upload

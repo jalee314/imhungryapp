@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
 import React from 'react';
 import {
   Modal,
@@ -7,10 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Monicon } from '@monicon/native';
-import { Box } from '../../../ui/primitives/Box';
-import { Text } from '../../../ui/primitives/Text';
+
 import {
   BRAND,
   STATIC,
@@ -22,6 +21,8 @@ import {
   ALPHA_COLORS,
   OPACITY,
 } from '../../../ui/alf';
+import { Box } from '../../../ui/primitives/Box';
+import { Text } from '../../../ui/primitives/Text';
 import type { Report } from '../types';
 
 const STATUS_COLORS: Record<Report['status'], string> = {

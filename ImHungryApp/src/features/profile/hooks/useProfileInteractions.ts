@@ -4,11 +4,12 @@
  */
 
 import { Alert } from 'react-native';
-import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../../services/voteService';
-import { deleteDeal } from '../../../services/dealService';
-import { logClick } from '../../../services/interactionService';
+
 import { useFavorites } from '../../../hooks/useFavorites';
 import { calculateUpvoteToggle, calculateDownvoteToggle } from '../../../hooks/useFeedInteractionHandlers';
+import { deleteDeal } from '../../../services/dealService';
+import { logClick } from '../../../services/interactionService';
+import { toggleUpvote, toggleDownvote, toggleFavorite } from '../../../services/voteService';
 import type { ProfileInteractionHandlers } from '../types';
 
 // ============================================================================

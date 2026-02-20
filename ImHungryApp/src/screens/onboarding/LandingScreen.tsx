@@ -1,7 +1,8 @@
+import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Pressable, View, Image, Dimensions } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
+
 import { STATIC } from '../../ui/alf';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');

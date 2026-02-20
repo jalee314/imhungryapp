@@ -5,9 +5,10 @@
  * and DealEditScreen. Purely presentational; state is owned by useDealForm.
  */
 
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import { Box, Text } from '../../../ui/primitives';
 import { TITLE_MAX_LENGTH } from '../engine';
 

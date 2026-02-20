@@ -1,10 +1,10 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useDataCache } from '../../hooks/useDataCache';
-import { useAuth } from '../../hooks/useAuth';
 
+import { useAuth } from '../../hooks/useAuth';
+import { useDataCache } from '../../hooks/useDataCache';
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 export default function CuisinePreferencesScreen() {

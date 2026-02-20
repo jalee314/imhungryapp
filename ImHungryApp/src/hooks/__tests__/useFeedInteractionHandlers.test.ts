@@ -6,8 +6,9 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { useFeedInteractionHandlers, useSingleDealInteractionHandlers } from '../useFeedInteractionHandlers';
+
 import type { Deal } from '../../types/deal';
+import { useFeedInteractionHandlers, useSingleDealInteractionHandlers } from '../useFeedInteractionHandlers';
 
 // Mock the voteService
 const mockToggleUpvote = jest.fn();
@@ -242,7 +243,7 @@ describe('useFeedInteractionHandlers', () => {
 
     it('should not update state if deal not found', async () => {
       const mockDeal = createMockDeal({ id: 'other-deal' });
-      let deals = [mockDeal];
+      const deals = [mockDeal];
       const setDeals = jest.fn();
 
       const { result } = renderHook(() =>

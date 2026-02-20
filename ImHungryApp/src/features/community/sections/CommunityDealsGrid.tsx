@@ -6,8 +6,9 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import type { Deal } from '../../../types/deal';
+
 import DealCard from '../../../components/DealCard';
+import type { Deal } from '../../../types/deal';
 import { Box } from '../../../ui/primitives';
 import type { CommunityInteractions } from '../types';
 

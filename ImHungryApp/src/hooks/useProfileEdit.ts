@@ -1,6 +1,7 @@
+import { useNavigation } from '@react-navigation/native';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+
 import { ProfileCacheService } from '../services/profileCacheService';
 import {
   fetchCurrentUserCuisines,

@@ -3,6 +3,7 @@
  */
 
 import { Alert, Share } from 'react-native';
+
 import {
   uploadProfilePhoto,
   handleTakePhoto,

@@ -1,10 +1,10 @@
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useDataCache } from '../../hooks/useDataCache';
 
+import { useDataCache } from '../../hooks/useDataCache';
 import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS } from '../../ui/alf';
 
 export default function CuisineEdit() {
@@ -35,7 +35,7 @@ export default function CuisineEdit() {
 
     // Get the navigation state to find the ProfileEdit route key
     const state = navigation.getState();
-    const profileEditRoute = state.routes.find((r: any) => r.name === 'ProfileEdit');
+    const profileEditRoute = state?.routes.find((r: any) => r.name === 'ProfileEdit');
 
     if (profileEditRoute?.key) {
       // Set params on ProfileEdit screen before going back

@@ -27,6 +27,7 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
+
 import { toggleUpvote, toggleDownvote, toggleFavorite } from '../services/voteService';
 import { useFavoritesStore, type FavoriteDealData } from '../stores/FavoritesStore';
 

@@ -1,5 +1,5 @@
-import { fetchUserProfile, fetchCurrentUserPhoto, createUserProfileCache, UserProfileCache, UserProfileData } from './userProfileService';
 import { fetchUserPosts, updatePostsWithUserInfo, UserPost } from './userPostsService';
+import { fetchUserProfile, fetchCurrentUserPhoto, createUserProfileCache, UserProfileCache, UserProfileData } from './userProfileService';
 
 
 /**

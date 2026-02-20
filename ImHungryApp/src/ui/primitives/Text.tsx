@@ -22,6 +22,8 @@ import {
   TextStyle,
   StyleProp,
 } from 'react-native';
+
+import { ThemePalette } from '../alf/themes';
 import {
   SPACING,
   FONT_SIZE,
@@ -31,7 +33,7 @@ import {
   FontSizeKey,
   FontWeightKey,
 } from '../alf/tokens';
-import { ThemePalette } from '../alf/themes';
+
 import { useThemeSafe } from './ThemeProvider';
 
 // ============================================================================

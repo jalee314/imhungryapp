@@ -8,10 +8,10 @@
 
 import React from 'react';
 import { View, ScrollView, StatusBar, RefreshControl } from 'react-native';
-import { Box } from '../../ui/primitives';
-import { STATIC, BRAND } from '../../ui/alf';
 
-import { useFeed } from './useFeed';
+import { STATIC, BRAND } from '../../ui/alf';
+import { Box } from '../../ui/primitives';
+
 import {
   CuisineFilterBar,
   FeaturedDealsSection,
@@ -21,6 +21,7 @@ import {
   FeedErrorState,
   FeedSectionDivider,
 } from './sections';
+import { useFeed } from './useFeed';
 
 const FeedContainer: React.FC = () => {
   const ctx = useFeed();

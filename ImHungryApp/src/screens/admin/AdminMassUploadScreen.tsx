@@ -1,3 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Monicon } from '@monicon/native';
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -11,18 +16,13 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { Monicon } from '@monicon/native';
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
-import { useDataCache } from '../../hooks/useDataCache';
-import ScreenHeader from '../../components/ui/ScreenHeader';
-import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../../services/restaurantService';
-import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
+
 import { supabase } from '../../../lib/supabase';
 import ListSelectionModal from '../../components/ListSelectionModal';
-
+import ScreenHeader from '../../components/ui/ScreenHeader';
+import { useDataCache } from '../../hooks/useDataCache';
+import { processImageWithEdgeFunction } from '../../services/imageProcessingService';
+import { getOrCreateRestaurant, searchRestaurants, GooglePlaceResult } from '../../services/restaurantService';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 // --- Debounce Helper Function ---

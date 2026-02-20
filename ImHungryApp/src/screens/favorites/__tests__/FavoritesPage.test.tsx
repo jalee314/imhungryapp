@@ -145,12 +145,12 @@ describe('FavoritesPage Integration Tests', () => {
 
   describe('Tab Navigation', () => {
     it('should support deals tab', () => {
-      let activeTab: 'restaurants' | 'deals' = 'deals';
+      const activeTab: 'restaurants' | 'deals' = 'deals';
       expect(activeTab).toBe('deals');
     });
 
     it('should support restaurants tab', () => {
-      let activeTab: 'restaurants' | 'deals' = 'restaurants';
+      const activeTab: 'restaurants' | 'deals' = 'restaurants';
       expect(activeTab).toBe('restaurants');
     });
 

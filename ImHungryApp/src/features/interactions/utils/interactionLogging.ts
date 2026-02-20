@@ -7,13 +7,13 @@
 
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentDatabaseSessionId } from '../../../services/sessionService';
+import { getCurrentUserId } from '../selectors/voteSelectors';
 import {
   InteractionType,
   InteractionSource,
   InteractionLogParams,
   InteractionLogResult,
 } from '../types';
-import { getCurrentUserId } from '../selectors/voteSelectors';
 
 // ==========================================
 // Interaction Logging

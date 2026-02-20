@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
@@ -12,10 +14,8 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
-import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCityAndStateFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
 
+import { getCurrentUserLocation, updateUserLocation, getCityFromCoordinates, getCityAndStateFromCoordinates, getCoordinatesFromCity, checkLocationPermission, getLocationPermissionStatus } from '../services/locationService';
 import { BRAND, STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING, ALPHA_COLORS } from '../ui/alf';
 
 interface LocationItem {

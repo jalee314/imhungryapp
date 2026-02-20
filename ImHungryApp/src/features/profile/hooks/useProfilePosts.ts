@@ -5,10 +5,11 @@
  * Manages: userPosts, postsLoading, postsInitialized, postsError.
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { fetchUserPosts, transformDealForUI } from '../../../services/dealService';
+import { useState, useRef, useEffect, useCallback } from 'react';
+
 import { useDealUpdate } from '../../../hooks/useDealUpdate';
+import { fetchUserPosts, transformDealForUI } from '../../../services/dealService';
 import type { ProfilePostsState } from '../types';
 
 // ============================================================================

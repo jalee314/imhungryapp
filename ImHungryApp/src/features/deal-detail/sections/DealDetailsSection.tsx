@@ -5,8 +5,9 @@
  */
 
 import React from 'react';
-import { Box, Text } from '../../../ui/primitives';
+
 import { STATIC, GRAY, BORDER_WIDTH } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 export interface DealDetailsSectionProps {
   details: string | undefined;

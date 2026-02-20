@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { StyleSheet } from 'react-native';
+
 import { Box } from '../../../ui/primitives';
 
 export function FormDivider() {

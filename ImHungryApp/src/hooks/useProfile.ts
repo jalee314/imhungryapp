@@ -7,16 +7,17 @@
  * Sub-hooks live in features/profile/hooks/ for focused unit-testing.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAdminStore } from '../stores/AdminStore';
-import { formatJoinDate, getDisplayName } from '../services/profileUtilsService';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
-import { useProfileData } from '../features/profile/hooks/useProfileData';
-import { useProfilePosts } from '../features/profile/hooks/useProfilePosts';
-import { useProfileInteractions } from '../features/profile/hooks/useProfileInteractions';
+
 import { useProfileActions } from '../features/profile/hooks/useProfileActions';
+import { useProfileData } from '../features/profile/hooks/useProfileData';
+import { useProfileInteractions } from '../features/profile/hooks/useProfileInteractions';
 import { useProfileModals } from '../features/profile/hooks/useProfileModals';
+import { useProfilePosts } from '../features/profile/hooks/useProfilePosts';
+import { formatJoinDate, getDisplayName } from '../services/profileUtilsService';
+import { useAdminStore } from '../stores/AdminStore';
 
 // Re-export types from the feature module for back-compat
 export type { UseProfileResult } from '../features/profile/types';

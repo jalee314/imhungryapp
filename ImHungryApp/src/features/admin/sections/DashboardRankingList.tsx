@@ -1,7 +1,8 @@
 import React from 'react';
+
+import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW, BORDER_WIDTH } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
-import { BRAND, STATIC, GRAY, SPACING, RADIUS, SHADOW, BORDER_WIDTH } from '../../../ui/alf';
 
 interface RankedItem {
   id: string;

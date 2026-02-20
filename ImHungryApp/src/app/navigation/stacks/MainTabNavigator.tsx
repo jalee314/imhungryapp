@@ -5,11 +5,15 @@
  * Contains all tab stacks and custom tab bar.
  */
 
-import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+
 import { useAdmin } from '../../../hooks/useAdmin';
 
 // Tab stacks
+import type { TabParamList } from '../types';
+
+import { CustomTabBar } from './CustomTabBar';
 import {
   FeedStack,
   DiscoverStack,
@@ -19,9 +23,7 @@ import {
 } from './TabStacks';
 
 // Custom tab bar
-import { CustomTabBar } from './CustomTabBar';
 
-import type { TabParamList } from '../types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 

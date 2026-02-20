@@ -5,22 +5,21 @@
  * Each tab has its own stack to support nested navigation.
  */
 
-import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
 
 // Screen components
 import FeedTabNavigator from '../../../components/FeedTabNavigator';
+import CommunityUploadedScreen from '../../../screens/deal_feed/CommunityUploadedScreen';
 import FavoritesPage from '../../../screens/favorites/FavoritesPage';
-import ProfilePage from '../../../screens/profile/ProfilePage';
-import ProfileEdit from '../../../screens/profile/ProfileEdit';
 import BlockedUsersPage from '../../../screens/profile/BlockedUsersPage';
 import ContactUsPage from '../../../screens/profile/ContactUsPage';
-import FAQPage from '../../../screens/profile/FAQPage';
-import TermsConditionsPage from '../../../screens/profile/TermsConditionsPage';
-import PrivacyPolicyPage from '../../../screens/profile/PrivacyPolicyPage';
 import CuisineEdit from '../../../screens/profile/CuisineEdit';
-import CommunityUploadedScreen from '../../../screens/deal_feed/CommunityUploadedScreen';
-
+import FAQPage from '../../../screens/profile/FAQPage';
+import PrivacyPolicyPage from '../../../screens/profile/PrivacyPolicyPage';
+import ProfileEdit from '../../../screens/profile/ProfileEdit';
+import ProfilePage from '../../../screens/profile/ProfilePage';
+import TermsConditionsPage from '../../../screens/profile/TermsConditionsPage';
 import type {
   FeedStackParamList,
   DiscoverStackParamList,

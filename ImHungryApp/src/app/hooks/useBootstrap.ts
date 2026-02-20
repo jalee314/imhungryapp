@@ -8,7 +8,6 @@
  * cleaner separation of concerns and better testability.
  */
 
-import { useState, useEffect } from 'react';
 import {
   useFonts,
   Inter_300Light,
@@ -17,6 +16,7 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import { useState, useEffect } from 'react';
 
 export interface BootstrapState {
   /** Whether fonts are loaded */

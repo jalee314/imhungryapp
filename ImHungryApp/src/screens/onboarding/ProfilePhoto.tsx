@@ -1,11 +1,11 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
   KeyboardAvoidingView, Platform, Alert, Image
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
 
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 

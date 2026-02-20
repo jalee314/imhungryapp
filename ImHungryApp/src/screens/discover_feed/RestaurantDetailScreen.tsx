@@ -1,3 +1,5 @@
+import { Ionicons , MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -12,19 +14,15 @@ import {
   Linking,
   SafeAreaView,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { supabase } from '../../../lib/supabase';
 import RowCard, { RowCardData } from '../../components/RowCard';
-import type { DiscoverRestaurant } from '../../types/discover';
-import { getCurrentUserLocation } from '../../services/locationService';
-import { calculateDistance } from '../../services/locationService';
+import { useFavorites } from '../../hooks/useFavorites';
+import { logClick } from '../../services/interactionService';
+import { getCurrentUserLocation , calculateDistance } from '../../services/locationService';
 import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '../../services/restaurantFavoriteService';
 import type { Deal } from '../../types/deal';
-import { logClick } from '../../services/interactionService';
-import { useFavorites } from '../../hooks/useFavorites';
-
+import type { DiscoverRestaurant } from '../../types/discover';
 import { BRAND, STATIC, GRAY, SEMANTIC } from '../../ui/alf';
 
 type RestaurantDetailRouteProp = RouteProp<{
@@ -137,7 +135,7 @@ const RestaurantDetailScreen: React.FC = () => {
       }
 
       // Transform and process deals
-      const processedDeals: RestaurantDeal[] = await Promise.all(
+      const processedDeals = await Promise.all(
         data.map(async (deal) => {
           // Get view count for this deal (count of click-open interactions)
           const { count: viewCount } = await supabase
@@ -180,7 +178,7 @@ const RestaurantDetailScreen: React.FC = () => {
           console.log('🔍 Processing deal:', template.title, {
             has_image_url: !!template.image_url,
             has_image_metadata: !!imageMetadata,
-            image_metadata_variants: imageMetadata?.variants,
+            image_metadata_variants: (imageMetadata as any)?.variants,
             image_url: template.image_url,
             deal_images_count: dealImages.length
           });
@@ -208,7 +206,7 @@ const RestaurantDetailScreen: React.FC = () => {
 
       console.log('🔍 Loaded deals:', processedDeals.map(d => ({ id: d.deal_id, title: d.title })));
       console.log('🔍 Setting deals state with length:', processedDeals.length);
-      setDeals(processedDeals);
+      setDeals(processedDeals as RestaurantDeal[]);
       console.log('🔍 Deals state set successfully');
     } catch (err) {
       console.error('Error loading restaurant deals:', err);

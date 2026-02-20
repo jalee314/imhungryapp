@@ -12,6 +12,7 @@
  */
 
 import * as Linking from 'expo-linking';
+
 import { DEEP_LINK_CONFIG, ONBOARDING_ROUTES } from '../routeConstants';
 
 // Mock Expo Linking module

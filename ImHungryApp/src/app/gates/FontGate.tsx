@@ -8,9 +8,9 @@
  * cleaner separation of concerns and better testability.
  */
 
+import { useBootstrap, UseBootstrapOptions } from '@app/hooks';
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
-import { useBootstrap, UseBootstrapOptions } from '@app/hooks';
 
 export interface FontGateProps {
   /** Content to render when fonts are ready */

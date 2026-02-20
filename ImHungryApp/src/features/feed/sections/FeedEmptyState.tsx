@@ -4,10 +4,11 @@
  * Purely presentational.
  */
 
-import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Box, Text } from '../../../ui/primitives';
+import React from 'react';
+
 import { BRAND, GRAY, SPACING } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 export interface FeedEmptyStateProps {
   reason: 'needs_location' | 'no_deals';

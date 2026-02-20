@@ -4,10 +4,11 @@
 
 import React from 'react';
 import { View, FlatList, ScrollView } from 'react-native';
+
 import DealCardSkeleton from '../../../components/DealCardSkeleton';
 import SkeletonLoader from '../../../components/SkeletonLoader';
-import { Box } from '../../../ui/primitives';
 import { SPACING } from '../../../ui/alf';
+import { Box } from '../../../ui/primitives';
 
 const renderItemSeparator = () => <View style={{ width: 0 }} />;
 

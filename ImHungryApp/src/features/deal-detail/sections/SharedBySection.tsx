@@ -6,9 +6,10 @@
 
 import React from 'react';
 import { Image, ImageSourcePropType, TouchableOpacity } from 'react-native';
+
 import type { Deal } from '../../../types/deal';
-import { Box, Text } from '../../../ui/primitives';
 import { STATIC, GRAY, BORDER_WIDTH, SPACING } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 export interface SharedBySectionProps {
   dealData: Deal;

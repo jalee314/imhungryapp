@@ -4,8 +4,9 @@
  */
 
 import { supabase } from '../../../lib/supabase';
-import { getCurrentUserId, uploadDealImage } from './utils';
+
 import { CreateDealData } from './types';
+import { getCurrentUserId, uploadDealImage } from './utils';
 
 /**
  * Create a new deal template (database trigger will create instance)

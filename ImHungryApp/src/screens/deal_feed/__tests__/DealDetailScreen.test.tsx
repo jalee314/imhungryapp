@@ -11,7 +11,7 @@
  * 4. Behavior Baseline: ensures parity for future refactors
  */
 
-import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import {
   render,
   screen,
@@ -19,12 +19,23 @@ import {
   waitFor,
   act,
 } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import DealDetailScreen from '../DealDetailScreen';
-import type { Deal } from '../../../types/deal';
+import {
+  logShare,
+  logClickThrough,
+  getDealViewCount,
+  getDealViewerPhotos,
+} from '../../../services/interactionService';
+import {
+  toggleUpvote,
+  toggleDownvote,
+  toggleFavorite,
+} from '../../../services/voteService';
 import { mockSupabase, configureMockAuth } from '../../../test-utils/mocks/supabaseMock';
+import type { Deal } from '../../../types/deal';
+import DealDetailScreen from '../DealDetailScreen';
 
 // Mock @monicon/native
 jest.mock('@monicon/native', () => ({
@@ -100,17 +111,6 @@ jest.mock('@react-navigation/native', () => {
 });
 
 // Import mocked modules
-import {
-  toggleUpvote,
-  toggleDownvote,
-  toggleFavorite,
-} from '../../../services/voteService';
-import {
-  logShare,
-  logClickThrough,
-  getDealViewCount,
-  getDealViewerPhotos,
-} from '../../../services/interactionService';
 
 // Test wrapper with all providers
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -173,7 +173,7 @@ describe('DealDetailScreen Integration Tests', () => {
         },
         error: null,
       }),
-    });
+    } as any);
   });
 
   describe('Render States', () => {
@@ -299,7 +299,7 @@ describe('DealDetailScreen Integration Tests', () => {
       // The share functionality is available through the VoteButtons component
       // logShare is called when sharing
       renderDealDetailScreen();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Test Deal Title')).toBeTruthy();
       });

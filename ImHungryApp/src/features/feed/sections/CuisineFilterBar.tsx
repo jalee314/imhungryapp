@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+
 import CuisineFilter from '../../../components/CuisineFilter';
 import type { FeedCuisineFilter } from '../types';
 

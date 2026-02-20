@@ -1,10 +1,11 @@
-import React from 'react';
-import { Modal, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Monicon } from '@monicon/native';
+import React from 'react';
+import { Modal, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native';
+
+import { BRAND, STATIC, GRAY, SPACING, RADIUS, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
 import { Box } from '../../../ui/primitives/Box';
 import { Text } from '../../../ui/primitives/Text';
-import { BRAND, STATIC, GRAY, SPACING, RADIUS, BORDER_WIDTH, SEMANTIC } from '../../../ui/alf';
 
 interface DealEditModalProps {
   visible: boolean;

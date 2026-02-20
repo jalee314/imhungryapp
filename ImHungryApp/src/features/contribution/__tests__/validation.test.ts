@@ -5,6 +5,7 @@
  * DealCreationScreen and DealEditScreen.
  */
 
+import type { DealFormValues } from '../engine/types';
 import {
   validateDealForm,
   getFieldError,
@@ -12,7 +13,6 @@ import {
   IMAGES_MIN_COUNT,
   IMAGES_MAX_COUNT,
 } from '../engine/validation';
-import type { DealFormValues } from '../engine/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 

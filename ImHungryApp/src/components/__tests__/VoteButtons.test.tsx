@@ -8,10 +8,12 @@
  * 4. Visual appearance matches design specs
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import VoteButtons from '../VoteButtons';
 import { ThemeProvider } from '@ui/primitives';
+import React from 'react';
+
+import VoteButtons from '../VoteButtons';
+
 
 // Wrapper component to provide theme context
 const renderWithTheme = (component: React.ReactElement) => {

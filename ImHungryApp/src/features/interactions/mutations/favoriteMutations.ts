@@ -7,12 +7,12 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
+import { getCurrentUserId } from '../selectors/voteSelectors';
 import {
   FavoriteMutationResult,
   FavoriteTargetType,
   InteractionSource,
 } from '../types';
-import { getCurrentUserId } from '../selectors/voteSelectors';
 import {
   logFavoriteEvent,
   logRestaurantFavoriteEvent,

@@ -6,6 +6,7 @@
  */
 
 import { useAuthStore } from '../AuthStore';
+
 import { act } from '@testing-library/react-native';
 
 // Mock services that AuthStore depends on
@@ -37,8 +38,8 @@ import {
   signInWithPassword,
   resetPasswordWithTokens,
 } from '../../services/authService';
-import { initializeAuthSession, setupAppStateListener } from '../../services/sessionService';
 import { completeSignup, completeSignupSkip } from '../../services/onboardingService';
+import { initializeAuthSession, setupAppStateListener } from '../../services/sessionService';
 
 describe('AuthStore', () => {
   beforeEach(() => {
@@ -277,7 +278,7 @@ describe('AuthStore', () => {
     it('should unsubscribe auth listener', async () => {
       const mockUnsubscribe = jest.fn();
       useAuthStore.setState({
-        _authSubscription: { unsubscribe: mockUnsubscribe },
+        _authSubscription: { unsubscribe: mockUnsubscribe } as any,
         _initialized: true,
       });
 

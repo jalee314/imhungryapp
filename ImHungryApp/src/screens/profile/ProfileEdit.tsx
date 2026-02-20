@@ -1,14 +1,14 @@
+import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
   ScrollView, TextInput as RNTextInput, Alert
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useProfileEdit } from '../../hooks/useProfileEdit';
-import LocationModal from '../../components/LocationModal';
 
+import LocationModal from '../../components/LocationModal';
+import { useProfileEdit } from '../../hooks/useProfileEdit';
 import { BRAND, STATIC, GRAY } from '../../ui/alf';
 
 interface ProfileEditProps {

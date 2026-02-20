@@ -12,6 +12,7 @@ import {
   FavoriteTargetType,
   createDefaultFavoriteState,
 } from '../types';
+
 import { getCurrentUserId } from './voteSelectors';
 
 // ==========================================

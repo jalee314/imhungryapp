@@ -17,12 +17,13 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react-native';
+
+import { useFavoritesStore } from '../../stores/FavoritesStore';
 import {
   useOptimisticDealInteractions,
   createInitialInteractionState,
   DealInteractionState,
 } from '../useOptimisticDealInteractions';
-import { useFavoritesStore } from '../../stores/FavoritesStore';
 
 // Mock the voteService
 const mockToggleUpvote = jest.fn();

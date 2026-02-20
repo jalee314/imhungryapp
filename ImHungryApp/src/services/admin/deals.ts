@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase';
+
 import { logAction } from './core';
 import type { Deal, ServiceResult } from './types';
 

@@ -1,8 +1,8 @@
+import { BRAND, STATIC } from '@ui/alf/tokens';
+import { Box, Text, Pressable } from '@ui/primitives';
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
 import React, { memo } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
-import { ArrowBigUp, ArrowBigDown } from 'lucide-react-native';
-import { Box, Text, Pressable } from '@ui/primitives';
-import { BRAND, STATIC } from '@ui/alf/tokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 

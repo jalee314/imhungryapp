@@ -11,8 +11,9 @@
  */
 
 import React from 'react';
-import { AppProviders } from './providers';
+
 import { FontGate } from './gates';
+import { AppProviders } from './providers';
 
 export interface AppRootProps {
   /** Content to render after bootstrap (AppContent component) */

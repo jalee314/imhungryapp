@@ -4,10 +4,10 @@
  * Purely presentational.
  */
 
+import { Monicon } from '@monicon/native';
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
-import { Monicon } from '@monicon/native';
-import { Box, Text } from '../../../ui/primitives';
+
 import {
   STATIC,
   GRAY,
@@ -16,6 +16,7 @@ import {
   RADIUS,
   FONT_SIZE,
 } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 
 // ============================================================================
 // Props

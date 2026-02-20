@@ -10,7 +10,7 @@
  * 3. Behavior Baseline: ensures parity for future refactors
  */
 
-import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import {
   render,
   screen,
@@ -18,16 +18,22 @@ import {
   waitFor,
   act,
 } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import Feed from '../Feed';
-import { useLocationStore } from '../../../stores/LocationStore';
-import { useFavoritesStore } from '../../../stores/FavoritesStore';
+import { dealCacheService } from '../../../services/dealCacheService';
+import { logClick } from '../../../services/interactionService';
+import {
+  toggleUpvote,
+  toggleDownvote,
+  toggleFavorite,
+} from '../../../services/voteService';
 import { useDataCacheStore } from '../../../stores/DataCacheStore';
 import { useDealUpdateStore } from '../../../stores/DealUpdateStore';
-import type { Deal } from '../../../types/deal';
+import { useFavoritesStore } from '../../../stores/FavoritesStore';
+import { useLocationStore } from '../../../stores/LocationStore';
 import { mockSupabase, mockUser, configureMockAuth } from '../../../test-utils/mocks/supabaseMock';
+import type { Deal } from '../../../types/deal';
 
 // Mock @monicon/native (used by DealCard)
 jest.mock('@monicon/native', () => ({
@@ -81,13 +87,7 @@ jest.mock('@react-navigation/native', () => {
 });
 
 // Import mocked modules
-import { dealCacheService } from '../../../services/dealCacheService';
-import {
-  toggleUpvote,
-  toggleDownvote,
-  toggleFavorite,
-} from '../../../services/voteService';
-import { logClick } from '../../../services/interactionService';
+import Feed from '../Feed';
 
 // Mock deal data factory
 const createMockDeal = (overrides: Partial<Deal> = {}): Deal => ({

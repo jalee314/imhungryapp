@@ -5,17 +5,18 @@
  * components can remain purely presentational.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import React from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import type { Deal } from '../../types/deal';
-import { getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
-import { logClick } from '../../services/interactionService';
-import { dealCacheService } from '../../services/dealCacheService';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+
 import { supabase } from '../../../lib/supabase';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useFeedInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
+import { dealCacheService } from '../../services/dealCacheService';
+import { logClick } from '../../services/interactionService';
+import { getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
+import type { Deal } from '../../types/deal';
+
 import type { CommunityContext } from './types';
 
 // ---------------------------------------------------------------------------

@@ -4,9 +4,10 @@
  * Mirrors the "Extra Details" area used in DealCreationScreen / DealEditScreen.
  */
 
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import { Box, Text } from '../../../ui/primitives';
 
 export interface DetailsSectionProps {

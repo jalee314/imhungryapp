@@ -5,22 +5,23 @@
  * Wraps MainTabNavigator and includes shared screens accessible from any tab.
  */
 
-import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
+
 import AuthGuard from '../../../components/AuthGuard';
 
 // Main tab navigator
-import { MainTabNavigator } from './MainTabNavigator';
 
 // Shared screens accessible from any tab
-import DealDetailScreen from '../../../screens/deal_feed/DealDetailScreen';
 import DealEditScreen from '../../../screens/contribution/DealEditScreen';
-import RestaurantDetailScreen from '../../../screens/discover_feed/RestaurantDetailScreen';
-import ReportContentScreen from '../../../screens/deal_feed/ReportContentScreen';
 import BlockUserScreen from '../../../screens/deal_feed/BlockUserScreen';
+import DealDetailScreen from '../../../screens/deal_feed/DealDetailScreen';
+import ReportContentScreen from '../../../screens/deal_feed/ReportContentScreen';
+import RestaurantDetailScreen from '../../../screens/discover_feed/RestaurantDetailScreen';
 import ProfilePage from '../../../screens/profile/ProfilePage';
-
 import type { AppStackParamList } from '../types';
+
+import { MainTabNavigator } from './MainTabNavigator';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 

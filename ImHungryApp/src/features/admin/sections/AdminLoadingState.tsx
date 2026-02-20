@@ -1,7 +1,8 @@
 import React from 'react';
 import { ActivityIndicator, SafeAreaView } from 'react-native';
-import { Box } from '../../../ui/primitives/Box';
+
 import { BRAND, GRAY } from '../../../ui/alf';
+import { Box } from '../../../ui/primitives/Box';
 
 const AdminLoadingState: React.FC = () => (
   <SafeAreaView style={{ flex: 1, backgroundColor: GRAY[100] }}>

@@ -22,8 +22,10 @@ import {
   StyleSheet,
   StyleProp,
 } from 'react-native';
-import { SPACING, RADIUS, BORDER_WIDTH, SpacingKey, RadiusKey } from '../alf/tokens';
+
 import { ThemePalette } from '../alf/themes';
+import { SPACING, RADIUS, BORDER_WIDTH, SpacingKey, RadiusKey } from '../alf/tokens';
+
 import { useThemeSafe } from './ThemeProvider';
 
 // ============================================================================

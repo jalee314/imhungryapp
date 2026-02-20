@@ -6,8 +6,9 @@
 import { supabase } from '../../../lib/supabase';
 import { calculateDistance, getRestaurantLocationsBatch } from '../locationService';
 import { getUserVoteStates, calculateVoteCounts } from '../voteService';
-import { getCurrentUserId, getUserLocation } from './utils';
+
 import { DatabaseDeal, RankedDealMeta } from './types';
+import { getCurrentUserId, getUserLocation } from './utils';
 
 /**
  * Call the ranking function to get ranked deal metadata (id + distance)

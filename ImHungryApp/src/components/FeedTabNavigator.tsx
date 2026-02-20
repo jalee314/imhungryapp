@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Header from './Header';
-import LocationModal from './LocationModal';
+
 import { useLocation } from '../hooks/useLocation';
 import Feed from '../screens/deal_feed/Feed';
 import DiscoverFeed from '../screens/discover_feed/DiscoverFeed';
-
 import { STATIC } from '../ui/alf';
+
+import Header from './Header';
+import LocationModal from './LocationModal';
 
 interface FeedTabNavigatorProps {
   currentTab?: 'feed' | 'discover';

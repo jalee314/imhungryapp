@@ -10,7 +10,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { supabase } from '../../../lib/supabase';
 import { useFavorites } from '../../hooks/useFavorites';
-import type { FavoriteDeal, FavoriteRestaurant } from '../../types/favorites';
 import {
   fetchFavoriteDeals,
   fetchFavoriteRestaurants,
@@ -18,6 +17,7 @@ import {
   toggleRestaurantFavorite,
 } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
+import type { FavoriteDeal, FavoriteRestaurant } from '../../types/favorites';
 
 import type { FavoritesTab, FavoritesContext } from './types';
 

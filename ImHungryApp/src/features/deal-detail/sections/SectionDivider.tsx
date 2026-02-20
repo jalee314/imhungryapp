@@ -3,8 +3,9 @@
  */
 
 import React from 'react';
-import { Box } from '../../../ui/primitives';
+
 import { GRAY, BORDER_WIDTH } from '../../../ui/alf';
+import { Box } from '../../../ui/primitives';
 
 export function SectionDivider() {
   return (

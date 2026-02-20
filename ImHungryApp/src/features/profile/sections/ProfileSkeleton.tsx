@@ -5,12 +5,12 @@
  * Purely presentational – no props required.
  */
 
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import SkeletonLoader from '../../../components/SkeletonLoader';
+
 import DealCardSkeleton from '../../../components/DealCardSkeleton';
-import { Box } from '../../../ui/primitives';
+import SkeletonLoader from '../../../components/SkeletonLoader';
 import {
   STATIC,
   GRAY,
@@ -19,6 +19,7 @@ import {
   BORDER_WIDTH,
   DIMENSION,
 } from '../../../ui/alf';
+import { Box } from '../../../ui/primitives';
 
 export function ProfileSkeleton() {
   return (

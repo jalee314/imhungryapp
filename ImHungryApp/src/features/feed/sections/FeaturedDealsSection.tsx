@@ -5,13 +5,13 @@
  * Purely presentational. State & callbacks come from useFeed.
  */
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { View, FlatList, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { Deal } from '../../../types/deal';
+
 import DealCard from '../../../components/DealCard';
-import { Box, Text } from '../../../ui/primitives';
+import type { Deal } from '../../../types/deal';
 import {
   STATIC,
   GRAY,
@@ -20,6 +20,7 @@ import {
   FONT_SIZE,
   FONT_WEIGHT,
 } from '../../../ui/alf';
+import { Box, Text } from '../../../ui/primitives';
 import type { FeedInteractions } from '../types';
 
 export interface FeaturedDealsSectionProps {
