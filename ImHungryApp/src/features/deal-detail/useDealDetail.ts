@@ -20,6 +20,7 @@ import {
 import { supabase } from '../../../lib/supabase';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useSingleDealInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
+import { getCurrentUserId as getCurrentUserIdFromService } from '../../services/currentUserService';
 import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
 import type { Deal } from '../../types/deal';
 import { startPerfSpan } from '../../utils/perfMonitor';
@@ -74,8 +75,8 @@ export function useDealDetail() {
   useEffect(() => {
     const fetchCurrentUserId = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUserId(user?.id || null);
+        const userId = await getCurrentUserIdFromService();
+        setCurrentUserId(userId);
       } catch (error) {
         console.error('Error getting current user:', error);
       }

@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '../../lib/supabase';
+import { toggleRestaurantFavorite as canonicalToggleRestaurantFavorite } from '../features/interactions';
 import type { FavoriteDeal, FavoriteRestaurant } from '../types/favorites';
 import {
   estimatePayloadBytes,
@@ -17,6 +18,8 @@ import {
   recordCacheRefresh,
   startPerfSpan,
 } from '../utils/perfMonitor';
+
+import { getCurrentUserId } from './currentUserService';
 
 export type { FavoriteDeal, FavoriteRestaurant } from '../types/favorites';
 
@@ -77,19 +80,6 @@ export const markFavoritesCacheDirty = (type?: FavoriteCacheType): void => {
       cache.dirtyEntries.add(key);
     }
   });
-};
-
-/**
- * Get the current authenticated user's ID
- */
-const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
 };
 
 export const isFavoritesCacheStale = async (type: FavoriteCacheType): Promise<boolean> => {
@@ -988,35 +978,23 @@ export const toggleRestaurantFavorite = async (
   isCurrentlyFavorited: boolean
 ): Promise<boolean> => {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId({ forceRefresh: true });
     if (!userId) {
       throw new Error('User not authenticated');
     }
 
-    if (isCurrentlyFavorited) {
-      // Remove from favorites
-      const { error } = await supabase
-        .from('favorite')
-        .delete()
-        .eq('user_id', userId)
-        .eq('restaurant_id', restaurantId);
-      
-      if (error) throw error;
-      markFavoritesCacheDirty();
-      return false;
-    } else {
-      // Add to favorites
-      const { error } = await supabase
-        .from('favorite')
-        .insert({
-          user_id: userId,
-          restaurant_id: restaurantId,
-        });
-      
-      if (error) throw error;
-      markFavoritesCacheDirty();
-      return true;
+    const result = await canonicalToggleRestaurantFavorite(
+      restaurantId,
+      isCurrentlyFavorited,
+      'favorites',
+    );
+
+    if (!result.success) {
+      throw { message: result.error || 'Failed to toggle restaurant favorite' };
     }
+
+    markFavoritesCacheDirty('restaurants');
+    return result.isFavorited ?? !isCurrentlyFavorited;
   } catch (error) {
     console.error('Error toggling restaurant favorite:', error);
     throw error;

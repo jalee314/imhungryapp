@@ -10,6 +10,7 @@ import {
   startPerfSpan,
 } from '../utils/perfMonitor';
 
+import { getCurrentUserId } from './currentUserService';
 import {
   addDistancesToDeals,
   addVotesToDeals,
@@ -347,10 +348,8 @@ class DealCacheService {
     this.setActiveContext(customCoordinates);
     if (this.isInitialized) return;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    const userId = await getCurrentUserId();
+    if (!userId) return;
 
     this.realtimeChannel = supabase
       .channel('deal-cache-realtime')
