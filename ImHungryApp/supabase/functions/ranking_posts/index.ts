@@ -1,4 +1,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const RANKING_DEBUG_ENABLED = [
+  '1',
+  'true',
+  'yes',
+  'on'
+].includes((Deno.env.get('RANKING_DEBUG') || '').toLowerCase());
+
+const debugLog = (...args) => {
+  if (RANKING_DEBUG_ENABLED) {
+    console.log(...args);
+  }
+};
+
 // ------------------- Gating & Filtering Functions -------------------
 async function applyBlockedGates(deals, user_id, supabase) {
   if (!deals || deals.length === 0) return [];
@@ -15,7 +29,7 @@ async function applyBlockedGates(deals, user_id, supabase) {
     const authorId = deal.deal_template?.user_id;
     return !blockedUserSet.has(authorId);
   });
-  console.log(`Removed ${deals.length - filteredDeals.length} deal(s) from blocked users.`);
+  debugLog(`Removed ${deals.length - filteredDeals.length} deal(s) from blocked users.`);
   return filteredDeals;
 }
 async function applyReportGates(deals, user_id, supabase) {
@@ -100,75 +114,21 @@ function calculatePersonalRelevanceScore(deal, userCuisineSet, market) {
     distanceScore: weightedDistanceScore
   };
 }
-const INTERACTION_WEIGHTS = {
-  save: 3.0,
-  share: 3.0,
-  'click-through': 2.5,
-  'click-open': 1.5,
-  upvote: 1.0,
-  downvote: -2.0,
-  report: -3.0,
-  view: 0.0
+
+const toFiniteNumber = (value) => {
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numericValue) ? numericValue : 0;
 };
-function applyTimeDecay(daysAgo, halfLife = 15) {
-  if (daysAgo < 0) return 1.0;
-  return Math.pow(0.5, daysAgo / halfLife);
+
+function calculateMedian(values) {
+  if (!values || values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const midpoint = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[midpoint - 1] + sorted[midpoint]) / 2
+    : sorted[midpoint];
 }
-function getWeightedInteractions(interactions) {
-  let weightedPositives = 0;
-  let weightedNegatives = 0;
-  for (const action of interactions) {
-    const weight = INTERACTION_WEIGHTS[action.interaction_type] || 0;
-    const daysAgo = (new Date().getTime() - new Date(action.created_at).getTime()) / (1000 * 60 * 60 * 24);
-    const decayFactor = applyTimeDecay(daysAgo);
-    const decayedWeight = weight * decayFactor;
-    if (decayedWeight > 0) {
-      weightedPositives += decayedWeight;
-    } else {
-      weightedNegatives += decayedWeight;
-    }
-  }
-  return {
-    weightedPositives,
-    weightedNegatives
-  };
-}
-function calculateGlobalAvgEfficiency(deals, interactionsByDeal, viewsByDeal) {
-  let totalEfficiencySum = 0;
-  if (deals.length === 0) return 0;
-  for (const deal of deals) {
-    const dealInteractions = interactionsByDeal.get(deal.deal_id) || [];
-    const { weightedPositives, weightedNegatives } = getWeightedInteractions(dealInteractions);
-    const totalViews = viewsByDeal.get(deal.deal_id) || 0;
-    const denominator = totalViews + Math.abs(weightedNegatives) + 1e-6;
-    totalEfficiencySum += weightedPositives / denominator;
-  }
-  return totalEfficiencySum / deals.length;
-}
-function findPriorStrength(deals, interactionsByDeal, viewsByDeal) {
-  if (!deals || deals.length === 0) return 50; // Default C value if no deals
-  const evidenceArray = deals.map((deal) => {
-    const dealInteractions = interactionsByDeal.get(deal.deal_id) || [];
-    const { weightedNegatives } = getWeightedInteractions(dealInteractions);
-    const totalViews = viewsByDeal.get(deal.deal_id) || 0;
-    return totalViews + Math.abs(weightedNegatives);
-  });
-  evidenceArray.sort((a, b) => a - b);
-  const mid = Math.floor(evidenceArray.length / 2);
-  return evidenceArray.length % 2 !== 0 ? evidenceArray[mid] : (evidenceArray[mid - 1] + evidenceArray[mid]) / 2;
-}
-function calculateSmoothedBehScore(interactions, totalViews, m, C) {
-  const { weightedPositives, weightedNegatives } = getWeightedInteractions(interactions);
-  const epsilon = 1e-6;
-  const denominator = totalViews + Math.abs(weightedNegatives) + epsilon;
-  const observedEfficiency = weightedPositives / denominator;
-  const evidence = totalViews + Math.abs(weightedNegatives);
-  // Prevent division by zero if C and evidence are both 0
-  const smoothingDenominator = C + evidence;
-  const smoothedEfficiency = smoothingDenominator > 0 ? (C * m + evidence * observedEfficiency) / smoothingDenominator : 0;
-  const logFactor = Math.log10(1 + totalViews);
-  return smoothedEfficiency * logFactor;
-}
+
 async function calculateQualityScore(deals, supabase) {
   if (!deals || deals.length === 0) return {
     normalizedScores: new Map(),
@@ -176,9 +136,11 @@ async function calculateQualityScore(deals, supabase) {
     c: 0
   };
   const dealIds = deals.map((deal) => deal.deal_id);
-  const { data: interactions, error } = await supabase.from('interaction').select('deal_id, interaction_type, created_at').in('deal_id', dealIds);
+  const { data: qualityInputs, error } = await supabase.rpc('get_deal_quality_components', {
+    p_deal_ids: dealIds
+  });
   if (error) {
-    console.error('Error fetching interactions:', error.message);
+    console.error('Error fetching quality components:', error.message);
     return {
       normalizedScores: new Map(deals.map((d) => [
         d.deal_id,
@@ -188,28 +150,56 @@ async function calculateQualityScore(deals, supabase) {
       c: 0
     };
   }
-  const interactionsByDeal = new Map();
-  const viewsByDeal = new Map();
-  deals.forEach((deal) => {
-    interactionsByDeal.set(deal.deal_id, []);
-    viewsByDeal.set(deal.deal_id, deal.view_count || 0);
+
+  const qualityInputByDealId = new Map();
+  (qualityInputs || []).forEach((entry) => {
+    if (!entry?.deal_id) return;
+    qualityInputByDealId.set(entry.deal_id, {
+      weightedPositives: toFiniteNumber(entry.weighted_positives),
+      weightedNegativesAbs: toFiniteNumber(entry.weighted_negatives_abs)
+    });
   });
-  interactions.forEach((interaction) => {
-    if (interactionsByDeal.has(interaction.deal_id)) {
-      interactionsByDeal.get(interaction.deal_id).push(interaction);
-    }
+
+  const evidenceByDeal = deals.map((deal) => {
+    const qualityInput = qualityInputByDealId.get(deal.deal_id) || {
+      weightedPositives: 0,
+      weightedNegativesAbs: 0
+    };
+    const totalViews = toFiniteNumber(deal.view_count);
+    const denominator = totalViews + qualityInput.weightedNegativesAbs + 1e-6;
+    return {
+      dealId: deal.deal_id,
+      totalViews,
+      weightedPositives: qualityInput.weightedPositives,
+      weightedNegativesAbs: qualityInput.weightedNegativesAbs,
+      evidence: totalViews + qualityInput.weightedNegativesAbs,
+      observedEfficiency: qualityInput.weightedPositives / denominator
+    };
   });
-  const m = calculateGlobalAvgEfficiency(deals, interactionsByDeal, viewsByDeal);
-  const c = findPriorStrength(deals, interactionsByDeal, viewsByDeal);
+
+  const totalEfficiency = evidenceByDeal.reduce((sum, item) => sum + item.observedEfficiency, 0);
+  const m = evidenceByDeal.length > 0 ? totalEfficiency / evidenceByDeal.length : 0;
+  const c = calculateMedian(evidenceByDeal.map((item) => item.evidence));
+
   const behScores = new Map();
-  for (const deal of deals) {
-    const dealId = deal.deal_id;
-    const dealInteractions = interactionsByDeal.get(dealId) || [];
-    const totalViews = viewsByDeal.get(dealId) || 0;
-    const score = calculateSmoothedBehScore(dealInteractions, totalViews, m, c);
-    behScores.set(dealId, score);
-  }
+  evidenceByDeal.forEach((item) => {
+    const smoothingDenominator = c + item.evidence;
+    const smoothedEfficiency = smoothingDenominator > 0
+      ? (c * m + item.evidence * item.observedEfficiency) / smoothingDenominator
+      : 0;
+    const score = smoothedEfficiency * Math.log10(1 + item.totalViews);
+    behScores.set(item.dealId, score);
+  });
+
   const scoresArray = Array.from(behScores.values());
+  if (scoresArray.length === 0) {
+    return {
+      normalizedScores: new Map(),
+      m,
+      c
+    };
+  }
+
   const minScore = Math.min(...scoresArray);
   const maxScore = Math.max(...scoresArray);
   const scoreRange = maxScore - minScore;
@@ -322,26 +312,28 @@ Deno.serve(async (req) => {
         distanceUsertoRes: deal.distance_miles
       };
     });
-    // 4. Log Scores for Debugging
-    const scoreLogs = scoredDeals.map((deal) => ({
-      deal_title: deal.deal_template?.title || 'Untitled Deal',
-      deal_id: deal.deal_id,
-      scores: {
-        relevance: deal.relevance ? parseFloat(deal.relevance.toFixed(3)) : 0,
-        quality: deal.quality ? parseFloat(deal.quality.toFixed(3)) : 0,
-        recency: deal.recency ? parseFloat(deal.recency.toFixed(3)) : 0,
-        final_score: deal.weightedScore ? parseFloat(deal.weightedScore.toFixed(3)) : 0
-      }
-    }));
-    const logObject = {
-      message: `Scoring analysis for ${scoredDeals.length} deals`,
-      qualityScoreParams: {
-        m_globalAvgEfficiency: parseFloat(m.toFixed(5)),
-        c_priorStrength: parseFloat(c.toFixed(5))
-      },
-      analysis: scoreLogs
-    };
-    console.log(JSON.stringify(logObject, null, 2));
+    // 4. Log Scores for Debugging (only enabled for explicit debug environments)
+    if (RANKING_DEBUG_ENABLED) {
+      const scoreLogs = scoredDeals.map((deal) => ({
+        deal_title: deal.deal_template?.title || 'Untitled Deal',
+        deal_id: deal.deal_id,
+        scores: {
+          relevance: deal.relevance ? parseFloat(deal.relevance.toFixed(3)) : 0,
+          quality: deal.quality ? parseFloat(deal.quality.toFixed(3)) : 0,
+          recency: deal.recency ? parseFloat(deal.recency.toFixed(3)) : 0,
+          final_score: deal.weightedScore ? parseFloat(deal.weightedScore.toFixed(3)) : 0
+        }
+      }));
+      const logObject = {
+        message: `Scoring analysis for ${scoredDeals.length} deals`,
+        qualityScoreParams: {
+          m_globalAvgEfficiency: parseFloat(m.toFixed(5)),
+          c_priorStrength: parseFloat(c.toFixed(5))
+        },
+        analysis: scoreLogs
+      };
+      debugLog(JSON.stringify(logObject, null, 2));
+    }
     // 5. Apply Final Ranking Adjustments
     let rankedDeals = applyDiversity(scoredDeals);
     rankedDeals.sort((a, b) => (b.weightedScore || 0) - (a.weightedScore || 0));
@@ -349,7 +341,6 @@ Deno.serve(async (req) => {
     // 6. Return Final Response
     const responseData = finalFeed.map((deal) => ({
       deal_id: deal.deal_id,
-      title: deal.deal_template?.title || 'Untitled Deal',
       distance: deal.distance_miles
     }));
     return new Response(JSON.stringify(responseData), {
