@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../../../lib/supabase';
+import { startPerfSpan } from '../../utils/perfMonitor';
 import { calculateDistance, getRestaurantLocationsBatch } from '../locationService';
 import { getUserVoteStates, calculateVoteCounts } from '../voteService';
 
@@ -15,40 +16,69 @@ import { getCurrentUserId, getUserLocation } from './utils';
  * Internal function used by fetchRankedDeals
  */
 const getRankedDealsMeta = async (): Promise<RankedDealMeta[]> => {
-  try {
-    const location = await getUserLocation();
-    if (!location) {
-      return [];
-    }
+  const location = await getUserLocation();
+  if (!location) {
+    return [];
+  }
 
+  const userId = await getCurrentUserId();
+  const rankingSpan = startPerfSpan('query.feed.ranking_posts.invoke', {
+    hasLocation: true,
+    hasUser: Boolean(userId),
+  });
+  const requestPayload = {
+    user_id: userId,
+    location: {
+      latitude: location.lat,
+      longitude: location.lng,
+    },
+  };
+
+  try {
     const startTime = Date.now();
     const { data, error } = await supabase.functions.invoke('ranking_posts', {
-      body: {
-        user_id: await getCurrentUserId(),
-        location: {
-          latitude: location.lat,
-          longitude: location.lng
-        }
-      }
+      body: requestPayload,
+    });
+    rankingSpan.recordRoundTrip({
+      request: requestPayload,
+      responseCount: Array.isArray(data) ? data.length : 0,
+      error: error?.message ?? null,
     });
     const rankingTime = Date.now() - startTime;
     console.log(`⏱️ Ranking function took: ${rankingTime}ms`);
 
     if (error) {
+      rankingSpan.end({ success: false, error });
       return [];
     }
 
     if (!data || !Array.isArray(data)) {
+      rankingSpan.end({
+        metadata: {
+          rankedCount: 0,
+          emptyResponse: true,
+        },
+      });
       return [];
     }
 
-    return data
+    const rankedDeals = data
       .map((item: any) => ({
         deal_id: item.deal_id,
-        distance: item.distance ?? null
+        distance: item.distance ?? null,
       }))
       .filter((item: RankedDealMeta) => Boolean(item.deal_id));
+
+    rankingSpan.addPayload(data);
+    rankingSpan.end({
+      metadata: {
+        rankedCount: rankedDeals.length,
+      },
+    });
+
+    return rankedDeals;
   } catch (error) {
+    rankingSpan.end({ success: false, error });
     return [];
   }
 };
@@ -67,6 +97,10 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
     if (rankedIds.length === 0) {
       return [];
     }
+
+    const dealQuerySpan = startPerfSpan('query.feed.deal_instance.fetch_ranked', {
+      rankedIds: rankedIds.length,
+    });
 
     const { data: deals, error } = await supabase
       .from('deal_instance')
@@ -120,7 +154,26 @@ export const fetchRankedDeals = async (): Promise<DatabaseDeal[]> => {
       `)
       .in('deal_id', rankedIds);
 
-    if (error) throw error;
+    dealQuerySpan.recordRoundTrip({
+      request: {
+        table: 'deal_instance',
+        idsRequested: rankedIds.length,
+      },
+      rowsReturned: deals?.length ?? 0,
+      error: error?.message ?? null,
+    });
+
+    if (error) {
+      dealQuerySpan.end({ success: false, error });
+      throw error;
+    }
+
+    dealQuerySpan.addPayload(deals);
+    dealQuerySpan.end({
+      metadata: {
+        rowsReturned: deals?.length ?? 0,
+      },
+    });
 
     const transformedDeals = deals?.map(deal => {
       const dealImages = ((deal.deal_template as any)?.deal_images || [])

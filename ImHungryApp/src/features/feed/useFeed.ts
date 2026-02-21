@@ -18,6 +18,7 @@ import { dealCacheService } from '../../services/dealCacheService';
 import { logClick } from '../../services/interactionService';
 import { calculateVoteCounts } from '../../services/voteService';
 import type { Deal } from '../../types/deal';
+import { startPerfSpan } from '../../utils/perfMonitor';
 
 import type { FeedContext } from './types';
 
@@ -56,16 +57,31 @@ export function useFeed(): FeedContext {
 
   // ----- Load deals ---------------------------------------------------------
   const loadDeals = useCallback(async () => {
+    const span = startPerfSpan('screen.feed.load', {
+      hasCoordinates: Boolean(selectedCoordinates),
+      hasExistingDeals: deals.length > 0,
+    });
+    let spanClosed = false;
+    let loadedDealsCount = 0;
+
     try {
       if (deals.length === 0) setLoading(true);
       const cachedDeals = await dealCacheService.getDeals(false, selectedCoordinates || undefined);
+      loadedDealsCount = cachedDeals.length;
+      span.recordRoundTrip({ source: 'dealCacheService.getDeals', deals: cachedDeals.length });
+      span.addPayload(cachedDeals);
       setDeals(cachedDeals);
       setError(null);
     } catch (err) {
       console.error('Error loading deals:', err);
       setError('Failed to load deals. Please try again.');
+      span.end({ success: false, error: err });
+      spanClosed = true;
     } finally {
       setLoading(false);
+      if (!spanClosed) {
+        span.end({ metadata: { dealsLoaded: loadedDealsCount } });
+      }
     }
   }, [deals.length, selectedCoordinates]);
 
@@ -235,16 +251,30 @@ export function useFeed(): FeedContext {
 
   // ----- Pull-to-refresh ----------------------------------------------------
   const onRefresh = useCallback(async () => {
+    const span = startPerfSpan('screen.feed.refresh', {
+      hasCoordinates: Boolean(selectedCoordinates),
+    });
+    let spanClosed = false;
+    let refreshedDealsCount = 0;
+
     setRefreshing(true);
     try {
       const freshDeals = await dealCacheService.getDeals(true);
+      refreshedDealsCount = freshDeals.length;
+      span.recordRoundTrip({ source: 'dealCacheService.getDeals.force', deals: freshDeals.length });
+      span.addPayload(freshDeals);
       setTimeout(() => setDeals(freshDeals), 0);
     } catch (err) {
       console.error('Error refreshing deals:', err);
+      span.end({ success: false, error: err });
+      spanClosed = true;
     } finally {
       setRefreshing(false);
+      if (!spanClosed) {
+        span.end({ metadata: { dealsLoaded: refreshedDealsCount } });
+      }
     }
-  }, []);
+  }, [selectedCoordinates]);
 
   // ----- Filtering ----------------------------------------------------------
   const filteredDeals = deals.filter(deal => {

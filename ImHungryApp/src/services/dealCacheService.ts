@@ -3,6 +3,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
 import type { Deal } from '../types/deal';
+import { startPerfSpan } from '../utils/perfMonitor';
 
 import { fetchRankedDeals, transformDealForUI, addDistancesToDeals, addVotesToDeals } from './dealService';
 import { getUserVoteStates, calculateVoteCounts } from './voteService';
@@ -64,11 +65,21 @@ class DealCacheService {
     }
 
     this.isFetching = true;
+    const span = startPerfSpan('service.feed.fetch_ranked_deals', {
+      force,
+      hasCustomCoordinates: Boolean(customCoordinates),
+    });
+    let spanClosed = false;
+    let finalDealCount = 0;
     
     try {
       console.log('🔄 Fetching fresh deals...');
       const fetchStart = Date.now();
       const dbDeals = await fetchRankedDeals();
+      span.recordRoundTrip({
+        source: 'dealService.fetchRankedDeals',
+        count: dbDeals.length,
+      });
       const fetchTime = Date.now() - fetchStart;
       console.log(`📊 Fetched ${dbDeals.length} deals in ${fetchTime}ms`);
       
@@ -78,7 +89,17 @@ class DealCacheService {
       const baseDeals = customCoordinates
         ? await addDistancesToDeals(dbDeals, customCoordinates)
         : dbDeals;
+      if (customCoordinates) {
+        span.recordRoundTrip({
+          source: 'dealService.addDistancesToDeals',
+          count: baseDeals.length,
+        });
+      }
       const enrichedDeals = await addVotesToDeals(baseDeals);
+      span.recordRoundTrip({
+        source: 'dealService.addVotesToDeals',
+        count: enrichedDeals.length,
+      });
       const enrichTime = Date.now() - enrichStart;
       console.log(`✅ Enrichment completed in ${enrichTime}ms`);
       
@@ -94,6 +115,8 @@ class DealCacheService {
       console.log('🔍 Vote sample:', voteSample);
       
       const transformedDeals = enrichedDeals.map(transformDealForUI);
+      finalDealCount = transformedDeals.length;
+      span.addPayload(transformedDeals);
       
       this.cachedDeals = transformedDeals;
       
@@ -111,9 +134,20 @@ class DealCacheService {
       return transformedDeals;
     } catch (error) {
       console.error('Error fetching deals:', error);
+      span.end({ success: false, error });
+      spanClosed = true;
       throw error;
     } finally {
       this.isFetching = false;
+      if (!spanClosed) {
+        span.end({
+          metadata: {
+            force,
+            hasCustomCoordinates: Boolean(customCoordinates),
+            dealsReturned: finalDealCount,
+          },
+        });
+      }
     }
   }
 

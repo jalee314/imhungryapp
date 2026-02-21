@@ -11,6 +11,7 @@
 
 import { supabase } from '../../lib/supabase';
 import type { FavoriteDeal, FavoriteRestaurant } from '../types/favorites';
+import { startPerfSpan } from '../utils/perfMonitor';
 
 export type { FavoriteDeal, FavoriteRestaurant } from '../types/favorites';
 
@@ -49,9 +50,19 @@ const getCurrentUserId = async (): Promise<string | null> => {
  * Fetch user's favorite deals
  */
 export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
+  const span = startPerfSpan('screen.favorites.fetch_deals');
+
   try {
     const userId = await getCurrentUserId();
-    if (!userId) return [];
+    if (!userId) {
+      span.end({
+        metadata: {
+          reason: 'no_authenticated_user',
+          deals: 0,
+        },
+      });
+      return [];
+    }
 
     // Check cache first
     const cacheKey = `deals_${userId}`;
@@ -59,7 +70,15 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
     const lastFetch = cache.lastFetch.get(cacheKey) || 0;
     
     if (now - lastFetch < cache.CACHE_DURATION && cache.deals.has(cacheKey)) {
-      return cache.deals.get(cacheKey)!;
+      const cachedDeals = cache.deals.get(cacheKey)!;
+      span.addPayload(cachedDeals);
+      span.end({
+        metadata: {
+          cacheHit: true,
+          deals: cachedDeals.length,
+        },
+      });
+      return cachedDeals;
     }
 
     // Get favorite deal IDs first
@@ -68,13 +87,25 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       .select('deal_id, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
+    span.recordRoundTrip({
+      source: 'query.favorite.deals',
+      responseCount: favoriteData?.length ?? 0,
+      error: favoriteError?.message ?? null,
+    });
 
     if (favoriteError) {
       console.error('Error fetching favorites:', favoriteError);
+      span.end({ success: false, error: favoriteError });
       return [];
     }
 
     if (!favoriteData || favoriteData.length === 0) {
+      span.end({
+        metadata: {
+          cacheHit: false,
+          deals: 0,
+        },
+      });
       return [];
     }
 
@@ -86,15 +117,21 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       .from('deal_instance')
       .select('deal_id, template_id, start_date, end_date')
       .in('deal_id', dealIds);
+    span.recordRoundTrip({
+      source: 'query.deal_instance.by_deal_ids',
+      responseCount: deals?.length ?? 0,
+      error: dealsError?.message ?? null,
+    });
 
     if (dealsError) {
       console.error('Error fetching deal details:', dealsError);
+      span.end({ success: false, error: dealsError });
       return [];
     }
 
     // Get all template data in one batch query - NOW WITH IMAGE METADATA AND DEAL_IMAGES
     const templateIds = [...new Set(deals.map(d => d.template_id))];
-    const { data: templatesData } = await supabase
+    const { data: templatesData, error: templatesError } = await supabase
       .from('deal_template')
       .select(`
         template_id,
@@ -128,6 +165,16 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         )
       `)
       .in('template_id', templateIds);
+    span.recordRoundTrip({
+      source: 'query.deal_template.by_template_ids',
+      responseCount: templatesData?.length ?? 0,
+      error: templatesError?.message ?? null,
+    });
+
+    if (templatesError) {
+      span.end({ success: false, error: templatesError });
+      return [];
+    }
 
     const templatesMap = new Map(templatesData?.map(t => [t.template_id, t]) || []);
 
@@ -167,8 +214,33 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       // Get deal counts
       restaurantIds.length > 0
         ? supabase.rpc('get_deal_counts_for_restaurants', { r_ids: restaurantIds })
-        : Promise.resolve({ data: [] })
+        : Promise.resolve({ data: [], error: null })
     ]);
+    span.recordRoundTrip({
+      source: 'query.restaurant.by_restaurant_ids',
+      responseCount: restaurantsResult.data?.length ?? 0,
+      error: restaurantsResult.error?.message ?? null,
+    });
+    span.recordRoundTrip({
+      source: 'query.cuisine.by_cuisine_ids',
+      responseCount: cuisinesResult.data?.length ?? 0,
+      error: cuisinesResult.error?.message ?? null,
+    });
+    span.recordRoundTrip({
+      source: 'query.category.by_category_ids',
+      responseCount: categoriesResult.data?.length ?? 0,
+      error: categoriesResult.error?.message ?? null,
+    });
+    span.recordRoundTrip({
+      source: 'rpc.get_restaurant_coords_with_distance',
+      responseCount: distancesResult.data?.length ?? 0,
+      error: distancesResult.error?.message ?? null,
+    });
+    span.recordRoundTrip({
+      source: 'rpc.get_deal_counts_for_restaurants',
+      responseCount: dealCountsResult.data?.length ?? 0,
+      error: dealCountsResult.error?.message ?? null,
+    });
 
     // Create lookup maps from parallel query results
     const restaurantsMap = new Map(restaurantsResult.data?.map(r => [r.restaurant_id, r]) || []);
@@ -275,9 +347,18 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
     cache.deals.set(cacheKey, favoriteDeals);
     cache.lastFetch.set(cacheKey, now);
 
+    span.addPayload(favoriteDeals);
+    span.end({
+      metadata: {
+        cacheHit: false,
+        deals: favoriteDeals.length,
+      },
+    });
+
     return favoriteDeals;
   } catch (error) {
     console.error('Error in fetchFavoriteDeals:', error);
+    span.end({ success: false, error });
     return [];
   }
 };
@@ -286,9 +367,19 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
  * Fetch user's favorite restaurants (restaurants with favorited deals)
  */
 export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> => {
+  const span = startPerfSpan('screen.favorites.fetch_restaurants');
+
   try {
     const userId = await getCurrentUserId();
-    if (!userId) return [];
+    if (!userId) {
+      span.end({
+        metadata: {
+          reason: 'no_authenticated_user',
+          restaurants: 0,
+        },
+      });
+      return [];
+    }
 
     // Check cache first
     const cacheKey = `restaurants_${userId}`;
@@ -296,7 +387,15 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     const lastFetch = cache.lastFetch.get(cacheKey) || 0;
     
     if (now - lastFetch < cache.CACHE_DURATION && cache.restaurants.has(cacheKey)) {
-      return cache.restaurants.get(cacheKey)!;
+      const cachedRestaurants = cache.restaurants.get(cacheKey)!;
+      span.addPayload(cachedRestaurants);
+      span.end({
+        metadata: {
+          cacheHit: true,
+          restaurants: cachedRestaurants.length,
+        },
+      });
+      return cachedRestaurants;
     }
     
     // Clear cache to force fresh fetch
@@ -310,13 +409,25 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       .eq('user_id', userId)
       .not('restaurant_id', 'is', null)
       .order('created_at', { ascending: false });
+    span.recordRoundTrip({
+      source: 'query.favorite.restaurants',
+      responseCount: favoriteData?.length ?? 0,
+      error: favoriteError?.message ?? null,
+    });
 
     if (favoriteError) {
       console.error('Error fetching favorites:', favoriteError);
+      span.end({ success: false, error: favoriteError });
       return [];
     }
 
     if (!favoriteData || favoriteData.length === 0) {
+      span.end({
+        metadata: {
+          cacheHit: false,
+          restaurants: 0,
+        },
+      });
       return [];
     }
 
@@ -331,6 +442,12 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     );
 
     if (directRestaurantIds.length === 0) {
+      span.end({
+        metadata: {
+          cacheHit: false,
+          restaurants: 0,
+        },
+      });
       return [];
     }
 
@@ -370,7 +487,7 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
               )
             `)
             .in('restaurant_id', allRestaurantIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       
       // Get deal counts for all restaurants (simplified approach)
       allRestaurantIds.length > 0
@@ -390,7 +507,7 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
               });
               return { data: counts, error: null };
             })
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       
       // Get the most liked deal with an image for each restaurant to use as thumbnail
       allRestaurantIds.length > 0
@@ -498,8 +615,37 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
               return { data: [], error: error };
             }
           })()
-        : Promise.resolve({ data: [] })
+        : Promise.resolve({ data: [], error: null })
     ]);
+    span.recordRoundTrip({
+      source: 'rpc.get_restaurant_coords_with_distance',
+      responseCount: distanceResult.data?.length ?? 0,
+      error: distanceResult.error?.message ?? null,
+    });
+    span.recordRoundTrip({
+      source: 'query.restaurant.by_restaurant_ids',
+      responseCount: restaurantsResult.data?.length ?? 0,
+      error: restaurantsResult.error?.message ?? null,
+    });
+    span.recordRoundTrip({
+      source: 'query.restaurant_cuisine.by_restaurant_ids',
+      responseCount: cuisinesResult.data?.length ?? 0,
+      error: cuisinesResult.error?.message ?? null,
+    });
+    span.recordRoundTrip({
+      source: 'query.deal_template.count_by_restaurant',
+      responseCount: dealCountsResult.data?.length ?? 0,
+      error: dealCountsResult.error ? String(dealCountsResult.error) : null,
+    });
+    span.recordRoundTrip({
+      source: 'query.most_liked_deals_by_restaurant',
+      responseCount: mostLikedDealsResult.data?.length ?? 0,
+      error:
+        mostLikedDealsResult.error instanceof Error
+          ? mostLikedDealsResult.error.message
+          : (mostLikedDealsResult.error as { message?: string } | null | undefined)?.message ??
+            null,
+    });
 
 
     if (distanceResult.error) {
@@ -608,9 +754,18 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     cache.restaurants.set(cacheKey, restaurants);
     cache.lastFetch.set(cacheKey, now);
 
+    span.addPayload(restaurants);
+    span.end({
+      metadata: {
+        cacheHit: false,
+        restaurants: restaurants.length,
+      },
+    });
+
     return restaurants;
   } catch (error) {
     console.error('Error in fetchFavoriteRestaurants:', error);
+    span.end({ success: false, error });
     return [];
   }
 };

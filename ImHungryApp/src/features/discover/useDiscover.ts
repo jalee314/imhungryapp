@@ -14,6 +14,7 @@ import {
   getRestaurantsWithDealsDirect,
 } from '../../services/discoverService';
 import type { DiscoverRestaurant } from '../../types/discover';
+import { startPerfSpan } from '../../utils/perfMonitor';
 
 import type { DiscoverContext } from './types';
 
@@ -42,20 +43,40 @@ export function useDiscover(): DiscoverContext {
 
   const loadRestaurants = useCallback(
     async (coords?: { lat: number; lng: number } | null) => {
+      const span = startPerfSpan('screen.discover.load', {
+        hasCoordinates: Boolean(coords),
+      });
+      let spanClosed = false;
+      let loadedRestaurants = 0;
+      let usedDirectFallback = false;
+
       try {
         setLoading(true);
         setError(null);
 
         let result = await getRestaurantsWithDeals(coords || undefined);
+        span.recordRoundTrip({
+          source: 'service.discover.getRestaurantsWithDeals',
+          success: result.success,
+          count: result.count,
+        });
 
         if (!result.success && result.error?.includes('function')) {
           console.log(
             'RPC function not available, trying direct query...',
           );
+          usedDirectFallback = true;
           result = await getRestaurantsWithDealsDirect(coords || undefined);
+          span.recordRoundTrip({
+            source: 'service.discover.getRestaurantsWithDealsDirect',
+            success: result.success,
+            count: result.count,
+          });
         }
 
         if (result.success) {
+          loadedRestaurants = result.restaurants.length;
+          span.addPayload(result.restaurants);
           setRestaurants(result.restaurants);
         } else {
           setError(result.error || 'Failed to load restaurants');
@@ -63,8 +84,18 @@ export function useDiscover(): DiscoverContext {
       } catch (err) {
         console.error('Error loading restaurants:', err);
         setError('Failed to load restaurants');
+        span.end({ success: false, error: err });
+        spanClosed = true;
       } finally {
         setLoading(false);
+        if (!spanClosed) {
+          span.end({
+            metadata: {
+              restaurantsLoaded: loadedRestaurants,
+              usedDirectFallback,
+            },
+          });
+        }
       }
     },
     [],

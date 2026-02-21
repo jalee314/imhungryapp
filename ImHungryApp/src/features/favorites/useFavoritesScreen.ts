@@ -18,6 +18,7 @@ import {
 } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
 import type { FavoriteDeal, FavoriteRestaurant } from '../../types/favorites';
+import { startPerfSpan } from '../../utils/perfMonitor';
 
 import type { FavoritesTab, FavoritesContext } from './types';
 
@@ -50,11 +51,19 @@ export function useFavoritesScreen(): FavoritesContext {
   const favoriteChannel = useRef<any>(null);
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [realtimeEnabled] = useState(true);
+  const previousTabRef = useRef<FavoritesTab>(activeTab);
 
   // ----- Data loaders -------------------------------------------------------
 
   const loadRestaurants = useCallback(
     async (silent: boolean = false) => {
+      const span = startPerfSpan('screen.favorites.load.restaurants', {
+        silent,
+        hasLoadedRestaurants,
+      });
+      let spanClosed = false;
+      let loadedCount = 0;
+
       try {
         if (!silent && !hasLoadedRestaurants) {
           setRestaurantsLoading(true);
@@ -64,16 +73,32 @@ export function useFavoritesScreen(): FavoritesContext {
           setHasLoadedInitialData(true);
         }
         const restaurantsData = await fetchFavoriteRestaurants();
+        span.recordRoundTrip({
+          source: 'favoritesService.fetchFavoriteRestaurants',
+          count: restaurantsData.length,
+        });
         const filteredData = restaurantsData.filter(
           (restaurant) => !isUnfavorited(restaurant.id, 'restaurant'),
         );
+        loadedCount = filteredData.length;
+        span.addPayload(filteredData);
         setRestaurants(filteredData);
         setHasLoadedRestaurants(true);
       } catch (error) {
         console.error('Error loading restaurants:', error);
+        span.end({ success: false, error });
+        spanClosed = true;
       } finally {
         if (!silent && !hasLoadedRestaurants) {
           setRestaurantsLoading(false);
+        }
+        if (!spanClosed) {
+          span.end({
+            metadata: {
+              loadedCount,
+              silent,
+            },
+          });
         }
       }
     },
@@ -82,6 +107,13 @@ export function useFavoritesScreen(): FavoritesContext {
 
   const loadDeals = useCallback(
     async (silent: boolean = false) => {
+      const span = startPerfSpan('screen.favorites.load.deals', {
+        silent,
+        hasLoadedDeals,
+      });
+      let spanClosed = false;
+      let loadedCount = 0;
+
       try {
         if (!silent && !hasLoadedDeals) {
           setDealsLoading(true);
@@ -91,16 +123,32 @@ export function useFavoritesScreen(): FavoritesContext {
           setHasLoadedInitialData(true);
         }
         const dealsData = await fetchFavoriteDeals();
+        span.recordRoundTrip({
+          source: 'favoritesService.fetchFavoriteDeals',
+          count: dealsData.length,
+        });
         const filteredData = dealsData.filter(
           (deal) => !isUnfavorited(deal.id, 'deal'),
         );
+        loadedCount = filteredData.length;
+        span.addPayload(filteredData);
         setDeals(filteredData);
         setHasLoadedDeals(true);
       } catch (error) {
         console.error('Error loading deals:', error);
+        span.end({ success: false, error });
+        spanClosed = true;
       } finally {
         if (!silent && !hasLoadedDeals) {
           setDealsLoading(false);
+        }
+        if (!spanClosed) {
+          span.end({
+            metadata: {
+              loadedCount,
+              silent,
+            },
+          });
         }
       }
     },
@@ -208,11 +256,41 @@ export function useFavoritesScreen(): FavoritesContext {
   // ----- Tab change ---------------------------------------------------------
 
   useEffect(() => {
-    if (activeTab === 'restaurants' && !restaurantsLoading) {
-      loadRestaurants(hasLoadedRestaurants);
-    } else if (activeTab === 'deals' && !dealsLoading) {
-      loadDeals(hasLoadedDeals);
-    }
+    const previousTab = previousTabRef.current;
+    const isTabSwitch = previousTab !== activeTab;
+    const tabSwitchSpan = isTabSwitch
+      ? startPerfSpan('screen.favorites.tab_switch', {
+          from: previousTab,
+          to: activeTab,
+        })
+      : null;
+
+    const finishTabSwitch = (error?: unknown) => {
+      if (!tabSwitchSpan) return;
+      if (error) {
+        tabSwitchSpan.end({ success: false, error, metadata: { to: activeTab } });
+        return;
+      }
+      tabSwitchSpan.end({ metadata: { to: activeTab } });
+    };
+
+    const loadActiveTabData = async () => {
+      if (activeTab === 'restaurants' && !restaurantsLoading) {
+        await loadRestaurants(hasLoadedRestaurants);
+        finishTabSwitch();
+      } else if (activeTab === 'deals' && !dealsLoading) {
+        await loadDeals(hasLoadedDeals);
+        finishTabSwitch();
+      } else {
+        finishTabSwitch();
+      }
+    };
+
+    loadActiveTabData().catch((error) => {
+      finishTabSwitch(error);
+    });
+
+    previousTabRef.current = activeTab;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
