@@ -15,6 +15,19 @@ import { startPerfSpan } from '../utils/perfMonitor';
 
 export type { FavoriteDeal, FavoriteRestaurant } from '../types/favorites';
 
+const isRpcUnavailableError = (error: unknown): boolean => {
+  const maybeError = error as { code?: string; message?: string } | null;
+  const code = maybeError?.code ?? '';
+  const message = (maybeError?.message ?? '').toLowerCase();
+
+  return (
+    code === '42883' ||
+    code === 'PGRST202' ||
+    message.includes('could not find the function') ||
+    message.includes('does not exist')
+  );
+};
+
 // Simple cache to avoid redundant queries
 const cache = {
   restaurants: new Map<string, FavoriteRestaurant[]>(),
@@ -109,8 +122,12 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       return [];
     }
 
-    // Filter out null values from dealIds
-    const dealIds = favoriteData.map(fav => fav.deal_id).filter((id): id is string => id !== null);
+    // Filter out null values and dedupe dealIds
+    const dealIds = [...new Set(
+      favoriteData
+        .map((fav) => fav.deal_id)
+        .filter((id): id is string => id !== null),
+    )];
 
     // Get deal details with all related data using separate queries
     const { data: deals, error: dealsError } = await supabase
@@ -144,6 +161,19 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         category_id,
         user_id,
         is_anonymous,
+        restaurant:restaurant_id (
+          restaurant_id,
+          name,
+          address
+        ),
+        cuisine:cuisine_id (
+          cuisine_id,
+          cuisine_name
+        ),
+        category:category_id (
+          category_id,
+          category_name
+        ),
         image_metadata:image_metadata_id (
           variants
         ),
@@ -178,59 +208,94 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
     const templatesMap = new Map(templatesData?.map(t => [t.template_id, t]) || []);
 
-    // Get all unique IDs for batch queries
+    // Prefer relation data from deal_template query; only fetch missing references.
+    const nestedRestaurantsMap = new Map<string, any>();
+    const nestedCuisinesMap = new Map<string, any>();
+    const nestedCategoriesMap = new Map<string, any>();
+
+    (templatesData ?? []).forEach((template: any) => {
+      const restaurantData = Array.isArray(template.restaurant)
+        ? template.restaurant[0]
+        : template.restaurant;
+      if (restaurantData?.restaurant_id) {
+        nestedRestaurantsMap.set(restaurantData.restaurant_id, restaurantData);
+      }
+
+      const cuisineData = Array.isArray(template.cuisine)
+        ? template.cuisine[0]
+        : template.cuisine;
+      if (cuisineData?.cuisine_id) {
+        nestedCuisinesMap.set(cuisineData.cuisine_id, cuisineData);
+      }
+
+      const categoryData = Array.isArray(template.category)
+        ? template.category[0]
+        : template.category;
+      if (categoryData?.category_id) {
+        nestedCategoriesMap.set(categoryData.category_id, categoryData);
+      }
+    });
+
     const restaurantIds = [...new Set(templatesData?.map(t => t.restaurant_id).filter(Boolean))];
     const cuisineIds = [...new Set(templatesData?.map(t => t.cuisine_id).filter(Boolean))];
     const categoryIds = [...new Set(templatesData?.map(t => t.category_id).filter(Boolean))];
 
-    // Execute all remaining queries in PARALLEL for much faster loading
+    const missingRestaurantIds = restaurantIds.filter((id) => !nestedRestaurantsMap.has(id));
+    const missingCuisineIds = cuisineIds.filter((id) => !nestedCuisinesMap.has(id));
+    const missingCategoryIds = categoryIds.filter((id) => !nestedCategoriesMap.has(id));
+
+    // Execute remaining queries in parallel, only when reference data is missing.
     const [restaurantsResult, cuisinesResult, categoriesResult, distancesResult, dealCountsResult] = await Promise.all([
-      // Get all restaurant data
-      supabase
-        .from('restaurant')
-        .select('restaurant_id, name, address')
-        .in('restaurant_id', restaurantIds),
-      
-      // Get all cuisine data
-      supabase
-        .from('cuisine')
-        .select('cuisine_id, cuisine_name')
-        .in('cuisine_id', cuisineIds),
-      
-      // Get all category data
-      supabase
-        .from('category')
-        .select('category_id, category_name')
-        .in('category_id', categoryIds),
-      
-      // Fetch PostGIS distances
+      missingRestaurantIds.length > 0
+        ? supabase
+            .from('restaurant')
+            .select('restaurant_id, name, address')
+            .in('restaurant_id', missingRestaurantIds)
+        : Promise.resolve({ data: [], error: null }),
+      missingCuisineIds.length > 0
+        ? supabase
+            .from('cuisine')
+            .select('cuisine_id, cuisine_name')
+            .in('cuisine_id', missingCuisineIds)
+        : Promise.resolve({ data: [], error: null }),
+      missingCategoryIds.length > 0
+        ? supabase
+            .from('category')
+            .select('category_id, category_name')
+            .in('category_id', missingCategoryIds)
+        : Promise.resolve({ data: [], error: null }),
       restaurantIds.length > 0
         ? supabase.rpc('get_restaurant_coords_with_distance', {
             restaurant_ids: restaurantIds,
             user_uuid: userId
           })
         : Promise.resolve({ data: [], error: null }),
-      
-      // Get deal counts
       restaurantIds.length > 0
         ? supabase.rpc('get_deal_counts_for_restaurants', { r_ids: restaurantIds })
         : Promise.resolve({ data: [], error: null })
     ]);
-    span.recordRoundTrip({
-      source: 'query.restaurant.by_restaurant_ids',
-      responseCount: restaurantsResult.data?.length ?? 0,
-      error: restaurantsResult.error?.message ?? null,
-    });
-    span.recordRoundTrip({
-      source: 'query.cuisine.by_cuisine_ids',
-      responseCount: cuisinesResult.data?.length ?? 0,
-      error: cuisinesResult.error?.message ?? null,
-    });
-    span.recordRoundTrip({
-      source: 'query.category.by_category_ids',
-      responseCount: categoriesResult.data?.length ?? 0,
-      error: categoriesResult.error?.message ?? null,
-    });
+
+    if (missingRestaurantIds.length > 0) {
+      span.recordRoundTrip({
+        source: 'query.restaurant.by_restaurant_ids',
+        responseCount: restaurantsResult.data?.length ?? 0,
+        error: restaurantsResult.error?.message ?? null,
+      });
+    }
+    if (missingCuisineIds.length > 0) {
+      span.recordRoundTrip({
+        source: 'query.cuisine.by_cuisine_ids',
+        responseCount: cuisinesResult.data?.length ?? 0,
+        error: cuisinesResult.error?.message ?? null,
+      });
+    }
+    if (missingCategoryIds.length > 0) {
+      span.recordRoundTrip({
+        source: 'query.category.by_category_ids',
+        responseCount: categoriesResult.data?.length ?? 0,
+        error: categoriesResult.error?.message ?? null,
+      });
+    }
     span.recordRoundTrip({
       source: 'rpc.get_restaurant_coords_with_distance',
       responseCount: distancesResult.data?.length ?? 0,
@@ -242,10 +307,21 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       error: dealCountsResult.error?.message ?? null,
     });
 
-    // Create lookup maps from parallel query results
-    const restaurantsMap = new Map(restaurantsResult.data?.map(r => [r.restaurant_id, r]) || []);
-    const cuisinesMap = new Map(cuisinesResult.data?.map(c => [c.cuisine_id, c]) || []);
-    const categoriesMap = new Map(categoriesResult.data?.map(c => [c.category_id, c]) || []);
+    // Create lookup maps from nested relation data + fallback reference queries.
+    const restaurantsMap = new Map<string, any>(nestedRestaurantsMap);
+    (restaurantsResult.data ?? []).forEach((restaurant: any) => {
+      restaurantsMap.set(restaurant.restaurant_id, restaurant);
+    });
+
+    const cuisinesMap = new Map<string, any>(nestedCuisinesMap);
+    (cuisinesResult.data ?? []).forEach((cuisine: any) => {
+      cuisinesMap.set(cuisine.cuisine_id, cuisine);
+    });
+
+    const categoriesMap = new Map<string, any>(nestedCategoriesMap);
+    (categoriesResult.data ?? []).forEach((category: any) => {
+      categoriesMap.set(category.category_id, category);
+    });
     
     const distanceMap = new Map<string, number | null>();
     if (distancesResult.error) {
@@ -259,6 +335,11 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
     }
 
     const dealCountsMap = new Map(dealCountsResult.data?.map((dc: any) => [dc.restaurant_id, dc.deal_count]) || []);
+    const favoriteCreatedAtByDealId = new Map(
+      favoriteData
+        .filter((fav) => fav.deal_id)
+        .map((fav) => [fav.deal_id as string, fav.created_at]),
+    );
 
     const favoriteDeals: FavoriteDeal[] = [];
 
@@ -317,8 +398,6 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         // If no Cloudinary, leave as null (don't use old Supabase storage)
       }
 
-      const favoriteRecord = favoriteData.find(fav => fav.deal_id === deal.deal_id);
-
       favoriteDeals.push({
         id: deal.deal_id,
         title: template.title,
@@ -331,7 +410,7 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
         dealCount: Number(dealCountsMap.get(restaurant.restaurant_id)) || 0,
         cuisineName: cuisinesMap.get(template.cuisine_id)?.cuisine_name || 'Unknown',
         categoryName: categoriesMap.get(template.category_id)?.category_name || 'Unknown',
-        createdAt: favoriteRecord?.created_at || new Date().toISOString(),
+        createdAt: favoriteCreatedAtByDealId.get(deal.deal_id) || new Date().toISOString(),
         isFavorited: true,
         userId: template.user_id,
         userDisplayName: template.is_anonymous ? 'Anonymous' : (userData?.display_name || 'Unknown User'),
@@ -432,9 +511,11 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     }
 
     // Get ONLY directly favorited restaurants
-    const directRestaurantIds = favoriteData
-      .map(fav => fav.restaurant_id)
-      .filter((id): id is string => id !== null);
+    const directRestaurantIds = [...new Set(
+      favoriteData
+        .map((fav) => fav.restaurant_id)
+        .filter((id): id is string => id !== null),
+    )];
 
     // Create a map of restaurant_id to created_at for sorting
     const favoriteCreatedAtMap = new Map(
@@ -571,21 +652,37 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
                 return { data: [], error: null };
               }
 
-              const { data: upvotes, error: voteError } = await supabase
-                .from('interaction')
-                .select('deal_id')
-                .in('deal_id', dealIds)
-                .eq('interaction_type', 'upvote');
+              const upvoteCounts: Record<string, number> = {};
+              const { data: upvoteRows, error: upvoteRpcError } = await supabase.rpc(
+                'get_upvote_counts_for_deals',
+                { p_deal_ids: dealIds },
+              );
 
-              if (voteError) {
-                console.error('❌ Error fetching upvotes:', voteError);
+              if (upvoteRpcError && !isRpcUnavailableError(upvoteRpcError)) {
+                console.error('❌ Error fetching upvote counts via RPC:', upvoteRpcError);
               }
 
-              // Count upvotes per deal_id
-              const upvoteCounts: Record<string, number> = {};
-              upvotes?.forEach(vote => {
-                upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
-              });
+              if (upvoteRpcError) {
+                const { data: upvotes, error: voteError } = await supabase
+                  .from('interaction')
+                  .select('deal_id')
+                  .in('deal_id', dealIds)
+                  .eq('interaction_type', 'upvote');
+
+                if (voteError) {
+                  console.error('❌ Error fetching upvotes:', voteError);
+                }
+
+                upvotes?.forEach(vote => {
+                  upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
+                });
+              } else {
+                (upvoteRows ?? []).forEach((row: any) => {
+                  if (row.deal_id) {
+                    upvoteCounts[row.deal_id] = Number(row.upvote_count) || 0;
+                  }
+                });
+              }
 
               // Step 4: For each restaurant, find the deal with most upvotes
               const mostLikedByRestaurant: Record<string, any> = {};

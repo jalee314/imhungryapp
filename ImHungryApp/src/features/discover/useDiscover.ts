@@ -22,9 +22,6 @@ import type { DiscoverContext } from './types';
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Maximum distance limit in miles */
-const MAX_DISTANCE_MILES = 31;
-
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -108,14 +105,17 @@ export function useDiscover(): DiscoverContext {
   // ----- Derived filtered list (search + distance + sort) -------------------
 
   const filteredRestaurants = useMemo(
-    () =>
-      restaurants
-        .filter(
-          (r) =>
-            r.distance_miles <= MAX_DISTANCE_MILES &&
-            r.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-        .sort((a, b) => a.distance_miles - b.distance_miles),
+    () => {
+      const normalizedQuery = searchQuery.trim().toLowerCase();
+      if (!normalizedQuery) {
+        return restaurants;
+      }
+
+      // Distance filtering + distance sorting already happens in discoverService.
+      return restaurants.filter((restaurant) =>
+        restaurant.name.toLowerCase().includes(normalizedQuery),
+      );
+    },
     [restaurants, searchQuery],
   );
 

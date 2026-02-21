@@ -6,6 +6,19 @@ import { getCurrentUserLocation } from './locationService';
 
 export type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
 
+const isRpcUnavailableError = (error: unknown): boolean => {
+  const maybeError = error as { code?: string; message?: string } | null;
+  const code = maybeError?.code ?? '';
+  const message = (maybeError?.message ?? '').toLowerCase();
+
+  return (
+    code === '42883' ||
+    code === 'PGRST202' ||
+    message.includes('could not find the function') ||
+    message.includes('does not exist')
+  );
+};
+
 /**
  * Get all unique restaurants that have deals, with deal counts and distances
  * @param customCoordinates - Optional custom coordinates to use for distance calculation instead of user's location
@@ -292,26 +305,44 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       }
     }
 
-    // Get deal counts for each restaurant
+    // Get deal counts for all restaurants in one batch call
+    const { data: dealCountRows, error: dealCountsError } = await supabase.rpc(
+      'get_deal_counts_for_restaurants',
+      { r_ids: uniqueRestaurantIds },
+    );
+    span.recordRoundTrip({
+      source: 'rpc.get_deal_counts_for_restaurants',
+      responseCount: dealCountRows?.length ?? 0,
+      error: dealCountsError?.message ?? null,
+    });
+
     const dealCounts: Record<string, number> = {};
-    for (const restaurantId of uniqueRestaurantIds) {
-      const { count, error: countError } = await supabase
-        .from('deal_instance')
-        .select('*', { count: 'exact', head: true })
-        .eq('deal_template.restaurant_id', restaurantId)
-        .not('deal_template.restaurant_id', 'is', null);
+    if (dealCountsError) {
+      // Fallback to one batched query and aggregate locally if RPC is unavailable.
+      const { data: templates, error: templateError } = await supabase
+        .from('deal_template')
+        .select('restaurant_id')
+        .in('restaurant_id', uniqueRestaurantIds);
+
       span.recordRoundTrip({
-        source: 'query.deal_instance.count_by_restaurant',
-        restaurantId,
-        count: count ?? 0,
-        error: countError?.message ?? null,
+        source: 'query.deal_template.count_by_restaurant_fallback',
+        responseCount: templates?.length ?? 0,
+        error: templateError?.message ?? null,
       });
 
-      if (!countError && count !== null) {
-        dealCounts[restaurantId] = count;
-      } else {
-        dealCounts[restaurantId] = 0;
+      if (!templateError) {
+        templates?.forEach((template) => {
+          const restaurantId = template.restaurant_id;
+          if (!restaurantId) return;
+          dealCounts[restaurantId] = (dealCounts[restaurantId] ?? 0) + 1;
+        });
       }
+    } else {
+      (dealCountRows ?? []).forEach((row: any) => {
+        if (row.restaurant_id) {
+          dealCounts[row.restaurant_id] = Number(row.deal_count) || 0;
+        }
+      });
     }
 
     // Transform and calculate distances
@@ -499,22 +530,46 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
       return new Map();
     }
 
-    const { data: upvotes } = await supabase
-      .from('interaction')
-      .select('deal_id')
-      .in('deal_id', dealIds)
-      .eq('interaction_type', 'upvote');
+    const upvoteCounts: Record<string, number> = {};
+    const { data: upvoteRows, error: upvoteRpcError } = await supabase.rpc(
+      'get_upvote_counts_for_deals',
+      { p_deal_ids: dealIds },
+    );
     span.recordRoundTrip({
-      source: 'query.interaction.upvotes_for_deals',
-      responseCount: upvotes?.length ?? 0,
+      source: 'rpc.get_upvote_counts_for_deals',
+      responseCount: upvoteRows?.length ?? 0,
+      error: upvoteRpcError?.message ?? null,
       dealIds: dealIds.length,
     });
 
-    // Count upvotes per deal_id
-    const upvoteCounts: Record<string, number> = {};
-    upvotes?.forEach(vote => {
-      upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
-    });
+    if (upvoteRpcError && !isRpcUnavailableError(upvoteRpcError)) {
+      span.end({ success: false, error: upvoteRpcError });
+      return new Map();
+    }
+
+    if (upvoteRpcError) {
+      const { data: upvotes } = await supabase
+        .from('interaction')
+        .select('deal_id')
+        .in('deal_id', dealIds)
+        .eq('interaction_type', 'upvote');
+
+      span.recordRoundTrip({
+        source: 'query.interaction.upvotes_for_deals.fallback',
+        responseCount: upvotes?.length ?? 0,
+        dealIds: dealIds.length,
+      });
+
+      upvotes?.forEach(vote => {
+        upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
+      });
+    } else {
+      (upvoteRows ?? []).forEach((row: any) => {
+        if (row.deal_id) {
+          upvoteCounts[row.deal_id] = Number(row.upvote_count) || 0;
+        }
+      });
+    }
 
     // Step 4: For each restaurant, find the deal with most upvotes
     const mostLikedByRestaurant: Record<string, any> = {};
