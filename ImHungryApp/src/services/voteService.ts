@@ -22,7 +22,7 @@ import {
   toggleDealFavorite,
 } from '../features/interactions';
 
-import { clearFavoritesCache } from './favoritesService';
+import { markFavoritesCacheDirty } from './favoritesService';
 
 // ==========================================
 // Vote State Selectors (Facade)
@@ -81,8 +81,7 @@ export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean
   const result = await toggleDealFavorite(dealId, currentlyFavorited);
   
   if (result.success) {
-    // Clear favorites caches so the favorites screen sees the change immediately
-    clearFavoritesCache();
+    markFavoritesCacheDirty('deals');
   }
   
   return result.success;

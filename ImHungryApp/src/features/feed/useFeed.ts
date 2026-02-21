@@ -16,11 +16,24 @@ import { useFeedInteractionHandlers } from '../../hooks/useFeedInteractionHandle
 import { useLocation } from '../../hooks/useLocation';
 import { dealCacheService } from '../../services/dealCacheService';
 import { logClick } from '../../services/interactionService';
-import { calculateVoteCounts } from '../../services/voteService';
 import type { Deal } from '../../types/deal';
 import { startPerfSpan } from '../../utils/perfMonitor';
 
 import type { FeedContext } from './types';
+
+type VoteInteractionType = 'upvote' | 'downvote';
+type VoteEventType = 'INSERT' | 'DELETE';
+
+const VOTE_DELTAS: Record<VoteEventType, Record<VoteInteractionType, number>> = {
+  INSERT: {
+    upvote: 1,
+    downvote: -1,
+  },
+  DELETE: {
+    upvote: -1,
+    downvote: 1,
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -91,20 +104,22 @@ export function useFeed(): FeedContext {
 
     if (hasLocationSet) {
       loadDeals();
-      dealCacheService.initializeRealtime();
+      dealCacheService.initializeRealtime(selectedCoordinates || undefined);
       const unsubscribe = dealCacheService.subscribe((updatedDeals) => {
-        setTimeout(() => setDeals(updatedDeals), 0);
+        setDeals(updatedDeals);
       });
       return () => unsubscribe();
-    } else {
-      setLoading(false);
     }
+
+    setLoading(false);
   }, [selectedCoordinates, hasLocationSet, isInitialLoad]);
 
   // ----- Realtime subscriptions ---------------------------------------------
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const userId = user.id;
@@ -118,35 +133,85 @@ export function useFeed(): FeedContext {
         favoriteChannel.current = null;
       }
 
+      const applyVoteDelta = (dealId: string, delta: number): void => {
+        setDeals((previousDeals) =>
+          previousDeals.map((deal) => {
+            if (deal.id !== dealId) return deal;
+            return {
+              ...deal,
+              votes: deal.votes + delta,
+            };
+          }),
+        );
+      };
+
+      const handleVoteEvent =
+        (eventType: VoteEventType, interactionType: VoteInteractionType) => (payload: any) => {
+          const interaction = payload.new || payload.old;
+          if (!interaction?.deal_id || !interaction.interaction_type) return;
+          if (interaction.user_id === userId) return;
+
+          const actionKey = [
+            eventType,
+            interaction.deal_id,
+            interaction.user_id,
+            interaction.interaction_type,
+            payload.commit_timestamp,
+          ]
+            .filter(Boolean)
+            .join(':');
+
+          if (recentActions.current.has(actionKey)) return;
+          recentActions.current.add(actionKey);
+          setTimeout(() => {
+            recentActions.current.delete(actionKey);
+          }, 1000);
+
+          const delta = VOTE_DELTAS[eventType][interactionType];
+          applyVoteDelta(interaction.deal_id, delta);
+        };
+
       interactionChannel.current = supabase
-        .channel('all-interactions')
+        .channel('feed-vote-interactions')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'interaction' },
-          async (payload: any) => {
-            const interaction = payload.new || payload.old;
-            if (interaction.interaction_type === 'click') return;
-            if (interaction.user_id === userId) return;
-
-            const actionKey = `${interaction.deal_id}-${interaction.interaction_type}`;
-            if (recentActions.current.has(actionKey)) return;
-
-            recentActions.current.add(actionKey);
-            setTimeout(() => recentActions.current.delete(actionKey), 1000);
-
-            const changedDealId = interaction.deal_id;
-            const voteCounts = await calculateVoteCounts([changedDealId]);
-
-            setDeals(prevDeals => prevDeals.map(deal => {
-              if (deal.id === changedDealId) {
-                return {
-                  ...deal,
-                  votes: voteCounts[changedDealId] ?? deal.votes,
-                };
-              }
-              return deal;
-            }));
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'interaction',
+            filter: 'interaction_type=eq.upvote',
           },
+          handleVoteEvent('INSERT', 'upvote'),
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'interaction',
+            filter: 'interaction_type=eq.upvote',
+          },
+          handleVoteEvent('DELETE', 'upvote'),
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'interaction',
+            filter: 'interaction_type=eq.downvote',
+          },
+          handleVoteEvent('INSERT', 'downvote'),
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'interaction',
+            filter: 'interaction_type=eq.downvote',
+          },
+          handleVoteEvent('DELETE', 'downvote'),
         )
         .subscribe();
 
@@ -154,15 +219,38 @@ export function useFeed(): FeedContext {
         .channel('user-favorites')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'favorite', filter: `user_id=eq.${userId}` },
-          (payload: any) => {
-            const dealId = payload.new?.deal_id || payload.old?.deal_id;
-            const isFavorited = payload.eventType === 'INSERT';
-            setTimeout(() => {
-              setDeals(prevDeals => prevDeals.map(deal =>
-                deal.id === dealId ? { ...deal, isFavorited } : deal,
-              ));
-            }, 0);
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'favorite',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload: { new?: { deal_id?: string } }) => {
+            const dealId = payload.new?.deal_id;
+            if (!dealId) return;
+            setDeals((prevDeals) =>
+              prevDeals.map((deal) =>
+                deal.id === dealId ? { ...deal, isFavorited: true } : deal,
+              ),
+            );
+          },
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'favorite',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload: { old?: { deal_id?: string } }) => {
+            const dealId = payload.old?.deal_id;
+            if (!dealId) return;
+            setDeals((prevDeals) =>
+              prevDeals.map((deal) =>
+                deal.id === dealId ? { ...deal, isFavorited: false } : deal,
+              ),
+            );
           },
         )
         .subscribe();
@@ -193,9 +281,9 @@ export function useFeed(): FeedContext {
 
         const cachedDeals = dealCacheService.getCachedDeals();
         if (cachedDeals.length > 0) {
-          setDeals(prevDeals => {
+          setDeals((prevDeals) => {
             const hasChanges = cachedDeals.some((cachedDeal) => {
-              const currentDeal = prevDeals.find(d => d.id === cachedDeal.id);
+              const currentDeal = prevDeals.find((d) => d.id === cachedDeal.id);
               if (!currentDeal) return true;
 
               if (cachedDeal.isAnonymous !== currentDeal.isAnonymous) return true;
@@ -207,9 +295,11 @@ export function useFeed(): FeedContext {
               const currentVariants = currentDeal.imageVariants;
               if (!cachedVariants && !currentVariants) return false;
               if (!cachedVariants || !currentVariants) return true;
-              return cachedVariants.medium !== currentVariants.medium ||
+              return (
+                cachedVariants.medium !== currentVariants.medium ||
                 cachedVariants.small !== currentVariants.small ||
-                cachedVariants.thumbnail !== currentVariants.thumbnail;
+                cachedVariants.thumbnail !== currentVariants.thumbnail
+              );
             });
 
             if (hasChanges || cachedDeals.length !== prevDeals.length) {
@@ -223,10 +313,10 @@ export function useFeed(): FeedContext {
       syncWithCache();
 
       const timeoutId = setTimeout(() => {
-        setDeals(prevDeals => {
+        setDeals((prevDeals) => {
           let hasChanges = false;
           const dealIdsToClear: string[] = [];
-          const updatedDeals = prevDeals.map(deal => {
+          const updatedDeals = prevDeals.map((deal) => {
             const updatedDeal = getUpdatedDeal(deal.id);
             if (updatedDeal) {
               hasChanges = true;
@@ -238,7 +328,7 @@ export function useFeed(): FeedContext {
 
           if (hasChanges) {
             setTimeout(() => {
-              dealIdsToClear.forEach(id => clearUpdatedDeal(id));
+              dealIdsToClear.forEach((id) => clearUpdatedDeal(id));
             }, 0);
           }
 
@@ -259,11 +349,11 @@ export function useFeed(): FeedContext {
 
     setRefreshing(true);
     try {
-      const freshDeals = await dealCacheService.getDeals(true);
+      const freshDeals = await dealCacheService.getDeals(true, selectedCoordinates || undefined);
       refreshedDealsCount = freshDeals.length;
       span.recordRoundTrip({ source: 'dealCacheService.getDeals.force', deals: freshDeals.length });
       span.addPayload(freshDeals);
-      setTimeout(() => setDeals(freshDeals), 0);
+      setDeals(freshDeals);
     } catch (err) {
       console.error('Error refreshing deals:', err);
       span.end({ success: false, error: err });
@@ -277,7 +367,7 @@ export function useFeed(): FeedContext {
   }, [selectedCoordinates]);
 
   // ----- Filtering ----------------------------------------------------------
-  const filteredDeals = deals.filter(deal => {
+  const filteredDeals = deals.filter((deal) => {
     if (selectedCuisineId === 'All') return true;
     return deal.cuisineId === selectedCuisineId;
   });
@@ -285,16 +375,16 @@ export function useFeed(): FeedContext {
   const communityDeals = filteredDeals.slice(0, 10);
   const dealsForYou = filteredDeals;
 
-  const cuisinesWithDeals = cuisines.filter(cuisine =>
-    deals.some(deal => deal.cuisineId === cuisine.id),
+  const cuisinesWithDeals = cuisines.filter((cuisine) =>
+    deals.some((deal) => deal.cuisineId === cuisine.id),
   );
 
   // ----- Navigation ---------------------------------------------------------
   const handleDealPress = (dealId: string) => {
-    const selectedDeal = deals.find(deal => deal.id === dealId);
+    const selectedDeal = deals.find((deal) => deal.id === dealId);
     if (selectedDeal) {
-      const positionInFeed = filteredDeals.findIndex(d => d.id === dealId);
-      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch(err => {
+      const positionInFeed = filteredDeals.findIndex((d) => d.id === dealId);
+      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch((err) => {
         console.error('Failed to log click:', err);
       });
       (navigation as any).navigate('DealDetail', { deal: selectedDeal });
@@ -320,7 +410,7 @@ export function useFeed(): FeedContext {
       cuisinesWithDeals,
       cuisinesLoading,
       onFilterSelect: (filterName: string) => {
-        const cuisine = cuisinesWithDeals.find(c => c.name === filterName);
+        const cuisine = cuisinesWithDeals.find((c) => c.name === filterName);
         setSelectedCuisineId(cuisine ? cuisine.id : 'All');
       },
     },

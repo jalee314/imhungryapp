@@ -13,7 +13,8 @@ import { useFavorites } from '../../hooks/useFavorites';
 import {
   fetchFavoriteDeals,
   fetchFavoriteRestaurants,
-  clearFavoritesCache,
+  isFavoritesCacheStale,
+  markFavoritesCacheDirty,
   toggleRestaurantFavorite,
 } from '../../services/favoritesService';
 import { toggleFavorite } from '../../services/voteService';
@@ -49,16 +50,18 @@ export function useFavoritesScreen(): FavoritesContext {
   const [hasLoadedDeals, setHasLoadedDeals] = useState(false);
   const [hasLoadedRestaurants, setHasLoadedRestaurants] = useState(false);
   const favoriteChannel = useRef<any>(null);
-  const refreshInterval = useRef<NodeJS.Timeout | null>(null);
-  const [realtimeEnabled] = useState(true);
+  const refreshDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const needsDealsRefreshRef = useRef(false);
+  const needsRestaurantsRefreshRef = useRef(false);
   const previousTabRef = useRef<FavoritesTab>(activeTab);
 
   // ----- Data loaders -------------------------------------------------------
 
   const loadRestaurants = useCallback(
-    async (silent: boolean = false) => {
+    async (silent: boolean = false, forceRefresh: boolean = false) => {
       const span = startPerfSpan('screen.favorites.load.restaurants', {
         silent,
+        forceRefresh,
         hasLoadedRestaurants,
       });
       let spanClosed = false;
@@ -72,11 +75,14 @@ export function useFavoritesScreen(): FavoritesContext {
           clearUnfavorited();
           setHasLoadedInitialData(true);
         }
-        const restaurantsData = await fetchFavoriteRestaurants();
+
+        const restaurantsData = await fetchFavoriteRestaurants({ forceRefresh });
         span.recordRoundTrip({
           source: 'favoritesService.fetchFavoriteRestaurants',
           count: restaurantsData.length,
+          forceRefresh,
         });
+
         const filteredData = restaurantsData.filter(
           (restaurant) => !isUnfavorited(restaurant.id, 'restaurant'),
         );
@@ -97,6 +103,7 @@ export function useFavoritesScreen(): FavoritesContext {
             metadata: {
               loadedCount,
               silent,
+              forceRefresh,
             },
           });
         }
@@ -106,9 +113,10 @@ export function useFavoritesScreen(): FavoritesContext {
   );
 
   const loadDeals = useCallback(
-    async (silent: boolean = false) => {
+    async (silent: boolean = false, forceRefresh: boolean = false) => {
       const span = startPerfSpan('screen.favorites.load.deals', {
         silent,
+        forceRefresh,
         hasLoadedDeals,
       });
       let spanClosed = false;
@@ -122,14 +130,15 @@ export function useFavoritesScreen(): FavoritesContext {
           clearUnfavorited();
           setHasLoadedInitialData(true);
         }
-        const dealsData = await fetchFavoriteDeals();
+
+        const dealsData = await fetchFavoriteDeals({ forceRefresh });
         span.recordRoundTrip({
           source: 'favoritesService.fetchFavoriteDeals',
           count: dealsData.length,
+          forceRefresh,
         });
-        const filteredData = dealsData.filter(
-          (deal) => !isUnfavorited(deal.id, 'deal'),
-        );
+
+        const filteredData = dealsData.filter((deal) => !isUnfavorited(deal.id, 'deal'));
         loadedCount = filteredData.length;
         span.addPayload(filteredData);
         setDeals(filteredData);
@@ -147,6 +156,7 @@ export function useFavoritesScreen(): FavoritesContext {
             metadata: {
               loadedCount,
               silent,
+              forceRefresh,
             },
           });
         }
@@ -155,12 +165,43 @@ export function useFavoritesScreen(): FavoritesContext {
     [hasLoadedDeals, hasLoadedInitialData, clearUnfavorited, isUnfavorited],
   );
 
+  const scheduleSilentRevalidate = useCallback(
+    (target: FavoritesTab) => {
+      if (target === 'deals') {
+        needsDealsRefreshRef.current = true;
+      } else {
+        needsRestaurantsRefreshRef.current = true;
+      }
+
+      if (refreshDebounceTimeout.current) {
+        clearTimeout(refreshDebounceTimeout.current);
+      }
+
+      refreshDebounceTimeout.current = setTimeout(() => {
+        const runRevalidate = async () => {
+          if (needsDealsRefreshRef.current && hasLoadedDeals) {
+            await loadDeals(true, true);
+            needsDealsRefreshRef.current = false;
+          }
+
+          if (needsRestaurantsRefreshRef.current && hasLoadedRestaurants) {
+            await loadRestaurants(true, true);
+            needsRestaurantsRefreshRef.current = false;
+          }
+        };
+
+        runRevalidate().catch((error) => {
+          console.error('Error in debounced favorites revalidation:', error);
+        });
+      }, 700);
+    },
+    [hasLoadedDeals, hasLoadedRestaurants, loadDeals, loadRestaurants],
+  );
+
   // ----- Realtime -----------------------------------------------------------
 
   const setupRealtimeSubscription = useCallback(async () => {
     try {
-      if (!realtimeEnabled) return;
-
       if (favoriteChannel.current) {
         try {
           await supabase.removeChannel(favoriteChannel.current);
@@ -183,53 +224,59 @@ export function useFavoritesScreen(): FavoritesContext {
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
             table: 'favorite',
             filter: `user_id=eq.${userId}`,
           },
-          (payload: any) => {
-            const payloadUserId =
-              payload.new?.user_id || payload.old?.user_id;
+          (payload: { new?: { user_id?: string; deal_id?: string; restaurant_id?: string } }) => {
+            const payloadUserId = payload.new?.user_id;
             if (payloadUserId !== userId) return;
 
-            if (payload.eventType === 'DELETE') {
-              const oldFavorite = payload.old;
-              if (oldFavorite.deal_id) {
-                setDeals((prev) =>
-                  prev.filter((deal) => deal.id !== oldFavorite.deal_id),
-                );
-              } else if (oldFavorite.restaurant_id) {
-                setRestaurants((prev) =>
-                  prev.filter((r) => r.id !== oldFavorite.restaurant_id),
-                );
-              }
-            } else if (payload.eventType === 'INSERT') {
-              if (activeTab === 'deals') {
-                loadDeals();
-              } else {
-                loadRestaurants();
-              }
+            if (payload.new?.deal_id) {
+              markFavoritesCacheDirty('deals');
+              scheduleSilentRevalidate('deals');
+            }
+
+            if (payload.new?.restaurant_id) {
+              markFavoritesCacheDirty('restaurants');
+              scheduleSilentRevalidate('restaurants');
             }
           },
         )
-        .subscribe((status: any) => {
-          if (status === 'SUBSCRIBED') {
-            if (refreshInterval.current) {
-              clearInterval(refreshInterval.current);
-              refreshInterval.current = null;
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'favorite',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload: { old?: { user_id?: string; deal_id?: string; restaurant_id?: string } }) => {
+            const oldFavorite = payload.old;
+            const payloadUserId = oldFavorite?.user_id;
+            if (payloadUserId !== userId || !oldFavorite) return;
+
+            if (oldFavorite.deal_id) {
+              setDeals((prev) => prev.filter((deal) => deal.id !== oldFavorite.deal_id));
+              markFavoritesCacheDirty('deals');
+              needsDealsRefreshRef.current = true;
             }
-          }
-        });
+
+            if (oldFavorite.restaurant_id) {
+              setRestaurants((prev) => prev.filter((r) => r.id !== oldFavorite.restaurant_id));
+              markFavoritesCacheDirty('restaurants');
+              needsRestaurantsRefreshRef.current = true;
+            }
+          },
+        )
+        .subscribe();
 
       favoriteChannel.current = channel;
     } catch (error) {
-      console.error(
-        'Error setting up favorites realtime subscription:',
-        error,
-      );
+      console.error('Error setting up favorites realtime subscription:', error);
     }
-  }, [realtimeEnabled, activeTab, loadDeals, loadRestaurants]);
+  }, [scheduleSilentRevalidate]);
 
   // ----- Initial load -------------------------------------------------------
 
@@ -239,15 +286,16 @@ export function useFavoritesScreen(): FavoritesContext {
     } else {
       loadDeals();
     }
+
     setupRealtimeSubscription();
 
     return () => {
       if (favoriteChannel.current) {
         supabase.removeChannel(favoriteChannel.current);
       }
-      if (refreshInterval.current) {
-        clearInterval(refreshInterval.current);
-        refreshInterval.current = null;
+      if (refreshDebounceTimeout.current) {
+        clearTimeout(refreshDebounceTimeout.current);
+        refreshDebounceTimeout.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,10 +324,12 @@ export function useFavoritesScreen(): FavoritesContext {
 
     const loadActiveTabData = async () => {
       if (activeTab === 'restaurants' && !restaurantsLoading) {
-        await loadRestaurants(hasLoadedRestaurants);
+        await loadRestaurants(hasLoadedRestaurants, needsRestaurantsRefreshRef.current);
+        needsRestaurantsRefreshRef.current = false;
         finishTabSwitch();
       } else if (activeTab === 'deals' && !dealsLoading) {
-        await loadDeals(hasLoadedDeals);
+        await loadDeals(hasLoadedDeals, needsDealsRefreshRef.current);
+        needsDealsRefreshRef.current = false;
         finishTabSwitch();
       } else {
         finishTabSwitch();
@@ -301,13 +351,9 @@ export function useFavoritesScreen(): FavoritesContext {
       setupRealtimeSubscription();
 
       if (hasLoadedInitialData) {
-        setDeals((prev) =>
-          prev.filter((deal) => !isUnfavorited(deal.id, 'deal')),
-        );
+        setDeals((prev) => prev.filter((deal) => !isUnfavorited(deal.id, 'deal')));
         setRestaurants((prev) =>
-          prev.filter(
-            (restaurant) => !isUnfavorited(restaurant.id, 'restaurant'),
-          ),
+          prev.filter((restaurant) => !isUnfavorited(restaurant.id, 'restaurant')),
         );
 
         const newDeals = getNewlyFavoritedDeals();
@@ -336,26 +382,43 @@ export function useFavoritesScreen(): FavoritesContext {
               }))
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime(),
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
               );
             return [...uniqueNewDeals, ...prev];
           });
         }
       }
 
-      const silentRefresh = async () => {
-        clearFavoritesCache();
-        if (activeTab === 'deals') {
-          await loadDeals(true);
-        } else {
-          await loadRestaurants(true);
+      const silentRefreshIfNeeded = async () => {
+        if (!hasLoadedInitialData) return;
+
+        const dealsAreStale = hasLoadedDeals
+          ? await isFavoritesCacheStale('deals')
+          : false;
+        const restaurantsAreStale = hasLoadedRestaurants
+          ? await isFavoritesCacheStale('restaurants')
+          : false;
+
+        if (activeTab === 'deals' && (needsDealsRefreshRef.current || dealsAreStale)) {
+          await loadDeals(true, true);
+          needsDealsRefreshRef.current = false;
         }
+
+        if (
+          activeTab === 'restaurants' &&
+          (needsRestaurantsRefreshRef.current || restaurantsAreStale)
+        ) {
+          await loadRestaurants(true, true);
+          needsRestaurantsRefreshRef.current = false;
+        }
+
         clearNewlyFavorited();
       };
 
       if (hasLoadedInitialData) {
-        silentRefresh();
+        silentRefreshIfNeeded().catch((error) => {
+          console.error('Error running favorites focus refresh:', error);
+        });
       }
 
       return () => {
@@ -363,7 +426,18 @@ export function useFavoritesScreen(): FavoritesContext {
           supabase.removeChannel(favoriteChannel.current);
         }
       };
-    }, [activeTab, hasLoadedInitialData]),
+    }, [
+      activeTab,
+      clearNewlyFavorited,
+      getNewlyFavoritedDeals,
+      hasLoadedDeals,
+      hasLoadedInitialData,
+      hasLoadedRestaurants,
+      isUnfavorited,
+      loadDeals,
+      loadRestaurants,
+      setupRealtimeSubscription,
+    ]),
   );
 
   // ----- Pull-to-refresh ----------------------------------------------------
@@ -371,11 +445,12 @@ export function useFavoritesScreen(): FavoritesContext {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      clearFavoritesCache();
       if (activeTab === 'deals') {
-        await loadDeals();
+        await loadDeals(false, true);
+        needsDealsRefreshRef.current = false;
       } else {
-        await loadRestaurants();
+        await loadRestaurants(false, true);
+        needsRestaurantsRefreshRef.current = false;
       }
     } catch (error) {
       console.error('Error refreshing favorites:', error);
@@ -397,9 +472,7 @@ export function useFavoritesScreen(): FavoritesContext {
           logo_image: restaurant.imageUrl,
           deal_count: restaurant.dealCount,
           distance_miles:
-            parseFloat(
-              restaurant.distance.replace('mi', '').replace('m', ''),
-            ) || 0,
+            parseFloat(restaurant.distance.replace('mi', '').replace('m', '')) || 0,
           lat: 0,
           lng: 0,
         };
@@ -474,12 +547,16 @@ export function useFavoritesScreen(): FavoritesContext {
           setRestaurants((prev) => prev.filter((r) => r.id !== id));
           const restaurant = restaurants.find((r) => r.id === id);
           if (restaurant) {
-            setDeals((prev) =>
-              prev.filter((d) => d.restaurantName !== restaurant.name),
-            );
+            setDeals((prev) => prev.filter((d) => d.restaurantName !== restaurant.name));
           }
+          needsRestaurantsRefreshRef.current = true;
+          markFavoritesCacheDirty('restaurants');
+          scheduleSilentRevalidate('restaurants');
         } else {
           setDeals((prev) => prev.filter((d) => d.id !== id));
+          needsDealsRefreshRef.current = true;
+          markFavoritesCacheDirty('deals');
+          scheduleSilentRevalidate('deals');
         }
 
         if (type === 'restaurant') {
@@ -491,8 +568,6 @@ export function useFavoritesScreen(): FavoritesContext {
             console.error('Failed to unfavorite deal:', err);
           });
         }
-
-        clearFavoritesCache();
       } catch (error) {
         console.error('Error unfavoriting:', error);
       } finally {
@@ -503,7 +578,12 @@ export function useFavoritesScreen(): FavoritesContext {
         });
       }
     },
-    [unfavoritingIds, restaurants, markAsUnfavorited],
+    [
+      markAsUnfavorited,
+      restaurants,
+      scheduleSilentRevalidate,
+      unfavoritingIds,
+    ],
   );
 
   // ----- Return context -----------------------------------------------------
