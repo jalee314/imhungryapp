@@ -7,13 +7,12 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
+import { getCurrentUserId } from '../../../services/currentUserService';
 import {
   FavoriteState,
   FavoriteTargetType,
   createDefaultFavoriteState,
 } from '../types';
-
-import { getCurrentUserId } from './voteSelectors';
 
 // ==========================================
 // Deal Favorite Selectors

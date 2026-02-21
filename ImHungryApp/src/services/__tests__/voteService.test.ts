@@ -26,10 +26,10 @@ jest.mock('../../features/interactions', () => ({
   toggleDealFavorite: (...args: unknown[]) => mockToggleDealFavorite(...args),
 }));
 
-// Mock the favoritesService clearFavoritesCache
-const mockClearFavoritesCache = jest.fn();
+// Mock the favoritesService cache dirty marker
+const mockMarkFavoritesCacheDirty = jest.fn();
 jest.mock('../favoritesService', () => ({
-  clearFavoritesCache: () => mockClearFavoritesCache(),
+  markFavoritesCacheDirty: (...args: unknown[]) => mockMarkFavoritesCacheDirty(...args),
 }));
 
 import {
@@ -144,7 +144,7 @@ describe('voteService (Facade)', () => {
   });
 
   describe('toggleFavorite', () => {
-    it('should return true and clear cache when adding favorite succeeds', async () => {
+    it('should return true and mark cache dirty when adding favorite succeeds', async () => {
       mockToggleDealFavorite.mockResolvedValue({
         success: true,
         isFavorited: true,
@@ -154,10 +154,10 @@ describe('voteService (Facade)', () => {
 
       expect(mockToggleDealFavorite).toHaveBeenCalledWith('deal-123', false);
       expect(result).toBe(true);
-      expect(mockClearFavoritesCache).toHaveBeenCalled();
+      expect(mockMarkFavoritesCacheDirty).toHaveBeenCalledWith('deals');
     });
 
-    it('should return true and clear cache when removing favorite succeeds', async () => {
+    it('should return true and mark cache dirty when removing favorite succeeds', async () => {
       mockToggleDealFavorite.mockResolvedValue({
         success: true,
         isFavorited: false,
@@ -167,10 +167,10 @@ describe('voteService (Facade)', () => {
 
       expect(mockToggleDealFavorite).toHaveBeenCalledWith('deal-123', true);
       expect(result).toBe(true);
-      expect(mockClearFavoritesCache).toHaveBeenCalled();
+      expect(mockMarkFavoritesCacheDirty).toHaveBeenCalledWith('deals');
     });
 
-    it('should return false and not clear cache when favorite toggle fails', async () => {
+    it('should return false and not mark cache dirty when favorite toggle fails', async () => {
       mockToggleDealFavorite.mockResolvedValue({
         success: false,
         error: 'User not authenticated',
@@ -180,7 +180,7 @@ describe('voteService (Facade)', () => {
 
       expect(mockToggleDealFavorite).toHaveBeenCalledWith('deal-123', false);
       expect(result).toBe(false);
-      expect(mockClearFavoritesCache).not.toHaveBeenCalled();
+      expect(mockMarkFavoritesCacheDirty).not.toHaveBeenCalled();
     });
   });
 });

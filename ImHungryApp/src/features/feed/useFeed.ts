@@ -14,6 +14,7 @@ import { useDataCache } from '../../hooks/useDataCache';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useFeedInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
 import { useLocation } from '../../hooks/useLocation';
+import { getCurrentUserId } from '../../services/currentUserService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { logClick } from '../../services/interactionService';
 import type { Deal } from '../../types/deal';
@@ -117,12 +118,8 @@ export function useFeed(): FeedContext {
   // ----- Realtime subscriptions ---------------------------------------------
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const userId = user.id;
+      const userId = await getCurrentUserId();
+      if (!userId) return;
 
       if (interactionChannel.current) {
         supabase.removeChannel(interactionChannel.current);

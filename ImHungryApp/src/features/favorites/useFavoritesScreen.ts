@@ -10,6 +10,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { supabase } from '../../../lib/supabase';
 import { useFavorites } from '../../hooks/useFavorites';
+import { getCurrentUserId } from '../../services/currentUserService';
 import {
   fetchFavoriteDeals,
   fetchFavoriteRestaurants,
@@ -211,12 +212,7 @@ export function useFavoritesScreen(): FavoritesContext {
         favoriteChannel.current = null;
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user || !user.id) return;
-
-      const userId = user.id.trim();
+      const userId = (await getCurrentUserId())?.trim() || '';
       if (!userId) return;
 
       const channel = supabase

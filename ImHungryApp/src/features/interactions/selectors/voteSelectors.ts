@@ -7,6 +7,7 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
+import { getCurrentUserId as getCurrentUserIdFromService } from '../../../services/currentUserService';
 import {
   VoteState,
   VoteStates,
@@ -50,15 +51,7 @@ const dedupeDealIds = (dealIds: string[]): string[] =>
  * Get the current authenticated user's ID
  */
 export const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('[interactions/selectors] Error getting current user:', error);
-    return null;
-  }
+  return getCurrentUserIdFromService();
 };
 
 // ==========================================
