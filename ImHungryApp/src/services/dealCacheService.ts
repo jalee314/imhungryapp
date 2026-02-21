@@ -3,313 +3,488 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
 import type { Deal } from '../types/deal';
-import { startPerfSpan } from '../utils/perfMonitor';
+import {
+  estimatePayloadBytes,
+  recordCacheAccess,
+  recordCacheRefresh,
+  startPerfSpan,
+} from '../utils/perfMonitor';
 
-import { fetchRankedDeals, transformDealForUI, addDistancesToDeals, addVotesToDeals } from './dealService';
-import { getUserVoteStates, calculateVoteCounts } from './voteService';
+import {
+  addDistancesToDeals,
+  addVotesToDeals,
+  fetchRankedDeals,
+  transformDealForUI,
+} from './dealService';
 
+type Coordinates = { lat: number; lng: number };
+type RefreshReason = 'miss' | 'stale' | 'manual' | 'realtime';
 
-const CACHE_KEY = 'cached_deals';
-const CACHE_TIMESTAMP_KEY = 'cached_deals_timestamp';
+const LEGACY_CACHE_KEY = 'cached_deals';
+const LEGACY_CACHE_TIMESTAMP_KEY = 'cached_deals_timestamp';
+const CACHE_KEY_PREFIX = 'cached_deals';
+const CACHE_TIMESTAMP_KEY_PREFIX = 'cached_deals_timestamp';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_CONTEXT_KEY = 'default';
+const CONTEXT_COORDINATE_PRECISION = 3;
+const CACHE_METRIC_NAME = 'deal_cache';
+
+const normalizeCoordinates = (coordinates?: Coordinates): Coordinates | undefined => {
+  if (!coordinates) return undefined;
+  if (!Number.isFinite(coordinates.lat) || !Number.isFinite(coordinates.lng)) {
+    return undefined;
+  }
+
+  const lat = Number(coordinates.lat.toFixed(CONTEXT_COORDINATE_PRECISION));
+  const lng = Number(coordinates.lng.toFixed(CONTEXT_COORDINATE_PRECISION));
+  return { lat, lng };
+};
+
+const contextKeyForCoordinates = (coordinates?: Coordinates): string => {
+  if (!coordinates) {
+    return DEFAULT_CONTEXT_KEY;
+  }
+  return `loc_${coordinates.lat.toFixed(CONTEXT_COORDINATE_PRECISION)}_${coordinates.lng.toFixed(
+    CONTEXT_COORDINATE_PRECISION,
+  )}`;
+};
+
+const storageKeysForContext = (contextKey: string): { deals: string; timestamp: string } => ({
+  deals: `${CACHE_KEY_PREFIX}:${contextKey}`,
+  timestamp: `${CACHE_TIMESTAMP_KEY_PREFIX}:${contextKey}`,
+});
+
+const parseTimestamp = (rawValue: string | null): number | undefined => {
+  if (!rawValue) return undefined;
+
+  try {
+    const parsed = JSON.parse(rawValue) as string | number;
+    const asDate = new Date(parsed).getTime();
+    return Number.isFinite(asDate) ? asDate : undefined;
+  } catch {
+    return undefined;
+  }
+};
 
 class DealCacheService {
   private realtimeChannel: RealtimeChannel | null = null;
   private subscribers: Set<(deals: Deal[]) => void> = new Set();
-  private cachedDeals: Deal[] = [];
+  private dealsByContext = new Map<string, Deal[]>();
+  private timestampsByContext = new Map<string, number>();
+  private contextCoordinates = new Map<string, Coordinates | undefined>([
+    [DEFAULT_CONTEXT_KEY, undefined],
+  ]);
+  private knownContextKeys = new Set<string>([DEFAULT_CONTEXT_KEY]);
+  private inflightFetches = new Map<string, Promise<Deal[]>>();
   private isInitialized = false;
-  private isFetching = false;
   private refreshTimeout: NodeJS.Timeout | null = null;
+  private activeContextKey = DEFAULT_CONTEXT_KEY;
 
-  // Load deals from AsyncStorage cache
-  async loadFromCache(): Promise<Deal[]> {
-    try {
-      const dealsJson = await AsyncStorage.getItem(CACHE_KEY);
-      if (dealsJson) {
-        const deals = JSON.parse(dealsJson) as Deal[];
-        this.cachedDeals = deals;
-        console.log(`📦 Loaded ${deals.length} deals from cache`);
-        return deals;
-      }
-    } catch (error) {
-      console.error('Error loading deals from cache:', error);
-    }
-    return [];
+  private setActiveContext(customCoordinates?: Coordinates): {
+    contextKey: string;
+    coordinates?: Coordinates;
+  } {
+    const coordinates = normalizeCoordinates(customCoordinates);
+    const contextKey = contextKeyForCoordinates(coordinates);
+    this.activeContextKey = contextKey;
+    this.knownContextKeys.add(contextKey);
+    this.contextCoordinates.set(contextKey, coordinates);
+    return { contextKey, coordinates };
   }
 
-  // Check if cache is stale
-  async isCacheStale(): Promise<boolean> {
-    try {
-      const timestampJson = await AsyncStorage.getItem(CACHE_TIMESTAMP_KEY);
-      if (!timestampJson) return true;
-      
-      const timestamp = new Date(JSON.parse(timestampJson));
-      const cacheAge = Date.now() - timestamp.getTime();
-      return cacheAge > CACHE_DURATION;
-    } catch (error) {
-      return true;
-    }
+  private isTimestampStale(timestamp?: number): boolean {
+    if (!timestamp) return true;
+    return Date.now() - timestamp > CACHE_DURATION;
   }
 
-  // Fetch fresh deals and cache them
-  async fetchAndCache(force = false, customCoordinates?: { lat: number; lng: number }): Promise<Deal[]> {
-    // Prevent multiple simultaneous fetches
-    if (this.isFetching && !force) {
-      return this.cachedDeals;
-    }
+  private async persistContextCache(contextKey: string, deals: Deal[], timestamp: number): Promise<void> {
+    const keys = storageKeysForContext(contextKey);
+    await Promise.all([
+      AsyncStorage.setItem(keys.deals, JSON.stringify(deals)),
+      AsyncStorage.setItem(keys.timestamp, JSON.stringify(new Date(timestamp).toISOString())),
+    ]);
+  }
 
-    // Check if we need to fetch (unless forced)
-    if (!force && !await this.isCacheStale()) {
-      console.log('✅ Cache is fresh, using cached deals');
-      return this.cachedDeals;
-    }
+  private async loadContextFromStorage(
+    contextKey: string,
+  ): Promise<{ deals: Deal[]; timestamp?: number; source: 'storage' | 'none' }> {
+    const keys = storageKeysForContext(contextKey);
+    let [dealsJson, timestampJson] = await Promise.all([
+      AsyncStorage.getItem(keys.deals),
+      AsyncStorage.getItem(keys.timestamp),
+    ]);
 
-    this.isFetching = true;
-    const span = startPerfSpan('service.feed.fetch_ranked_deals', {
-      force,
-      hasCustomCoordinates: Boolean(customCoordinates),
-    });
-    let spanClosed = false;
-    let finalDealCount = 0;
-    
-    try {
-      console.log('🔄 Fetching fresh deals...');
-      const fetchStart = Date.now();
-      const dbDeals = await fetchRankedDeals();
-      span.recordRoundTrip({
-        source: 'dealService.fetchRankedDeals',
-        count: dbDeals.length,
-      });
-      const fetchTime = Date.now() - fetchStart;
-      console.log(`📊 Fetched ${dbDeals.length} deals in ${fetchTime}ms`);
-      
-      // ⚡ OPTIMIZATION: Only recompute distances when the caller overrides coordinates
-      console.log('⚡ Adding vote information (and custom distance overrides when requested)...');
-      const enrichStart = Date.now();
-      const baseDeals = customCoordinates
-        ? await addDistancesToDeals(dbDeals, customCoordinates)
-        : dbDeals;
-      if (customCoordinates) {
-        span.recordRoundTrip({
-          source: 'dealService.addDistancesToDeals',
-          count: baseDeals.length,
-        });
-      }
-      const enrichedDeals = await addVotesToDeals(baseDeals);
-      span.recordRoundTrip({
-        source: 'dealService.addVotesToDeals',
-        count: enrichedDeals.length,
-      });
-      const enrichTime = Date.now() - enrichStart;
-      console.log(`✅ Enrichment completed in ${enrichTime}ms`);
-      
-      // Log some vote states for debugging
-      const voteSample = enrichedDeals.slice(0, 3).map(deal => ({
-        id: deal.deal_id,
-        title: deal.title.substring(0, 30),
-        votes: deal.votes,
-        isUpvoted: deal.is_upvoted,
-        isDownvoted: deal.is_downvoted,
-        isFavorited: deal.is_favorited
-      }));
-      console.log('🔍 Vote sample:', voteSample);
-      
-      const transformedDeals = enrichedDeals.map(transformDealForUI);
-      finalDealCount = transformedDeals.length;
-      span.addPayload(transformedDeals);
-      
-      this.cachedDeals = transformedDeals;
-      
-      // Cache the data
-      await Promise.all([
-        AsyncStorage.setItem(CACHE_KEY, JSON.stringify(transformedDeals)),
-        AsyncStorage.setItem(CACHE_TIMESTAMP_KEY, JSON.stringify(new Date().toISOString()))
+    if (!dealsJson && contextKey === DEFAULT_CONTEXT_KEY) {
+      [dealsJson, timestampJson] = await Promise.all([
+        AsyncStorage.getItem(LEGACY_CACHE_KEY),
+        AsyncStorage.getItem(LEGACY_CACHE_TIMESTAMP_KEY),
       ]);
-      
-      console.log(`✅ Fetched and cached ${transformedDeals.length} deals with votes and distances`);
-      
-      // Notify all subscribers
-      this.notifySubscribers(transformedDeals);
-      
-      return transformedDeals;
+    }
+
+    if (!dealsJson) {
+      return { deals: [], source: 'none' };
+    }
+
+    try {
+      const parsedDeals = JSON.parse(dealsJson) as Deal[];
+      const timestamp = parseTimestamp(timestampJson);
+      this.dealsByContext.set(contextKey, parsedDeals);
+      if (timestamp) {
+        this.timestampsByContext.set(contextKey, timestamp);
+      }
+      return {
+        deals: parsedDeals,
+        timestamp,
+        source: 'storage',
+      };
     } catch (error) {
-      console.error('Error fetching deals:', error);
-      span.end({ success: false, error });
-      spanClosed = true;
-      throw error;
-    } finally {
-      this.isFetching = false;
-      if (!spanClosed) {
+      console.error('Error parsing cached deals:', error);
+      return { deals: [], source: 'none' };
+    }
+  }
+
+  private async getContextCache(
+    contextKey: string,
+  ): Promise<{ deals: Deal[]; timestamp?: number; source: 'memory' | 'storage' | 'none' }> {
+    const inMemoryDeals = this.dealsByContext.get(contextKey);
+    if (inMemoryDeals) {
+      return {
+        deals: inMemoryDeals,
+        timestamp: this.timestampsByContext.get(contextKey),
+        source: 'memory',
+      };
+    }
+
+    return this.loadContextFromStorage(contextKey);
+  }
+
+  private notifySubscribers(contextKey: string): void {
+    if (contextKey !== this.activeContextKey) return;
+    const deals = this.dealsByContext.get(contextKey) ?? [];
+    this.subscribers.forEach((callback) => callback(deals));
+  }
+
+  private async refreshContext(
+    contextKey: string,
+    coordinates: Coordinates | undefined,
+    reason: RefreshReason,
+  ): Promise<Deal[]> {
+    const inflight = this.inflightFetches.get(contextKey);
+    if (inflight) {
+      return inflight;
+    }
+
+    const refreshPromise = (async () => {
+      const span = startPerfSpan('service.feed.fetch_ranked_deals', {
+        contextKey,
+        hasCustomCoordinates: Boolean(coordinates),
+        refreshReason: reason,
+      });
+      const refreshStartedAt = Date.now();
+      let spanClosed = false;
+      let roundTrips = 0;
+      let transformedDeals: Deal[] = [];
+
+      const recordRoundTrip = (payload: unknown): void => {
+        roundTrips += 1;
+        span.recordRoundTrip(payload);
+      };
+
+      try {
+        const dbDeals = await fetchRankedDeals();
+        recordRoundTrip({
+          source: 'dealService.fetchRankedDeals',
+          count: dbDeals.length,
+          contextKey,
+        });
+
+        const dealsWithDistance = coordinates
+          ? await addDistancesToDeals(dbDeals, coordinates)
+          : dbDeals;
+        if (coordinates) {
+          recordRoundTrip({
+            source: 'dealService.addDistancesToDeals',
+            count: dealsWithDistance.length,
+            contextKey,
+          });
+        }
+
+        const enrichedDeals = await addVotesToDeals(dealsWithDistance);
+        recordRoundTrip({
+          source: 'dealService.addVotesToDeals',
+          count: enrichedDeals.length,
+          contextKey,
+        });
+
+        transformedDeals = enrichedDeals.map(transformDealForUI);
+        const refreshedAt = Date.now();
+
+        this.dealsByContext.set(contextKey, transformedDeals);
+        this.timestampsByContext.set(contextKey, refreshedAt);
+        this.contextCoordinates.set(contextKey, coordinates);
+        this.knownContextKeys.add(contextKey);
+
+        await this.persistContextCache(contextKey, transformedDeals, refreshedAt);
+        this.notifySubscribers(contextKey);
+
+        span.addPayload(transformedDeals);
+        recordCacheRefresh(CACHE_METRIC_NAME, {
+          durationMs: refreshedAt - refreshStartedAt,
+          roundTrips,
+          payloadBytes: estimatePayloadBytes(transformedDeals),
+          triggeredBy: reason,
+        });
+
         span.end({
           metadata: {
-            force,
-            hasCustomCoordinates: Boolean(customCoordinates),
-            dealsReturned: finalDealCount,
+            dealsReturned: transformedDeals.length,
+            contextKey,
+            refreshReason: reason,
           },
         });
+        spanClosed = true;
+        return transformedDeals;
+      } catch (error) {
+        console.error('Error fetching deals:', error);
+        span.end({ success: false, error });
+        spanClosed = true;
+        throw error;
+      } finally {
+        if (!spanClosed) {
+          span.end({
+            metadata: {
+              dealsReturned: transformedDeals.length,
+              contextKey,
+              refreshReason: reason,
+            },
+          });
+        }
+        this.inflightFetches.delete(contextKey);
       }
-    }
+    })();
+
+    this.inflightFetches.set(contextKey, refreshPromise);
+    return refreshPromise;
   }
 
-  // Get deals (from cache or fetch)
-  async getDeals(forceRefresh = false, customCoordinates?: { lat: number; lng: number }): Promise<Deal[]> {
-    // If forced refresh OR custom coordinates provided, fetch immediately to recalculate distances
-    if (forceRefresh || customCoordinates) {
-      return this.fetchAndCache(true, customCoordinates);
+  private refreshInBackground(
+    contextKey: string,
+    coordinates: Coordinates | undefined,
+    reason: RefreshReason,
+  ): void {
+    if (this.inflightFetches.has(contextKey)) {
+      return;
     }
 
-    // If we have cached deals and cache is fresh, return them
-    if (this.cachedDeals.length > 0 && !await this.isCacheStale()) {
-      return this.cachedDeals;
-    }
-
-    // Try loading from AsyncStorage first
-    const cachedDeals = await this.loadFromCache();
-    if (cachedDeals.length > 0 && !await this.isCacheStale()) {
-      return cachedDeals;
-    }
-
-    // Otherwise fetch fresh data
-    return this.fetchAndCache(false, customCoordinates);
+    void this.refreshContext(contextKey, coordinates, reason).catch((error) => {
+      console.error('Background deal refresh failed:', error);
+    });
   }
 
-  // Get cached deals synchronously (for focus sync without async)
-  getCachedDeals(): Deal[] {
-    return this.cachedDeals;
+  async loadFromCache(customCoordinates?: Coordinates): Promise<Deal[]> {
+    const { contextKey } = this.setActiveContext(customCoordinates);
+    const cache = await this.getContextCache(contextKey);
+    return cache.deals;
   }
 
-  // Initialize realtime subscriptions
-  async initializeRealtime() {
+  async isCacheStale(customCoordinates?: Coordinates): Promise<boolean> {
+    const { contextKey } = this.setActiveContext(customCoordinates);
+    const cache = await this.getContextCache(contextKey);
+    return this.isTimestampStale(cache.timestamp);
+  }
+
+  async fetchAndCache(force = false, customCoordinates?: Coordinates): Promise<Deal[]> {
+    const { contextKey, coordinates } = this.setActiveContext(customCoordinates);
+    const reason: RefreshReason = force ? 'manual' : 'miss';
+    return this.refreshContext(contextKey, coordinates, reason);
+  }
+
+  async getDeals(forceRefresh = false, customCoordinates?: Coordinates): Promise<Deal[]> {
+    const { contextKey, coordinates } = this.setActiveContext(customCoordinates);
+
+    if (forceRefresh) {
+      recordCacheAccess(CACHE_METRIC_NAME, {
+        hit: false,
+        stale: false,
+        source: 'force_refresh',
+      });
+      return this.refreshContext(contextKey, coordinates, 'manual');
+    }
+
+    const cache = await this.getContextCache(contextKey);
+    if (cache.deals.length > 0) {
+      const stale = this.isTimestampStale(cache.timestamp);
+      recordCacheAccess(CACHE_METRIC_NAME, {
+        hit: true,
+        stale,
+        source: cache.source,
+      });
+
+      if (stale) {
+        this.refreshInBackground(contextKey, coordinates, 'stale');
+      }
+      return cache.deals;
+    }
+
+    recordCacheAccess(CACHE_METRIC_NAME, {
+      hit: false,
+      stale: false,
+      source: 'none',
+    });
+
+    return this.refreshContext(contextKey, coordinates, 'miss');
+  }
+
+  getCachedDeals(customCoordinates?: Coordinates): Deal[] {
+    const coordinates = normalizeCoordinates(customCoordinates);
+    const contextKey = customCoordinates
+      ? contextKeyForCoordinates(coordinates)
+      : this.activeContextKey;
+    return [...(this.dealsByContext.get(contextKey) ?? [])];
+  }
+
+  async initializeRealtime(customCoordinates?: Coordinates): Promise<void> {
+    this.setActiveContext(customCoordinates);
     if (this.isInitialized) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Subscribe to deal_instance changes
     this.realtimeChannel = supabase
       .channel('deal-cache-realtime')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'deal_instance',
-        },
-        () => {
-          console.log('⚡ Deal change detected, scheduling refresh...');
-          this.scheduleRefresh();
-        }
+        { event: 'INSERT', schema: 'public', table: 'deal_instance' },
+        () => this.scheduleRefresh('realtime'),
       )
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'deal_images',
-        },
-        () => {
-          console.log('⚡ Deal images change detected, scheduling refresh...');
-          this.scheduleRefresh();
-        }
+        { event: 'UPDATE', schema: 'public', table: 'deal_instance' },
+        () => this.scheduleRefresh('realtime'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'deal_instance' },
+        () => this.scheduleRefresh('realtime'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'deal_images' },
+        () => this.scheduleRefresh('realtime'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'deal_images' },
+        () => this.scheduleRefresh('realtime'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'deal_images' },
+        () => this.scheduleRefresh('realtime'),
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('📡 Deal cache realtime: SUBSCRIBED');
           this.isInitialized = true;
         }
       });
   }
 
-  // Debounced refresh to prevent spam
-  private scheduleRefresh() {
+  private scheduleRefresh(reason: RefreshReason = 'realtime'): void {
     if (this.refreshTimeout) {
       clearTimeout(this.refreshTimeout);
     }
-    
-    this.refreshTimeout = setTimeout(async () => {
-      console.log('⏰ Executing scheduled refresh');
-      await this.fetchAndCache(true);
-    }, 2000); // 2 second debounce
+
+    const contextKey = this.activeContextKey;
+    const coordinates = this.contextCoordinates.get(contextKey);
+
+    this.refreshTimeout = setTimeout(() => {
+      this.refreshInBackground(contextKey, coordinates, reason);
+    }, 2000);
   }
 
-  // Subscribe to cache updates
-  subscribe(callback: (deals: Deal[]) => void) {
+  subscribe(callback: (deals: Deal[]) => void): () => void {
     this.subscribers.add(callback);
-    
-    // Return unsubscribe function
     return () => {
       this.subscribers.delete(callback);
     };
   }
 
-  // Notify all subscribers of new data
-  private notifySubscribers(deals: Deal[]) {
-    this.subscribers.forEach(callback => callback(deals));
-  }
+  updateDealInCache(dealId: string, updates: Partial<Deal>): void {
+    const contextKey = this.activeContextKey;
+    const currentDeals = this.dealsByContext.get(contextKey) ?? [];
+    const nextDeals = currentDeals.map((deal) => (deal.id === dealId ? { ...deal, ...updates } : deal));
 
-  // Update a single deal in cache (for optimistic updates)
-  updateDealInCache(dealId: string, updates: Partial<Deal>) {
-    this.cachedDeals = this.cachedDeals.map(deal => 
-      deal.id === dealId ? { ...deal, ...updates } : deal
-    );
-    
-    // Update AsyncStorage
-    AsyncStorage.setItem(CACHE_KEY, JSON.stringify(this.cachedDeals)).catch(err => {
-      console.error('Error updating cache:', err);
+    this.dealsByContext.set(contextKey, nextDeals);
+    this.timestampsByContext.set(contextKey, Date.now());
+    this.notifySubscribers(contextKey);
+
+    const timestamp = this.timestampsByContext.get(contextKey) ?? Date.now();
+    void this.persistContextCache(contextKey, nextDeals, timestamp).catch((error) => {
+      console.error('Error updating cache:', error);
     });
-    
-    // Notify subscribers
-    this.notifySubscribers(this.cachedDeals);
   }
 
-  // Invalidate cache and force a fresh fetch (call after deal modifications)
-  async invalidateAndRefresh() {
-    console.log('🔄 Invalidating cache and forcing refresh...');
-    // Clear ALL cache data to ensure no stale data
-    this.cachedDeals = [];
-    await AsyncStorage.removeItem(CACHE_KEY);
-    await AsyncStorage.removeItem(CACHE_TIMESTAMP_KEY);
-    // Reset fetching flag in case it's stuck
-    this.isFetching = false;
-    // Fetch fresh data
-    const freshDeals = await this.fetchAndCache(true);
-    console.log(`✅ Cache refreshed with ${freshDeals.length} deals`);
-    return freshDeals;
+  async invalidateAndRefresh(): Promise<Deal[]> {
+    const contextKey = this.activeContextKey;
+    const coordinates = this.contextCoordinates.get(contextKey);
+    await this.clearCacheDataOnly();
+    return this.refreshContext(contextKey, coordinates, 'manual');
   }
 
-  // Remove a specific deal from cache
-  removeDealFromCache(dealId: string) {
-    this.cachedDeals = this.cachedDeals.filter(deal => deal.id !== dealId);
-    AsyncStorage.setItem(CACHE_KEY, JSON.stringify(this.cachedDeals)).catch(err => {
-      console.error('Error updating cache:', err);
+  removeDealFromCache(dealId: string): void {
+    const contextKey = this.activeContextKey;
+    const currentDeals = this.dealsByContext.get(contextKey) ?? [];
+    const nextDeals = currentDeals.filter((deal) => deal.id !== dealId);
+
+    this.dealsByContext.set(contextKey, nextDeals);
+    this.timestampsByContext.set(contextKey, Date.now());
+    this.notifySubscribers(contextKey);
+
+    const timestamp = this.timestampsByContext.get(contextKey) ?? Date.now();
+    void this.persistContextCache(contextKey, nextDeals, timestamp).catch((error) => {
+      console.error('Error updating cache:', error);
     });
-    this.notifySubscribers(this.cachedDeals);
   }
 
-  // Cleanup
-  cleanup() {
+  private async clearCacheDataOnly(): Promise<void> {
+    const keysToRemove = new Set<string>([LEGACY_CACHE_KEY, LEGACY_CACHE_TIMESTAMP_KEY]);
+    this.knownContextKeys.forEach((contextKey) => {
+      const keys = storageKeysForContext(contextKey);
+      keysToRemove.add(keys.deals);
+      keysToRemove.add(keys.timestamp);
+    });
+
+    this.dealsByContext.clear();
+    this.timestampsByContext.clear();
+    this.inflightFetches.clear();
+    this.contextCoordinates.clear();
+    this.contextCoordinates.set(DEFAULT_CONTEXT_KEY, undefined);
+    this.knownContextKeys.clear();
+    this.knownContextKeys.add(DEFAULT_CONTEXT_KEY);
+    this.activeContextKey = DEFAULT_CONTEXT_KEY;
+
+    await AsyncStorage.multiRemove(Array.from(keysToRemove));
+  }
+
+  cleanup(): void {
     if (this.realtimeChannel) {
       supabase.removeChannel(this.realtimeChannel);
       this.realtimeChannel = null;
     }
     if (this.refreshTimeout) {
       clearTimeout(this.refreshTimeout);
+      this.refreshTimeout = null;
     }
     this.subscribers.clear();
     this.isInitialized = false;
   }
 
-  // Clear cache (useful for logout)
-  async clearCache() {
-    this.cachedDeals = [];
+  async clearCache(): Promise<void> {
     this.cleanup();
-    await Promise.all([
-      AsyncStorage.removeItem(CACHE_KEY),
-      AsyncStorage.removeItem(CACHE_TIMESTAMP_KEY)
-    ]);
-    console.log('🗑️ Deal cache cleared');
+    await this.clearCacheDataOnly();
   }
 }
 
-// Export singleton instance
 export const dealCacheService = new DealCacheService();

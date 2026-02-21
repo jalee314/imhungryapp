@@ -11,7 +11,12 @@
 
 import { supabase } from '../../lib/supabase';
 import type { FavoriteDeal, FavoriteRestaurant } from '../types/favorites';
-import { startPerfSpan } from '../utils/perfMonitor';
+import {
+  estimatePayloadBytes,
+  recordCacheAccess,
+  recordCacheRefresh,
+  startPerfSpan,
+} from '../utils/perfMonitor';
 
 export type { FavoriteDeal, FavoriteRestaurant } from '../types/favorites';
 
@@ -28,12 +33,31 @@ const isRpcUnavailableError = (error: unknown): boolean => {
   );
 };
 
+type FavoriteCacheType = 'deals' | 'restaurants';
+
+export interface FavoritesFetchOptions {
+  forceRefresh?: boolean;
+}
+
 // Simple cache to avoid redundant queries
 const cache = {
   restaurants: new Map<string, FavoriteRestaurant[]>(),
   deals: new Map<string, FavoriteDeal[]>(),
   lastFetch: new Map<string, number>(),
+  dirtyEntries: new Set<string>(),
   CACHE_DURATION: 30000, // 30 seconds
+};
+
+const FAVORITES_DEALS_CACHE_METRIC = 'favorites_deals_cache';
+const FAVORITES_RESTAURANTS_CACHE_METRIC = 'favorites_restaurants_cache';
+
+const buildCacheKey = (type: FavoriteCacheType, userId: string): string => `${type}_${userId}`;
+
+const isCacheEntryFresh = (cacheKey: string, now: number): boolean => {
+  const lastFetch = cache.lastFetch.get(cacheKey) || 0;
+  const isExpired = now - lastFetch >= cache.CACHE_DURATION;
+  const isDirty = cache.dirtyEntries.has(cacheKey);
+  return !isExpired && !isDirty;
 };
 
 /**
@@ -43,7 +67,16 @@ export const clearFavoritesCache = () => {
   cache.restaurants.clear();
   cache.deals.clear();
   cache.lastFetch.clear();
+  cache.dirtyEntries.clear();
   console.log('🗑️ Favorites cache cleared');
+};
+
+export const markFavoritesCacheDirty = (type?: FavoriteCacheType): void => {
+  cache.lastFetch.forEach((_value, key) => {
+    if (!type || key.startsWith(`${type}_`)) {
+      cache.dirtyEntries.add(key);
+    }
+  });
 };
 
 /**
@@ -59,10 +92,22 @@ const getCurrentUserId = async (): Promise<string | null> => {
   }
 };
 
+export const isFavoritesCacheStale = async (type: FavoriteCacheType): Promise<boolean> => {
+  const userId = await getCurrentUserId();
+  if (!userId) return true;
+
+  const cacheKey = buildCacheKey(type, userId);
+  if (type === 'deals' && !cache.deals.has(cacheKey)) return true;
+  if (type === 'restaurants' && !cache.restaurants.has(cacheKey)) return true;
+  return !isCacheEntryFresh(cacheKey, Date.now());
+};
+
 /**
  * Fetch user's favorite deals
  */
-export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
+export const fetchFavoriteDeals = async (
+  options: FavoritesFetchOptions = {},
+): Promise<FavoriteDeal[]> => {
   const span = startPerfSpan('screen.favorites.fetch_deals');
 
   try {
@@ -78,12 +123,18 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
     }
 
     // Check cache first
-    const cacheKey = `deals_${userId}`;
+    const cacheKey = buildCacheKey('deals', userId);
     const now = Date.now();
-    const lastFetch = cache.lastFetch.get(cacheKey) || 0;
-    
-    if (now - lastFetch < cache.CACHE_DURATION && cache.deals.has(cacheKey)) {
-      const cachedDeals = cache.deals.get(cacheKey)!;
+    const cachedDeals = cache.deals.get(cacheKey);
+    const canUseCachedDeals =
+      !options.forceRefresh && Boolean(cachedDeals) && isCacheEntryFresh(cacheKey, now);
+
+    if (canUseCachedDeals && cachedDeals) {
+      recordCacheAccess(FAVORITES_DEALS_CACHE_METRIC, {
+        hit: true,
+        stale: false,
+        source: 'memory',
+      });
       span.addPayload(cachedDeals);
       span.end({
         metadata: {
@@ -93,6 +144,15 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
       });
       return cachedDeals;
     }
+
+    const staleCachedDeals = Boolean(cachedDeals);
+    recordCacheAccess(FAVORITES_DEALS_CACHE_METRIC, {
+      hit: false,
+      stale: staleCachedDeals,
+      source: staleCachedDeals ? 'memory' : 'none',
+    });
+    const refreshReason = options.forceRefresh ? 'manual' : staleCachedDeals ? 'stale' : 'miss';
+    const refreshStartedAt = Date.now();
 
     // Get favorite deal IDs first
     const { data: favoriteData, error: favoriteError } = await supabase
@@ -113,6 +173,14 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
     }
 
     if (!favoriteData || favoriteData.length === 0) {
+      cache.deals.set(cacheKey, []);
+      cache.lastFetch.set(cacheKey, Date.now());
+      cache.dirtyEntries.delete(cacheKey);
+      recordCacheRefresh(FAVORITES_DEALS_CACHE_METRIC, {
+        durationMs: Date.now() - refreshStartedAt,
+        payloadBytes: 0,
+        triggeredBy: refreshReason,
+      });
       span.end({
         metadata: {
           cacheHit: false,
@@ -424,7 +492,13 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 
     // Cache the results
     cache.deals.set(cacheKey, favoriteDeals);
-    cache.lastFetch.set(cacheKey, now);
+    cache.lastFetch.set(cacheKey, Date.now());
+    cache.dirtyEntries.delete(cacheKey);
+    recordCacheRefresh(FAVORITES_DEALS_CACHE_METRIC, {
+      durationMs: Date.now() - refreshStartedAt,
+      payloadBytes: estimatePayloadBytes(favoriteDeals),
+      triggeredBy: refreshReason,
+    });
 
     span.addPayload(favoriteDeals);
     span.end({
@@ -445,7 +519,9 @@ export const fetchFavoriteDeals = async (): Promise<FavoriteDeal[]> => {
 /**
  * Fetch user's favorite restaurants (restaurants with favorited deals)
  */
-export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> => {
+export const fetchFavoriteRestaurants = async (
+  options: FavoritesFetchOptions = {},
+): Promise<FavoriteRestaurant[]> => {
   const span = startPerfSpan('screen.favorites.fetch_restaurants');
 
   try {
@@ -461,12 +537,18 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     }
 
     // Check cache first
-    const cacheKey = `restaurants_${userId}`;
+    const cacheKey = buildCacheKey('restaurants', userId);
     const now = Date.now();
-    const lastFetch = cache.lastFetch.get(cacheKey) || 0;
-    
-    if (now - lastFetch < cache.CACHE_DURATION && cache.restaurants.has(cacheKey)) {
-      const cachedRestaurants = cache.restaurants.get(cacheKey)!;
+    const cachedRestaurants = cache.restaurants.get(cacheKey);
+    const canUseCachedRestaurants =
+      !options.forceRefresh && Boolean(cachedRestaurants) && isCacheEntryFresh(cacheKey, now);
+
+    if (canUseCachedRestaurants && cachedRestaurants) {
+      recordCacheAccess(FAVORITES_RESTAURANTS_CACHE_METRIC, {
+        hit: true,
+        stale: false,
+        source: 'memory',
+      });
       span.addPayload(cachedRestaurants);
       span.end({
         metadata: {
@@ -476,10 +558,19 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
       });
       return cachedRestaurants;
     }
-    
-    // Clear cache to force fresh fetch
-    cache.restaurants.delete(cacheKey);
-    cache.lastFetch.delete(cacheKey);
+
+    const staleCachedRestaurants = Boolean(cachedRestaurants);
+    recordCacheAccess(FAVORITES_RESTAURANTS_CACHE_METRIC, {
+      hit: false,
+      stale: staleCachedRestaurants,
+      source: staleCachedRestaurants ? 'memory' : 'none',
+    });
+    const refreshReason = options.forceRefresh
+      ? 'manual'
+      : staleCachedRestaurants
+        ? 'stale'
+        : 'miss';
+    const refreshStartedAt = Date.now();
 
     // Get ONLY directly favorited restaurants (not restaurants with favorited deals)
     const { data: favoriteData, error: favoriteError } = await supabase
@@ -501,6 +592,14 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     }
 
     if (!favoriteData || favoriteData.length === 0) {
+      cache.restaurants.set(cacheKey, []);
+      cache.lastFetch.set(cacheKey, Date.now());
+      cache.dirtyEntries.delete(cacheKey);
+      recordCacheRefresh(FAVORITES_RESTAURANTS_CACHE_METRIC, {
+        durationMs: Date.now() - refreshStartedAt,
+        payloadBytes: 0,
+        triggeredBy: refreshReason,
+      });
       span.end({
         metadata: {
           cacheHit: false,
@@ -523,6 +622,14 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
     );
 
     if (directRestaurantIds.length === 0) {
+      cache.restaurants.set(cacheKey, []);
+      cache.lastFetch.set(cacheKey, Date.now());
+      cache.dirtyEntries.delete(cacheKey);
+      recordCacheRefresh(FAVORITES_RESTAURANTS_CACHE_METRIC, {
+        durationMs: Date.now() - refreshStartedAt,
+        payloadBytes: 0,
+        triggeredBy: refreshReason,
+      });
       span.end({
         metadata: {
           cacheHit: false,
@@ -849,7 +956,13 @@ export const fetchFavoriteRestaurants = async (): Promise<FavoriteRestaurant[]> 
 
     // Cache the results
     cache.restaurants.set(cacheKey, restaurants);
-    cache.lastFetch.set(cacheKey, now);
+    cache.lastFetch.set(cacheKey, Date.now());
+    cache.dirtyEntries.delete(cacheKey);
+    recordCacheRefresh(FAVORITES_RESTAURANTS_CACHE_METRIC, {
+      durationMs: Date.now() - refreshStartedAt,
+      payloadBytes: estimatePayloadBytes(restaurants),
+      triggeredBy: refreshReason,
+    });
 
     span.addPayload(restaurants);
     span.end({
@@ -889,8 +1002,7 @@ export const toggleRestaurantFavorite = async (
         .eq('restaurant_id', restaurantId);
       
       if (error) throw error;
-      // Bust caches so favorites lists refresh with this change
-      clearFavoritesCache();
+      markFavoritesCacheDirty();
       return false;
     } else {
       // Add to favorites
@@ -902,8 +1014,7 @@ export const toggleRestaurantFavorite = async (
         });
       
       if (error) throw error;
-      // Bust caches so favorites lists refresh with this change
-      clearFavoritesCache();
+      markFavoritesCacheDirty();
       return true;
     }
   } catch (error) {

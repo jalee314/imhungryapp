@@ -34,6 +34,39 @@ export interface PerfMetricSummary {
   payloadBytes: PerfDistributionSummary;
 }
 
+export interface CacheAccessSample {
+  cacheName: string;
+  hit: boolean;
+  stale: boolean;
+  source?: string;
+  timestamp: string;
+}
+
+export type CacheRefreshTrigger = 'miss' | 'stale' | 'manual' | 'realtime' | 'unknown';
+
+export interface CacheRefreshSample {
+  cacheName: string;
+  durationMs: number;
+  roundTrips: number;
+  payloadBytes: number;
+  triggeredBy: CacheRefreshTrigger;
+  timestamp: string;
+}
+
+export interface CacheMetricSummary {
+  cacheName: string;
+  accesses: number;
+  hits: number;
+  misses: number;
+  staleHits: number;
+  hitRate: number;
+  staleRefreshFrequency: number;
+  refreshes: number;
+  refreshCostMs: PerfDistributionSummary;
+  refreshRoundTrips: PerfDistributionSummary;
+  refreshPayloadBytes: PerfDistributionSummary;
+}
+
 export interface PerfSpan {
   readonly name: string;
   recordRoundTrip: (payload?: unknown, count?: number) => void;
@@ -51,6 +84,19 @@ export interface PerfRoundTripOptions<T> {
   count?: number;
   request?: unknown;
   response?: (result: T) => unknown;
+}
+
+export interface CacheAccessOptions {
+  hit: boolean;
+  stale?: boolean;
+  source?: string;
+}
+
+export interface CacheRefreshOptions {
+  durationMs: number;
+  roundTrips?: number;
+  payloadBytes?: number;
+  triggeredBy?: CacheRefreshTrigger;
 }
 
 const isFiniteNumber = (value: number): boolean => Number.isFinite(value);
@@ -203,6 +249,8 @@ class PerfSpanImpl implements PerfSpan {
 
 class PerfMonitor {
   private readonly samplesByMetric = new Map<string, PerfSample[]>();
+  private readonly cacheAccessByName = new Map<string, CacheAccessSample[]>();
+  private readonly cacheRefreshByName = new Map<string, CacheRefreshSample[]>();
 
   startSpan(name: string, metadata?: PerfMetadata): PerfSpan {
     return new PerfSpanImpl(name, this, metadata);
@@ -229,8 +277,20 @@ class PerfMonitor {
     this.samplesByMetric.clear();
   }
 
+  clearCacheMetrics(cacheName?: string): void {
+    if (cacheName) {
+      this.cacheAccessByName.delete(cacheName);
+      this.cacheRefreshByName.delete(cacheName);
+      return;
+    }
+
+    this.cacheAccessByName.clear();
+    this.cacheRefreshByName.clear();
+  }
+
   reset(): void {
     this.clear();
+    this.clearCacheMetrics();
   }
 
   getSummary(name?: string): PerfMetricSummary | Record<string, PerfMetricSummary> | null {
@@ -259,6 +319,61 @@ class PerfMonitor {
     console.info('[perf] Summary:', summary);
   }
 
+  recordCacheAccess(cacheName: string, options: CacheAccessOptions): void {
+    const current = this.cacheAccessByName.get(cacheName) ?? [];
+    current.push({
+      cacheName,
+      hit: options.hit,
+      stale: options.stale ?? false,
+      source: options.source,
+      timestamp: new Date().toISOString(),
+    });
+    this.cacheAccessByName.set(cacheName, current);
+  }
+
+  recordCacheRefresh(cacheName: string, options: CacheRefreshOptions): void {
+    const current = this.cacheRefreshByName.get(cacheName) ?? [];
+    current.push({
+      cacheName,
+      durationMs: Math.max(0, round(options.durationMs)),
+      roundTrips: Math.max(0, Math.floor(options.roundTrips ?? 0)),
+      payloadBytes: Math.max(0, Math.floor(options.payloadBytes ?? 0)),
+      triggeredBy: options.triggeredBy ?? 'unknown',
+      timestamp: new Date().toISOString(),
+    });
+    this.cacheRefreshByName.set(cacheName, current);
+  }
+
+  getCacheSummary(cacheName?: string): CacheMetricSummary | Record<string, CacheMetricSummary> | null {
+    if (cacheName) {
+      return this.summarizeCache(cacheName);
+    }
+
+    const names = new Set<string>([
+      ...this.cacheAccessByName.keys(),
+      ...this.cacheRefreshByName.keys(),
+    ]);
+
+    const result: Record<string, CacheMetricSummary> = {};
+    names.forEach((name) => {
+      const summary = this.summarizeCache(name);
+      if (summary) {
+        result[name] = summary;
+      }
+    });
+
+    return result;
+  }
+
+  printCacheSummary(cacheName?: string): void {
+    const summary = this.getCacheSummary(cacheName);
+    if (!summary || (typeof summary === 'object' && Object.keys(summary).length === 0)) {
+      console.info('[perf] No cache samples recorded.');
+      return;
+    }
+    console.info('[perf] Cache Summary:', summary);
+  }
+
   private summarizeMetric(name: string): PerfMetricSummary | null {
     const samples = this.samplesByMetric.get(name) ?? [];
     if (samples.length === 0) return null;
@@ -271,6 +386,33 @@ class PerfMonitor {
       durationMs: summarizeValues(samples.map((sample) => sample.durationMs)),
       roundTrips: summarizeValues(samples.map((sample) => sample.roundTrips)),
       payloadBytes: summarizeValues(samples.map((sample) => sample.payloadBytes)),
+    };
+  }
+
+  private summarizeCache(cacheName: string): CacheMetricSummary | null {
+    const accesses = this.cacheAccessByName.get(cacheName) ?? [];
+    const refreshes = this.cacheRefreshByName.get(cacheName) ?? [];
+
+    if (accesses.length === 0 && refreshes.length === 0) {
+      return null;
+    }
+
+    const hits = accesses.filter((sample) => sample.hit).length;
+    const misses = accesses.length - hits;
+    const staleHits = accesses.filter((sample) => sample.hit && sample.stale).length;
+
+    return {
+      cacheName,
+      accesses: accesses.length,
+      hits,
+      misses,
+      staleHits,
+      hitRate: accesses.length > 0 ? round((hits / accesses.length) * 100) : 0,
+      staleRefreshFrequency: accesses.length > 0 ? round((staleHits / accesses.length) * 100) : 0,
+      refreshes: refreshes.length,
+      refreshCostMs: summarizeValues(refreshes.map((sample) => sample.durationMs)),
+      refreshRoundTrips: summarizeValues(refreshes.map((sample) => sample.roundTrips)),
+      refreshPayloadBytes: summarizeValues(refreshes.map((sample) => sample.payloadBytes)),
     };
   }
 }
@@ -293,6 +435,27 @@ export const getPerfSummary = (
 
 export const printPerfSummary = (name?: string): void => perfMonitor.printSummary(name);
 
+export const recordCacheAccess = (
+  cacheName: string,
+  options: CacheAccessOptions,
+): void => perfMonitor.recordCacheAccess(cacheName, options);
+
+export const recordCacheRefresh = (
+  cacheName: string,
+  options: CacheRefreshOptions,
+): void => perfMonitor.recordCacheRefresh(cacheName, options);
+
+export const getCacheSummary = (
+  cacheName?: string,
+): CacheMetricSummary | Record<string, CacheMetricSummary> | null =>
+  perfMonitor.getCacheSummary(cacheName);
+
+export const clearCacheMetrics = (cacheName?: string): void =>
+  perfMonitor.clearCacheMetrics(cacheName);
+
+export const printCacheSummary = (cacheName?: string): void =>
+  perfMonitor.printCacheSummary(cacheName);
+
 export const measureRoundTrip = async <T>(
   span: PerfSpan,
   operation: () => Promise<T>,
@@ -314,6 +477,11 @@ type PerfRuntimeApi = {
   getSamples: typeof getPerfSamples;
   getSummary: typeof getPerfSummary;
   printSummary: typeof printPerfSummary;
+  recordCacheAccess: typeof recordCacheAccess;
+  recordCacheRefresh: typeof recordCacheRefresh;
+  clearCacheMetrics: typeof clearCacheMetrics;
+  getCacheSummary: typeof getCacheSummary;
+  printCacheSummary: typeof printCacheSummary;
   estimatePayloadBytes: typeof estimatePayloadBytes;
 };
 
@@ -330,7 +498,11 @@ if (typeof globalThis !== 'undefined') {
     getSamples: getPerfSamples,
     getSummary: getPerfSummary,
     printSummary: printPerfSummary,
+    recordCacheAccess,
+    recordCacheRefresh,
+    clearCacheMetrics,
+    getCacheSummary,
+    printCacheSummary,
     estimatePayloadBytes,
   };
 }
-
