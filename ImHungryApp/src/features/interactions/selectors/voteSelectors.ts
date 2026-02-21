@@ -15,6 +15,33 @@ import {
   createDefaultVoteState,
 } from '../types';
 
+interface LatestVoteStateRow {
+  deal_id: string;
+  latest_vote: VoteType | null;
+  is_favorited: boolean | null;
+}
+
+interface NetVoteCountRow {
+  deal_id: string;
+  net_votes: number | string | null;
+}
+
+const isRpcUnavailableError = (error: unknown): boolean => {
+  const maybeError = error as { code?: string; message?: string } | null;
+  const code = maybeError?.code ?? '';
+  const message = (maybeError?.message ?? '').toLowerCase();
+
+  return (
+    code === '42883' ||
+    code === 'PGRST202' ||
+    message.includes('could not find the function') ||
+    message.includes('does not exist')
+  );
+};
+
+const dedupeDealIds = (dealIds: string[]): string[] =>
+  Array.from(new Set(dealIds.filter(Boolean)));
+
 // ==========================================
 // User Context Helper
 // ==========================================
@@ -48,60 +75,50 @@ export const selectVoteStates = async (
 ): Promise<VoteStates> => {
   try {
     const effectiveUserId = userId || (await getCurrentUserId());
-    if (!effectiveUserId || dealIds.length === 0) {
+    const uniqueDealIds = dedupeDealIds(dealIds);
+
+    if (!effectiveUserId || uniqueDealIds.length === 0) {
       return {};
     }
 
-    // Get the LATEST vote interaction for each deal (one per deal)
-    const { data: interactions } = await supabase
-      .from('interaction')
-      .select('deal_id, interaction_type, interaction_id, created_at')
-      .eq('user_id', effectiveUserId)
-      .in('deal_id', dealIds)
-      .in('interaction_type', ['upvote', 'downvote'])
-      .order('created_at', { ascending: false });
-
-    // Fetch favorites
-    const { data: favorites } = await supabase
-      .from('favorite')
-      .select('deal_id')
-      .eq('user_id', effectiveUserId)
-      .in('deal_id', dealIds);
-
-    // Initialize vote states for all deals
     const voteStates: VoteStates = {};
-    dealIds.forEach((dealId) => {
+    uniqueDealIds.forEach((dealId) => {
       voteStates[dealId] = createDefaultVoteState();
     });
 
-    // Get the latest interaction for each deal
-    const latestInteractions: Record<string, VoteType> = {};
-    interactions?.forEach((interaction) => {
-      if (!latestInteractions[interaction.deal_id]) {
-        latestInteractions[interaction.deal_id] = interaction.interaction_type as VoteType;
-      }
+    const { data, error } = await supabase.rpc('get_latest_vote_states_for_deals', {
+      p_user_id: effectiveUserId,
+      p_deal_ids: uniqueDealIds,
     });
 
-    // Apply the latest vote state
-    Object.entries(latestInteractions).forEach(([dealId, voteType]) => {
-      if (voteType === 'upvote') {
-        voteStates[dealId].isUpvoted = true;
-      } else if (voteType === 'downvote') {
-        voteStates[dealId].isDownvoted = true;
+    if (error) {
+      if (!isRpcUnavailableError(error)) {
+        console.error('[interactions/selectors] Error getting vote states via RPC:', error);
       }
-    });
+      return selectVoteStatesLegacy(uniqueDealIds, effectiveUserId);
+    }
 
-    // Apply favorites
-    favorites?.forEach((fav) => {
-      if (voteStates[fav.deal_id]) {
-        voteStates[fav.deal_id].isFavorited = true;
+    (data as LatestVoteStateRow[] | null | undefined)?.forEach((row) => {
+      const dealState = voteStates[row.deal_id];
+      if (!dealState) return;
+
+      if (row.latest_vote === 'upvote') {
+        dealState.isUpvoted = true;
+      } else if (row.latest_vote === 'downvote') {
+        dealState.isDownvoted = true;
       }
+
+      dealState.isFavorited = Boolean(row.is_favorited);
     });
 
     return voteStates;
   } catch (error) {
     console.error('[interactions/selectors] Error getting vote states:', error);
-    return {};
+    const effectiveUserId = userId || (await getCurrentUserId());
+    if (!effectiveUserId) {
+      return {};
+    }
+    return selectVoteStatesLegacy(dedupeDealIds(dealIds), effectiveUserId);
   }
 };
 
@@ -126,54 +143,36 @@ export const selectDealVoteState = async (
  */
 export const selectVoteCounts = async (dealIds: string[]): Promise<VoteCounts> => {
   try {
-    if (dealIds.length === 0) return {};
-
-    // Get latest interaction type for each user-deal combination
-    const { data: interactions } = await supabase
-      .from('interaction')
-      .select('deal_id, user_id, interaction_type, created_at')
-      .in('deal_id', dealIds)
-      .in('interaction_type', ['upvote', 'downvote'])
-      .order('created_at', { ascending: false });
+    const uniqueDealIds = dedupeDealIds(dealIds);
+    if (uniqueDealIds.length === 0) return {};
 
     const voteCounts: VoteCounts = {};
 
     // Initialize all deals to 0
-    dealIds.forEach((dealId) => {
+    uniqueDealIds.forEach((dealId) => {
       voteCounts[dealId] = 0;
     });
 
-    // Group interactions by deal and user, keep only latest
-    const latestUserVotes: Record<string, Record<string, VoteType>> = {};
-
-    interactions?.forEach((interaction) => {
-      const dealId = interaction.deal_id;
-      const interactionUserId = interaction.user_id;
-
-      if (!latestUserVotes[dealId]) {
-        latestUserVotes[dealId] = {};
-      }
-
-      // Only keep the first (latest) interaction per user per deal
-      if (!latestUserVotes[dealId][interactionUserId]) {
-        latestUserVotes[dealId][interactionUserId] = interaction.interaction_type as VoteType;
-      }
+    const { data, error } = await supabase.rpc('get_net_vote_counts_for_deals', {
+      p_deal_ids: uniqueDealIds,
     });
 
-    // Calculate vote counts
-    Object.entries(latestUserVotes).forEach(([dealId, userVotes]) => {
-      let count = 0;
-      Object.values(userVotes).forEach((voteType) => {
-        if (voteType === 'upvote') count++;
-        else if (voteType === 'downvote') count--;
-      });
-      voteCounts[dealId] = count;
+    if (error) {
+      if (!isRpcUnavailableError(error)) {
+        console.error('[interactions/selectors] Error calculating vote counts via RPC:', error);
+      }
+      return selectVoteCountsLegacy(uniqueDealIds);
+    }
+
+    (data as NetVoteCountRow[] | null | undefined)?.forEach((row) => {
+      if (!row.deal_id) return;
+      voteCounts[row.deal_id] = Number(row.net_votes ?? 0);
     });
 
     return voteCounts;
   } catch (error) {
     console.error('[interactions/selectors] Error calculating vote counts:', error);
-    return {};
+    return selectVoteCountsLegacy(dedupeDealIds(dealIds));
   }
 };
 
@@ -206,4 +205,112 @@ export const selectVoteInfo = async (
   ]);
 
   return { states, counts };
+};
+
+const selectVoteStatesLegacy = async (
+  dealIds: string[],
+  effectiveUserId: string
+): Promise<VoteStates> => {
+  const voteStates: VoteStates = {};
+  dealIds.forEach((dealId) => {
+    voteStates[dealId] = createDefaultVoteState();
+  });
+
+  if (dealIds.length === 0) {
+    return voteStates;
+  }
+
+  const [interactionsResult, favoritesResult] = await Promise.all([
+    supabase
+      .from('interaction')
+      .select('deal_id, interaction_type, interaction_id, created_at')
+      .eq('user_id', effectiveUserId)
+      .in('deal_id', dealIds)
+      .in('interaction_type', ['upvote', 'downvote'])
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('favorite')
+      .select('deal_id')
+      .eq('user_id', effectiveUserId)
+      .in('deal_id', dealIds),
+  ]);
+
+  if (interactionsResult.error) {
+    console.error('[interactions/selectors] Error getting vote states (legacy interactions):', interactionsResult.error);
+    return voteStates;
+  }
+
+  if (favoritesResult.error) {
+    console.error('[interactions/selectors] Error getting vote states (legacy favorites):', favoritesResult.error);
+    return voteStates;
+  }
+
+  const latestInteractions: Record<string, VoteType> = {};
+  interactionsResult.data?.forEach((interaction) => {
+    if (!latestInteractions[interaction.deal_id]) {
+      latestInteractions[interaction.deal_id] = interaction.interaction_type as VoteType;
+    }
+  });
+
+  Object.entries(latestInteractions).forEach(([dealId, voteType]) => {
+    if (voteType === 'upvote') {
+      voteStates[dealId].isUpvoted = true;
+    } else if (voteType === 'downvote') {
+      voteStates[dealId].isDownvoted = true;
+    }
+  });
+
+  favoritesResult.data?.forEach((favorite) => {
+    if (favorite.deal_id && voteStates[favorite.deal_id]) {
+      voteStates[favorite.deal_id].isFavorited = true;
+    }
+  });
+
+  return voteStates;
+};
+
+const selectVoteCountsLegacy = async (dealIds: string[]): Promise<VoteCounts> => {
+  const voteCounts: VoteCounts = {};
+  dealIds.forEach((dealId) => {
+    voteCounts[dealId] = 0;
+  });
+
+  if (dealIds.length === 0) {
+    return voteCounts;
+  }
+
+  const { data: interactions, error } = await supabase
+    .from('interaction')
+    .select('deal_id, user_id, interaction_type, created_at')
+    .in('deal_id', dealIds)
+    .in('interaction_type', ['upvote', 'downvote'])
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[interactions/selectors] Error calculating vote counts (legacy):', error);
+    return voteCounts;
+  }
+
+  const latestUserVotes: Record<string, Record<string, VoteType>> = {};
+  interactions?.forEach((interaction) => {
+    const dealId = interaction.deal_id;
+    const interactionUserId = interaction.user_id;
+    if (!latestUserVotes[dealId]) {
+      latestUserVotes[dealId] = {};
+    }
+    if (!latestUserVotes[dealId][interactionUserId]) {
+      latestUserVotes[dealId][interactionUserId] = interaction.interaction_type as VoteType;
+    }
+  });
+
+  Object.entries(latestUserVotes).forEach(([dealId, userVotes]) => {
+    let count = 0;
+    Object.values(userVotes).forEach((voteType) => {
+      if (voteType === 'upvote') count += 1;
+      else if (voteType === 'downvote') count -= 1;
+    });
+    voteCounts[dealId] = count;
+  });
+
+  return voteCounts;
 };

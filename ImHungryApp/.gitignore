@@ -43,6 +43,8 @@ yarn-error.*
 eas.json
 eas.json
 *.sql
+!supabase/migrations/
+!supabase/migrations/*.sql
 
 # Environment files
 .env.local
