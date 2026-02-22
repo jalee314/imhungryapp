@@ -5,7 +5,8 @@
  * can remain purely presentational.
  */
 
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, type NavigationProp } from '@react-navigation/native';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { supabase } from '../../../lib/supabase';
@@ -28,8 +29,58 @@ import type { FavoritesTab, FavoritesContext } from './types';
 // Hook
 // ---------------------------------------------------------------------------
 
+interface RestaurantDetailNavigationPayload {
+  restaurant: {
+    restaurant_id: string;
+    name: string;
+    address: string;
+    logo_image: string;
+    deal_count: number;
+    distance_miles: number;
+    lat: number;
+    lng: number;
+  };
+}
+
+interface DealDetailNavigationPayload {
+  deal: {
+    id: string;
+    title: string;
+    restaurant: string;
+    details: string;
+    image: { uri: string } | number;
+    imageVariants?: FavoriteDeal['imageVariants'];
+    votes: number;
+    isUpvoted: boolean;
+    isDownvoted: boolean;
+    isFavorited: boolean;
+    cuisine: string;
+    cuisineId: string | undefined;
+    timeAgo: string;
+    author: string;
+    milesAway: string;
+    userId?: string;
+    userDisplayName?: string;
+    userProfilePhoto?: string | null;
+    restaurantAddress: string;
+    isAnonymous: boolean;
+  };
+}
+
+interface UserProfileNavigationPayload {
+  viewUser: true;
+  username: string;
+  userId: string;
+}
+
+type FavoritesNavigationRoutes = {
+  RestaurantDetail: RestaurantDetailNavigationPayload;
+  DealDetail: DealDetailNavigationPayload;
+  UserProfile: UserProfileNavigationPayload;
+};
+
 export function useFavoritesScreen(): FavoritesContext {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<FavoritesNavigationRoutes>>();
   const {
     markAsUnfavorited,
     isUnfavorited,
@@ -50,11 +101,22 @@ export function useFavoritesScreen(): FavoritesContext {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [hasLoadedDeals, setHasLoadedDeals] = useState(false);
   const [hasLoadedRestaurants, setHasLoadedRestaurants] = useState(false);
-  const favoriteChannel = useRef<any>(null);
+  const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const refreshDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const needsDealsRefreshRef = useRef(false);
   const needsRestaurantsRefreshRef = useRef(false);
   const previousTabRef = useRef<FavoritesTab>(activeTab);
+
+  const removeDealById = useCallback(
+    (dealId: string) => (previousDeals: FavoriteDeal[]) =>
+      previousDeals.filter((deal) => deal.id !== dealId),
+    [],
+  );
+  const removeRestaurantById = useCallback(
+    (restaurantId: string) => (previousRestaurants: FavoriteRestaurant[]) =>
+      previousRestaurants.filter((restaurant) => restaurant.id !== restaurantId),
+    [],
+  );
 
   // ----- Data loaders -------------------------------------------------------
 
@@ -254,13 +316,13 @@ export function useFavoritesScreen(): FavoritesContext {
             if (payloadUserId !== userId || !oldFavorite) return;
 
             if (oldFavorite.deal_id) {
-              setDeals((prev) => prev.filter((deal) => deal.id !== oldFavorite.deal_id));
+              setDeals(removeDealById(oldFavorite.deal_id));
               markFavoritesCacheDirty('deals');
               needsDealsRefreshRef.current = true;
             }
 
             if (oldFavorite.restaurant_id) {
-              setRestaurants((prev) => prev.filter((r) => r.id !== oldFavorite.restaurant_id));
+              setRestaurants(removeRestaurantById(oldFavorite.restaurant_id));
               markFavoritesCacheDirty('restaurants');
               needsRestaurantsRefreshRef.current = true;
             }
@@ -272,18 +334,38 @@ export function useFavoritesScreen(): FavoritesContext {
     } catch (error) {
       console.error('Error setting up favorites realtime subscription:', error);
     }
-  }, [scheduleSilentRevalidate]);
+  }, [removeDealById, removeRestaurantById, scheduleSilentRevalidate]);
+
+  const loadDealsRef = useRef(loadDeals);
+  const loadRestaurantsRef = useRef(loadRestaurants);
+  const setupRealtimeSubscriptionRef = useRef(setupRealtimeSubscription);
+  const hasLoadedDealsRef = useRef(hasLoadedDeals);
+  const hasLoadedRestaurantsRef = useRef(hasLoadedRestaurants);
+  const dealsLoadingRef = useRef(dealsLoading);
+  const restaurantsLoadingRef = useRef(restaurantsLoading);
+
+  loadDealsRef.current = loadDeals;
+  loadRestaurantsRef.current = loadRestaurants;
+  setupRealtimeSubscriptionRef.current = setupRealtimeSubscription;
+  hasLoadedDealsRef.current = hasLoadedDeals;
+  hasLoadedRestaurantsRef.current = hasLoadedRestaurants;
+  dealsLoadingRef.current = dealsLoading;
+  restaurantsLoadingRef.current = restaurantsLoading;
 
   // ----- Initial load -------------------------------------------------------
 
   useEffect(() => {
-    if (activeTab === 'restaurants') {
-      loadRestaurants();
+    if (previousTabRef.current === 'restaurants') {
+      loadRestaurantsRef.current().catch((error) => {
+        console.error('Error loading initial restaurants favorites:', error);
+      });
     } else {
-      loadDeals();
+      loadDealsRef.current().catch((error) => {
+        console.error('Error loading initial deal favorites:', error);
+      });
     }
 
-    setupRealtimeSubscription();
+    setupRealtimeSubscriptionRef.current();
 
     return () => {
       if (favoriteChannel.current) {
@@ -294,7 +376,6 @@ export function useFavoritesScreen(): FavoritesContext {
         refreshDebounceTimeout.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ----- Tab change ---------------------------------------------------------
@@ -319,12 +400,15 @@ export function useFavoritesScreen(): FavoritesContext {
     };
 
     const loadActiveTabData = async () => {
-      if (activeTab === 'restaurants' && !restaurantsLoading) {
-        await loadRestaurants(hasLoadedRestaurants, needsRestaurantsRefreshRef.current);
+      if (activeTab === 'restaurants' && !restaurantsLoadingRef.current) {
+        await loadRestaurantsRef.current(
+          hasLoadedRestaurantsRef.current,
+          needsRestaurantsRefreshRef.current,
+        );
         needsRestaurantsRefreshRef.current = false;
         finishTabSwitch();
-      } else if (activeTab === 'deals' && !dealsLoading) {
-        await loadDeals(hasLoadedDeals, needsDealsRefreshRef.current);
+      } else if (activeTab === 'deals' && !dealsLoadingRef.current) {
+        await loadDealsRef.current(hasLoadedDealsRef.current, needsDealsRefreshRef.current);
         needsDealsRefreshRef.current = false;
         finishTabSwitch();
       } else {
@@ -337,7 +421,6 @@ export function useFavoritesScreen(): FavoritesContext {
     });
 
     previousTabRef.current = activeTab;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // ----- Focus sync ---------------------------------------------------------
@@ -472,7 +555,7 @@ export function useFavoritesScreen(): FavoritesContext {
           lat: 0,
           lng: 0,
         };
-        (navigation as any).navigate('RestaurantDetail', {
+        navigation.navigate('RestaurantDetail', {
           restaurant: restaurantForDetail,
         });
       }
@@ -508,7 +591,7 @@ export function useFavoritesScreen(): FavoritesContext {
           restaurantAddress: deal.restaurantAddress,
           isAnonymous: deal.isAnonymous,
         };
-        (navigation as any).navigate('DealDetail', { deal: dealForDetail });
+        navigation.navigate('DealDetail', { deal: dealForDetail });
       }
     },
     [deals, navigation],
@@ -518,7 +601,7 @@ export function useFavoritesScreen(): FavoritesContext {
     (userId: string) => {
       const deal = deals.find((d) => d.userId === userId);
       if (deal && deal.userDisplayName) {
-        (navigation as any).navigate('UserProfile', {
+        navigation.navigate('UserProfile', {
           viewUser: true,
           username: deal.userDisplayName,
           userId,
