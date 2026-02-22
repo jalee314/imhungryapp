@@ -5,19 +5,21 @@
  */
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useRef } from 'react';
+import React, { memo, useCallback } from 'react';
 import {
   Image,
   TouchableOpacity,
   FlatList,
   Dimensions,
   StyleSheet,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 
 import OptimizedImage from '../../../components/OptimizedImage';
 import SkeletonLoader from '../../../components/SkeletonLoader';
 import type { Deal } from '../../../types/deal';
-import { GRAY, STATIC, RADIUS, BORDER_WIDTH, BRAND } from '../../../ui/alf';
+import { GRAY, RADIUS, BORDER_WIDTH, BRAND } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 import type { ImageCarouselState } from '../types';
 
@@ -30,14 +32,12 @@ export interface DealMediaCarouselProps {
   onOpenImageViewer: () => void;
 }
 
-export function DealMediaCarousel({
+function DealMediaCarouselComponent({
   dealData,
   carousel,
   imagesForCarousel,
   onOpenImageViewer,
 }: DealMediaCarouselProps) {
-  const carouselRef = useRef<FlatList>(null);
-
   const {
     currentImageIndex,
     setCurrentImageIndex,
@@ -49,6 +49,56 @@ export function DealMediaCarousel({
     handleImageLoad,
     handleImageError,
   } = carousel;
+  const carouselWidth = screenWidth - 48;
+
+  const handleCarouselScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / carouselWidth);
+    if (!imagesForCarousel) return;
+    if (index !== currentImageIndex && index >= 0 && index < imagesForCarousel.length) {
+      setCurrentImageIndex(index);
+    }
+  }, [carouselWidth, currentImageIndex, imagesForCarousel, setCurrentImageIndex]);
+
+  const keyExtractor = useCallback((item: string, index: number) => {
+    const imageKey = item || `image-${index}`;
+    return `detail-image-${index}-${imageKey}`;
+  }, []);
+
+  const renderCarouselItem = useCallback(
+    ({ item, index }: { item: string; index: number }) => (
+      <TouchableOpacity
+        onPress={() => {
+          setCurrentImageIndex(index);
+          onOpenImageViewer();
+        }}
+        style={{ width: carouselWidth }}
+      >
+        <Image
+          source={{ uri: item }}
+          style={[
+            styles.dealImage,
+            { width: carouselWidth },
+            imageDimensions
+              ? { height: (imageDimensions.height / imageDimensions.width) * 350 }
+              : { height: 350 },
+            imageLoading && { opacity: 0 },
+          ]}
+          resizeMode="cover"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
+      </TouchableOpacity>
+    ),
+    [
+      carouselWidth,
+      handleImageError,
+      handleImageLoad,
+      imageDimensions,
+      imageLoading,
+      onOpenImageViewer,
+      setCurrentImageIndex,
+    ],
+  );
 
   // ---- Carousel (multiple images from server) ----------------------------
   if (imagesForCarousel && imagesForCarousel.length > 0) {
@@ -70,7 +120,6 @@ export function DealMediaCarousel({
             </Box>
           )}
           <FlatList
-            ref={carouselRef}
             data={imagesForCarousel}
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -78,44 +127,19 @@ export function DealMediaCarousel({
             pagingEnabled
             scrollEnabled={imagesForCarousel.length > 1}
             decelerationRate="fast"
-            onScroll={(event) => {
-              const contentWidth = screenWidth - 48;
-              const index = Math.round(event.nativeEvent.contentOffset.x / contentWidth);
-              if (index !== currentImageIndex && index >= 0 && index < imagesForCarousel.length) {
-                setCurrentImageIndex(index);
-              }
-            }}
+            onScroll={handleCarouselScroll}
             scrollEventThrottle={16}
-            keyExtractor={(_, index) => `detail-image-${index}`}
+            keyExtractor={keyExtractor}
             getItemLayout={(_, index) => ({
-              length: screenWidth - 48,
-              offset: (screenWidth - 48) * index,
+              length: carouselWidth,
+              offset: carouselWidth * index,
               index,
             })}
-            renderItem={({ item, index }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  setCurrentImageIndex(index);
-                  onOpenImageViewer();
-                }}
-                style={{ width: screenWidth - 48 }}
-              >
-                <Image
-                  source={{ uri: item }}
-                  style={[
-                    styles.dealImage,
-                    { width: screenWidth - 48 },
-                    imageDimensions
-                      ? { height: (imageDimensions.height / imageDimensions.width) * 350 }
-                      : { height: 350 },
-                    imageLoading && { opacity: 0 },
-                  ]}
-                  resizeMode="cover"
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
-              </TouchableOpacity>
-            )}
+            renderItem={renderCarouselItem}
+            initialNumToRender={1}
+            maxToRenderPerBatch={2}
+            windowSize={3}
+            removeClippedSubviews
           />
         </Box>
 
@@ -227,6 +251,8 @@ export function DealMediaCarousel({
     </TouchableOpacity>
   );
 }
+
+export const DealMediaCarousel = memo(DealMediaCarouselComponent);
 
 const styles = StyleSheet.create({
   imageWrapper: {

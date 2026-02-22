@@ -118,6 +118,10 @@ export function useDiscover(): DiscoverContext {
     },
     [restaurants, searchQuery],
   );
+  const restaurantsById = useMemo(
+    () => new Map(restaurants.map((restaurant) => [restaurant.restaurant_id, restaurant])),
+    [restaurants],
+  );
 
   // ----- Interactions -------------------------------------------------------
 
@@ -131,12 +135,12 @@ export function useDiscover(): DiscoverContext {
 
   const handleRowCardPress = useCallback(
     (id: string) => {
-      const restaurant = restaurants.find((r) => r.restaurant_id === id);
+      const restaurant = restaurantsById.get(id);
       if (restaurant) {
         (navigation as any).navigate('RestaurantDetail', { restaurant });
       }
     },
-    [restaurants, navigation],
+    [restaurantsById, navigation],
   );
 
   const handleRetry = useCallback(() => {

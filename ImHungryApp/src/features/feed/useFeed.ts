@@ -7,7 +7,7 @@
 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 import { supabase } from '../../../lib/supabase';
 import { useDataCache } from '../../hooks/useDataCache';
@@ -34,6 +34,24 @@ const VOTE_DELTAS: Record<VoteEventType, Record<VoteInteractionType, number>> = 
     upvote: -1,
     downvote: 1,
   },
+};
+
+const hasDealChangedForCacheSync = (cachedDeal: Deal, currentDeal: Deal): boolean => {
+  if (cachedDeal.isAnonymous !== currentDeal.isAnonymous) return true;
+  if (cachedDeal.author !== currentDeal.author) return true;
+  if (cachedDeal.title !== currentDeal.title) return true;
+  if (cachedDeal.details !== currentDeal.details) return true;
+
+  const cachedVariants = cachedDeal.imageVariants;
+  const currentVariants = currentDeal.imageVariants;
+  if (!cachedVariants && !currentVariants) return false;
+  if (!cachedVariants || !currentVariants) return true;
+
+  return (
+    cachedVariants.medium !== currentVariants.medium ||
+    cachedVariants.small !== currentVariants.small ||
+    cachedVariants.thumbnail !== currentVariants.thumbnail
+  );
 };
 
 // ---------------------------------------------------------------------------
@@ -68,6 +86,11 @@ export function useFeed(): FeedContext {
   const interactionChannel = useRef<RealtimeChannel | null>(null);
   const favoriteChannel = useRef<RealtimeChannel | null>(null);
   const recentActions = useRef<Set<string>>(new Set());
+  const dealsRef = useRef<Deal[]>([]);
+
+  useEffect(() => {
+    dealsRef.current = deals;
+  }, [deals]);
 
   // ----- Load deals ---------------------------------------------------------
   const loadDeals = useCallback(async () => {
@@ -263,77 +286,61 @@ export function useFeed(): FeedContext {
   }, []);
 
   // ----- Focus sync ---------------------------------------------------------
+  const syncDealsWithCache = useCallback((): Deal[] => {
+    const currentDeals = dealsRef.current;
+
+    if (postAdded) {
+      console.log('📸 Feed: postAdded detected, syncing with fresh cache');
+      const cachedDeals = dealCacheService.getCachedDeals();
+      if (cachedDeals.length > 0) {
+        setDeals(cachedDeals);
+        setPostAdded(false);
+        return cachedDeals;
+      }
+      setPostAdded(false);
+      return currentDeals;
+    }
+
+    const cachedDeals = dealCacheService.getCachedDeals();
+    if (cachedDeals.length === 0) {
+      return currentDeals;
+    }
+
+    const currentDealsById = new Map(currentDeals.map((dealItem) => [dealItem.id, dealItem]));
+    const hasChanges =
+      cachedDeals.length !== currentDeals.length ||
+      cachedDeals.some((cachedDeal) => {
+        const currentDeal = currentDealsById.get(cachedDeal.id);
+        if (!currentDeal) return true;
+        return hasDealChangedForCacheSync(cachedDeal, currentDeal);
+      });
+
+    if (hasChanges) {
+      console.log('📸 Feed: Detected deal changes, syncing with cache');
+      setDeals(cachedDeals);
+      return cachedDeals;
+    }
+
+    return currentDeals;
+  }, [postAdded, setPostAdded]);
+
   useFocusEffect(
     React.useCallback(() => {
-      const syncWithCache = async () => {
-        if (postAdded) {
-          console.log('📸 Feed: postAdded detected, syncing with fresh cache');
-          const cachedDeals = dealCacheService.getCachedDeals();
-          if (cachedDeals.length > 0) {
-            setDeals(cachedDeals);
-          }
-          setPostAdded(false);
-          return;
-        }
+      const baseDeals = syncDealsWithCache();
+      const dealIdsToClear: string[] = [];
+      const updatedDeals = baseDeals.map((dealItem) => {
+        const updatedDeal = getUpdatedDeal(dealItem.id);
+        if (!updatedDeal) return dealItem;
 
-        const cachedDeals = dealCacheService.getCachedDeals();
-        if (cachedDeals.length > 0) {
-          setDeals((prevDeals) => {
-            const hasChanges = cachedDeals.some((cachedDeal) => {
-              const currentDeal = prevDeals.find((d) => d.id === cachedDeal.id);
-              if (!currentDeal) return true;
+        dealIdsToClear.push(dealItem.id);
+        return updatedDeal;
+      });
 
-              if (cachedDeal.isAnonymous !== currentDeal.isAnonymous) return true;
-              if (cachedDeal.author !== currentDeal.author) return true;
-              if (cachedDeal.title !== currentDeal.title) return true;
-              if (cachedDeal.details !== currentDeal.details) return true;
-
-              const cachedVariants = cachedDeal.imageVariants;
-              const currentVariants = currentDeal.imageVariants;
-              if (!cachedVariants && !currentVariants) return false;
-              if (!cachedVariants || !currentVariants) return true;
-              return (
-                cachedVariants.medium !== currentVariants.medium ||
-                cachedVariants.small !== currentVariants.small ||
-                cachedVariants.thumbnail !== currentVariants.thumbnail
-              );
-            });
-
-            if (hasChanges || cachedDeals.length !== prevDeals.length) {
-              console.log('📸 Feed: Detected deal changes, syncing with cache');
-              return cachedDeals;
-            }
-            return prevDeals;
-          });
-        }
-      };
-      syncWithCache();
-
-      const timeoutId = setTimeout(() => {
-        setDeals((prevDeals) => {
-          let hasChanges = false;
-          const dealIdsToClear: string[] = [];
-          const updatedDeals = prevDeals.map((deal) => {
-            const updatedDeal = getUpdatedDeal(deal.id);
-            if (updatedDeal) {
-              hasChanges = true;
-              dealIdsToClear.push(deal.id);
-              return updatedDeal;
-            }
-            return deal;
-          });
-
-          if (hasChanges) {
-            setTimeout(() => {
-              dealIdsToClear.forEach((id) => clearUpdatedDeal(id));
-            }, 0);
-          }
-
-          return hasChanges ? updatedDeals : prevDeals;
-        });
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }, [getUpdatedDeal, clearUpdatedDeal, postAdded, setPostAdded]),
+      if (dealIdsToClear.length > 0) {
+        setDeals(updatedDeals);
+        dealIdsToClear.forEach((id) => clearUpdatedDeal(id));
+      }
+    }, [syncDealsWithCache, getUpdatedDeal, clearUpdatedDeal]),
   );
 
   // ----- Pull-to-refresh ----------------------------------------------------
@@ -364,29 +371,66 @@ export function useFeed(): FeedContext {
   }, [selectedCoordinates]);
 
   // ----- Filtering ----------------------------------------------------------
-  const filteredDeals = deals.filter((deal) => {
-    if (selectedCuisineId === 'All') return true;
-    return deal.cuisineId === selectedCuisineId;
-  });
+  const {
+    filteredDeals,
+    communityDeals,
+    dealsForYou,
+    cuisinesWithDeals,
+  } = useMemo(() => {
+    const selectedAll = selectedCuisineId === 'All';
+    const nextFilteredDeals: Deal[] = [];
+    const cuisineIdsWithDeals = new Set<string>();
 
-  const communityDeals = filteredDeals.slice(0, 10);
-  const dealsForYou = filteredDeals;
+    deals.forEach((dealItem) => {
+      if (dealItem.cuisineId) {
+        cuisineIdsWithDeals.add(dealItem.cuisineId);
+      }
 
-  const cuisinesWithDeals = cuisines.filter((cuisine) =>
-    deals.some((deal) => deal.cuisineId === cuisine.id),
-  );
+      if (selectedAll || dealItem.cuisineId === selectedCuisineId) {
+        nextFilteredDeals.push(dealItem);
+      }
+    });
+
+    const nextCuisinesWithDeals = cuisines.filter((cuisine) => cuisineIdsWithDeals.has(cuisine.id));
+
+    return {
+      filteredDeals: nextFilteredDeals,
+      communityDeals: nextFilteredDeals.slice(0, 10),
+      dealsForYou: nextFilteredDeals,
+      cuisinesWithDeals: nextCuisinesWithDeals,
+    };
+  }, [deals, cuisines, selectedCuisineId]);
 
   // ----- Navigation ---------------------------------------------------------
-  const handleDealPress = (dealId: string) => {
-    const selectedDeal = deals.find((deal) => deal.id === dealId);
+  const handleDealPress = useCallback((dealId: string) => {
+    const selectedDeal = deals.find((dealItem) => dealItem.id === dealId);
     if (selectedDeal) {
-      const positionInFeed = filteredDeals.findIndex((d) => d.id === dealId);
-      logClick(dealId, 'feed', positionInFeed >= 0 ? positionInFeed : undefined).catch((err) => {
+      const positionInFeed = filteredDeals.findIndex((dealItem) => dealItem.id === dealId);
+      logClick(dealId, 'feed', typeof positionInFeed === 'number' ? positionInFeed : undefined).catch((err) => {
         console.error('Failed to log click:', err);
       });
       (navigation as any).navigate('DealDetail', { deal: selectedDeal });
     }
-  };
+  }, [deals, filteredDeals, navigation]);
+
+  const onFilterSelect = useCallback((filterName: string) => {
+    const cuisine = cuisinesWithDeals.find((cuisineItem) => cuisineItem.name === filterName);
+    setSelectedCuisineId(cuisine ? cuisine.id : 'All');
+  }, [cuisinesWithDeals]);
+
+  const interactions = useMemo(() => ({
+    handleUpvote,
+    handleDownvote,
+    handleFavorite,
+    handleDealPress,
+  }), [handleUpvote, handleDownvote, handleFavorite, handleDealPress]);
+
+  const cuisineFilter = useMemo(() => ({
+    selectedCuisineId,
+    cuisinesWithDeals,
+    cuisinesLoading,
+    onFilterSelect,
+  }), [selectedCuisineId, cuisinesWithDeals, cuisinesLoading, onFilterSelect]);
 
   // ----- Return context -----------------------------------------------------
   return {
@@ -402,21 +446,8 @@ export function useFeed(): FeedContext {
       isLocationLoading,
       hasLocationSet,
     },
-    cuisineFilter: {
-      selectedCuisineId,
-      cuisinesWithDeals,
-      cuisinesLoading,
-      onFilterSelect: (filterName: string) => {
-        const cuisine = cuisinesWithDeals.find((c) => c.name === filterName);
-        setSelectedCuisineId(cuisine ? cuisine.id : 'All');
-      },
-    },
-    interactions: {
-      handleUpvote,
-      handleDownvote,
-      handleFavorite,
-      handleDealPress,
-    },
+    cuisineFilter,
+    interactions,
     communityDeals,
     dealsForYou,
     onRefresh,

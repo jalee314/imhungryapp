@@ -4,12 +4,12 @@
  * Purely presentational. State & callbacks come from useFeed.
  */
 
-import React from 'react';
-import { View } from 'react-native';
+import React, { memo } from 'react';
+import { View, StyleSheet } from 'react-native';
 
 import DealCard from '../../../components/DealCard';
 import type { Deal } from '../../../types/deal';
-import { STATIC, SPACING } from '../../../ui/alf';
+import { STATIC } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 import type { FeedInteractions } from '../types';
 
@@ -18,7 +18,7 @@ export interface DealsForYouSectionProps {
   interactions: FeedInteractions;
 }
 
-export function DealsForYouSection({ deals, interactions }: DealsForYouSectionProps) {
+function DealsForYouSectionComponent({ deals, interactions }: DealsForYouSectionProps) {
   if (deals.length === 0) return null;
 
   return (
@@ -53,7 +53,7 @@ export function DealsForYouSection({ deals, interactions }: DealsForYouSectionPr
         {deals.map((deal, index) => (
           <View
             key={deal.id}
-            style={index % 2 === 0 ? { marginBottom: 0, marginRight: 2 } : { marginTop: 0, marginLeft: 2 }}
+            style={index % 2 === 0 ? styles.leftColumnCard : styles.rightColumnCard}
           >
             <DealCard
               deal={deal}
@@ -69,3 +69,16 @@ export function DealsForYouSection({ deals, interactions }: DealsForYouSectionPr
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  leftColumnCard: {
+    marginBottom: 0,
+    marginRight: 2,
+  },
+  rightColumnCard: {
+    marginTop: 0,
+    marginLeft: 2,
+  },
+});
+
+export const DealsForYouSection = memo(DealsForYouSectionComponent);
