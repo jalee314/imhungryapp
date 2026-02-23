@@ -25,12 +25,24 @@ interface QueryResult<T> {
   error: { message?: string } | null;
 }
 
+interface DealReferenceData {
+  categoriesMap: Map<string, CategoryRow>;
+  cuisinesMap: Map<string, CuisineRow>;
+  dealCountsMap: Map<string, number>;
+  distanceMap: Map<string, number | null>;
+  restaurantsMap: Map<string, RestaurantRow>;
+}
+
 const emptyQueryResult = <T>(): QueryResult<T> => ({
   data: [],
   error: null,
 });
 
 const asQueryResult = <T>(value: unknown): QueryResult<T> => value as QueryResult<T>;
+
+const uniqueDefined = (values: Array<string | null | undefined>): string[] => {
+  return [...new Set(values.filter((value): value is string => Boolean(value)))];
+};
 
 const buildTemplateRelationMaps = (templates: DealTemplateRow[]) => {
   const restaurants = new Map<string, RestaurantRow>();
@@ -61,18 +73,19 @@ const buildTemplateRelationMaps = (templates: DealTemplateRow[]) => {
   };
 };
 
-const uniqueDefined = (values: Array<string | null | undefined>): string[] => {
-  return [...new Set(values.filter((value): value is string => Boolean(value)))];
+const buildFavoriteCreatedAtMap = (favoriteData: FavoriteDealRow[]): Map<string, string> => {
+  return new Map(
+    favoriteData
+      .filter((favorite): favorite is FavoriteDealRow & { deal_id: string } => Boolean(favorite.deal_id))
+      .map((favorite) => [favorite.deal_id, favorite.created_at]),
+  );
 };
 
 const buildFavoriteDeal = (
   deal: DealInstanceRow,
   template: DealTemplateRow,
   restaurant: RestaurantRow,
-  cuisinesMap: Map<string, CuisineRow>,
-  categoriesMap: Map<string, CategoryRow>,
-  distanceMap: Map<string, number | null>,
-  dealCountsMap: Map<string, number>,
+  referenceData: DealReferenceData,
   favoriteCreatedAtByDealId: Map<string, string>,
 ): FavoriteDeal => {
   const { imageUrl, imageVariants } = getFavoriteDealImageData(
@@ -82,7 +95,6 @@ const buildFavoriteDeal = (
   const isAnonymous = template.is_anonymous ?? false;
   const userData = getSingleRelation(template.user);
   const userDisplayName = isAnonymous ? 'Anonymous' : (userData?.display_name || 'Unknown User');
-  const userProfilePhoto = getUserProfilePhotoUrl(template.user, isAnonymous);
 
   return {
     id: deal.deal_id,
@@ -92,28 +104,29 @@ const buildFavoriteDeal = (
     imageVariants,
     restaurantName: restaurant.name,
     restaurantAddress: restaurant.address,
-    distance: formatDistance(distanceMap.get(restaurant.restaurant_id)),
-    dealCount: dealCountsMap.get(restaurant.restaurant_id) || 0,
-    cuisineName: cuisinesMap.get(template.cuisine_id ?? '')?.cuisine_name || 'Unknown',
-    categoryName: categoriesMap.get(template.category_id ?? '')?.category_name || 'Unknown',
+    distance: formatDistance(referenceData.distanceMap.get(restaurant.restaurant_id)),
+    dealCount: referenceData.dealCountsMap.get(restaurant.restaurant_id) || 0,
+    cuisineName: referenceData.cuisinesMap.get(template.cuisine_id ?? '')?.cuisine_name || 'Unknown',
+    categoryName: referenceData.categoriesMap.get(template.category_id ?? '')?.category_name || 'Unknown',
     createdAt: favoriteCreatedAtByDealId.get(deal.deal_id) || new Date().toISOString(),
     isFavorited: true,
     userId: template.user_id ?? undefined,
     userDisplayName,
-    userProfilePhoto: userProfilePhoto ?? null,
+    userProfilePhoto: getUserProfilePhotoUrl(template.user, isAnonymous) ?? null,
     isAnonymous,
   };
 };
 
-export const fetchFavoriteDealsFromDatabase = async (
+const fetchFavoriteDealRows = async (
   userId: string,
   span: PerfSpanLike,
-): Promise<FavoriteDeal[]> => {
+): Promise<FavoriteDealRow[]> => {
   const { data: favoriteDataRaw, error: favoriteError } = await supabase
     .from('favorite')
     .select('deal_id, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
+
   const favoriteData = (favoriteDataRaw ?? []) as FavoriteDealRow[];
   span.recordRoundTrip({
     source: 'query.favorite.deals',
@@ -125,19 +138,18 @@ export const fetchFavoriteDealsFromDatabase = async (
     throw favoriteError;
   }
 
-  if (favoriteData.length === 0) {
-    return [];
-  }
+  return favoriteData;
+};
 
-  const dealIds = uniqueDefined(favoriteData.map((favorite) => favorite.deal_id));
-  if (dealIds.length === 0) {
-    return [];
-  }
-
+const fetchDealInstances = async (
+  dealIds: string[],
+  span: PerfSpanLike,
+): Promise<DealInstanceRow[]> => {
   const { data: dealsRaw, error: dealsError } = await supabase
     .from('deal_instance')
     .select('deal_id, template_id, start_date, end_date')
     .in('deal_id', dealIds);
+
   const deals = (dealsRaw ?? []) as DealInstanceRow[];
   span.recordRoundTrip({
     source: 'query.deal_instance.by_deal_ids',
@@ -149,15 +161,13 @@ export const fetchFavoriteDealsFromDatabase = async (
     throw dealsError;
   }
 
-  if (deals.length === 0) {
-    return [];
-  }
+  return deals;
+};
 
-  const templateIds = uniqueDefined(deals.map((deal) => deal.template_id));
-  if (templateIds.length === 0) {
-    return [];
-  }
-
+const fetchTemplates = async (
+  templateIds: string[],
+  span: PerfSpanLike,
+): Promise<DealTemplateRow[]> => {
   const { data: templatesDataRaw, error: templatesError } = await supabase
     .from('deal_template')
     .select(`
@@ -205,6 +215,7 @@ export const fetchFavoriteDealsFromDatabase = async (
       )
     `)
     .in('template_id', templateIds);
+
   const templatesData = (templatesDataRaw ?? []) as DealTemplateRow[];
   span.recordRoundTrip({
     source: 'query.deal_template.by_template_ids',
@@ -216,38 +227,56 @@ export const fetchFavoriteDealsFromDatabase = async (
     throw templatesError;
   }
 
-  const templatesMap = new Map<string, DealTemplateRow>(
-    templatesData.map((template) => [template.template_id, template]),
-  );
-  const relationMaps = buildTemplateRelationMaps(templatesData);
+  return templatesData;
+};
 
-  const restaurantIds = uniqueDefined(templatesData.map((template) => template.restaurant_id));
-  const cuisineIds = uniqueDefined(templatesData.map((template) => template.cuisine_id));
-  const categoryIds = uniqueDefined(templatesData.map((template) => template.category_id));
+interface MissingReferenceIds { missingCategoryIds: string[]; missingCuisineIds: string[]; missingRestaurantIds: string[]; }
 
-  const missingRestaurantIds = restaurantIds.filter((id) => !relationMaps.restaurants.has(id));
-  const missingCuisineIds = cuisineIds.filter((id) => !relationMaps.cuisines.has(id));
-  const missingCategoryIds = categoryIds.filter((id) => !relationMaps.categories.has(id));
+const getMissingReferenceIds = (
+  categoryIds: string[],
+  cuisineIds: string[],
+  restaurantIds: string[],
+  relationMaps: {
+    categories: Map<string, CategoryRow>;
+    cuisines: Map<string, CuisineRow>;
+    restaurants: Map<string, RestaurantRow>;
+  },
+): MissingReferenceIds => ({
+  missingCategoryIds: categoryIds.filter((id) => !relationMaps.categories.has(id)),
+  missingCuisineIds: cuisineIds.filter((id) => !relationMaps.cuisines.has(id)),
+  missingRestaurantIds: restaurantIds.filter((id) => !relationMaps.restaurants.has(id)),
+});
 
+const fetchReferenceQueryResults = async (
+  missingIds: MissingReferenceIds,
+  restaurantIds: string[],
+  userId: string,
+): Promise<{
+  categoriesResult: QueryResult<CategoryRow>;
+  cuisinesResult: QueryResult<CuisineRow>;
+  dealCountsResult: QueryResult<DealCountRow>;
+  distancesResult: QueryResult<DistanceRow>;
+  restaurantsResult: QueryResult<RestaurantRow>;
+}> => {
   const [restaurantsResultRaw, cuisinesResultRaw, categoriesResultRaw, distancesResultRaw, dealCountsResultRaw] =
     await Promise.all([
-      missingRestaurantIds.length > 0
+      missingIds.missingRestaurantIds.length > 0
         ? supabase
             .from('restaurant')
             .select('restaurant_id, name, address')
-            .in('restaurant_id', missingRestaurantIds)
+            .in('restaurant_id', missingIds.missingRestaurantIds)
         : Promise.resolve(emptyQueryResult<RestaurantRow>()),
-      missingCuisineIds.length > 0
+      missingIds.missingCuisineIds.length > 0
         ? supabase
             .from('cuisine')
             .select('cuisine_id, cuisine_name')
-            .in('cuisine_id', missingCuisineIds)
+            .in('cuisine_id', missingIds.missingCuisineIds)
         : Promise.resolve(emptyQueryResult<CuisineRow>()),
-      missingCategoryIds.length > 0
+      missingIds.missingCategoryIds.length > 0
         ? supabase
             .from('category')
             .select('category_id, category_name')
-            .in('category_id', missingCategoryIds)
+            .in('category_id', missingIds.missingCategoryIds)
         : Promise.resolve(emptyQueryResult<CategoryRow>()),
       restaurantIds.length > 0
         ? supabase.rpc('get_restaurant_coords_with_distance', {
@@ -260,89 +289,152 @@ export const fetchFavoriteDealsFromDatabase = async (
         : Promise.resolve(emptyQueryResult<DealCountRow>()),
     ]);
 
-  const restaurantsResult = asQueryResult<RestaurantRow>(restaurantsResultRaw);
-  const cuisinesResult = asQueryResult<CuisineRow>(cuisinesResultRaw);
-  const categoriesResult = asQueryResult<CategoryRow>(categoriesResultRaw);
-  const distancesResult = asQueryResult<DistanceRow>(distancesResultRaw);
-  const dealCountsResult = asQueryResult<DealCountRow>(dealCountsResultRaw);
+  return {
+    categoriesResult: asQueryResult<CategoryRow>(categoriesResultRaw),
+    cuisinesResult: asQueryResult<CuisineRow>(cuisinesResultRaw),
+    dealCountsResult: asQueryResult<DealCountRow>(dealCountsResultRaw),
+    distancesResult: asQueryResult<DistanceRow>(distancesResultRaw),
+    restaurantsResult: asQueryResult<RestaurantRow>(restaurantsResultRaw),
+  };
+};
 
-  if (missingRestaurantIds.length > 0) {
+const recordReferenceRoundTrips = (
+  span: PerfSpanLike,
+  missingIds: MissingReferenceIds,
+  results: {
+    categoriesResult: QueryResult<CategoryRow>;
+    cuisinesResult: QueryResult<CuisineRow>;
+    dealCountsResult: QueryResult<DealCountRow>;
+    distancesResult: QueryResult<DistanceRow>;
+    restaurantsResult: QueryResult<RestaurantRow>;
+  },
+) => {
+  if (missingIds.missingRestaurantIds.length > 0) {
     span.recordRoundTrip({
       source: 'query.restaurant.by_restaurant_ids',
-      responseCount: restaurantsResult.data?.length ?? 0,
-      error: restaurantsResult.error?.message ?? null,
+      responseCount: results.restaurantsResult.data?.length ?? 0,
+      error: results.restaurantsResult.error?.message ?? null,
     });
   }
-  if (missingCuisineIds.length > 0) {
+  if (missingIds.missingCuisineIds.length > 0) {
     span.recordRoundTrip({
       source: 'query.cuisine.by_cuisine_ids',
-      responseCount: cuisinesResult.data?.length ?? 0,
-      error: cuisinesResult.error?.message ?? null,
+      responseCount: results.cuisinesResult.data?.length ?? 0,
+      error: results.cuisinesResult.error?.message ?? null,
     });
   }
-  if (missingCategoryIds.length > 0) {
+  if (missingIds.missingCategoryIds.length > 0) {
     span.recordRoundTrip({
       source: 'query.category.by_category_ids',
-      responseCount: categoriesResult.data?.length ?? 0,
-      error: categoriesResult.error?.message ?? null,
+      responseCount: results.categoriesResult.data?.length ?? 0,
+      error: results.categoriesResult.error?.message ?? null,
     });
   }
 
   span.recordRoundTrip({
     source: 'rpc.get_restaurant_coords_with_distance',
-    responseCount: distancesResult.data?.length ?? 0,
-    error: distancesResult.error?.message ?? null,
+    responseCount: results.distancesResult.data?.length ?? 0,
+    error: results.distancesResult.error?.message ?? null,
   });
   span.recordRoundTrip({
     source: 'rpc.get_deal_counts_for_restaurants',
-    responseCount: dealCountsResult.data?.length ?? 0,
-    error: dealCountsResult.error?.message ?? null,
+    responseCount: results.dealCountsResult.data?.length ?? 0,
+    error: results.dealCountsResult.error?.message ?? null,
   });
+};
 
+const buildReferenceData = (
+  relationMaps: {
+    categories: Map<string, CategoryRow>;
+    cuisines: Map<string, CuisineRow>;
+    restaurants: Map<string, RestaurantRow>;
+  },
+  results: {
+    categoriesResult: QueryResult<CategoryRow>;
+    cuisinesResult: QueryResult<CuisineRow>;
+    dealCountsResult: QueryResult<DealCountRow>;
+    distancesResult: QueryResult<DistanceRow>;
+    restaurantsResult: QueryResult<RestaurantRow>;
+  },
+): DealReferenceData => {
   const restaurantsMap = new Map<string, RestaurantRow>(relationMaps.restaurants);
-  (restaurantsResult.data ?? []).forEach((restaurant) => {
+  (results.restaurantsResult.data ?? []).forEach((restaurant) => {
     restaurantsMap.set(restaurant.restaurant_id, restaurant);
   });
 
   const cuisinesMap = new Map<string, CuisineRow>(relationMaps.cuisines);
-  (cuisinesResult.data ?? []).forEach((cuisine) => {
+  (results.cuisinesResult.data ?? []).forEach((cuisine) => {
     cuisinesMap.set(cuisine.cuisine_id, cuisine);
   });
 
   const categoriesMap = new Map<string, CategoryRow>(relationMaps.categories);
-  (categoriesResult.data ?? []).forEach((category) => {
+  (results.categoriesResult.data ?? []).forEach((category) => {
     categoriesMap.set(category.category_id, category);
   });
 
-  if (distancesResult.error) {
-    console.error('Error fetching restaurant distances:', distancesResult.error);
+  if (results.distancesResult.error) {
+    console.error('Error fetching restaurant distances:', results.distancesResult.error);
   }
-  const distanceMap = buildDistanceMap(distancesResult.data);
-  const dealCountsMap = buildDealCountMap(dealCountsResult.data);
-  const favoriteCreatedAtByDealId = new Map<string, string>(
-    favoriteData
-      .filter((favorite): favorite is FavoriteDealRow & { deal_id: string } => Boolean(favorite.deal_id))
-      .map((favorite) => [favorite.deal_id, favorite.created_at]),
+
+  return {
+    categoriesMap,
+    cuisinesMap,
+    dealCountsMap: buildDealCountMap(results.dealCountsResult.data),
+    distanceMap: buildDistanceMap(results.distancesResult.data),
+    restaurantsMap,
+  };
+};
+
+export const fetchFavoriteDealsFromDatabase = async (
+  userId: string,
+  span: PerfSpanLike,
+): Promise<FavoriteDeal[]> => {
+  const favoriteData = await fetchFavoriteDealRows(userId, span);
+  if (favoriteData.length === 0) {
+    return [];
+  }
+
+  const dealIds = uniqueDefined(favoriteData.map((favorite) => favorite.deal_id));
+  if (dealIds.length === 0) {
+    return [];
+  }
+
+  const deals = await fetchDealInstances(dealIds, span);
+  if (deals.length === 0) {
+    return [];
+  }
+
+  const templateIds = uniqueDefined(deals.map((deal) => deal.template_id));
+  if (templateIds.length === 0) {
+    return [];
+  }
+
+  const templatesData = await fetchTemplates(templateIds, span);
+  const templatesMap = new Map<string, DealTemplateRow>(
+    templatesData.map((template) => [template.template_id, template]),
   );
+  const relationMaps = buildTemplateRelationMaps(templatesData);
+
+  const restaurantIds = uniqueDefined(templatesData.map((template) => template.restaurant_id));
+  const cuisineIds = uniqueDefined(templatesData.map((template) => template.cuisine_id));
+  const categoryIds = uniqueDefined(templatesData.map((template) => template.category_id));
+  const missingIds = getMissingReferenceIds(categoryIds, cuisineIds, restaurantIds, relationMaps);
+
+  const referenceQueryResults = await fetchReferenceQueryResults(missingIds, restaurantIds, userId);
+  recordReferenceRoundTrips(span, missingIds, referenceQueryResults);
+
+  const referenceData = buildReferenceData(relationMaps, referenceQueryResults);
+  const favoriteCreatedAtByDealId = buildFavoriteCreatedAtMap(favoriteData);
 
   const favoriteDeals = deals.reduce<FavoriteDeal[]>((accumulator, deal) => {
     const template = templatesMap.get(deal.template_id);
     if (!template) return accumulator;
 
-    const restaurant = restaurantsMap.get(template.restaurant_id);
+    const restaurant = referenceData.restaurantsMap.get(template.restaurant_id);
     if (!restaurant) return accumulator;
 
     accumulator.push(
-      buildFavoriteDeal(
-        deal,
-        template,
-        restaurant,
-        cuisinesMap,
-        categoriesMap,
-        distanceMap,
-        dealCountsMap,
-        favoriteCreatedAtByDealId,
-      ),
+      buildFavoriteDeal(deal, template, restaurant, referenceData, favoriteCreatedAtByDealId),
     );
     return accumulator;
   }, []);

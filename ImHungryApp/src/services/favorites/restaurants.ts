@@ -25,6 +25,8 @@ interface QueryResult<T> {
   error: unknown;
 }
 
+interface FavoriteRestaurantContext { cuisinesMap: Map<string, string>; dealCountsMap: Map<string, number>; distanceMap: Map<string, number | null>; favoriteCreatedAtMap: Map<string, string>; mostLikedDealsMap: Map<string, MostLikedDealRow>; restaurantsMap: Map<string, RestaurantRow>; }
+
 const emptyQueryResult = <T>(): QueryResult<T> => ({
   data: [],
   error: null,
@@ -46,7 +48,45 @@ const uniqueDefined = (values: Array<string | null | undefined>): string[] => {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
 };
 
-const fetchDealCountsForRestaurants = async (restaurantIds: string[]): Promise<QueryResult<DealCountRow>> => {
+const buildFavoriteCreatedAtMap = (favoriteData: FavoriteRestaurantRow[]): Map<string, string> => {
+  return new Map(
+    favoriteData
+      .filter(
+        (favorite): favorite is FavoriteRestaurantRow & { restaurant_id: string } =>
+          Boolean(favorite.restaurant_id),
+      )
+      .map((favorite) => [favorite.restaurant_id, favorite.created_at]),
+  );
+};
+
+const fetchFavoriteRestaurantRows = async (
+  userId: string,
+  span: PerfSpanLike,
+): Promise<FavoriteRestaurantRow[]> => {
+  const { data: favoriteDataRaw, error: favoriteError } = await supabase
+    .from('favorite')
+    .select('restaurant_id, created_at')
+    .eq('user_id', userId)
+    .not('restaurant_id', 'is', null)
+    .order('created_at', { ascending: false });
+
+  const favoriteData = (favoriteDataRaw ?? []) as FavoriteRestaurantRow[];
+  span.recordRoundTrip({
+    source: 'query.favorite.restaurants',
+    responseCount: favoriteData.length,
+    error: favoriteError?.message ?? null,
+  });
+
+  if (favoriteError) {
+    throw favoriteError;
+  }
+
+  return favoriteData;
+};
+
+const fetchDealCountsForRestaurants = async (
+  restaurantIds: string[],
+): Promise<QueryResult<DealCountRow>> => {
   if (restaurantIds.length === 0) {
     return emptyQueryResult<DealCountRow>();
   }
@@ -66,7 +106,6 @@ const fetchDealCountsForRestaurants = async (restaurantIds: string[]): Promise<Q
       restaurant_id,
       deal_count,
     })),
-    // Keep historical behavior where count-query errors do not fail the request.
     error: null,
   };
 };
@@ -110,7 +149,36 @@ const fetchUpvoteCountsForDeals = async (dealIds: string[]): Promise<Record<stri
       counts[row.deal_id] = Number(row.upvote_count) || 0;
     }
   });
+
   return counts;
+};
+
+const buildMostLikedDealMap = (
+  dealTemplates: DealTemplateRow[],
+  templateToDealMap: Map<string, string>,
+  upvoteCounts: Record<string, number>,
+): Map<string, MostLikedDealRow> => {
+  const mostLikedByRestaurant = new Map<string, MostLikedDealRow>();
+
+  dealTemplates.forEach((template) => {
+    const dealId = templateToDealMap.get(template.template_id);
+    const upvoteCount = dealId ? (upvoteCounts[dealId] || 0) : 0;
+    const existing = mostLikedByRestaurant.get(template.restaurant_id);
+
+    if (!existing || upvoteCount > existing.upvote_count) {
+      mostLikedByRestaurant.set(template.restaurant_id, {
+        restaurant_id: template.restaurant_id,
+        template_id: template.template_id,
+        image_url: template.image_url,
+        image_metadata_id: template.image_metadata_id,
+        image_metadata: template.image_metadata,
+        deal_images: (template.deal_images as DealImageRow[] | null | undefined) ?? [],
+        upvote_count: upvoteCount,
+      });
+    }
+  });
+
+  return mostLikedByRestaurant;
 };
 
 const fetchMostLikedDealsByRestaurant = async (
@@ -177,27 +245,9 @@ const fetchMostLikedDealsByRestaurant = async (
 
     const dealIds = [...new Set(templateToDealMap.values())];
     const upvoteCounts = await fetchUpvoteCountsForDeals(dealIds);
-    const mostLikedByRestaurant = new Map<string, MostLikedDealRow>();
-
-    dealTemplates.forEach((template) => {
-      const dealId = templateToDealMap.get(template.template_id);
-      const upvoteCount = dealId ? (upvoteCounts[dealId] || 0) : 0;
-      const existing = mostLikedByRestaurant.get(template.restaurant_id);
-      if (!existing || upvoteCount > existing.upvote_count) {
-        mostLikedByRestaurant.set(template.restaurant_id, {
-          restaurant_id: template.restaurant_id,
-          template_id: template.template_id,
-          image_url: template.image_url,
-          image_metadata_id: template.image_metadata_id,
-          image_metadata: template.image_metadata,
-          deal_images: (template.deal_images as DealImageRow[] | null | undefined) ?? [],
-          upvote_count: upvoteCount,
-        });
-      }
-    });
 
     return {
-      data: [...mostLikedByRestaurant.values()],
+      data: [...buildMostLikedDealMap(dealTemplates, templateToDealMap, upvoteCounts).values()],
       error: null,
     };
   } catch (error) {
@@ -208,83 +258,16 @@ const fetchMostLikedDealsByRestaurant = async (
   }
 };
 
-const buildFavoriteRestaurant = (
-  restaurantId: string,
-  restaurantsMap: Map<string, RestaurantRow>,
-  cuisinesMap: Map<string, string>,
-  distanceMap: Map<string, number | null>,
-  dealCountsMap: Map<string, number>,
-  mostLikedDealsMap: Map<string, MostLikedDealRow>,
-  favoriteCreatedAtMap: Map<string, string>,
-): FavoriteRestaurant | null => {
-  const restaurant = restaurantsMap.get(restaurantId);
-  if (!restaurant) {
-    return null;
-  }
-
-  const mostLikedDeal = mostLikedDealsMap.get(restaurantId);
-  const imageUrl = mostLikedDeal
-    ? getFavoriteRestaurantImageUrl(
-        mostLikedDeal.deal_images,
-        mostLikedDeal.image_metadata,
-        mostLikedDeal.image_url,
-      )
-    : '';
-
-  return {
-    id: restaurantId,
-    name: restaurant.name,
-    address: restaurant.address,
-    imageUrl,
-    distance: formatDistance(distanceMap.get(restaurantId)),
-    dealCount: dealCountsMap.get(restaurantId) || 0,
-    cuisineName: cuisinesMap.get(restaurantId) || 'Unknown',
-    isFavorited: true,
-    createdAt: favoriteCreatedAtMap.get(restaurantId) || new Date().toISOString(),
-  };
-};
-
-export const fetchFavoriteRestaurantsFromDatabase = async (
+const fetchRestaurantDataBundle = async (
+  directRestaurantIds: string[],
   userId: string,
-  span: PerfSpanLike,
-): Promise<FavoriteRestaurant[]> => {
-  const { data: favoriteDataRaw, error: favoriteError } = await supabase
-    .from('favorite')
-    .select('restaurant_id, created_at')
-    .eq('user_id', userId)
-    .not('restaurant_id', 'is', null)
-    .order('created_at', { ascending: false });
-  const favoriteData = (favoriteDataRaw ?? []) as FavoriteRestaurantRow[];
-  span.recordRoundTrip({
-    source: 'query.favorite.restaurants',
-    responseCount: favoriteData.length,
-    error: favoriteError?.message ?? null,
-  });
-
-  if (favoriteError) {
-    throw favoriteError;
-  }
-
-  if (favoriteData.length === 0) {
-    return [];
-  }
-
-  const directRestaurantIds = uniqueDefined(
-    favoriteData.map((favorite) => favorite.restaurant_id),
-  );
-  if (directRestaurantIds.length === 0) {
-    return [];
-  }
-
-  const favoriteCreatedAtMap = new Map<string, string>(
-    favoriteData
-      .filter(
-        (favorite): favorite is FavoriteRestaurantRow & { restaurant_id: string } =>
-          Boolean(favorite.restaurant_id),
-      )
-      .map((favorite) => [favorite.restaurant_id, favorite.created_at]),
-  );
-
+): Promise<{
+  cuisinesResult: QueryResult<RestaurantCuisineRow>;
+  dealCountsResult: QueryResult<DealCountRow>;
+  distanceResult: QueryResult<DistanceRow>;
+  mostLikedDealsResult: QueryResult<MostLikedDealRow>;
+  restaurantsResult: QueryResult<RestaurantRow>;
+}> => {
   const [distanceResultRaw, restaurantsResultRaw, cuisinesResultRaw, dealCountsResultRaw, mostLikedDealsResultRaw] =
     await Promise.all([
       supabase.rpc('get_restaurant_coords_with_distance', {
@@ -309,48 +292,68 @@ export const fetchFavoriteRestaurantsFromDatabase = async (
       fetchMostLikedDealsByRestaurant(directRestaurantIds),
     ]);
 
-  const distanceResult = asQueryResult<DistanceRow>(distanceResultRaw);
-  const restaurantsResult = asQueryResult<RestaurantRow>(restaurantsResultRaw);
-  const cuisinesResult = asQueryResult<RestaurantCuisineRow>(cuisinesResultRaw);
-  const dealCountsResult = asQueryResult<DealCountRow>(dealCountsResultRaw);
-  const mostLikedDealsResult = asQueryResult<MostLikedDealRow>(mostLikedDealsResultRaw);
+  return {
+    cuisinesResult: asQueryResult<RestaurantCuisineRow>(cuisinesResultRaw),
+    dealCountsResult: asQueryResult<DealCountRow>(dealCountsResultRaw),
+    distanceResult: asQueryResult<DistanceRow>(distanceResultRaw),
+    mostLikedDealsResult: asQueryResult<MostLikedDealRow>(mostLikedDealsResultRaw),
+    restaurantsResult: asQueryResult<RestaurantRow>(restaurantsResultRaw),
+  };
+};
 
+const recordRestaurantRoundTrips = (
+  span: PerfSpanLike,
+  results: {
+    cuisinesResult: QueryResult<RestaurantCuisineRow>;
+    dealCountsResult: QueryResult<DealCountRow>;
+    distanceResult: QueryResult<DistanceRow>;
+    mostLikedDealsResult: QueryResult<MostLikedDealRow>;
+    restaurantsResult: QueryResult<RestaurantRow>;
+  },
+) => {
   span.recordRoundTrip({
     source: 'rpc.get_restaurant_coords_with_distance',
-    responseCount: distanceResult.data?.length ?? 0,
-    error: getErrorMessage(distanceResult.error),
+    responseCount: results.distanceResult.data?.length ?? 0,
+    error: getErrorMessage(results.distanceResult.error),
   });
   span.recordRoundTrip({
     source: 'query.restaurant.by_restaurant_ids',
-    responseCount: restaurantsResult.data?.length ?? 0,
-    error: getErrorMessage(restaurantsResult.error),
+    responseCount: results.restaurantsResult.data?.length ?? 0,
+    error: getErrorMessage(results.restaurantsResult.error),
   });
   span.recordRoundTrip({
     source: 'query.restaurant_cuisine.by_restaurant_ids',
-    responseCount: cuisinesResult.data?.length ?? 0,
-    error: getErrorMessage(cuisinesResult.error),
+    responseCount: results.cuisinesResult.data?.length ?? 0,
+    error: getErrorMessage(results.cuisinesResult.error),
   });
   span.recordRoundTrip({
     source: 'query.deal_template.count_by_restaurant',
-    responseCount: dealCountsResult.data?.length ?? 0,
-    error: getErrorMessage(dealCountsResult.error),
+    responseCount: results.dealCountsResult.data?.length ?? 0,
+    error: getErrorMessage(results.dealCountsResult.error),
   });
   span.recordRoundTrip({
     source: 'query.most_liked_deals_by_restaurant',
-    responseCount: mostLikedDealsResult.data?.length ?? 0,
-    error: getErrorMessage(mostLikedDealsResult.error),
+    responseCount: results.mostLikedDealsResult.data?.length ?? 0,
+    error: getErrorMessage(results.mostLikedDealsResult.error),
   });
+};
 
-  if (distanceResult.error) {
-    console.error('Error fetching restaurant distances:', distanceResult.error);
+const buildRestaurantContext = (
+  favoriteCreatedAtMap: Map<string, string>,
+  results: {
+    cuisinesResult: QueryResult<RestaurantCuisineRow>;
+    dealCountsResult: QueryResult<DealCountRow>;
+    distanceResult: QueryResult<DistanceRow>;
+    mostLikedDealsResult: QueryResult<MostLikedDealRow>;
+    restaurantsResult: QueryResult<RestaurantRow>;
+  },
+): FavoriteRestaurantContext => {
+  if (results.distanceResult.error) {
+    console.error('Error fetching restaurant distances:', results.distanceResult.error);
   }
 
-  const distanceMap = buildDistanceMap(distanceResult.data);
-  const restaurantsMap = new Map<string, RestaurantRow>(
-    (restaurantsResult.data ?? []).map((restaurant) => [restaurant.restaurant_id, restaurant]),
-  );
   const cuisinesMap = new Map<string, string>();
-  (cuisinesResult.data ?? []).forEach((row) => {
+  (results.cuisinesResult.data ?? []).forEach((row) => {
     const cuisine = getSingleRelation(row.cuisine);
     if (cuisine) {
       cuisinesMap.set(row.restaurant_id, cuisine.cuisine_name);
@@ -358,25 +361,82 @@ export const fetchFavoriteRestaurantsFromDatabase = async (
   });
 
   const dealCountsMap = new Map<string, number>();
-  (dealCountsResult.data ?? []).forEach((row) => {
+  (results.dealCountsResult.data ?? []).forEach((row) => {
     dealCountsMap.set(row.restaurant_id, Number(row.deal_count) || 0);
   });
 
   const mostLikedDealsMap = new Map<string, MostLikedDealRow>();
-  (mostLikedDealsResult.data ?? []).forEach((deal) => {
+  (results.mostLikedDealsResult.data ?? []).forEach((deal) => {
     mostLikedDealsMap.set(deal.restaurant_id, deal);
   });
 
+  return {
+    cuisinesMap,
+    dealCountsMap,
+    distanceMap: buildDistanceMap(results.distanceResult.data),
+    favoriteCreatedAtMap,
+    mostLikedDealsMap,
+    restaurantsMap: new Map(
+      (results.restaurantsResult.data ?? []).map((restaurant) => [restaurant.restaurant_id, restaurant]),
+    ),
+  };
+};
+
+const buildFavoriteRestaurant = (
+  restaurantId: string,
+  context: FavoriteRestaurantContext,
+): FavoriteRestaurant | null => {
+  const restaurant = context.restaurantsMap.get(restaurantId);
+  if (!restaurant) {
+    return null;
+  }
+
+  const mostLikedDeal = context.mostLikedDealsMap.get(restaurantId);
+  const imageUrl = mostLikedDeal
+    ? getFavoriteRestaurantImageUrl(
+        mostLikedDeal.deal_images,
+        mostLikedDeal.image_metadata,
+        mostLikedDeal.image_url,
+      )
+    : '';
+
+  return {
+    id: restaurantId,
+    name: restaurant.name,
+    address: restaurant.address,
+    imageUrl,
+    distance: formatDistance(context.distanceMap.get(restaurantId)),
+    dealCount: context.dealCountsMap.get(restaurantId) || 0,
+    cuisineName: context.cuisinesMap.get(restaurantId) || 'Unknown',
+    isFavorited: true,
+    createdAt: context.favoriteCreatedAtMap.get(restaurantId) || new Date().toISOString(),
+  };
+};
+
+export const fetchFavoriteRestaurantsFromDatabase = async (
+  userId: string,
+  span: PerfSpanLike,
+): Promise<FavoriteRestaurant[]> => {
+  const favoriteData = await fetchFavoriteRestaurantRows(userId, span);
+  if (favoriteData.length === 0) {
+    return [];
+  }
+
+  const directRestaurantIds = uniqueDefined(
+    favoriteData.map((favorite) => favorite.restaurant_id),
+  );
+  if (directRestaurantIds.length === 0) {
+    return [];
+  }
+
+  const favoriteCreatedAtMap = buildFavoriteCreatedAtMap(favoriteData);
+  const results = await fetchRestaurantDataBundle(directRestaurantIds, userId);
+  recordRestaurantRoundTrips(span, results);
+
+  const context = buildRestaurantContext(favoriteCreatedAtMap, results);
+
   const restaurants = directRestaurantIds.reduce<FavoriteRestaurant[]>((accumulator, restaurantId) => {
-    const favoriteRestaurant = buildFavoriteRestaurant(
-      restaurantId,
-      restaurantsMap,
-      cuisinesMap,
-      distanceMap,
-      dealCountsMap,
-      mostLikedDealsMap,
-      favoriteCreatedAtMap,
-    );
+    const favoriteRestaurant = buildFavoriteRestaurant(restaurantId, context);
     if (favoriteRestaurant) {
       accumulator.push(favoriteRestaurant);
     }
@@ -388,4 +448,3 @@ export const fetchFavoriteRestaurantsFromDatabase = async (
   );
   return restaurants;
 };
-
