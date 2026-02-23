@@ -6,8 +6,8 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
+import { getCurrentUserId } from '../../../services/currentUserService';
 import { getCurrentDatabaseSessionId } from '../../../services/sessionService';
-import { getCurrentUserId } from '../selectors/voteSelectors';
 import {
   InteractionType,
   InteractionSource,

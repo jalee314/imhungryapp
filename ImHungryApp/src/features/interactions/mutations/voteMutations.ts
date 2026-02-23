@@ -7,7 +7,7 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
-import { getCurrentUserId } from '../selectors/voteSelectors';
+import { getCurrentUserId } from '../../../services/currentUserService';
 import {
   VoteType,
   VoteMutationResult,

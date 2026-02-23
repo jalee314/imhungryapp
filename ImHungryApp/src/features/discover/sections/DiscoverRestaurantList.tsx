@@ -2,7 +2,7 @@
  * @file DiscoverRestaurantList — FlatList of discover restaurants.
  */
 
-import React, { useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 
 import RowCard, { RowCardData } from '../../../components/RowCard';
@@ -27,7 +27,7 @@ const convertToRowCardData = (restaurant: DiscoverRestaurant): RowCardData => ({
   dealCount: restaurant.deal_count,
 });
 
-export function DiscoverRestaurantList({
+function DiscoverRestaurantListComponent({
   restaurants,
   searchQuery,
   onPress,
@@ -38,6 +38,10 @@ export function DiscoverRestaurantList({
     ),
     [onPress],
   );
+  const emptyState = useMemo(
+    () => <DiscoverEmptyState searchQuery={searchQuery} />,
+    [searchQuery],
+  );
 
   return (
     <FlatList
@@ -46,11 +50,17 @@ export function DiscoverRestaurantList({
       keyExtractor={(item) => item.restaurant_id}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.listContainer}
-      ListEmptyComponent={<DiscoverEmptyState searchQuery={searchQuery} />}
+      ListEmptyComponent={emptyState}
       numColumns={1}
+      initialNumToRender={8}
+      maxToRenderPerBatch={8}
+      windowSize={7}
+      removeClippedSubviews
     />
   );
 }
+
+export const DiscoverRestaurantList = memo(DiscoverRestaurantListComponent);
 
 const styles = StyleSheet.create({
   listContainer: {

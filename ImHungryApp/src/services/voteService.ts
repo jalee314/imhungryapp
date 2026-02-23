@@ -22,7 +22,7 @@ import {
   toggleDealFavorite,
 } from '../features/interactions';
 
-import { clearFavoritesCache } from './favoritesService';
+import { markFavoritesCacheDirty } from './favoritesService';
 
 // ==========================================
 // Vote State Selectors (Facade)
@@ -76,13 +76,10 @@ export const toggleDownvote = async (dealId: string): Promise<boolean> => {
  * @deprecated Use toggleDealFavorite from @/features/interactions directly
  */
 export const toggleFavorite = async (dealId: string, currentlyFavorited: boolean): Promise<boolean> => {
-  console.log('🎯 toggleFavorite called:', { dealId, currentlyFavorited });
-  
   const result = await toggleDealFavorite(dealId, currentlyFavorited);
   
   if (result.success) {
-    // Clear favorites caches so the favorites screen sees the change immediately
-    clearFavoritesCache();
+    markFavoritesCacheDirty('deals');
   }
   
   return result.success;

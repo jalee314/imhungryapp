@@ -7,7 +7,7 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { View, FlatList, TouchableOpacity } from 'react-native';
 
 import DealCard from '../../../components/DealCard';
@@ -17,8 +17,6 @@ import {
   GRAY,
   SPACING,
   RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
 } from '../../../ui/alf';
 import { Box, Text } from '../../../ui/primitives';
 import type { FeedInteractions } from '../types';
@@ -28,24 +26,32 @@ export interface FeaturedDealsSectionProps {
   interactions: FeedInteractions;
 }
 
-const renderCommunityDeal = (
-  { item }: { item: Deal },
-  interactions: FeedInteractions,
-) => (
-  <DealCard
-    deal={item}
-    variant="horizontal"
-    onUpvote={interactions.handleUpvote}
-    onDownvote={interactions.handleDownvote}
-    onFavorite={interactions.handleFavorite}
-    onPress={interactions.handleDealPress}
-  />
-);
-
 const renderItemSeparator = () => <View style={{ width: 0 }} />;
 
-export function FeaturedDealsSection({ deals, interactions }: FeaturedDealsSectionProps) {
+function FeaturedDealsSectionComponent({ deals, interactions }: FeaturedDealsSectionProps) {
   const navigation = useNavigation();
+  const imageVariantSignature = useMemo(
+    () => deals.map((deal) => deal.imageVariants?.cloudinary_id ?? '').join(','),
+    [deals],
+  );
+
+  const renderCommunityDeal = useCallback(
+    ({ item }: { item: Deal }) => (
+      <DealCard
+        deal={item}
+        variant="horizontal"
+        onUpvote={interactions.handleUpvote}
+        onDownvote={interactions.handleDownvote}
+        onFavorite={interactions.handleFavorite}
+        onPress={interactions.handleDealPress}
+      />
+    ),
+    [interactions],
+  );
+
+  const handleSeeAllPress = useCallback(() => {
+    navigation.navigate('CommunityUploaded' as never);
+  }, [navigation]);
 
   if (deals.length === 0) return null;
 
@@ -77,7 +83,7 @@ export function FeaturedDealsSection({ deals, interactions }: FeaturedDealsSecti
             justifyContent: 'center',
             alignItems: 'center',
           }}
-          onPress={() => navigation.navigate('CommunityUploaded' as never)}
+          onPress={handleSeeAllPress}
         >
           <MaterialCommunityIcons name="arrow-right" size={20} color="#404040" />
         </TouchableOpacity>
@@ -85,14 +91,20 @@ export function FeaturedDealsSection({ deals, interactions }: FeaturedDealsSecti
 
       <FlatList
         data={deals}
-        renderItem={(info) => renderCommunityDeal(info, interactions)}
+        renderItem={renderCommunityDeal}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingLeft: 10.5, paddingRight: SPACING.md }}
         ItemSeparatorComponent={renderItemSeparator}
-        extraData={deals.map(d => d.imageVariants?.cloudinary_id).join(',')}
+        extraData={imageVariantSignature}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        removeClippedSubviews
       />
     </>
   );
 }
+
+export const FeaturedDealsSection = memo(FeaturedDealsSectionComponent);

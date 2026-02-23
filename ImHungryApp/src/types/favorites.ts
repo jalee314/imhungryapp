@@ -1,9 +1,11 @@
+import type { ImageVariants } from './image';
+
 export interface FavoriteDeal {
   id: string;
   title: string;
   description: string;
   imageUrl: string;
-  imageVariants?: any;
+  imageVariants?: ImageVariants;
   restaurantName: string;
   restaurantAddress: string;
   distance: string;
@@ -14,7 +16,7 @@ export interface FavoriteDeal {
   isFavorited: boolean;
   userId?: string;
   userDisplayName?: string;
-  userProfilePhoto?: string;
+  userProfilePhoto?: string | null;
   isAnonymous: boolean;
 }
 

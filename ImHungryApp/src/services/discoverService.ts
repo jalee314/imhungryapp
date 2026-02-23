@@ -1,15 +1,34 @@
 import { supabase } from '../../lib/supabase';
 import type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
+import { startPerfSpan } from '../utils/perfMonitor';
 
 import { getCurrentUserLocation } from './locationService';
 
 export type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
+
+const isRpcUnavailableError = (error: unknown): boolean => {
+  const maybeError = error as { code?: string; message?: string } | null;
+  const code = maybeError?.code ?? '';
+  const message = (maybeError?.message ?? '').toLowerCase();
+
+  return (
+    code === '42883' ||
+    code === 'PGRST202' ||
+    message.includes('could not find the function') ||
+    message.includes('does not exist')
+  );
+};
 
 /**
  * Get all unique restaurants that have deals, with deal counts and distances
  * @param customCoordinates - Optional custom coordinates to use for distance calculation instead of user's location
  */
 export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
+  const span = startPerfSpan('service.discover.get_restaurants_with_deals', {
+    path: 'rpc',
+    hasCustomCoordinates: Boolean(customCoordinates),
+  });
+
   try {
     console.log('🔍 Fetching restaurants with deals...');
 
@@ -23,6 +42,13 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       // Get current user location for distance calculation
       const userLocation = await getCurrentUserLocation();
       if (!userLocation) {
+        span.end({
+          success: false,
+          metadata: {
+            path: 'rpc',
+            reason: 'user_location_unavailable',
+          },
+        });
         return {
           success: false,
           restaurants: [],
@@ -40,9 +66,21 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       user_lat: locationToUse.lat,
       user_lng: locationToUse.lng
     });
+    span.recordRoundTrip({
+      source: 'rpc.get_restaurants_with_deal_counts',
+      responseCount: data?.length ?? 0,
+      error: error?.message ?? null,
+    });
 
     if (error) {
       console.error('Error fetching restaurants with deals:', error);
+      span.end({
+        success: false,
+        error,
+        metadata: {
+          path: 'rpc',
+        },
+      });
       return {
         success: false,
         restaurants: [],
@@ -53,6 +91,12 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
 
     if (!data || data.length === 0) {
       console.log('No restaurants found');
+      span.end({
+        metadata: {
+          path: 'rpc',
+          restaurants: 0,
+        },
+      });
       return {
         success: true,
         restaurants: [],
@@ -75,6 +119,11 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     // Fetch the most liked deal's image for each restaurant
     const restaurantIds = restaurants.map(r => r.restaurant_id);
     const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIds);
+    span.recordRoundTrip({
+      source: 'helper.fetchMostLikedDealsForRestaurants',
+      restaurantCount: restaurantIds.length,
+      imageCount: mostLikedDeals.size,
+    });
 
     // Map the images to restaurants
     restaurants.forEach(restaurant => {
@@ -90,6 +139,14 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
       .sort((a, b) => a.distance_miles - b.distance_miles);
 
+    span.addPayload(filteredRestaurants);
+    span.end({
+      metadata: {
+        path: 'rpc',
+        restaurants: filteredRestaurants.length,
+      },
+    });
+
     console.log(`✅ Found ${filteredRestaurants.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
     return {
       success: true,
@@ -99,6 +156,13 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
 
   } catch (error) {
     console.error('Error in getRestaurantsWithDeals:', error);
+    span.end({
+      success: false,
+      error,
+      metadata: {
+        path: 'rpc',
+      },
+    });
     return {
       success: false,
       restaurants: [],
@@ -114,6 +178,11 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
  * @param customCoordinates - Optional custom coordinates to use for distance calculation instead of user's location
  */
 export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
+  const span = startPerfSpan('service.discover.get_restaurants_with_deals', {
+    path: 'direct',
+    hasCustomCoordinates: Boolean(customCoordinates),
+  });
+
   try {
     console.log('🔍 Fetching restaurants with deals (direct query)...');
 
@@ -127,6 +196,13 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       // Get current user location
       const userLocation = await getCurrentUserLocation();
       if (!userLocation) {
+        span.end({
+          success: false,
+          metadata: {
+            path: 'direct',
+            reason: 'user_location_unavailable',
+          },
+        });
         return {
           success: false,
           restaurants: [],
@@ -146,9 +222,15 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
         )
       `)
       .not('deal_template.restaurant_id', 'is', null);
+    span.recordRoundTrip({
+      source: 'query.deal_instance.restaurant_ids',
+      responseCount: restaurantIds?.length ?? 0,
+      error: idsError?.message ?? null,
+    });
 
     if (idsError) {
       console.error('Error fetching restaurant IDs:', idsError);
+      span.end({ success: false, error: idsError, metadata: { path: 'direct' } });
       return {
         success: false,
         restaurants: [],
@@ -163,6 +245,12 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
     );
 
     if (uniqueRestaurantIds.length === 0) {
+      span.end({
+        metadata: {
+          path: 'direct',
+          restaurants: 0,
+        },
+      });
       return {
         success: true,
         restaurants: [],
@@ -175,9 +263,15 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       .from('restaurants_with_coords')
       .select('restaurant_id, name, address, restaurant_image_metadata, lat, lng')
       .in('restaurant_id', uniqueRestaurantIds);
+    span.recordRoundTrip({
+      source: 'query.restaurants_with_coords.fetch',
+      responseCount: restaurants?.length ?? 0,
+      error: restaurantsError?.message ?? null,
+    });
 
     if (restaurantsError) {
       console.error('Error fetching restaurant details:', restaurantsError);
+      span.end({ success: false, error: restaurantsError, metadata: { path: 'direct' } });
       return {
         success: false,
         restaurants: [],
@@ -194,6 +288,11 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
         ref_lat: locationToUse.lat,
         ref_lng: locationToUse.lng
       });
+      span.recordRoundTrip({
+        source: 'rpc.get_restaurant_coords_with_distance',
+        responseCount: distanceRows?.length ?? 0,
+        error: distanceError?.message ?? null,
+      });
 
       if (distanceError) {
         console.error('Error fetching restaurant distances:', distanceError);
@@ -206,20 +305,44 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       }
     }
 
-    // Get deal counts for each restaurant
-    const dealCounts: Record<string, number> = {};
-    for (const restaurantId of uniqueRestaurantIds) {
-      const { count, error: countError } = await supabase
-        .from('deal_instance')
-        .select('*', { count: 'exact', head: true })
-        .eq('deal_template.restaurant_id', restaurantId)
-        .not('deal_template.restaurant_id', 'is', null);
+    // Get deal counts for all restaurants in one batch call
+    const { data: dealCountRows, error: dealCountsError } = await supabase.rpc(
+      'get_deal_counts_for_restaurants',
+      { r_ids: uniqueRestaurantIds },
+    );
+    span.recordRoundTrip({
+      source: 'rpc.get_deal_counts_for_restaurants',
+      responseCount: dealCountRows?.length ?? 0,
+      error: dealCountsError?.message ?? null,
+    });
 
-      if (!countError && count !== null) {
-        dealCounts[restaurantId] = count;
-      } else {
-        dealCounts[restaurantId] = 0;
+    const dealCounts: Record<string, number> = {};
+    if (dealCountsError) {
+      // Fallback to one batched query and aggregate locally if RPC is unavailable.
+      const { data: templates, error: templateError } = await supabase
+        .from('deal_template')
+        .select('restaurant_id')
+        .in('restaurant_id', uniqueRestaurantIds);
+
+      span.recordRoundTrip({
+        source: 'query.deal_template.count_by_restaurant_fallback',
+        responseCount: templates?.length ?? 0,
+        error: templateError?.message ?? null,
+      });
+
+      if (!templateError) {
+        templates?.forEach((template) => {
+          const restaurantId = template.restaurant_id;
+          if (!restaurantId) return;
+          dealCounts[restaurantId] = (dealCounts[restaurantId] ?? 0) + 1;
+        });
       }
+    } else {
+      (dealCountRows ?? []).forEach((row: any) => {
+        if (row.restaurant_id) {
+          dealCounts[row.restaurant_id] = Number(row.deal_count) || 0;
+        }
+      });
     }
 
     // Transform and calculate distances
@@ -246,6 +369,11 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
     // Fetch the most liked deal's image for each restaurant
     const restaurantIdsForImages = result.map(r => r.restaurant_id);
     const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIdsForImages);
+    span.recordRoundTrip({
+      source: 'helper.fetchMostLikedDealsForRestaurants',
+      restaurantCount: restaurantIdsForImages.length,
+      imageCount: mostLikedDeals.size,
+    });
 
     // Map the images to restaurants
     result.forEach(restaurant => {
@@ -261,6 +389,14 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
       .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
       .sort((a, b) => a.distance_miles - b.distance_miles);
 
+    span.addPayload(filteredResult);
+    span.end({
+      metadata: {
+        path: 'direct',
+        restaurants: filteredResult.length,
+      },
+    });
+
     console.log(`✅ Found ${filteredResult.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
     return {
       success: true,
@@ -270,6 +406,13 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
 
   } catch (error) {
     console.error('Error in getRestaurantsWithDealsDirect:', error);
+    span.end({
+      success: false,
+      error,
+      metadata: {
+        path: 'direct',
+      },
+    });
     return {
       success: false,
       restaurants: [],
@@ -284,8 +427,18 @@ export const getRestaurantsWithDealsDirect = async (customCoordinates?: { lat: n
  * Returns a Map of restaurant_id -> image_url
  */
 async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promise<Map<string, string>> {
+  const span = startPerfSpan('query.discover.fetch_most_liked_deals_for_restaurants', {
+    restaurantsRequested: restaurantIds.length,
+  });
+
   try {
     if (restaurantIds.length === 0) {
+      span.end({
+        metadata: {
+          restaurantsRequested: 0,
+          imagesReturned: 0,
+        },
+      });
       return new Map();
     }
 
@@ -310,8 +463,23 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
         )
       `)
       .in('restaurant_id', restaurantIds);
+    span.recordRoundTrip({
+      source: 'query.deal_template.fetch_for_restaurants',
+      responseCount: dealTemplates?.length ?? 0,
+      error: templateError?.message ?? null,
+    });
 
     if (templateError || !dealTemplates || dealTemplates.length === 0) {
+      if (templateError) {
+        span.end({ success: false, error: templateError });
+      } else {
+        span.end({
+          metadata: {
+            restaurantsRequested: restaurantIds.length,
+            templates: 0,
+          },
+        });
+      }
       return new Map();
     }
 
@@ -321,8 +489,23 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
       .from('deal_instance')
       .select('deal_id, template_id')
       .in('template_id', templateIds);
+    span.recordRoundTrip({
+      source: 'query.deal_instance.fetch_for_templates',
+      responseCount: dealInstances?.length ?? 0,
+      error: instanceError?.message ?? null,
+    });
 
     if (instanceError || !dealInstances) {
+      if (instanceError) {
+        span.end({ success: false, error: instanceError });
+      } else {
+        span.end({
+          metadata: {
+            restaurantsRequested: restaurantIds.length,
+            instances: 0,
+          },
+        });
+      }
       return new Map();
     }
 
@@ -338,20 +521,55 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
     const dealIds = Object.values(templateToDealMap);
 
     if (dealIds.length === 0) {
+      span.end({
+        metadata: {
+          restaurantsRequested: restaurantIds.length,
+          dealsConsidered: 0,
+        },
+      });
       return new Map();
     }
 
-    const { data: upvotes } = await supabase
-      .from('interaction')
-      .select('deal_id')
-      .in('deal_id', dealIds)
-      .eq('interaction_type', 'upvote');
-
-    // Count upvotes per deal_id
     const upvoteCounts: Record<string, number> = {};
-    upvotes?.forEach(vote => {
-      upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
+    const { data: upvoteRows, error: upvoteRpcError } = await supabase.rpc(
+      'get_upvote_counts_for_deals',
+      { p_deal_ids: dealIds },
+    );
+    span.recordRoundTrip({
+      source: 'rpc.get_upvote_counts_for_deals',
+      responseCount: upvoteRows?.length ?? 0,
+      error: upvoteRpcError?.message ?? null,
+      dealIds: dealIds.length,
     });
+
+    if (upvoteRpcError && !isRpcUnavailableError(upvoteRpcError)) {
+      span.end({ success: false, error: upvoteRpcError });
+      return new Map();
+    }
+
+    if (upvoteRpcError) {
+      const { data: upvotes } = await supabase
+        .from('interaction')
+        .select('deal_id')
+        .in('deal_id', dealIds)
+        .eq('interaction_type', 'upvote');
+
+      span.recordRoundTrip({
+        source: 'query.interaction.upvotes_for_deals.fallback',
+        responseCount: upvotes?.length ?? 0,
+        dealIds: dealIds.length,
+      });
+
+      upvotes?.forEach(vote => {
+        upvoteCounts[vote.deal_id] = (upvoteCounts[vote.deal_id] || 0) + 1;
+      });
+    } else {
+      (upvoteRows ?? []).forEach((row: any) => {
+        if (row.deal_id) {
+          upvoteCounts[row.deal_id] = Number(row.upvote_count) || 0;
+        }
+      });
+    }
 
     // Step 4: For each restaurant, find the deal with most upvotes
     const mostLikedByRestaurant: Record<string, any> = {};
@@ -424,9 +642,18 @@ async function fetchMostLikedDealsForRestaurants(restaurantIds: string[]): Promi
       }
     });
 
+    span.addPayload(Array.from(result.entries()));
+    span.end({
+      metadata: {
+        restaurantsRequested: restaurantIds.length,
+        imagesReturned: result.size,
+      },
+    });
+
     return result;
   } catch (error) {
     console.error('Error fetching most liked deals:', error);
+    span.end({ success: false, error });
     return new Map();
   }
 }

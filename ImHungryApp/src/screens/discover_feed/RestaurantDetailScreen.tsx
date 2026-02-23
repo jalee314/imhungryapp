@@ -19,7 +19,6 @@ import { supabase } from '../../../lib/supabase';
 import RowCard, { RowCardData } from '../../components/RowCard';
 import { useFavorites } from '../../hooks/useFavorites';
 import { logClick } from '../../services/interactionService';
-import { getCurrentUserLocation , calculateDistance } from '../../services/locationService';
 import { isRestaurantFavorited as checkRestaurantFavorited, toggleRestaurantFavorite } from '../../services/restaurantFavoriteService';
 import type { Deal } from '../../types/deal';
 import type { DiscoverRestaurant } from '../../types/discover';
@@ -70,6 +69,8 @@ const RestaurantDetailScreen: React.FC = () => {
   const [cuisineName, setCuisineName] = useState<string>('');
   const [isRestaurantFavorited, setIsRestaurantFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const VOTE_INTERACTION_TYPES = ['click-open', 'upvote', 'vote', 'click'] as const;
+  const VIEW_INTERACTION_TYPE = 'click-open';
 
   useEffect(() => {
     console.log('🔄 useEffect triggered for restaurant:', restaurant.restaurant_id);
@@ -134,75 +135,102 @@ const RestaurantDetailScreen: React.FC = () => {
         return;
       }
 
-      // Transform and process deals
-      const processedDeals = await Promise.all(
-        data.map(async (deal) => {
-          // Get view count for this deal (count of click-open interactions)
-          const { count: viewCount } = await supabase
-            .from('interaction')
-            .select('*', { count: 'exact', head: true })
-            .eq('deal_id', deal.deal_id)
-            .eq('interaction_type', 'click-open');
+      const dealRows = data ?? [];
+      if (dealRows.length === 0) {
+        setDeals([]);
+        return;
+      }
 
-          // Get vote count from click-open interactions
-          const { count: voteCount } = await supabase
-            .from('interaction')
-            .select('*', { count: 'exact', head: true })
-            .eq('deal_id', deal.deal_id)
-            .in('interaction_type', ['click-open', 'upvote', 'vote', 'click']);
+      const dealIds = dealRows.map((deal) => deal.deal_id);
+      const [interactionsResult, favoritesResult] = await Promise.all([
+        supabase
+          .from('interaction')
+          .select('deal_id, interaction_type')
+          .in('deal_id', dealIds)
+          .in('interaction_type', VOTE_INTERACTION_TYPES),
+        supabase
+          .from('favorite')
+          .select('deal_id')
+          .in('deal_id', dealIds),
+      ]);
 
-          // Get favorite status
-          const { data: favoriteData } = await supabase
-            .from('favorite')
-            .select('favorite_id')
-            .eq('deal_id', deal.deal_id)
-            .single();
+      if (interactionsResult.error) {
+        console.error('Error fetching restaurant deal interactions:', interactionsResult.error);
+      }
 
-          const template = Array.isArray(deal.deal_template) ? deal.deal_template[0] : deal.deal_template;
-          const user = Array.isArray(template.user) ? template.user[0] : template.user;
+      if (favoritesResult.error) {
+        console.error('Error fetching restaurant deal favorites:', favoritesResult.error);
+      }
 
-          // Prioritize thumbnail from deal_images, fallback to deal_template.image_metadata
-          const dealImages = template.deal_images || [];
-          const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
-          const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+      const viewCountsByDeal = new Map<string, number>();
+      const voteCountsByDeal = new Map<string, number>();
+      const voteTypes = new Set<string>(VOTE_INTERACTION_TYPES);
 
-          let imageMetadata;
-          if (thumbnailImage?.image_metadata) {
-            imageMetadata = thumbnailImage.image_metadata;
-          } else if (firstDealImage?.image_metadata) {
-            imageMetadata = firstDealImage.image_metadata;
-          } else {
-            imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
-          }
+      (interactionsResult.data ?? []).forEach((interaction) => {
+        const dealId = interaction.deal_id;
+        if (!dealId) return;
 
-          console.log('🔍 Processing deal:', template.title, {
-            has_image_url: !!template.image_url,
-            has_image_metadata: !!imageMetadata,
-            image_metadata_variants: (imageMetadata as any)?.variants,
-            image_url: template.image_url,
-            deal_images_count: dealImages.length
-          });
+        if (interaction.interaction_type === VIEW_INTERACTION_TYPE) {
+          viewCountsByDeal.set(dealId, (viewCountsByDeal.get(dealId) ?? 0) + 1);
+        }
 
-          return {
-            deal_id: deal.deal_id,
-            title: template.title,
-            description: template.description,
-            image_url: template.image_url,
-            image_metadata: imageMetadata,
-            created_at: deal.created_at,
-            end_date: deal.end_date,
-            views: viewCount || 0,
-            votes: voteCount || 0,
-            is_upvoted: false,
-            is_downvoted: false,
-            is_favorited: !!favoriteData,
-            user_id: template.user_id, // Add user_id for profile navigation
-            user_display_name: template.is_anonymous ? null : user.display_name,
-            user_profile_photo: template.is_anonymous ? null : user.profile_photo,
-            is_anonymous: template.is_anonymous,
-          };
-        })
+        if (voteTypes.has(interaction.interaction_type)) {
+          voteCountsByDeal.set(dealId, (voteCountsByDeal.get(dealId) ?? 0) + 1);
+        }
+      });
+
+      const favoritedDealIds = new Set(
+        (favoritesResult.data ?? [])
+          .map((favorite) => favorite.deal_id)
+          .filter((dealId): dealId is string => Boolean(dealId)),
       );
+
+      // Transform and process deals with batched interaction/favorite data
+      const processedDeals = dealRows.map((deal) => {
+        const template = Array.isArray(deal.deal_template) ? deal.deal_template[0] : deal.deal_template;
+        const user = Array.isArray(template.user) ? template.user[0] : template.user;
+
+        // Prioritize thumbnail from deal_images, fallback to deal_template.image_metadata
+        const dealImages = template.deal_images || [];
+        const thumbnailImage = dealImages.find((img: any) => img.is_thumbnail && img.image_metadata?.variants);
+        const firstDealImage = !thumbnailImage ? dealImages.find((img: any) => img.image_metadata?.variants) : null;
+
+        let imageMetadata;
+        if (thumbnailImage?.image_metadata) {
+          imageMetadata = thumbnailImage.image_metadata;
+        } else if (firstDealImage?.image_metadata) {
+          imageMetadata = firstDealImage.image_metadata;
+        } else {
+          imageMetadata = Array.isArray(template.image_metadata) ? template.image_metadata[0] : template.image_metadata;
+        }
+
+        console.log('🔍 Processing deal:', template.title, {
+          has_image_url: !!template.image_url,
+          has_image_metadata: !!imageMetadata,
+          image_metadata_variants: (imageMetadata as any)?.variants,
+          image_url: template.image_url,
+          deal_images_count: dealImages.length
+        });
+
+        return {
+          deal_id: deal.deal_id,
+          title: template.title,
+          description: template.description,
+          image_url: template.image_url,
+          image_metadata: imageMetadata,
+          created_at: deal.created_at,
+          end_date: deal.end_date,
+          views: viewCountsByDeal.get(deal.deal_id) ?? 0,
+          votes: voteCountsByDeal.get(deal.deal_id) ?? 0,
+          is_upvoted: false,
+          is_downvoted: false,
+          is_favorited: favoritedDealIds.has(deal.deal_id),
+          user_id: template.user_id, // Add user_id for profile navigation
+          user_display_name: template.is_anonymous ? null : (user?.display_name ?? null),
+          user_profile_photo: template.is_anonymous ? null : (user?.profile_photo ?? null),
+          is_anonymous: template.is_anonymous,
+        };
+      });
 
       console.log('🔍 Loaded deals:', processedDeals.map(d => ({ id: d.deal_id, title: d.title })));
       console.log('🔍 Setting deals state with length:', processedDeals.length);

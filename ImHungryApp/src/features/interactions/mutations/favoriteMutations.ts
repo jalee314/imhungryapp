@@ -7,7 +7,7 @@
  */
 
 import { supabase } from '../../../../lib/supabase';
-import { getCurrentUserId } from '../selectors/voteSelectors';
+import { getCurrentUserId } from '../../../services/currentUserService';
 import {
   FavoriteMutationResult,
   FavoriteTargetType,
@@ -127,7 +127,6 @@ export const addRestaurantToFavorites = async (
     const { error } = await supabase.from('favorite').insert({
       user_id: userId,
       restaurant_id: restaurantId,
-      deal_id: null,
     });
 
     if (error) {

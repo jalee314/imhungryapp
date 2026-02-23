@@ -12,6 +12,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useFeedInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
+import { getCurrentUserId } from '../../services/currentUserService';
 import { dealCacheService } from '../../services/dealCacheService';
 import { logClick } from '../../services/interactionService';
 import { getUserVoteStates, calculateVoteCounts } from '../../services/voteService';
@@ -106,10 +107,8 @@ export function useCommunity(): CommunityContext {
   // ----- Realtime subscriptions ---------------------------------------------
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const userId = user.id;
+      const userId = await getCurrentUserId();
+      if (!userId) return;
       currentUserId.current = userId;
 
       if (interactionChannel.current) {

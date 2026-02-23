@@ -20,8 +20,10 @@ import {
 import { supabase } from '../../../lib/supabase';
 import { useDealUpdate } from '../../hooks/useDealUpdate';
 import { useSingleDealInteractionHandlers } from '../../hooks/useFeedInteractionHandlers';
+import { getCurrentUserId as getCurrentUserIdFromService } from '../../services/currentUserService';
 import { getDealViewCount, getDealViewerPhotos, logShare, logClickThrough } from '../../services/interactionService';
 import type { Deal } from '../../types/deal';
+import { startPerfSpan } from '../../utils/perfMonitor';
 
 import type {
   DealDetailState,
@@ -73,8 +75,8 @@ export function useDealDetail() {
   useEffect(() => {
     const fetchCurrentUserId = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUserId(user?.id || null);
+        const userId = await getCurrentUserIdFromService();
+        setCurrentUserId(userId);
       } catch (error) {
         console.error('Error getting current user:', error);
       }
@@ -283,7 +285,23 @@ export function useDealDetail() {
   }, [dealData.id, dealData.title]);
 
   // Initial fetch
-  useEffect(() => { fetchDealData(false); }, [fetchDealData]);
+  useEffect(() => {
+    const span = startPerfSpan('screen.restaurant_detail.open', {
+      dealId: dealData.id,
+    });
+    span.recordRoundTrip({
+      source: 'useDealDetail.fetchDealData',
+      dealId: dealData.id,
+    });
+
+    fetchDealData(false)
+      .then(() => {
+        span.end({ metadata: { dealId: dealData.id } });
+      })
+      .catch((error) => {
+        span.end({ success: false, error, metadata: { dealId: dealData.id } });
+      });
+  }, [dealData.id, fetchDealData]);
 
   // Refresh after edit
   useFocusEffect(
