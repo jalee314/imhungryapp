@@ -32,7 +32,7 @@ export function FavoritesDealsList({
                 ? require('../../../../img/default-rest.png')
                 : { uri: deal.imageUrl },
             userId: deal.userId,
-            userProfilePhoto: deal.userProfilePhoto,
+            userProfilePhoto: deal.userProfilePhoto ?? undefined,
             userDisplayName: deal.userDisplayName,
           }}
           variant="favorites-deal-card"
