@@ -24,7 +24,8 @@
     "e2e:smoke": "./scripts/run-e2e-smoke.sh",
     "e2e:smoke:ios": "./scripts/run-e2e-smoke.sh --ios",
     "e2e:smoke:android": "./scripts/run-e2e-smoke.sh --android",
-    "e2e:smoke:ci": "./scripts/run-e2e-smoke.sh --ci"
+    "e2e:smoke:ci": "./scripts/run-e2e-smoke.sh --ci",
+    "perf:phase7": "npx ts-node --skip-project --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' scripts/perf/collect-phase7-results.ts"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
