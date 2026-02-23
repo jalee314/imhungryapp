@@ -1,0 +1,27 @@
+# Feed Flow
+# Tests that the main feed loads and is scrollable
+#
+# Prerequisites: User is authenticated and on main screen
+# Expected: Feed displays deals and can be scrolled
+
+appId: com.imhungri
+
+---
+
+# Wait for any content to load
+- waitForAnimationToEnd
+
+# Scroll down to load more content
+- swipe:
+    direction: UP
+    duration: 500
+
+# Wait for scroll to settle
+- waitForAnimationToEnd
+
+# Scroll back up
+- swipe:
+    direction: DOWN
+    duration: 300
+
+# Success: Feed scrolled without crashing

@@ -1,0 +1,45 @@
+# ImHungri Smoke Test Suite
+# Runs critical user journey tests in sequence
+#
+# This is the main entry point for e2e smoke tests.
+# Run with: npm run e2e:smoke
+#
+# Prerequisites:
+# - App built and installed on simulator/device
+# - Maestro CLI installed (brew install maestro)
+# - Set TEST_EMAIL and TEST_PASSWORD env vars for auth flows
+
+appId: com.imhungri
+
+---
+
+# ============================================
+# SMOKE TEST SUITE
+# ============================================
+# Tests core user journeys:
+# 1. Login authentication
+# 2. Feed loading and scrolling  
+# 3. Favorites navigation
+# 4. Contribution modal open/close
+# 5. Profile page access
+# ============================================
+
+# ----- Login Journey -----
+- runFlow: flows/login.yaml
+
+# ----- Feed Journey -----
+- runFlow: flows/feed.yaml
+
+# ----- Favorites Journey -----
+- runFlow: flows/favorite.yaml
+
+# ----- Contribution Journey -----
+- runFlow: flows/contribution.yaml
+
+# ----- Profile Journey -----
+- runFlow: flows/profile.yaml
+
+# ============================================
+# SMOKE SUITE COMPLETE
+# All critical journeys tested successfully
+# ============================================

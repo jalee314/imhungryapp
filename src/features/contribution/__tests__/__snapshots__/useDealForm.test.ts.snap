@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`useDealForm — state snapshots should snapshot a populated edit form 1`] = `
+{
+  "categoryId": "bogo",
+  "cuisineId": "american",
+  "details": "Lunch only",
+  "expirationDate": "2026-06-30",
+  "imageUris": [
+    "file://a.jpg",
+    "file://b.jpg",
+  ],
+  "isAnonymous": true,
+  "restaurant": {
+    "address": "1 Main",
+    "id": "r1",
+    "name": "Burger Barn",
+  },
+  "thumbnailIndex": 1,
+  "title": "BOGO Burgers",
+}
+`;
+
+exports[`useDealForm — state snapshots should snapshot default create form values 1`] = `
+{
+  "categoryId": null,
+  "cuisineId": null,
+  "details": "",
+  "expirationDate": null,
+  "imageUris": [],
+  "isAnonymous": false,
+  "restaurant": null,
+  "thumbnailIndex": 0,
+  "title": "",
+}
+`;

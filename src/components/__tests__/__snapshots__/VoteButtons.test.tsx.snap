@@ -1,0 +1,460 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`VoteButtons Visual State Rendering should render default state with neutral colors 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      color="#000000"
+      fill="transparent"
+      size={34}
+      testID="lucide-ArrowBigUp"
+    />
+    <Text
+      style={
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
+      }
+    >
+      10
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
+    }
+  />
+  <View
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      color="#000000"
+      fill="transparent"
+      size={34}
+      testID="lucide-ArrowBigDown"
+    />
+  </View>
+</View>
+`;
+
+exports[`VoteButtons Visual State Rendering should render downvote icon with highlight color when downvoted 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      color="#000000"
+      fill="transparent"
+      size={34}
+      testID="lucide-ArrowBigUp"
+    />
+    <Text
+      style={
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
+      }
+    >
+      9
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
+    }
+  />
+  <View
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      color="#9796FF"
+      fill="#9796FF"
+      size={34}
+      testID="lucide-ArrowBigDown"
+    />
+  </View>
+</View>
+`;
+
+exports[`VoteButtons Visual State Rendering should render upvote icon with primary color when upvoted 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#D7D7D7",
+        "borderRadius": 30,
+        "borderWidth": 1,
+        "flexDirection": "row",
+        "height": 53.4351145038168,
+        "overflow": "hidden",
+        "width": 162.21374045801528,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "flexDirection": "row",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingLeft": 15.267175572519085,
+          "paddingRight": 3.816793893129771,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      color="#FF8C4C"
+      fill="#FF8C4C"
+      size={34}
+      testID="lucide-ArrowBigUp"
+    />
+    <Text
+      style={
+        [
+          {
+            "color": "#212121",
+          },
+          {
+            "color": "#000000",
+            "fontFamily": "Inter",
+            "fontSize": 19.083969465648856,
+            "fontWeight": "400",
+            "marginLeft": 7.633587786259542,
+          },
+        ]
+      }
+    >
+      11
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#DEDEDE",
+          "height": 22.900763358778626,
+          "width": 1,
+        },
+        undefined,
+      ]
+    }
+  />
+  <View
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "height": "100%",
+          "justifyContent": "center",
+          "paddingHorizontal": 19.083969465648856,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      color="#000000"
+      fill="transparent"
+      size={34}
+      testID="lucide-ArrowBigDown"
+    />
+  </View>
+</View>
+`;

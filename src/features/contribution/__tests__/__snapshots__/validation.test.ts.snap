@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`validation result snapshots should snapshot a clean validation result 1`] = `
+{
+  "errors": [],
+  "valid": true,
+}
+`;
+
+exports[`validation result snapshots should snapshot a multi-error validation result 1`] = `
+{
+  "errors": [
+    {
+      "field": "title",
+      "message": "Please enter a deal title.",
+    },
+    {
+      "field": "imageUris",
+      "message": "Please add at least one photo to continue.",
+    },
+    {
+      "field": "restaurant",
+      "message": "Please select a restaurant and add a deal title to continue.",
+    },
+  ],
+  "valid": false,
+}
+`;

@@ -1,0 +1,19 @@
+# Favorite Action Flow
+# Tests navigating to favorites tab
+#
+# Prerequisites: User is authenticated
+# Expected: Favorites page loads
+
+appId: com.imhungri
+
+---
+
+# Tap Favorites in bottom nav (4th icon from left)
+# Bottom nav is at the bottom of screen
+- tapOn:
+    point: "80%,95%"
+
+# Wait for navigation
+- waitForAnimationToEnd
+
+# Success: Favorites tab tapped without crashing

@@ -1,0 +1,111 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Platform,
+} from 'react-native';
+
+import { STATIC, GRAY, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../ui/alf';
+
+interface MapSelectionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSelectAppleMaps: () => void;
+  onSelectGoogleMaps: () => void;
+}
+
+const MapSelectionModal: React.FC<MapSelectionModalProps> = ({
+  visible,
+  onClose,
+  onSelectAppleMaps,
+  onSelectGoogleMaps,
+}) => {
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={() => { }}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                {Platform.OS === 'ios' && (
+                  <>
+                    <TouchableOpacity style={styles.option} onPress={onSelectAppleMaps}>
+                      <Text style={styles.optionText}>Apple Maps</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.divider} />
+                  </>
+                )}
+
+                <TouchableOpacity style={styles.option} onPress={onSelectGoogleMaps}>
+                  <Text style={styles.optionText}>Google Maps</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 90,
+  },
+  modalContent: {
+    backgroundColor: STATIC.white,
+    borderRadius: RADIUS.card,
+    marginBottom: 8,
+  },
+  option: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  optionText: {
+    fontFamily: 'Inter',
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.regular,
+    color: STATIC.black,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: GRAY[300],
+  },
+  cancelButton: {
+    backgroundColor: STATIC.white,
+    borderRadius: RADIUS.card,
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontFamily: 'Inter',
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.regular,
+    color: STATIC.black,
+  },
+});
+
+export default MapSelectionModal;
+
+
+

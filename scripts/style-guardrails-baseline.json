@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-02-15T17:21:45.206Z",
+  "description": "Baseline violations for style guardrails. These are tolerated existing violations.",
+  "violations": [
+    {
+      "file": "src/components/BottomNavigation.tsx",
+      "line": 215,
+      "type": "hex-literal",
+      "match": "#bcbcbc"
+    },
+    {
+      "file": "src/components/BottomNavigation.tsx",
+      "line": 168,
+      "type": "inline-style",
+      "match": "isContributePressed && { opacity: 0.5 }"
+    }
+  ]
+}
