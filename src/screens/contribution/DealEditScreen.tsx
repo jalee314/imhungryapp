@@ -29,7 +29,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 
 import CalendarModal from '../../components/CalendarModal';
 import DraggableThumbnailStrip from '../../components/DraggableThumbnailStrip';
-import ImageCropperModal from '../../components/ImageCropperModal';
+import ImageCropperModal, { CropTransformState } from '../../components/ImageCropperModal';
 import InstagramPhotoPickerModal, { PhotoWithCrop } from '../../components/InstagramPhotoPickerModal';
 import PhotoActionModal from '../../components/PhotoActionModal';
 import { useDealForm, IMAGES_MAX_COUNT } from '../../features/contribution/engine';
@@ -81,6 +81,8 @@ interface EditImage {
   url: string;
   isNew?: boolean;
   localUri?: string;
+  /** Last saved crop transform for restoring crop position on reopen. */
+  cropState?: CropTransformState;
   /** The source image we always re-crop from (never changes once set). */
   originalUri?: string;
 }
@@ -243,6 +245,7 @@ function DealEditForm({
   const [isCameraModalVisible, setIsCameraModalVisible] = useState(false);
   const [isCropperVisible, setIsCropperVisible] = useState(false);
   const [pendingCropUri, setPendingCropUri] = useState<string | null>(null);
+  const [pendingCropState, setPendingCropState] = useState<CropTransformState | null>(null);
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
   const [isInstagramPickerVisible, setIsInstagramPickerVisible] = useState(false);
 
@@ -314,6 +317,7 @@ function DealEditForm({
 
       if (!result.canceled && result.assets[0]) {
         setPendingCropUri(result.assets[0].uri);
+        setPendingCropState(null);
         setEditingImageId(null); // New image, not editing
         setIsCropperVisible(true);
       }
@@ -334,17 +338,18 @@ function DealEditForm({
     if (photos.length > 0) {
       // Open cropper for the first photo (using the full original URI)
       setPendingCropUri(photos[0].uri);
+      setPendingCropState(null);
       setEditingImageId(null);
       setIsCropperVisible(true);
     }
   };
 
   // Handle crop completion
-  const handleCropComplete = (croppedUri: string) => {
+  const handleCropComplete = (croppedUri: string, cropState: CropTransformState) => {
     if (editingImageId) {
       const idx = images.findIndex((img) => img.imageMetadataId === editingImageId);
       if (idx === -1) {
-        addNewImage(croppedUri, pendingCropUri || croppedUri);
+        addNewImage(croppedUri, pendingCropUri || croppedUri, cropState);
       } else {
         const target = images[idx];
         const originalUri = target.originalUri || target.localUri || target.url;
@@ -357,6 +362,7 @@ function DealEditForm({
               ...copy[idx],
               url: croppedUri,
               localUri: croppedUri,
+              cropState,
               originalUri,
             };
             return copy;
@@ -391,6 +397,7 @@ function DealEditForm({
               url: croppedUri,
               isNew: true,
               localUri: croppedUri,
+              cropState,
               originalUri,
             });
             return newImages;
@@ -399,28 +406,37 @@ function DealEditForm({
       }
     } else {
       // New image
-      addNewImage(croppedUri, pendingCropUri || croppedUri);
+      addNewImage(croppedUri, pendingCropUri || croppedUri, cropState);
     }
     setIsCropperVisible(false);
     setPendingCropUri(null);
+    setPendingCropState(null);
     setEditingImageId(null);
   };
 
   const handleCropCancel = () => {
     setIsCropperVisible(false);
     setPendingCropUri(null);
+    setPendingCropState(null);
     setEditingImageId(null);
   };
 
   // Edit existing image
   const handleEditImage = (index: number) => {
     const image = activeImages[index];
-    setPendingCropUri(image.originalUri || image.localUri || image.url);
+    if (!image) return;
+    // Reopen cropper with the most recently edited image so crop state doesn't visually reset.
+    setPendingCropUri(image.localUri ?? image.url ?? image.originalUri ?? null);
+    setPendingCropState(image.cropState || null);
     setEditingImageId(image.imageMetadataId);
     setIsCropperVisible(true);
   };
 
-  const addNewImage = (displayUri: string, originalUri?: string) => {
+  const addNewImage = (
+    displayUri: string,
+    originalUri?: string,
+    cropState?: CropTransformState,
+  ) => {
     const totalImages = images.length - pendingRemovals.length + pendingNewImages.length;
     if (totalImages >= IMAGES_MAX_COUNT) {
       Alert.alert('Limit Reached', `You can only have up to ${IMAGES_MAX_COUNT} photos.`);
@@ -435,6 +451,7 @@ function DealEditForm({
         url: displayUri,
         isNew: true,
         localUri: displayUri,
+        cropState,
         originalUri: originalUri || displayUri,
       },
     ]);
@@ -543,6 +560,17 @@ function DealEditForm({
     carouselRef.current?.scrollToIndex({ index, animated: true });
   };
 
+  // TEMP DEBUG: remove after crop-save issue is resolved.
+  const summarizeImagesForLog = (list: EditImage[]) =>
+    list.map((img, idx) => ({
+      idx,
+      id: img.imageMetadataId,
+      isNew: !!img.isNew,
+      hasLocalUri: !!img.localUri,
+      hasCropState: !!img.cropState,
+      url: (img.url || '').slice(0, 60),
+    }));
+
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     const result = form.validate();
@@ -551,7 +579,16 @@ function DealEditForm({
       return;
     }
 
+    const saveTraceId = `save_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     setIsSaving(true);
+    console.log(`[DealEditSave:${saveTraceId}] Start save`, {
+      dealId,
+      pendingRemovals,
+      pendingNewImagesCount: pendingNewImages.length,
+      pendingNewImageTempIds,
+      currentImages: summarizeImagesForLog(images),
+      activeImages: summarizeImagesForLog(activeImages),
+    });
 
     try {
       const { values } = form;
@@ -565,60 +602,153 @@ function DealEditForm({
       });
 
       if (!fieldsResult.success) {
+        console.log(`[DealEditSave:${saveTraceId}] updateDealFields failed`, fieldsResult);
         Alert.alert('Error', fieldsResult.error || 'Failed to update deal');
         setIsSaving(false);
         return;
       }
+      console.log(`[DealEditSave:${saveTraceId}] updateDealFields success`);
 
-      // 2. Remove deleted images
-      for (const metadataId of pendingRemovals) {
-        await removeDealImage(dealId, metadataId);
+      // 2/3. Apply image removals/uploads safely.
+      // We may need to interleave operations so we never exceed max photos
+      // and never remove the last server image before a replacement is uploaded.
+      const uploadedImageMap = new Map<string, string>(); // tempId -> uploadedId
+      const uploadedImageUrlMap = new Map<string, string>(); // tempId -> uploadedUrl
+
+      const uploadQueue = pendingNewImages.map((uri, index) => ({
+        uri,
+        tempId: pendingNewImageTempIds[index],
+      }));
+
+      if (uploadQueue.some((item) => !item.tempId)) {
+        console.log(`[DealEditSave:${saveTraceId}] Invalid upload queue`, uploadQueue);
+        throw new Error('Image upload queue is out of sync. Please try saving again.');
       }
 
-      // 3. Add new images - track uploaded IDs for order update
-      const uploadedImageMap = new Map<string, string>(); // tempId → uploadedId
+      let serverImageCount = images.filter((img) => !img.isNew).length;
+      const pendingRemovalQueue = [...pendingRemovals];
+      console.log(`[DealEditSave:${saveTraceId}] Initial server image count`, {
+        serverImageCount,
+        pendingRemovalQueue,
+        uploadQueue: uploadQueue.map((item) => ({
+          tempId: item.tempId,
+          uri: item.uri.slice(0, 80),
+        })),
+      });
 
-      if (pendingNewImages.length > 0) {
-        const addResult = await addDealImages(dealId, pendingNewImages);
-        if (!addResult.success) {
-          console.warn('Some images failed to upload:', addResult.error);
-        } else if (addResult.newImages && addResult.newImages.length > 0) {
-          // Map temp IDs to uploaded IDs
-          const mappedCount = Math.min(
-            addResult.newImages.length,
-            pendingNewImageTempIds.length,
-          );
-          for (let i = 0; i < mappedCount; i++) {
-            const tempId = pendingNewImageTempIds[i];
-            const uploaded = addResult.newImages[i];
-            uploadedImageMap.set(tempId, uploaded.imageMetadataId);
-          }
+      const removeNextImage = async () => {
+        const metadataId = pendingRemovalQueue.shift();
+        if (!metadataId) return;
 
-          setImages((prev) => {
-            const updated = [...prev];
-            for (let i = 0; i < mappedCount; i++) {
-              const tempId = pendingNewImageTempIds[i];
-              const uploaded = addResult.newImages![i];
-              const idx = updated.findIndex((img) => img.imageMetadataId === tempId);
-              if (idx !== -1) {
-                updated[idx] = {
-                  ...updated[idx],
-                  imageMetadataId: uploaded.imageMetadataId,
-                  url: uploaded.url,
-                  isNew: false,
-                  localUri: undefined,
-                };
-              }
-            }
-            return updated;
+        console.log(`[DealEditSave:${saveTraceId}] Removing image`, {
+          metadataId,
+          serverImageCountBefore: serverImageCount,
+          pendingRemovalQueueAfterShift: pendingRemovalQueue,
+        });
+        const removeResult = await removeDealImage(dealId, metadataId);
+        if (!removeResult.success) {
+          console.log(`[DealEditSave:${saveTraceId}] removeDealImage failed`, {
+            metadataId,
+            removeResult,
           });
+          throw new Error(removeResult.error || 'Failed to remove an image');
         }
+        console.log(`[DealEditSave:${saveTraceId}] removeDealImage success`, metadataId);
+
+        serverImageCount = Math.max(0, serverImageCount - 1);
+        console.log(`[DealEditSave:${saveTraceId}] serverImageCount decremented`, serverImageCount);
+      };
+
+      let uploadIndex = 0;
+      while (uploadIndex < uploadQueue.length) {
+        const remainingUploads = uploadQueue.length - uploadIndex;
+        const capacity = IMAGES_MAX_COUNT - serverImageCount;
+        console.log(`[DealEditSave:${saveTraceId}] Upload loop`, {
+          uploadIndex,
+          remainingUploads,
+          capacity,
+          serverImageCount,
+          pendingRemovalQueueLength: pendingRemovalQueue.length,
+        });
+
+        // No room to upload yet; free one slot first, but keep at least one server image.
+        if (capacity <= 0) {
+          if (pendingRemovalQueue.length === 0 || serverImageCount <= 1) {
+            console.log(
+              `[DealEditSave:${saveTraceId}] Cannot free capacity safely`,
+              { pendingRemovalQueueLength: pendingRemovalQueue.length, serverImageCount },
+            );
+            throw new Error(
+              'Unable to apply photo edits safely. Please remove fewer photos and try again.',
+            );
+          }
+          await removeNextImage();
+          continue;
+        }
+
+        const batchSize = Math.min(capacity, remainingUploads);
+        const batch = uploadQueue.slice(uploadIndex, uploadIndex + batchSize);
+        console.log(`[DealEditSave:${saveTraceId}] Uploading batch`, {
+          batchSize,
+          batch: batch.map((item) => ({ tempId: item.tempId, uri: item.uri.slice(0, 80) })),
+        });
+
+        const addResult = await addDealImages(
+          dealId,
+          batch.map((item) => item.uri),
+        );
+        if (!addResult.success) {
+          console.log(`[DealEditSave:${saveTraceId}] addDealImages failed`, addResult);
+          throw new Error(addResult.error || 'Failed to upload edited photos');
+        }
+        console.log(`[DealEditSave:${saveTraceId}] addDealImages success`, {
+          uploadedCount: addResult.newImages?.length || 0,
+          uploadedIds: (addResult.newImages || []).map((img) => img.imageMetadataId),
+        });
+
+        const uploadedBatch = addResult.newImages || [];
+        if (uploadedBatch.length !== batch.length) {
+          console.log(`[DealEditSave:${saveTraceId}] addDealImages partial upload`, {
+            expected: batch.length,
+            actual: uploadedBatch.length,
+          });
+          throw new Error('Some edited photos failed to upload. Please try again.');
+        }
+
+        uploadedBatch.forEach((uploaded, idx) => {
+          const tempId = batch[idx].tempId as string;
+          uploadedImageMap.set(tempId, uploaded.imageMetadataId);
+          uploadedImageUrlMap.set(tempId, uploaded.url);
+        });
+
+        serverImageCount += uploadedBatch.length;
+        uploadIndex += batch.length;
+        console.log(`[DealEditSave:${saveTraceId}] Batch upload mapped`, {
+          uploadedImageMap: Array.from(uploadedImageMap.entries()),
+          serverImageCount,
+          uploadIndex,
+        });
       }
+
+      // Remove anything still queued after uploads have succeeded.
+      while (pendingRemovalQueue.length > 0) {
+        if (serverImageCount <= 1) {
+          throw new Error('Cannot remove the last photo. Keep at least one photo.');
+        }
+        await removeNextImage();
+      }
+
+      // Keep local preview URIs unchanged during save to avoid visible image flicker.
+      // We resolve temp IDs via uploadedImageMap for backend order/thumbnail updates below.
 
       // 4. Update display_order for all images based on current array order
       const currentActiveImages = images.filter(
         (img) => !pendingRemovals.includes(img.imageMetadataId),
       );
+      console.log(`[DealEditSave:${saveTraceId}] currentActiveImages before order update`, {
+        currentActiveImages: summarizeImagesForLog(currentActiveImages),
+        uploadedImageMap: Array.from(uploadedImageMap.entries()),
+      });
       const imageOrder = currentActiveImages
         .map((img, index) => {
           const resolvedId =
@@ -626,13 +756,16 @@ function DealEditForm({
           return { imageMetadataId: resolvedId, displayOrder: index };
         })
         .filter((item) => !item.imageMetadataId.startsWith('new_'));
+      console.log(`[DealEditSave:${saveTraceId}] Computed imageOrder`, imageOrder);
 
       if (imageOrder.length > 0) {
         await updateDealImageOrder(dealId, imageOrder);
+        console.log(`[DealEditSave:${saveTraceId}] updateDealImageOrder success`);
 
         // 5. Set the first image as the thumbnail
         const firstImageId = imageOrder[0].imageMetadataId;
         await setDealThumbnail(dealId, firstImageId);
+        console.log(`[DealEditSave:${saveTraceId}] setDealThumbnail success`, { firstImageId });
       }
 
       // Invalidate all caches to ensure fresh data everywhere
@@ -644,13 +777,19 @@ function DealEditForm({
       await dealCacheService.invalidateAndRefresh();
 
       setPostAdded(true);
+      console.log(`[DealEditSave:${saveTraceId}] Save completed successfully`);
 
       Alert.alert('Success', 'Your deal has been updated!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
-      console.error('Error saving deal:', error);
-      Alert.alert('Error', 'Failed to save changes. Please try again.');
+      console.error(`[DealEditSave:${saveTraceId}] Error saving deal:`, error);
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'Failed to save changes. Please try again.',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -944,6 +1083,7 @@ function DealEditForm({
       <ImageCropperModal
         visible={isCropperVisible}
         imageUri={pendingCropUri || ''}
+        initialCropState={pendingCropState}
         aspectRatio={(screenWidth - 48) / 350}
         onCancel={handleCropCancel}
         onComplete={handleCropComplete}

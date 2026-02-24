@@ -15,6 +15,11 @@ export const addDealImages = async (
   imageUris: string[]
 ): Promise<{ success: boolean; newImages?: Array<{ imageMetadataId: string; url: string }>; error?: string }> => {
   try {
+    console.log('[dealImages.addDealImages] Start', {
+      dealId,
+      count: imageUris.length,
+      sampleUris: imageUris.map((u) => u.slice(0, 80)),
+    });
     const userId = await getCurrentUserId();
     if (!userId) {
       return { success: false, error: 'User not authenticated' };
@@ -46,6 +51,12 @@ export const addDealImages = async (
     let currentImageCount = template.deal_images?.length || 0;
     const primaryImageId = template.image_metadata_id;
     const maxImages = 5;
+    console.log('[dealImages.addDealImages] Current template state', {
+      dealId,
+      templateId: dealInstance.template_id,
+      currentImageCount,
+      primaryImageId,
+    });
 
     // MIGRATION: If deal_images is empty but there's a primary image on deal_template,
     // migrate that image to deal_images first
@@ -76,6 +87,10 @@ export const addDealImages = async (
     // Upload all images
     const uploadPromises = imageUris.map(uri => uploadDealImage(uri));
     const uploadedIds = await Promise.all(uploadPromises);
+    console.log('[dealImages.addDealImages] Upload results', {
+      dealId,
+      uploadedIds,
+    });
 
     const newImages: Array<{ imageMetadataId: string; url: string }> = [];
 
@@ -99,6 +114,12 @@ export const addDealImages = async (
         console.error('Failed to insert deal image:', insertError);
         continue;
       }
+      console.log('[dealImages.addDealImages] Inserted deal image', {
+        dealId,
+        templateId: dealInstance.template_id,
+        metadataId,
+        displayOrder: currentImageCount + i,
+      });
 
       const { data: metadata } = await supabase
         .from('image_metadata')
@@ -110,6 +131,11 @@ export const addDealImages = async (
       newImages.push({ imageMetadataId: metadataId, url });
     }
 
+    console.log('[dealImages.addDealImages] Completed', {
+      dealId,
+      uploadedCount: newImages.length,
+      uploadedIds: newImages.map((img) => img.imageMetadataId),
+    });
     return { success: true, newImages };
   } catch (error) {
     console.error('Error in addDealImages:', error);
@@ -125,6 +151,7 @@ export const removeDealImage = async (
   imageMetadataId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('[dealImages.removeDealImage] Start', { dealId, imageMetadataId });
     const userId = await getCurrentUserId();
     if (!userId) {
       return { success: false, error: 'User not authenticated' };
@@ -159,6 +186,14 @@ export const removeDealImage = async (
     // Calculate total image count
     const primaryInDealImages = dealImages.some((img: any) => img.image_metadata_id === primaryImageId);
     const totalImageCount = dealImages.length + (primaryImageId && !primaryInDealImages && dealImages.length === 0 ? 1 : 0);
+    console.log('[dealImages.removeDealImage] Current template state', {
+      dealId,
+      templateId: dealInstance.template_id,
+      totalImageCount,
+      dealImagesCount: dealImages.length,
+      primaryImageId,
+      imageMetadataId,
+    });
     
     if (totalImageCount <= 1) {
       return { success: false, error: 'Cannot remove the last image. A deal must have at least one photo.' };
@@ -203,6 +238,12 @@ export const removeDealImage = async (
         console.error('Error deleting deal image:', deleteError);
         return { success: false, error: 'Failed to remove image' };
       }
+      console.log('[dealImages.removeDealImage] Deleted from deal_images', {
+        dealId,
+        templateId: dealInstance.template_id,
+        imageMetadataId,
+        wasThumbnail,
+      });
 
       if (wasThumbnail) {
         const remainingImages = dealImages.filter((img: any) => img.image_metadata_id !== imageMetadataId);
@@ -238,6 +279,7 @@ export const removeDealImage = async (
       .delete()
       .eq('image_metadata_id', imageMetadataId);
 
+    console.log('[dealImages.removeDealImage] Completed', { dealId, imageMetadataId });
     return { success: true };
   } catch (error) {
     console.error('Error in removeDealImage:', error);
@@ -253,6 +295,7 @@ export const setDealThumbnail = async (
   imageMetadataId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('[dealImages.setDealThumbnail] Start', { dealId, imageMetadataId });
     const userId = await getCurrentUserId();
     if (!userId) {
       return { success: false, error: 'User not authenticated' };
@@ -300,6 +343,11 @@ export const setDealThumbnail = async (
       .update({ image_metadata_id: imageMetadataId })
       .eq('template_id', dealInstance.template_id);
 
+    console.log('[dealImages.setDealThumbnail] Completed', {
+      dealId,
+      templateId: dealInstance.template_id,
+      imageMetadataId,
+    });
     return { success: true };
   } catch (error) {
     console.error('Error in setDealThumbnail:', error);
@@ -315,6 +363,7 @@ export const updateDealImageOrder = async (
   imageOrder: Array<{ imageMetadataId: string; displayOrder: number }>
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    console.log('[dealImages.updateDealImageOrder] Start', { dealId, imageOrder });
     const userId = await getCurrentUserId();
     if (!userId) {
       return { success: false, error: 'User not authenticated' };
@@ -347,6 +396,11 @@ export const updateDealImageOrder = async (
         .eq('image_metadata_id', item.imageMetadataId);
     }
 
+    console.log('[dealImages.updateDealImageOrder] Completed', {
+      dealId,
+      templateId: dealInstance.template_id,
+      imageOrder,
+    });
     return { success: true };
   } catch (error) {
     console.error('Error in updateDealImageOrder:', error);

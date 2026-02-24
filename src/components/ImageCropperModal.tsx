@@ -20,12 +20,19 @@ import Animated, {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+export interface CropTransformState {
+    scale: number;
+    translateX: number;
+    translateY: number;
+}
+
 interface ImageCropperModalProps {
     visible: boolean;
     imageUri: string;
     aspectRatio?: number;
+    initialCropState?: CropTransformState | null;
     onCancel: () => void;
-    onComplete: (croppedImageUri: string) => void;
+    onComplete: (croppedImageUri: string, cropState: CropTransformState) => void;
 }
 
 interface ImageDimensions {
@@ -37,6 +44,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     visible,
     imageUri,
     aspectRatio = 4 / 3,
+    initialCropState = null,
     onCancel,
     onComplete,
 }) => {
@@ -63,17 +71,21 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     // Minimum scale to ensure crop frame is covered (needed for valid crop)
     const [minScale, setMinScale] = useState(1);
 
-    // Reset on open
+    // Restore saved transform state when opening/switching images.
     useEffect(() => {
         if (visible) {
-            scale.value = 1;
-            savedScale.value = 1;
-            translateX.value = 0;
-            translateY.value = 0;
-            savedTranslateX.value = 0;
-            savedTranslateY.value = 0;
+            const restoredScale = Math.min(4, Math.max(1, initialCropState?.scale ?? 1));
+            const restoredTranslateX = initialCropState?.translateX ?? 0;
+            const restoredTranslateY = initialCropState?.translateY ?? 0;
+
+            scale.value = restoredScale;
+            savedScale.value = restoredScale;
+            translateX.value = restoredTranslateX;
+            translateY.value = restoredTranslateY;
+            savedTranslateX.value = restoredTranslateX;
+            savedTranslateY.value = restoredTranslateY;
         }
-    }, [visible]);
+    }, [visible, imageUri, initialCropState]);
 
     // Get image dimensions and calculate display size
     useEffect(() => {
@@ -159,11 +171,17 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
         if (!imageDimensions) return;
         
         setIsProcessing(true);
+
+        const currentCropState: CropTransformState = {
+            scale: scale.value,
+            translateX: translateX.value,
+            translateY: translateY.value,
+        };
         
         try {
-            const currentScale = scale.value;
-            const currentTranslateX = translateX.value;
-            const currentTranslateY = translateY.value;
+            const currentScale = currentCropState.scale;
+            const currentTranslateX = currentCropState.translateX;
+            const currentTranslateY = currentCropState.translateY;
 
             // Scale factors from display to original image
             const scaleToOriginalX = imageDimensions.width / displaySize.width;
@@ -213,10 +231,10 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                 { compress: 0.8, format: SaveFormat.JPEG }
             );
             
-            onComplete(result.uri);
+            onComplete(result.uri, currentCropState);
         } catch (error) {
             console.error('Error cropping image:', error);
-            onComplete(imageUri);
+            onComplete(imageUri, currentCropState);
         } finally {
             setIsProcessing(false);
         }

@@ -104,6 +104,19 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const [hasChanges, setHasChanges] = useState(false);
     const initialPhotosRef = useRef<string[]>([]);
 
+    const applyCropStateToShared = useCallback((state?: CropState | null) => {
+        const nextScale = state?.scale ?? 1;
+        const nextTranslateX = state?.translateX ?? 0;
+        const nextTranslateY = state?.translateY ?? 0;
+
+        scale.value = nextScale;
+        savedScale.value = nextScale;
+        translateX.value = nextTranslateX;
+        translateY.value = nextTranslateY;
+        savedTranslateX.value = nextTranslateX;
+        savedTranslateY.value = nextTranslateY;
+    }, []);
+
     // Calculate crop frame size to maintain aspect ratio within the crop area
     const getCropFrameDimensions = () => {
         // The crop frame should fit inside cropAreaWidth x cropAreaHeight while maintaining CROP_FRAME_ASPECT_RATIO
@@ -174,20 +187,11 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             setLocalOriginalPhotos(propOriginalPhotos || photos);
             
             if (isFirstOpen) {
-                // Fresh modal open - reset everything
+                // Fresh modal open - preserve existing crop state for already-added photos
                 setCurrentIndex(0);
-                setCropStates(new Map());
-                setImageDimensions(new Map());
-                setDisplaySizes(new Map());
                 setHasChanges(false);
                 initialPhotosRef.current = [...photos]; // Store initial photos for comparison
-                // Reset crop state
-                scale.value = 1;
-                savedScale.value = 1;
-                translateX.value = 0;
-                translateY.value = 0;
-                savedTranslateX.value = 0;
-                savedTranslateY.value = 0;
+                applyCropStateToShared(cropStates.get(0));
                 // Reset display size shared values to safe defaults
                 displayWidth.value = screenWidth;
                 displayHeight.value = screenHeight * 0.6;
@@ -197,12 +201,7 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                 saveCropState(); // Save current before switching
                 setCurrentIndex(newPhotoIndex);
                 // Reset crop values for the new image
-                scale.value = 1;
-                savedScale.value = 1;
-                translateX.value = 0;
-                translateY.value = 0;
-                savedTranslateX.value = 0;
-                savedTranslateY.value = 0;
+                applyCropStateToShared(null);
             }
             
             wasVisible.current = true;
@@ -212,6 +211,18 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
             prevPhotosLength.current = photos.length;
         }
     }, [visible, photos, propOriginalPhotos]);
+
+    // Fully reset cached crop/layout state only when the parent has no photos left.
+    useEffect(() => {
+        if (!visible && photos.length === 0) {
+            setCropStates(new Map());
+            setImageDimensions(new Map());
+            setDisplaySizes(new Map());
+            setHasChanges(false);
+            initialPhotosRef.current = [];
+            applyCropStateToShared(null);
+        }
+    }, [visible, photos.length, applyCropStateToShared]);
 
     // Load image dimensions for current image and initialize crop state from initialCropRegions if available
     useEffect(() => {
@@ -247,21 +258,20 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                         displayWidth.value = calcDisplayWidth;
                         displayHeight.value = calcDisplayHeight;
                         
-                        // Initialize crop state from initialCropRegions if available and no existing state
-                        if (initialCropRegions && initialCropRegions[currentIndex] && !cropStates.has(currentIndex)) {
+                        const existingState = cropStates.get(currentIndex);
+                        if (existingState) {
+                            applyCropStateToShared(existingState);
+                        } else if (initialCropRegions && initialCropRegions[currentIndex]) {
+                            // Initialize crop state from initialCropRegions if available and no existing state
                             const initialState = cropRegionToInitialState(
                                 initialCropRegions[currentIndex],
                                 width,
                                 height
                             );
                             setCropStates(prev => new Map(prev).set(currentIndex, initialState));
-                            // Apply the initial state to current values
-                            scale.value = initialState.scale;
-                            savedScale.value = initialState.scale;
-                            translateX.value = initialState.translateX;
-                            translateY.value = initialState.translateY;
-                            savedTranslateX.value = initialState.translateX;
-                            savedTranslateY.value = initialState.translateY;
+                            applyCropStateToShared(initialState);
+                        } else {
+                            applyCropStateToShared(null);
                         }
                     },
                     (error) => {
@@ -276,8 +286,11 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                     displayHeight.value = existing.height;
                 }
                 
-                // Check if we need to initialize from crop regions (e.g., when switching images)
-                if (initialCropRegions && initialCropRegions[currentIndex] && !cropStates.has(currentIndex)) {
+                const existingState = cropStates.get(currentIndex);
+                if (existingState) {
+                    applyCropStateToShared(existingState);
+                } else if (initialCropRegions && initialCropRegions[currentIndex]) {
+                    // Initialize from picker crop regions when no saved state exists
                     const dims = imageDimensions.get(currentIndex);
                     if (dims) {
                         const initialState = cropRegionToInitialState(
@@ -286,17 +299,25 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
                             dims.height
                         );
                         setCropStates(prev => new Map(prev).set(currentIndex, initialState));
-                        scale.value = initialState.scale;
-                        savedScale.value = initialState.scale;
-                        translateX.value = initialState.translateX;
-                        translateY.value = initialState.translateY;
-                        savedTranslateX.value = initialState.translateX;
-                        savedTranslateY.value = initialState.translateY;
+                        applyCropStateToShared(initialState);
                     }
+                } else {
+                    applyCropStateToShared(null);
                 }
             }
         }
-    }, [visible, currentIndex, localOriginalPhotos, cropAreaHeight, cropAreaWidth, initialCropRegions]);
+    }, [
+        visible,
+        currentIndex,
+        localOriginalPhotos,
+        cropAreaHeight,
+        cropAreaWidth,
+        initialCropRegions,
+        cropStates,
+        imageDimensions,
+        displaySizes,
+        applyCropStateToShared,
+    ]);
 
     // Save crop state when switching images
     const saveCropState = () => {
@@ -584,14 +605,16 @@ const PhotoReviewModal: React.FC<PhotoReviewModalProps> = ({
     const handleDone = async () => {
         // Get current image's crop state directly from shared values (not async state)
         const currentState: CropState = {
-            scale: savedScale.value,
-            translateX: savedTranslateX.value,
-            translateY: savedTranslateY.value,
+            scale: scale.value,
+            translateX: translateX.value,
+            translateY: translateY.value,
         };
 
         // Create a combined map with all saved states plus current
         const allCropStates = new Map(cropStates);
         allCropStates.set(currentIndex, currentState);
+        // Persist latest transform so reopening the modal restores the same crop frame.
+        setCropStates(new Map(allCropStates));
 
         // Check which images can be cropped (have dimensions loaded)
         // Note: ALL images should be cropped to the frame, not just "modified" ones.
