@@ -33,7 +33,7 @@ export const OnboardingStack = () => (
   <Stack.Navigator
     screenOptions={{
       headerShown: false,
-      animation: 'slide_from_right',
+      animation: 'ios_from_right',
       gestureEnabled: false
     }}
     initialRouteName="Landing"
@@ -43,7 +43,7 @@ export const OnboardingStack = () => (
       name="SignUp"
       component={SignUp}
       options={({ route }) => ({
-        animation: (route.params as any)?.fromLogin ? 'slide_from_left' : 'slide_from_right'
+        animation: (route.params as any)?.fromLogin ? 'ios_from_left' : 'ios_from_right'
       })}
     />
     <Stack.Screen name="LogIn" component={LogIn} />

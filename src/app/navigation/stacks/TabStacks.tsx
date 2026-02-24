@@ -37,7 +37,13 @@ const FeedStackNavigator = createNativeStackNavigator<FeedStackParamList>();
  * FeedStack - Main feed tab navigation
  */
 export const FeedStack = () => (
-  <FeedStackNavigator.Navigator screenOptions={{ headerShown: false }}>
+  <FeedStackNavigator.Navigator
+    screenOptions={{
+      headerShown: false,
+      animation: 'ios_from_right',
+      gestureEnabled: true
+    }}
+  >
     <FeedStackNavigator.Screen name="Feed Main" component={FeedTabNavigator} />
     <FeedStackNavigator.Screen name="CommunityUploaded" component={CommunityUploadedScreen} />
   </FeedStackNavigator.Navigator>
@@ -104,7 +110,13 @@ const ProfileStackNavigator = createNativeStackNavigator<ProfileStackParamList>(
  * ProfileStack - Profile and settings tab navigation
  */
 export const ProfileStack = () => (
-  <ProfileStackNavigator.Navigator screenOptions={{ headerShown: false }}>
+  <ProfileStackNavigator.Navigator
+    screenOptions={{
+      headerShown: false,
+      animation: 'ios_from_right',
+      gestureEnabled: true
+    }}
+  >
     <ProfileStackNavigator.Screen name="ProfileMain" component={ProfilePage} />
     <ProfileStackNavigator.Screen name="ProfileEdit" component={ProfileEdit} />
     <ProfileStackNavigator.Screen name="BlockedUsersPage" component={BlockedUsersPage} />
