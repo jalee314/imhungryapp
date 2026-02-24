@@ -321,10 +321,11 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={GRAY[475]} />
+          <Ionicons name="search" size={20} color="#8E8E93" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search"
+            placeholderTextColor="#3c3c4399"
             value={searchText}
             onChangeText={setSearchText}
             autoCorrect={false}
@@ -397,18 +398,23 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: GRAY[150],
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginHorizontal: 16,
-    marginVertical: 10,
+    backgroundColor: 'white',
+    borderRadius: 30,
+    marginTop: 10,
+    marginHorizontal: 10,
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    height: 36,
+    borderColor: GRAY[325],
+    borderWidth: 1,
   },
   searchInput: {
     flex: 1,
-    fontSize: 17,
-    color: STATIC.black,
     marginLeft: 8,
+    fontSize: FONT_SIZE.sm,
+    fontFamily: 'Inter-Regular',
+    color: STATIC.black,
+    fontWeight: FONT_WEIGHT.regular,
   },
   content: {
     flex: 1,

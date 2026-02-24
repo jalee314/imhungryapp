@@ -35,7 +35,13 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
  */
 export const AppStack = () => (
   <AuthGuard>
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'ios_from_right',
+        gestureEnabled: true
+      }}
+    >
       {/* Main tab navigator with persistent bottom navigation */}
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
 
