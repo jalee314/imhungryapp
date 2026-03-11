@@ -550,7 +550,10 @@ describe('API Payload Contract Tests', () => {
       );
 
       expect(imageInsert).toBeDefined();
-      const payload = imageInsert!.data as Record<string, unknown>;
+      // After batch-insert optimisation, data may be an array
+      const payload = Array.isArray(imageInsert!.data)
+        ? (imageInsert!.data as Record<string, unknown>[])[0]
+        : (imageInsert!.data as Record<string, unknown>);
       expect(payload).toHaveProperty('display_order');
       expect(payload).toHaveProperty('is_thumbnail', false);
     });

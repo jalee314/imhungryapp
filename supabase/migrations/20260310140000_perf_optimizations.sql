@@ -31,6 +31,7 @@ CREATE INDEX IF NOT EXISTS idx_deal_instance_view_count
 CREATE OR REPLACE FUNCTION public.increment_deal_view_count()
   RETURNS trigger
   LANGUAGE plpgsql
+  SECURITY DEFINER
   SET search_path = 'public', 'extensions'
 AS $fn$
 BEGIN
@@ -55,6 +56,7 @@ CREATE TRIGGER trg_increment_deal_view_count
 CREATE OR REPLACE FUNCTION public.decrement_deal_view_count()
   RETURNS trigger
   LANGUAGE plpgsql
+  SECURITY DEFINER
   SET search_path = 'public', 'extensions'
 AS $fn$
 BEGIN

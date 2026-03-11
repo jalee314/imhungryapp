@@ -5,12 +5,15 @@
  */
 
 import React from 'react';
-import { View } from 'react-native';
+import { View, Dimensions } from 'react-native';
 
 import DealCard from '../../../components/DealCard';
 import type { Deal } from '../../../types/deal';
 import { Box } from '../../../ui/primitives';
 import type { CommunityInteractions } from '../types';
+
+const GRID_GAP = 4;
+const COLUMN_WIDTH = (Dimensions.get('window').width - GRID_GAP) / 2;
 
 export interface CommunityDealsGridProps {
   deals: Deal[];
@@ -23,11 +26,11 @@ export function CommunityDealsGrid({ deals, interactions }: CommunityDealsGridPr
       {deals.map((deal, index) => (
         <View
           key={deal.id}
-          style={
-            index % 2 === 0
-              ? { marginBottom: 4, marginRight: 2 }
-              : { marginBottom: 4, marginLeft: 2 }
-          }
+          style={{
+            width: COLUMN_WIDTH,
+            marginBottom: GRID_GAP,
+            marginRight: index % 2 === 0 ? GRID_GAP : 0,
+          }}
         >
           <DealCard
             deal={deal}

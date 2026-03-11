@@ -3,22 +3,20 @@
 exports[`API Payload Contract Tests addDealImages payload contracts should snapshot deal_images insert payload for adding images: add_deal_images_payloads 1`] = `
 [
   {
-    "data": {
-      "deal_template_id": "template-for-images",
-      "display_order": 1,
-      "image_metadata_id": "uploaded-image-meta-1",
-      "is_thumbnail": false,
-    },
-    "operation": "insert",
-    "table": "deal_images",
-  },
-  {
-    "data": {
-      "deal_template_id": "template-for-images",
-      "display_order": 2,
-      "image_metadata_id": "uploaded-image-meta-2",
-      "is_thumbnail": false,
-    },
+    "data": [
+      {
+        "deal_template_id": "template-for-images",
+        "display_order": 1,
+        "image_metadata_id": "uploaded-image-meta-1",
+        "is_thumbnail": false,
+      },
+      {
+        "deal_template_id": "template-for-images",
+        "display_order": 2,
+        "image_metadata_id": "uploaded-image-meta-2",
+        "is_thumbnail": false,
+      },
+    ],
     "operation": "insert",
     "table": "deal_images",
   },
