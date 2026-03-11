@@ -1,10 +1,46 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   console.log('=== Cloudinary Deletion Edge Function Started ===');
   
   try {
+    // ── AUTH CHECK: Require authenticated caller ────────────────────────
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization');
+
+    if (!authHeader) {
+      return new Response(JSON.stringify({ success: false, error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    const callerClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller }, error: authError } = await callerClient.auth.getUser();
+
+    if (authError || !caller) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid or expired token' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+    console.log(`Authenticated caller: ${caller.id}`);
+    // ── END AUTH CHECK ──────────────────────────────────────────────────
     // Get Cloudinary credentials
     const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')!;
     const apiKey = Deno.env.get('CLOUDINARY_API_KEY')!;
@@ -30,7 +66,7 @@ serve(async (req) => {
         error: 'Missing or invalid publicIds array'
       }), { 
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
@@ -99,7 +135,7 @@ serve(async (req) => {
         failed: failedDeletions.length
       }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
 
   } catch (error) {
@@ -109,7 +145,7 @@ serve(async (req) => {
       error: error.message || 'Unexpected error occurred'
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 });

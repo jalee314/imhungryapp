@@ -279,8 +279,13 @@ Deno.serve(async (req) => {
         }
       });
     }
-    // 2. Apply Gates & Filters
-    const dealsWithoutBlocked = await applyBlockedGates(candidateDeals, user_id, supabase);
+    // 2. Apply Gates & Filters + fetch cuisine preferences in parallel
+    // Blocked gates and cuisine prefs are independent — run them concurrently
+    const [dealsWithoutBlocked, preferredCuisinesResult] = await Promise.all([
+      applyBlockedGates(candidateDeals, user_id, supabase),
+      supabase.rpc('get_user_cuisine_preferences', { p_user_id: user_id }),
+    ]);
+
     const gatedDeals = await applyReportGates(dealsWithoutBlocked, user_id, supabase);
     if (gatedDeals.length === 0) {
       return new Response(JSON.stringify([]), {
@@ -290,9 +295,7 @@ Deno.serve(async (req) => {
       });
     }
     // 3. Score Deals
-    const { data: preferredCuisines } = await supabase.rpc('get_user_cuisine_preferences', {
-      p_user_id: user_id
-    });
+    const { data: preferredCuisines } = preferredCuisinesResult;
     const userCuisineSet = new Set(preferredCuisines?.map((p) => p.cuisine_id) || []);
     const userMarket = 'OC'; // Example market
     const { normalizedScores: qualityScores, m, c } = await calculateQualityScore(gatedDeals, supabase);

@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase';
 
-const USER_CACHE_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 5000;
+const USER_CACHE_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 60_000;
 
 interface CurrentUserCacheEntry {
   userId: string | null;

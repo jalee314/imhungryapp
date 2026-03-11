@@ -4,34 +4,31 @@
  */
 
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUserId as getCachedUserId } from '../currentUserService';
 import { processImageWithEdgeFunction } from '../imageProcessingService';
 
 /**
- * Get current authenticated user ID
+ * Get current authenticated user ID.
+ * Delegates to the cached currentUserService to avoid redundant auth round-trips.
  */
 export const getCurrentUserId = async (): Promise<string | null> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
+  return getCachedUserId();
 };
 
 /**
- * Get user's location coordinates from database
+ * Get user's location coordinates from database.
+ * Uses the cached user ID to avoid an extra auth round-trip.
  */
 export const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const userId = await getCachedUserId();
+    if (!userId) {
       console.log('No authenticated user found');
       return null;
     }
 
     const { data: userData, error } = await supabase
-      .rpc('get_user_location_coords', { user_uuid: user.id });
+      .rpc('get_user_location_coords', { user_uuid: userId });
 
     if (error) {
       return null;
@@ -61,9 +58,9 @@ export const getUserLocation = async (): Promise<{ lat: number; lng: number } | 
  */
 export const uploadDealImage = async (imageUri: string): Promise<string | null> => {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('User not authenticated:', authError);
+    const userId = await getCachedUserId();
+    if (!userId) {
+      console.error('User not authenticated');
       return null;
     }
 
