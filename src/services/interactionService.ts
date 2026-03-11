@@ -120,22 +120,24 @@ export const removeFavoriteInteractions = async (dealId: string): Promise<boolea
 // ==========================================
 
 /**
- * Get the view count for a deal (count of click interactions)
+ * Get the view count for a deal.
+ * Reads the pre-aggregated view_count column on deal_instance
+ * (kept in sync by a database trigger on the interaction table).
  */
 export const getDealViewCount = async (dealId: string): Promise<number> => {
   try {
-    const { count, error } = await supabase
-      .from('interaction')
-      .select('*', { count: 'exact', head: true })
+    const { data, error } = await supabase
+      .from('deal_instance')
+      .select('view_count')
       .eq('deal_id', dealId)
-      .eq('interaction_type', 'click-open');
+      .single();
 
     if (error) {
       console.error('Error fetching view count:', error);
       return 0;
     }
 
-    return count || 0;
+    return data?.view_count ?? 0;
   } catch (error) {
     console.error('Error in getDealViewCount:', error);
     return 0;
@@ -143,29 +145,27 @@ export const getDealViewCount = async (dealId: string): Promise<number> => {
 };
 
 /**
- * Get view counts for multiple deals at once (more efficient)
+ * Get view counts for multiple deals at once.
+ * Reads the pre-aggregated view_count column on deal_instance.
  */
 export const getDealViewCounts = async (dealIds: string[]): Promise<Record<string, number>> => {
   try {
     if (dealIds.length === 0) return {};
 
     const { data, error } = await supabase
-      .from('interaction')
-      .select('deal_id')
-      .in('deal_id', dealIds)
-      .eq('interaction_type', 'click-open');
+      .from('deal_instance')
+      .select('deal_id, view_count')
+      .in('deal_id', dealIds);
 
     if (error) {
       console.error('Error fetching view counts:', error);
       return {};
     }
 
-    // Count clicks per deal
     const viewCounts: Record<string, number> = {};
     dealIds.forEach(id => viewCounts[id] = 0);
-    
-    data?.forEach(interaction => {
-      viewCounts[interaction.deal_id] = (viewCounts[interaction.deal_id] || 0) + 1;
+    data?.forEach(row => {
+      viewCounts[row.deal_id] = row.view_count ?? 0;
     });
 
     return viewCounts;
@@ -176,17 +176,24 @@ export const getDealViewCounts = async (dealIds: string[]): Promise<Record<strin
 };
 
 /**
- * Get random viewer profile photos for a deal (up to 3)
+ * Get random viewer profile photos for a deal (up to 3).
+ * Uses a targeted query to fetch only the distinct user IDs we need,
+ * instead of pulling every click-open interaction.
  */
 export const getDealViewerPhotos = async (dealId: string, limit: number = 3): Promise<string[]> => {
   try {
-    // First, get unique user_ids who viewed this deal (excluding null users)
+    // Fetch a small set of distinct user_ids who viewed this deal.
+    // We fetch more than `limit` so the random sample has variety,
+    // but still far fewer rows than "all interactions".
+    const sampleSize = Math.max(limit * 5, 20);
+
     const { data: interactions, error: interactionError } = await supabase
       .from('interaction')
       .select('user_id')
       .eq('deal_id', dealId)
       .eq('interaction_type', 'click-open')
-      .not('user_id', 'is', null);
+      .not('user_id', 'is', null)
+      .limit(sampleSize);
 
     if (interactionError) {
       console.error('Error fetching viewer interactions:', interactionError);
@@ -197,14 +204,10 @@ export const getDealViewerPhotos = async (dealId: string, limit: number = 3): Pr
       return [];
     }
 
-    // Get unique user IDs
+    // Deduplicate user IDs, shuffle, and take `limit`
     const uniqueUserIds = [...new Set(interactions.map(i => i.user_id).filter(Boolean))] as string[];
-    
-    if (uniqueUserIds.length === 0) {
-      return [];
-    }
+    if (uniqueUserIds.length === 0) return [];
 
-    // Shuffle and take up to `limit` random users
     const shuffledUserIds = uniqueUserIds.sort(() => Math.random() - 0.5).slice(0, limit);
 
     // Fetch profile photos for these users

@@ -6,6 +6,32 @@ import { getCurrentUserLocation } from './locationService';
 
 export type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
 
+// ── In-memory cache for discover results ────────────────────────────
+const DISCOVER_CACHE_TTL_MS = 30_000; // 30 seconds
+
+interface DiscoverCache {
+  result: DiscoverResult;
+  fetchedAt: number;
+  /** Serialised coordinates key so moves > 0.01° invalidate */
+  coordKey: string;
+}
+
+let discoverCache: DiscoverCache | null = null;
+
+/** Clear the discover cache (e.g. after creating/deleting a deal). */
+export const clearDiscoverCache = (): void => {
+  discoverCache = null;
+};
+
+const coordKey = (lat: number, lng: number): string =>
+  `${lat.toFixed(3)}_${lng.toFixed(3)}`;
+
+const isDiscoverCacheFresh = (coords: string): boolean => {
+  if (!discoverCache) return false;
+  if (discoverCache.coordKey !== coords) return false;
+  return Date.now() - discoverCache.fetchedAt < DISCOVER_CACHE_TTL_MS;
+};
+
 const isRpcUnavailableError = (error: unknown): boolean => {
   const maybeError = error as { code?: string; message?: string } | null;
   const code = maybeError?.code ?? '';
@@ -21,6 +47,8 @@ const isRpcUnavailableError = (error: unknown): boolean => {
 
 /**
  * Get all unique restaurants that have deals, with deal counts and distances
+ * Uses the optimized single-RPC get_discover_restaurants_with_images when available,
+ * with automatic fallback to the multi-query approach.
  * @param customCoordinates - Optional custom coordinates to use for distance calculation instead of user's location
  */
 export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
@@ -60,26 +88,41 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       locationToUse = userLocation;
     }
 
-    // Query to get unique restaurants with deal counts
-    // This uses a CTE to get restaurant counts and then joins with restaurant data
-    const { data, error } = await supabase.rpc('get_restaurants_with_deal_counts', {
+    // Return cached result if still fresh and location hasn't changed significantly
+    const ck = coordKey(locationToUse.lat, locationToUse.lng);
+    if (isDiscoverCacheFresh(ck)) {
+      console.log('📦 Returning cached discover results');
+      span.end({ metadata: { path: 'cache' } });
+      return discoverCache!.result;
+    }
+
+    // Try the optimized single-RPC that returns restaurants + images in one call
+    const { data, error } = await supabase.rpc('get_discover_restaurants_with_images', {
       user_lat: locationToUse.lat,
-      user_lng: locationToUse.lng
+      user_lng: locationToUse.lng,
+      max_distance_miles: 31
     });
     span.recordRoundTrip({
-      source: 'rpc.get_restaurants_with_deal_counts',
+      source: 'rpc.get_discover_restaurants_with_images',
       responseCount: data?.length ?? 0,
       error: error?.message ?? null,
     });
+
+    // If the new RPC doesn't exist yet, fall back to the legacy multi-query path
+    if (error && isRpcUnavailableError(error)) {
+      console.log('⚠️ get_discover_restaurants_with_images not available, falling back to legacy path');
+      span.end({
+        metadata: { path: 'rpc', fallback: true },
+      });
+      return getRestaurantsWithDealsLegacy(customCoordinates);
+    }
 
     if (error) {
       console.error('Error fetching restaurants with deals:', error);
       span.end({
         success: false,
         error,
-        metadata: {
-          path: 'rpc',
-        },
+        metadata: { path: 'rpc' },
       });
       return {
         success: false,
@@ -92,10 +135,7 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     if (!data || data.length === 0) {
       console.log('No restaurants found');
       span.end({
-        metadata: {
-          path: 'rpc',
-          restaurants: 0,
-        },
+        metadata: { path: 'rpc', restaurants: 0 },
       });
       return {
         success: true,
@@ -104,55 +144,37 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       };
     }
 
-    // Transform the data to match our interface
+    // Transform the data to match our interface — the RPC already returns images
     const restaurants: DiscoverRestaurant[] = data.map((restaurant: any) => ({
       restaurant_id: restaurant.restaurant_id,
       name: restaurant.name,
       address: restaurant.address,
-      logo_image: '', // Will be populated below
+      logo_image: restaurant.best_deal_image_url || '',
       deal_count: parseInt(restaurant.deal_count) || 0,
       distance_miles: parseFloat(restaurant.distance_miles) || 0,
       lat: parseFloat(restaurant.lat),
       lng: parseFloat(restaurant.lng)
     }));
 
-    // Fetch the most liked deal's image for each restaurant
-    const restaurantIds = restaurants.map(r => r.restaurant_id);
-    const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIds);
-    span.recordRoundTrip({
-      source: 'helper.fetchMostLikedDealsForRestaurants',
-      restaurantCount: restaurantIds.length,
-      imageCount: mostLikedDeals.size,
-    });
-
-    // Map the images to restaurants
-    restaurants.forEach(restaurant => {
-      const dealImage = mostLikedDeals.get(restaurant.restaurant_id);
-      if (dealImage) {
-        restaurant.logo_image = dealImage;
-      }
-    });
-
-    // Filter to 20-mile maximum distance and sort by distance (closest first)
-    const MAX_DISTANCE_MILES = 31;
-    const filteredRestaurants = restaurants
-      .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
-      .sort((a, b) => a.distance_miles - b.distance_miles);
-
-    span.addPayload(filteredRestaurants);
+    span.addPayload(restaurants);
     span.end({
       metadata: {
         path: 'rpc',
-        restaurants: filteredRestaurants.length,
+        restaurants: restaurants.length,
       },
     });
 
-    console.log(`✅ Found ${filteredRestaurants.length} restaurants with deals within ${MAX_DISTANCE_MILES} miles`);
-    return {
+    console.log(`✅ Found ${restaurants.length} restaurants with deals`);
+    const result: DiscoverResult = {
       success: true,
-      restaurants: filteredRestaurants,
-      count: filteredRestaurants.length
+      restaurants,
+      count: restaurants.length
     };
+
+    // Cache the successful result
+    discoverCache = { result, fetchedAt: Date.now(), coordKey: ck };
+
+    return result;
 
   } catch (error) {
     console.error('Error in getRestaurantsWithDeals:', error);
@@ -169,6 +191,91 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       count: 0,
       error: 'An unexpected error occurred'
     };
+  }
+};
+
+/**
+ * Legacy multi-query path for the discover tab.
+ * Used as fallback when get_discover_restaurants_with_images RPC is not deployed yet.
+ */
+const getRestaurantsWithDealsLegacy = async (customCoordinates?: { lat: number; lng: number }): Promise<DiscoverResult> => {
+  const span = startPerfSpan('service.discover.get_restaurants_with_deals', {
+    path: 'legacy',
+    hasCustomCoordinates: Boolean(customCoordinates),
+  });
+
+  try {
+    let locationToUse: { lat: number; lng: number } | null = null;
+
+    if (customCoordinates) {
+      locationToUse = customCoordinates;
+    } else {
+      const userLocation = await getCurrentUserLocation();
+      if (!userLocation) {
+        span.end({ success: false, metadata: { path: 'legacy', reason: 'user_location_unavailable' } });
+        return { success: false, restaurants: [], count: 0, error: 'User location not available' };
+      }
+      locationToUse = userLocation;
+    }
+
+    const { data, error } = await supabase.rpc('get_restaurants_with_deal_counts', {
+      user_lat: locationToUse.lat,
+      user_lng: locationToUse.lng
+    });
+    span.recordRoundTrip({
+      source: 'rpc.get_restaurants_with_deal_counts',
+      responseCount: data?.length ?? 0,
+      error: error?.message ?? null,
+    });
+
+    if (error) {
+      span.end({ success: false, error, metadata: { path: 'legacy' } });
+      return { success: false, restaurants: [], count: 0, error: 'Failed to fetch restaurants' };
+    }
+
+    if (!data || data.length === 0) {
+      span.end({ metadata: { path: 'legacy', restaurants: 0 } });
+      return { success: true, restaurants: [], count: 0 };
+    }
+
+    const restaurants: DiscoverRestaurant[] = data.map((restaurant: any) => ({
+      restaurant_id: restaurant.restaurant_id,
+      name: restaurant.name,
+      address: restaurant.address,
+      logo_image: '',
+      deal_count: parseInt(restaurant.deal_count) || 0,
+      distance_miles: parseFloat(restaurant.distance_miles) || 0,
+      lat: parseFloat(restaurant.lat),
+      lng: parseFloat(restaurant.lng)
+    }));
+
+    const restaurantIds = restaurants.map(r => r.restaurant_id);
+    const mostLikedDeals = await fetchMostLikedDealsForRestaurants(restaurantIds);
+    span.recordRoundTrip({
+      source: 'helper.fetchMostLikedDealsForRestaurants',
+      restaurantCount: restaurantIds.length,
+      imageCount: mostLikedDeals.size,
+    });
+
+    restaurants.forEach(restaurant => {
+      const dealImage = mostLikedDeals.get(restaurant.restaurant_id);
+      if (dealImage) {
+        restaurant.logo_image = dealImage;
+      }
+    });
+
+    const MAX_DISTANCE_MILES = 31;
+    const filteredRestaurants = restaurants
+      .filter(r => r.distance_miles <= MAX_DISTANCE_MILES)
+      .sort((a, b) => a.distance_miles - b.distance_miles);
+
+    span.addPayload(filteredRestaurants);
+    span.end({ metadata: { path: 'legacy', restaurants: filteredRestaurants.length } });
+
+    return { success: true, restaurants: filteredRestaurants, count: filteredRestaurants.length };
+  } catch (error) {
+    span.end({ success: false, error, metadata: { path: 'legacy' } });
+    return { success: false, restaurants: [], count: 0, error: 'An unexpected error occurred' };
   }
 };
 

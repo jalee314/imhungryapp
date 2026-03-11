@@ -279,7 +279,7 @@ const DealPreviewScreen: React.FC<DealPreviewScreenProps> = ({
                 paddingVertical: SPACING.sm,
                 paddingHorizontal: SPACING.lg,
                 backgroundColor: ALPHA_COLORS.brandPrimary80,
-                borderRadius: RADIUS.card,
+                borderRadius: RADIUS.pill,
                 minWidth: 90,
                 opacity: isPosting ? OPACITY.disabled + 0.1 : OPACITY.full,
               }}

@@ -92,44 +92,59 @@ export const addDealImages = async (
       uploadedIds,
     });
 
-    const newImages: Array<{ imageMetadataId: string; url: string }> = [];
-
+    // Filter out failed uploads
+    const successfulUploads: Array<{ metadataId: string; index: number }> = [];
     for (let i = 0; i < uploadedIds.length; i++) {
       const metadataId = uploadedIds[i];
       if (!metadataId) {
         console.error('Failed to upload image:', imageUris[i]);
         continue;
       }
-
-      const { error: insertError } = await supabase
-        .from('deal_images')
-        .insert({
-          deal_template_id: dealInstance.template_id,
-          image_metadata_id: metadataId,
-          display_order: currentImageCount + i,
-          is_thumbnail: false,
-        });
-
-      if (insertError) {
-        console.error('Failed to insert deal image:', insertError);
-        continue;
-      }
-      console.log('[dealImages.addDealImages] Inserted deal image', {
-        dealId,
-        templateId: dealInstance.template_id,
-        metadataId,
-        displayOrder: currentImageCount + i,
-      });
-
-      const { data: metadata } = await supabase
-        .from('image_metadata')
-        .select('variants')
-        .eq('image_metadata_id', metadataId)
-        .single();
-
-      const url = metadata?.variants?.large || metadata?.variants?.medium || metadata?.variants?.original || '';
-      newImages.push({ imageMetadataId: metadataId, url });
+      successfulUploads.push({ metadataId, index: i });
     }
+
+    if (successfulUploads.length === 0) {
+      return { success: true, newImages: [] };
+    }
+
+    // Batch insert all deal_images rows in a single call
+    const dealImagesRows = successfulUploads.map(({ metadataId, index }) => ({
+      deal_template_id: dealInstance.template_id,
+      image_metadata_id: metadataId,
+      display_order: currentImageCount + index,
+      is_thumbnail: false,
+    }));
+
+    const { error: batchInsertError } = await supabase
+      .from('deal_images')
+      .insert(dealImagesRows);
+
+    if (batchInsertError) {
+      console.error('Failed to batch-insert deal images:', batchInsertError);
+      return { success: false, error: 'Failed to save images' };
+    }
+    console.log('[dealImages.addDealImages] Batch-inserted deal images', {
+      dealId,
+      templateId: dealInstance.template_id,
+      count: dealImagesRows.length,
+    });
+
+    // Batch fetch all image_metadata variants in a single query
+    const metadataIds = successfulUploads.map(u => u.metadataId);
+    const { data: metadataList } = await supabase
+      .from('image_metadata')
+      .select('image_metadata_id, variants')
+      .in('image_metadata_id', metadataIds);
+
+    const metadataMap = new Map(
+      (metadataList || []).map(m => [m.image_metadata_id, m.variants]),
+    );
+
+    const newImages: Array<{ imageMetadataId: string; url: string }> = successfulUploads.map(({ metadataId }) => {
+      const variants = metadataMap.get(metadataId);
+      const url = variants?.large || variants?.medium || variants?.original || '';
+      return { imageMetadataId: metadataId, url };
+    });
 
     console.log('[dealImages.addDealImages] Completed', {
       dealId,
@@ -387,14 +402,16 @@ export const updateDealImageOrder = async (
       return { success: false, error: 'You can only edit your own posts' };
     }
 
-    // Update each image's display order
-    for (const item of imageOrder) {
-      await supabase
-        .from('deal_images')
-        .update({ display_order: item.displayOrder })
-        .eq('deal_template_id', dealInstance.template_id)
-        .eq('image_metadata_id', item.imageMetadataId);
-    }
+    // Update all display orders in parallel
+    await Promise.all(
+      imageOrder.map(item =>
+        supabase
+          .from('deal_images')
+          .update({ display_order: item.displayOrder })
+          .eq('deal_template_id', dealInstance.template_id)
+          .eq('image_metadata_id', item.imageMetadataId),
+      ),
+    );
 
     console.log('[dealImages.updateDealImageOrder] Completed', {
       dealId,

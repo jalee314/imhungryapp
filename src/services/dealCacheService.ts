@@ -199,9 +199,14 @@ class DealCacheService {
           contextKey,
         });
 
-        const dealsWithDistance = coordinates
-          ? await addDistancesToDeals(dbDeals, coordinates)
-          : dbDeals;
+        // Run distance enrichment and vote enrichment in parallel —
+        // they are independent of each other and both only read data.
+        const [dealsWithDistance, dealsWithVotes] = await Promise.all([
+          coordinates
+            ? addDistancesToDeals(dbDeals, coordinates)
+            : Promise.resolve(dbDeals),
+          addVotesToDeals(dbDeals),
+        ]);
         if (coordinates) {
           recordRoundTrip({
             source: 'dealService.addDistancesToDeals',
@@ -209,13 +214,20 @@ class DealCacheService {
             contextKey,
           });
         }
-
-        const enrichedDeals = await addVotesToDeals(dealsWithDistance);
         recordRoundTrip({
           source: 'dealService.addVotesToDeals',
-          count: enrichedDeals.length,
+          count: dealsWithVotes.length,
           contextKey,
         });
+
+        // Merge distance overrides into the vote-enriched deals
+        const distanceMap = new Map(
+          dealsWithDistance.map(d => [d.deal_id, d.distance_miles]),
+        );
+        const enrichedDeals = dealsWithVotes.map(deal => ({
+          ...deal,
+          distance_miles: distanceMap.get(deal.deal_id) ?? deal.distance_miles,
+        }));
 
         transformedDeals = enrichedDeals.map(transformDealForUI);
         const refreshedAt = Date.now();
