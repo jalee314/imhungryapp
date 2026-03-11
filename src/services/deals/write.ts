@@ -150,71 +150,75 @@ export const deleteDeal = async (
 
     const imageIdsToDelete = Array.from(allImageIds);
 
-    // Delete from Cloudinary
+    // --- Parallel cleanup: Cloudinary + legacy storage can run concurrently ---
+    const cleanupPromises: Promise<void>[] = [];
+
+    // Cloudinary cleanup
     if (imageIdsToDelete.length > 0) {
-      try {
-        const { data: imageMetadataList, error: metadataError } = await supabase
-          .from('image_metadata')
-          .select('image_metadata_id, cloudinary_public_id')
-          .in('image_metadata_id', imageIdsToDelete);
+      cleanupPromises.push(
+        (async () => {
+          try {
+            const { data: imageMetadataList, error: metadataError } = await supabase
+              .from('image_metadata')
+              .select('image_metadata_id, cloudinary_public_id')
+              .in('image_metadata_id', imageIdsToDelete);
 
-        if (!metadataError && imageMetadataList && imageMetadataList.length > 0) {
-          const publicIds = imageMetadataList
-            .map(img => img.cloudinary_public_id)
-            .filter(id => id !== null && id !== undefined);
+            if (!metadataError && imageMetadataList && imageMetadataList.length > 0) {
+              const publicIds = imageMetadataList
+                .map(img => img.cloudinary_public_id)
+                .filter(id => id !== null && id !== undefined);
 
-          if (publicIds.length > 0) {
-            console.log('Deleting Cloudinary images:', publicIds.length);
-
-            const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
-              body: { publicIds }
-            });
-
-            if (cloudinaryError) {
-              console.warn('Failed to delete images from Cloudinary:', cloudinaryError);
-            } else {
-              console.log('Successfully deleted Cloudinary images');
+              if (publicIds.length > 0) {
+                console.log('Deleting Cloudinary images:', publicIds.length);
+                const { error: cloudinaryError } = await supabase.functions.invoke('delete-cloudinary-images', {
+                  body: { publicIds }
+                });
+                if (cloudinaryError) {
+                  console.warn('Failed to delete images from Cloudinary:', cloudinaryError);
+                } else {
+                  console.log('Successfully deleted Cloudinary images');
+                }
+              }
             }
+          } catch (cloudinaryCleanupError) {
+            console.warn('Error during Cloudinary cleanup:', cloudinaryCleanupError);
           }
-        }
-      } catch (cloudinaryCleanupError) {
-        console.warn('Error during Cloudinary cleanup:', cloudinaryCleanupError);
-      }
+        })()
+      );
     }
 
-    // Delete legacy image from Supabase Storage if it exists
+    // Legacy storage cleanup
     if ((dealInstance.deal_template as any).image_url) {
-      const { error: storageError } = await supabase.storage
-        .from('deal-images')
-        .remove([(dealInstance.deal_template as any).image_url]);
-
-      if (storageError) {
-        console.warn('Failed to delete image from storage:', storageError);
-      }
+      cleanupPromises.push(
+        (async () => {
+          const { error: storageError } = await supabase.storage
+            .from('deal-images')
+            .remove([(dealInstance.deal_template as any).image_url]);
+          if (storageError) {
+            console.warn('Failed to delete image from storage:', storageError);
+          }
+        })()
+      );
     }
 
-    // Delete the deal instance
-    const { error: deleteInstanceError } = await supabase
-      .from('deal_instance')
-      .delete()
-      .eq('deal_id', dealId);
+    // Wait for all external cleanup to finish before deleting DB rows
+    await Promise.all(cleanupPromises);
 
-    if (deleteInstanceError) {
-      console.error('Error deleting deal instance:', deleteInstanceError);
+    // --- Parallel DB deletes: deal_instance + deal_images are independent ---
+    const [instanceResult, imagesResult] = await Promise.all([
+      supabase.from('deal_instance').delete().eq('deal_id', dealId),
+      supabase.from('deal_images').delete().eq('deal_template_id', dealInstance.template_id),
+    ]);
+
+    if (instanceResult.error) {
+      console.error('Error deleting deal instance:', instanceResult.error);
       return { success: false, error: 'Failed to delete deal' };
     }
-
-    // Delete deal_images rows
-    const { error: deleteImagesError } = await supabase
-      .from('deal_images')
-      .delete()
-      .eq('deal_template_id', dealInstance.template_id);
-
-    if (deleteImagesError) {
-      console.warn('Failed to delete deal_images rows:', deleteImagesError);
+    if (imagesResult.error) {
+      console.warn('Failed to delete deal_images rows:', imagesResult.error);
     }
 
-    // Delete the deal template
+    // Delete the deal template (must be after instance + images due to FK constraints)
     const { error: deleteTemplateError } = await supabase
       .from('deal_template')
       .delete()

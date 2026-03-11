@@ -14,36 +14,29 @@ export const checkDealContentForProfanity = async (
   description?: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { data: titleData, error: titleError } = await supabase.functions.invoke('catch-profanity', {
-      body: { text: title }
-    });
+    const PROFANITY_ERROR =
+      'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.';
 
-    if (titleError) {
-      return { success: true };
+    // Check title and description in parallel — they are independent
+    const hasDescription = Boolean(description && description.trim());
+    const checks = [
+      supabase.functions.invoke('catch-profanity', { body: { text: title } }),
+      ...(hasDescription
+        ? [supabase.functions.invoke('catch-profanity', { body: { text: description } })]
+        : []),
+    ];
+
+    const results = await Promise.all(checks);
+
+    const [titleResult, descResult] = results;
+
+    // If edge function errors, allow the content (fail-open)
+    if (!titleResult.error && !titleResult.data?.isClean) {
+      return { success: false, error: PROFANITY_ERROR };
     }
 
-    if (!titleData?.isClean) {
-      return {
-        success: false,
-        error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.'
-      };
-    }
-
-    if (description && description.trim()) {
-      const { data: descData, error: descError } = await supabase.functions.invoke('catch-profanity', {
-        body: { text: description }
-      });
-
-      if (descError) {
-        return { success: true };
-      }
-
-      if (!descData?.isClean) {
-        return {
-          success: false,
-          error: 'Just because you\'re hungry doesn\'t mean you can use offensive language. Please edit your post to remove it.'
-        };
-      }
+    if (descResult && !descResult.error && !descResult.data?.isClean) {
+      return { success: false, error: PROFANITY_ERROR };
     }
 
     return { success: true };

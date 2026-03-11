@@ -7,7 +7,7 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 
 import { useAuth } from '../hooks/useAuth';
@@ -43,8 +43,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
   const [showContributeModal, setShowContributeModal] = useState(false);
   const [contributePressed, setContributePressed] = useState(false);
+  const isFetchingRef = useRef(false);
 
   const loadUserData = async (): Promise<boolean> => {
+    if (isFetchingRef.current) return !!userPhotoUrl;
+    isFetchingRef.current = true;
     try {
       // Check if user is authenticated before fetching data
       if (!isAuthenticated) {
@@ -60,6 +63,8 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       // Handle error silently
       setUserPhotoUrl(null);
       return false;
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 

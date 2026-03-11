@@ -50,7 +50,8 @@ export const initializeAuthSession = async (): Promise<boolean> => {
       console.log('✅ User is logged in:', session.user.email);
 
       // Create or resume database session for analytics
-      await createDatabaseSession();
+      // Pass the user from the session to avoid a redundant getUser() call
+      await createDatabaseSession(session.user);
 
       return true;
     } else {
@@ -64,11 +65,17 @@ export const initializeAuthSession = async (): Promise<boolean> => {
 };
 
 /**
- * Create a new database session for tracking user activity
+ * Create a new database session for tracking user activity.
+ * Accepts an optional user object to avoid a redundant getUser() call
+ * when the caller already has it from getSession().
  */
-const createDatabaseSession = async (): Promise<string | null> => {
+const createDatabaseSession = async (existingUser?: { id: string }): Promise<string | null> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    let user = existingUser;
+    if (!user) {
+      const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+      user = fetchedUser ?? undefined;
+    }
     if (!user) {
       console.log('No user found, cannot create database session');
       return null;

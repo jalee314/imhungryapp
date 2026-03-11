@@ -6,6 +6,32 @@ import { getCurrentUserLocation } from './locationService';
 
 export type { DiscoverRestaurant, DiscoverResult } from '../types/discover';
 
+// ── In-memory cache for discover results ────────────────────────────
+const DISCOVER_CACHE_TTL_MS = 30_000; // 30 seconds
+
+interface DiscoverCache {
+  result: DiscoverResult;
+  fetchedAt: number;
+  /** Serialised coordinates key so moves > 0.01° invalidate */
+  coordKey: string;
+}
+
+let discoverCache: DiscoverCache | null = null;
+
+/** Clear the discover cache (e.g. after creating/deleting a deal). */
+export const clearDiscoverCache = (): void => {
+  discoverCache = null;
+};
+
+const coordKey = (lat: number, lng: number): string =>
+  `${lat.toFixed(3)}_${lng.toFixed(3)}`;
+
+const isDiscoverCacheFresh = (coords: string): boolean => {
+  if (!discoverCache) return false;
+  if (discoverCache.coordKey !== coords) return false;
+  return Date.now() - discoverCache.fetchedAt < DISCOVER_CACHE_TTL_MS;
+};
+
 const isRpcUnavailableError = (error: unknown): boolean => {
   const maybeError = error as { code?: string; message?: string } | null;
   const code = maybeError?.code ?? '';
@@ -60,6 +86,14 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
       }
       console.log('📍 User location:', userLocation);
       locationToUse = userLocation;
+    }
+
+    // Return cached result if still fresh and location hasn't changed significantly
+    const ck = coordKey(locationToUse.lat, locationToUse.lng);
+    if (isDiscoverCacheFresh(ck)) {
+      console.log('📦 Returning cached discover results');
+      span.end({ metadata: { path: 'cache' } });
+      return discoverCache!.result;
     }
 
     // Try the optimized single-RPC that returns restaurants + images in one call
@@ -131,11 +165,16 @@ export const getRestaurantsWithDeals = async (customCoordinates?: { lat: number;
     });
 
     console.log(`✅ Found ${restaurants.length} restaurants with deals`);
-    return {
+    const result: DiscoverResult = {
       success: true,
       restaurants,
       count: restaurants.length
     };
+
+    // Cache the successful result
+    discoverCache = { result, fetchedAt: Date.now(), coordKey: ck };
+
+    return result;
 
   } catch (error) {
     console.error('Error in getRestaurantsWithDeals:', error);
